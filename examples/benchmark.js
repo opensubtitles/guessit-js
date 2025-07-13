@@ -118,10 +118,12 @@ async function runBenchmarkSuite() {
     ];
     
     // Test with different iteration counts for different engines
+    // Reduce iterations in CI environment to prevent memory issues
+    const isCI = process.env.CI || process.env.GITHUB_ACTIONS;
     const iterations = {
-        js: 10000,
-        wasm: 10000,
-        batch: 1000
+        js: isCI ? 1000 : 10000,
+        wasm: isCI ? 1000 : 10000,
+        batch: isCI ? 100 : 1000
     };
 
     try {
@@ -179,7 +181,7 @@ async function runBenchmarkSuite() {
         // Memory stress test
         console.log(`${colors.bold}Testing Memory Usage${colors.reset}`);
         
-        const memoryTestIterations = 50000;
+        const memoryTestIterations = isCI ? 5000 : 50000;
         console.log(`\n${colors.cyan}🧠 Memory stress test (${memoryTestIterations.toLocaleString()} iterations)...${colors.reset}`);
         
         const initialMemory = process.memoryUsage();
