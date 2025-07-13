@@ -4,7 +4,7 @@
 
 [![npm version](https://badge.fury.io/js/guessit-js.svg)](https://www.npmjs.com/package/guessit-js)
 [![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
-[![Build Status](https://github.com/yourusername/guessit-js/workflows/CI/badge.svg)](https://github.com/yourusername/guessit-js/actions)
+[![Build Status](https://github.com/opensubtitles/guessit-js/workflows/CI/badge.svg)](https://github.com/opensubtitles/guessit-js/actions)
 
 GuessIt JS is a JavaScript/WebAssembly port of the popular [GuessIt](https://github.com/guessit-io/guessit) Python library. It extracts metadata from video filenames with **8x better performance** than the original Python version.
 
