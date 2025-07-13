@@ -9,7 +9,7 @@
     "build": "webpack --mode=production",
     "build:dev": "webpack --mode=development",
     "build:simple": "node build-simple.js",
-    "build:wasm": "emcc -O3 -s WASM=1 -s MODULARIZE=1 -s EXPORT_NAME=GuessItWasm -s EXPORTED_FUNCTIONS='[\"_guessit\",\"_version\",\"_init\",\"_malloc\",\"_free\"]' -s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"cwrap\"]' src/wasm/guessit.c -o dist/guessit-wasm.js",
+    "build:wasm": "mkdir -p dist && emcc -O3 -s WASM=1 -s MODULARIZE=1 -s EXPORT_NAME=GuessItWasm -s EXPORTED_FUNCTIONS='[\"_guessit\",\"_version\",\"_init\",\"_malloc\",\"_free\"]' -s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"cwrap\"]' src/wasm/guessit.c -o dist/guessit-wasm.js",
     "test": "node test-runner.js",
     "test:simple": "node test-simple.js",
     "test:all": "npm test",
