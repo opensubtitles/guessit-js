@@ -5,8 +5,7 @@ yarn-debug.log*
 yarn-error.log*
 yarn.lock
 
-# Build outputs
-dist/
+# Build outputs (keep dist/ for WASM distribution)
 build/
 *.tgz
 

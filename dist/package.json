@@ -1,0 +1,10 @@
+{
+  "name": "guessit-js",
+  "version": "1.0.0",
+  "description": "JavaScript port of GuessIt",
+  "main": "guessit.js",
+  "files": [
+    "guessit.js",
+    "guessit.min.js"
+  ]
+}
