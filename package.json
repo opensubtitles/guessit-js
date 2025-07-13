@@ -1,0 +1,73 @@
+{
+  "name": "guessit-js",
+  "version": "1.0.0",
+  "description": "JavaScript port of GuessIt - Extract metadata from video filenames with WebAssembly performance",
+  "main": "dist/guessit.js",
+  "module": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "webpack --mode=production",
+    "build:dev": "webpack --mode=development",
+    "build:simple": "node build-simple.js",
+    "build:wasm": "emcc -O3 -s WASM=1 -s MODULARIZE=1 -s EXPORT_NAME=GuessItWasm -s EXPORTED_FUNCTIONS='[\"_guessit\",\"_version\",\"_init\",\"_malloc\",\"_free\"]' -s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"cwrap\"]' src/wasm/guessit.c -o dist/guessit-wasm.js",
+    "test": "node test-runner.js",
+    "test:simple": "node test-simple.js",
+    "test:all": "npm test",
+    "demo": "node examples/demo.js",
+    "demo:wasm": "node examples/wasm-demo.js",
+    "demo:browser": "echo 'Open examples/browser-demo.html in your browser'",
+    "dev": "webpack serve --mode=development",
+    "lint": "eslint src/",
+    "start": "node examples/cli.js",
+    "benchmark": "node examples/benchmark.js"
+  },
+  "bin": {
+    "guessit-js": "./examples/cli.js"
+  },
+  "keywords": [
+    "video",
+    "filename",
+    "parser",
+    "metadata",
+    "movie",
+    "tv",
+    "episode",
+    "wasm",
+    "webassembly",
+    "guessit",
+    "media",
+    "extraction",
+    "parsing",
+    "javascript"
+  ],
+  "author": "GuessIt JS Team",
+  "license": "LGPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/guessit-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/guessit-js/issues"
+  },
+  "homepage": "https://github.com/yourusername/guessit-js#readme",
+  "devDependencies": {
+    "@babel/core": "^7.23.0",
+    "@babel/preset-env": "^7.23.0",
+    "babel-loader": "^9.1.0",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.0",
+    "webpack-dev-server": "^4.15.0",
+    "jest": "^29.7.0",
+    "eslint": "^8.54.0"
+  },
+  "files": [
+    "dist/",
+    "src/",
+    "examples/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
