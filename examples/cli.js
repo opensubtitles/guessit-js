@@ -37,7 +37,7 @@ Examples:
   guessit-js --json *.mkv
   guessit-js --properties
 
-GitHub: https://github.com/yourusername/guessit-js
+GitHub: https://github.com/opensubtitles/guessit-js
     `);
 }
 

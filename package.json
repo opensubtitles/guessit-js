@@ -44,12 +44,12 @@
   "license": "LGPL-3.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/guessit-js.git"
+    "url": "https://github.com/opensubtitles/guessit-js.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/guessit-js/issues"
+    "url": "https://github.com/opensubtitles/guessit-js/issues"
   },
-  "homepage": "https://github.com/yourusername/guessit-js#readme",
+  "homepage": "https://github.com/opensubtitles/guessit-js#readme",
   "devDependencies": {
     "@babel/core": "^7.23.0",
     "@babel/preset-env": "^7.23.0",

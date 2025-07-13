@@ -46,7 +46,7 @@ Thank you for your interest in contributing to GuessIt JS! This document provide
 
 ```bash
 # Clone your fork
-git clone https://github.com/yourusername/guessit-js.git
+git clone https://github.com/opensubtitles/guessit-js.git
 cd guessit-js
 
 # Install dependencies

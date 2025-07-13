@@ -108,6 +108,6 @@ The results are identical, making migration seamless.
 
 ## Support
 
-- **GitHub Issues**: [Report bugs and request features](https://github.com/yourusername/guessit-js/issues)
-- **Documentation**: [Complete API reference and examples](https://github.com/yourusername/guessit-js#readme)
+- **GitHub Issues**: [Report bugs and request features](https://github.com/opensubtitles/guessit-js/issues)
+- **Documentation**: [Complete API reference and examples](https://github.com/opensubtitles/guessit-js#readme)
 - **NPM Package**: [Install from npm registry](https://www.npmjs.com/package/guessit-js)

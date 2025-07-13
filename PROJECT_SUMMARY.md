@@ -113,7 +113,7 @@ guessit-js/
    🎯 Same API and results as original Python version"
    
    git branch -M main
-   git remote add origin https://github.com/yourusername/guessit-js.git
+   git remote add origin https://github.com/opensubtitles/guessit-js.git
    git push -u origin main
    ```
 

@@ -234,7 +234,7 @@ WebAssembly-powered parsing for maximum performance.
 ### Setup
 
 ```bash
-git clone https://github.com/yourusername/guessit-js.git
+git clone https://github.com/opensubtitles/guessit-js.git
 cd guessit-js
 npm install
 ```
@@ -319,10 +319,10 @@ This project is licensed under the LGPL-3.0 License - see the [LICENSE](LICENSE)
 
 ## 🔗 Links
 
-- [Documentation](https://github.com/yourusername/guessit-js/wiki)
+- [Documentation](https://github.com/opensubtitles/guessit-js/wiki)
 - [Examples](./examples/)
 - [Changelog](CHANGELOG.md)
-- [Issues](https://github.com/yourusername/guessit-js/issues)
+- [Issues](https://github.com/opensubtitles/guessit-js/issues)
 - [NPM Package](https://www.npmjs.com/package/guessit-js)
 
 ---
