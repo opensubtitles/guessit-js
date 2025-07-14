@@ -32,13 +32,13 @@ export function screenSizeRules(config) {
         }
     }
     
-    // Width x Height patterns (1920x1080, 1280x720, etc.)
+    // Width x Height patterns (1920x1080, 1280x720, etc.) - handle both x and × characters
     rules.push(new Rule(
-        /(\d{3,4})x(\d{3,4})/gi,
+        /(\d{3,4})[x×](\d{3,4})/gi,
         {
             name: 'screen_size',
             formatter: (value) => {
-                const match = value.match(/(\d{3,4})x(\d{3,4})/i);
+                const match = value.match(/(\d{3,4})[x×](\d{3,4})/i);
                 if (match) {
                     const width = parseInt(match[1], 10);
                     const height = parseInt(match[2], 10);

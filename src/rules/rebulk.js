@@ -211,21 +211,57 @@ export class Matches {
     toDict(advanced = false, singleValue = false, enforceList = false) {
         const result = {};
         const propertyGroups = {};
+        const matchesWithPriority = {};
         
-        // Group matches by property name
+        // Group matches by property name with priority tracking
         for (const match of this.matches) {
             if (match.private) continue;
             
             if (!propertyGroups[match.name]) {
                 propertyGroups[match.name] = [];
+                matchesWithPriority[match.name] = [];
             }
             propertyGroups[match.name].push(match.value);
+            matchesWithPriority[match.name].push(match);
         }
         
         // Process each property
         for (const [property, values] of Object.entries(propertyGroups)) {
-            // Remove duplicates while preserving order
-            const uniqueValues = [...new Set(values)];
+            let uniqueValues = [...new Set(values)];
+            
+            // Apply priority logic for specific properties
+            if (property === 'season' && uniqueValues.length > 1) {
+                // Prioritize season from filename over directory
+                const matches = matchesWithPriority[property];
+                const filenameMatches = matches.filter(m => 
+                    m.tags && (m.tags.includes('season-SxE') || m.tags.includes('season-episode'))
+                );
+                if (filenameMatches.length > 0) {
+                    uniqueValues = [filenameMatches[0].value];
+                } else {
+                    // If no explicit filename matches, prefer the higher number (more specific)
+                    const sortedValues = uniqueValues.sort((a, b) => b - a);
+                    uniqueValues = [sortedValues[0]];
+                }
+            }
+            
+            if (property === 'title' && Array.isArray(uniqueValues) && uniqueValues.length > 1) {
+                // For title, prioritize matches from beginning of filename
+                const matches = matchesWithPriority[property];
+                const titleMatches = matches.filter(m => 
+                    m.tags && (m.tags.includes('title') || m.tags.includes('title-unicode'))
+                );
+                if (titleMatches.length > 0) {
+                    // Join multiple title parts if they form a coherent title
+                    const titleParts = titleMatches.map(m => m.value).filter(v => v && v.trim());
+                    if (titleParts.length > 0) {
+                        uniqueValues = [titleParts.join(' ')];
+                    }
+                } else {
+                    // Join array elements for title
+                    uniqueValues = [uniqueValues.join(' ')];
+                }
+            }
             
             if (singleValue && uniqueValues.length > 0) {
                 result[property] = uniqueValues[0];

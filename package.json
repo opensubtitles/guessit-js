@@ -1,6 +1,6 @@
 {
   "name": "guessit-js",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "GuessIt JS (WASM) - Extract metadata from video filenames with WebAssembly performance",
   "main": "dist/guessit.js",
   "module": "src/index.js",
@@ -24,7 +24,7 @@
     "benchmark": "node examples/benchmark.js"
   },
   "bin": {
-    "guessit-js": "./examples/cli.js"
+    "guessit-js": "examples/cli.js"
   },
   "keywords": [
     "video",
@@ -46,7 +46,7 @@
   "license": "LGPL-3.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/opensubtitles/guessit-js.git"
+    "url": "git+https://github.com/opensubtitles/guessit-js.git"
   },
   "bugs": {
     "url": "https://github.com/opensubtitles/guessit-js/issues"

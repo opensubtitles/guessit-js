@@ -102,6 +102,39 @@ export function episodeRules(config) {
         }
     ));
     
+    // Episode title patterns - match text after SxxExx pattern
+    rules.push(new Rule(
+        /S\d+E\d+\.((?:Log\.?\d+\.)?[a-zA-Z][a-zA-Z0-9\s\-\.']*?)(?=[\.\s\-](?:REPACK|PROPER|INTERNAL|\d{3,4}p|bluray|hdtv|web|dvd|cam|x264|x265|h264|h265|xvid|divx|dts|aac|mkv|avi|mp4))/gi,
+        {
+            name: 'episode_title',
+            formatter: (value) => {
+                // Remove the Log prefix if present
+                let cleaned = value.replace(/^Log\.?\d+\.?/i, '').trim();
+                // Clean up separators
+                cleaned = cleaned.replace(/[\.\-_]/g, ' ').replace(/\s+/g, ' ').trim();
+                return cleaned;
+            },
+            validator: (match) => {
+                const value = match.value.trim();
+                return value.length >= 2 && !/^\d+$/.test(value);
+            },
+            tags: ['episode-title']
+        }
+    ));
+    
+    // REPACK and similar markers - exclude words that might be part of titles
+    const otherMarkers = ['REPACK', 'PROPER', 'INTERNAL', 'LIMITED', 'EXTENDED', 'UNCUT', 'DIRECTORS', 'DC', 'UNRATED', 'RATED', 'FINAL', 'REAL', 'RERIP', 'REMASTERED', 'COMPLETE'];
+    for (const marker of otherMarkers) {
+        rules.push(new Rule(
+            new RegExp(`\\b${marker}\\b`, 'gi'),
+            {
+                name: 'other',
+                value: marker,
+                tags: ['other-marker']
+            }
+        ));
+    }
+    
     // Episode details
     const episodeDetails = ['Special', 'Pilot', 'Unaired', 'Final'];
     for (const detail of episodeDetails) {
