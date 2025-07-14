@@ -33,7 +33,8 @@ export function RebulkBuilder(config) {
     }
 
     const rebulk = new Rebulk();
-    const commonWords = new Set(getConfig('common_words') || []);
+    const commonWordsConfig = getConfig('common_words');
+    const commonWords = new Set(Array.isArray(commonWordsConfig) ? commonWordsConfig : []);
 
     // Add all rule modules to rebulk
     rebulk.addRules(pathRules(getConfig('path')));

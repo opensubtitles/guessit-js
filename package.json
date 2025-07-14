@@ -13,7 +13,7 @@
     "test": "node test-runner.js",
     "test:simple": "node test-simple.js",
     "test:all": "npm test",
-    "demo": "node examples/working-demo.js",
+    "demo": "node examples/demo.js",
     "demo:full": "node examples/demo.js",
     "demo:wasm": "node examples/wasm-demo.js",
     "demo:browser": "echo 'Open examples/browser-demo.html in your browser'",

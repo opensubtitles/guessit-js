@@ -8,7 +8,9 @@ export function sourceRules(config) {
     const rules = [];
     
     const sources = {
-        'BluRay': ['bluray', 'blu-ray', 'bdrip', 'brrip'],
+        'BluRay': ['bluray'],
+        'Blu-ray': ['blu-ray', 'bdrip', 'brrip'],
+        'HD-DVD': ['hddvd', 'hd-dvd'],
         'HDTV': ['hdtv'],
         'WEB': ['web', 'webrip', 'web-dl', 'webdl'],
         'DVD': ['dvd', 'dvdrip'],

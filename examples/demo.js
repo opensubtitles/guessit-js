@@ -77,33 +77,35 @@ async function runDemo() {
         console.log(`  ${colors.green}✓${colors.reset} ${prop}`);
     });
 
-    // Performance test (reduced iterations to prevent memory issues)
+    // Performance benchmark with 10,000 iterations
     printHeader('Performance Test');
     const testFile = 'The.Matrix.1999.1080p.BluRay.x264-GROUP.mkv';
-    const iterations = 1000; // Reduced from 10000 to prevent memory exhaustion
+    const iterations = 10000;
     
-    console.log(`Testing ${iterations} iterations on: ${testFile}`);
+    console.log(`🚀 Running ${iterations.toLocaleString()} iterations on: ${testFile}`);
+    console.log(`⏱️  Measuring JavaScript performance...`);
     
-    const startTime = Date.now();
-    for (let i = 0; i < iterations; i++) {
+    // Warmup
+    for (let i = 0; i < 100; i++) {
         guessit(testFile);
-        
-        // Force garbage collection every 100 iterations to prevent memory buildup
-        if (i % 100 === 0 && global.gc) {
-            global.gc();
-        }
     }
-    const endTime = Date.now();
     
-    const totalTime = endTime - startTime;
-    const avgTime = totalTime / iterations;
-    const opsPerSec = Math.round(1000 / avgTime);
+    const startTime = process.hrtime.bigint();
+    let result;
+    for (let i = 0; i < iterations; i++) {
+        result = guessit(testFile);
+    }
+    const endTime = process.hrtime.bigint();
     
-    console.log(`${colors.green}Performance Results (${iterations} iterations):${colors.reset}`);
-    console.log(`  Total time: ${totalTime}ms`);
-    console.log(`  Average per parse: ${avgTime.toFixed(3)}ms`);
-    console.log(`  Operations per second: ${opsPerSec.toLocaleString()}`);
-    console.log(`${colors.yellow}  Note: Reduced iterations to prevent memory issues${colors.reset}`);
+    const totalTimeMs = Number(endTime - startTime) / 1_000_000;
+    const avgTimeMs = totalTimeMs / iterations;
+    const opsPerSec = Math.round(1000 / avgTimeMs);
+    
+    console.log(`${colors.green}📊 JavaScript Performance Results:${colors.reset}`);
+    console.log(`   Total time: ${totalTimeMs.toFixed(2)}ms`);
+    console.log(`   Average per parse: ${avgTimeMs.toFixed(4)}ms`);
+    console.log(`   Operations per second: ${opsPerSec.toLocaleString()}`);
+    console.log(`   Parsed properties: ${Object.keys(result).length}`);
 
     console.log(`\n${colors.bold}${colors.cyan}🎯 Demo Complete!${colors.reset}`);
     console.log(`${colors.yellow}For comprehensive benchmarks, try:${colors.reset}`);

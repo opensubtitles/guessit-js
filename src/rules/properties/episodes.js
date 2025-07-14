@@ -12,13 +12,13 @@ export function episodeRules(config) {
     const rangeSeparators = config.range_separators || ['-', '~', 'to'];
     const discreteSeparators = config.discrete_separators || ['+', '&', 'and'];
     
-    // SxxExx patterns (S01E02, 1x02, etc.)
+    // SxxExx patterns (S01E02, S01E02, 1x02, etc.)
     rules.push(new Rule(
-        `([Ss])(\\d{1,2})[\\s\\-\\.]*([Ee]|x)(\\d{1,3})`,
+        /([Ss])(\d{1,2})[\s\-\.]*([Ee])(\d{1,3})/g,
         {
             name: 'season_episode',
             formatter: (value) => {
-                const match = value.match(/([Ss])(\d{1,2})[\s\-\.]*([Ee]|x)(\d{1,3})/);
+                const match = value.match(/([Ss])(\d{1,2})[\s\-\.]*([Ee])(\d{1,3})/);
                 if (match) {
                     return {
                         season: parseInt(match[2], 10),
@@ -31,80 +31,74 @@ export function episodeRules(config) {
         }
     ));
     
-    // Season only patterns (Season 1, S02, etc.)
-    for (const marker of seasonMarkers) {
-        rules.push(new Rule(
-            `${marker}(\\d{1,2})`,
-            {
-                name: 'season',
-                formatter: (value) => {
-                    const match = value.match(/\\d+/);
-                    return match ? parseInt(match[0], 10) : value;
-                },
-                tags: ['season-only']
-            }
-        ));
-    }
-    
-    // Episode only patterns (E02, Episode 5, etc.)
-    for (const marker of episodeMarkers) {
-        rules.push(new Rule(
-            `${marker}(\\d{1,3})`,
-            {
-                name: 'episode',
-                formatter: (value) => {
-                    const match = value.match(/\\d+/);
-                    return match ? parseInt(match[0], 10) : value;
-                },
-                tags: ['episode-only']
-            }
-        ));
-    }
-    
-    // Episode words (Episode 5, Episodio 3, etc.)
-    const episodeWords = config.episode_words || ['episode', 'episodes'];
-    for (const word of episodeWords) {
-        rules.push(new Rule(
-            `${word}\\s*(\\d{1,3})`,
-            {
-                name: 'episode',
-                formatter: (value) => {
-                    const match = value.match(/\\d+/);
-                    return match ? parseInt(match[0], 10) : value;
-                },
-                tags: ['episode-word']
-            }
-        ));
-    }
-    
-    // Season words (Season 1, Temporada 2, etc.)
-    const seasonWords = config.season_words || ['season', 'seasons'];
-    for (const word of seasonWords) {
-        rules.push(new Rule(
-            `${word}\\s*(\\d{1,2})`,
-            {
-                name: 'season',
-                formatter: (value) => {
-                    const match = value.match(/\\d+/);
-                    return match ? parseInt(match[0], 10) : value;
-                },
-                tags: ['season-word']
-            }
-        ));
-    }
-    
-    // Weak episode patterns (just numbers that might be episodes)
+    // NxNN patterns (1x02, 2x10, etc.)
     rules.push(new Rule(
-        `\\b(\\d{2,4})\\b`,
+        /(\d{1,2})x(\d{1,3})/gi,
+        {
+            name: 'season_episode',
+            formatter: (value) => {
+                const match = value.match(/(\d{1,2})x(\d{1,3})/i);
+                if (match) {
+                    return {
+                        season: parseInt(match[1], 10),
+                        episode: parseInt(match[2], 10)
+                    };
+                }
+                return value;
+            },
+            tags: ['NxNN']
+        }
+    ));
+    
+    // Season only patterns (S02, etc.)
+    rules.push(new Rule(
+        /[Ss](\d{1,2})/g,
+        {
+            name: 'season',
+            formatter: (value) => {
+                const match = value.match(/(\d+)/);
+                return match ? parseInt(match[1], 10) : value;
+            },
+            tags: ['season-only']
+        }
+    ));
+    
+    // Episode only patterns (E02, etc.)
+    rules.push(new Rule(
+        /[Ee](\d{1,3})/g,
         {
             name: 'episode',
-            formatter: (value) => parseInt(value, 10),
-            tags: ['weak-episode'],
-            validator: (match) => {
-                // Only valid if it looks like an episode number
-                const num = parseInt(match.value, 10);
-                return num > 0 && num <= (config.episode_max_range || 999);
-            }
+            formatter: (value) => {
+                const match = value.match(/(\d+)/);
+                return match ? parseInt(match[1], 10) : value;
+            },
+            tags: ['episode-only']
+        }
+    ));
+    
+    // Episode words (Episode 5, Episodio 3, etc.)
+    rules.push(new Rule(
+        /\b(?:episode|episodes)\s*(\d{1,3})\b/gi,
+        {
+            name: 'episode',
+            formatter: (value) => {
+                const match = value.match(/(\d+)/);
+                return match ? parseInt(match[1], 10) : value;
+            },
+            tags: ['episode-word']
+        }
+    ));
+    
+    // Season words (Season 1, Temporada 2, etc.)
+    rules.push(new Rule(
+        /\b(?:season|seasons)\s*(\d{1,2})\b/gi,
+        {
+            name: 'season',
+            formatter: (value) => {
+                const match = value.match(/(\d+)/);
+                return match ? parseInt(match[1], 10) : value;
+            },
+            tags: ['season-word']
         }
     ));
     

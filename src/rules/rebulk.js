@@ -236,6 +236,18 @@ export class Matches {
             }
         }
         
+        // Post-process: flatten season_episode objects into separate season and episode properties
+        if (result.season_episode && typeof result.season_episode === 'object') {
+            const seasonEpisode = result.season_episode;
+            if (seasonEpisode.season !== undefined) {
+                result.season = seasonEpisode.season;
+            }
+            if (seasonEpisode.episode !== undefined) {
+                result.episode = seasonEpisode.episode;
+            }
+            // Keep the season_episode object as well for backwards compatibility
+        }
+        
         return result;
     }
 }
@@ -320,11 +332,29 @@ export class Rule {
         } else {
             return [];
         }
+        
+        // Debug logging (remove in production)
+        const isDebugging = process.env.DEBUG_RULES === 'true';
+        if (isDebugging && this.name === 'container') {
+            console.log(`[DEBUG] Applying ${this.name} rule with pattern ${regex} to "${inputString}"`);
+        }
 
         const newMatches = [];
         let match;
+        let lastIndex = 0;
+        let iterations = 0;
+        const maxIterations = 1000; // Prevent infinite loops
         
-        while ((match = regex.exec(inputString)) !== null) {
+        while ((match = regex.exec(inputString)) !== null && iterations < maxIterations) {
+            iterations++;
+            
+            // Prevent infinite loop on zero-length matches
+            if (match.index === lastIndex && match[0].length === 0) {
+                regex.lastIndex = lastIndex + 1;
+                continue;
+            }
+            lastIndex = match.index + match[0].length;
+            
             const matchObj = new Match(
                 match.index,
                 match.index + match[0].length,
@@ -339,13 +369,35 @@ export class Rule {
                 }
             );
             
+            // Debug logging
+            if (isDebugging && this.name === 'container' && match) {
+                console.log(`[DEBUG] Found match: ${JSON.stringify(match)} -> matchObj: ${JSON.stringify({start: matchObj.start, end: matchObj.end, name: matchObj.name, value: matchObj.value})}`);
+            }
+            
             // Apply formatting
             matchObj.format();
             
             // Validate
-            if (matchObj.validate()) {
-                newMatches.push(matchObj);
+            const isValid = matchObj.validate();
+            if (isDebugging && this.name === 'container' && match) {
+                console.log(`[DEBUG] Validation result: ${isValid}`);
             }
+            
+            if (isValid) {
+                newMatches.push(matchObj);
+                if (isDebugging && this.name === 'container') {
+                    console.log(`[DEBUG] Added match to newMatches, total: ${newMatches.length}`);
+                }
+            }
+            
+            // If regex doesn't have global flag, break after first match
+            if (!regex.global) {
+                break;
+            }
+        }
+        
+        if (isDebugging && this.name === 'container') {
+            console.log(`[DEBUG] Returning ${newMatches.length} matches from ${this.name} rule`);
         }
         
         return newMatches;
@@ -406,8 +458,15 @@ export class Rebulk {
         // Apply all rules
         for (const rule of this.rules) {
             const ruleMatches = rule.apply(inputString, matches, mergedOptions);
+            const isDebugging = process.env.DEBUG_RULES === 'true';
+            if (isDebugging && rule.name === 'container' && ruleMatches.length > 0) {
+                console.log(`[DEBUG] Rule ${rule.name} returned ${ruleMatches.length} matches`);
+            }
             for (const match of ruleMatches) {
                 matches.add(match);
+                if (isDebugging && rule.name === 'container') {
+                    console.log(`[DEBUG] Added match to collection, total matches: ${matches.matches.length}`);
+                }
             }
         }
         
@@ -442,31 +501,108 @@ export class Rebulk {
      * Post-process matches to resolve conflicts and clean up
      */
     postProcessMatches(matches) {
-        // Remove overlapping matches based on priorities and conflict solvers
-        // Sort matches by start position
-        matches.matches.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
+        const isDebugging = process.env.DEBUG_RULES === 'true';
+        if (isDebugging) {
+            console.log(`[DEBUG] Post-processing ${matches.matches.length} matches`);
+            matches.matches.forEach((match, i) => {
+                console.log(`[DEBUG]   ${i}: ${match.start}-${match.end} "${match.name}": "${match.value}" (private: ${match.private})`);
+            });
+        }
         
-        // Simple conflict resolution - keep longer matches
+        // Separate private and non-private matches
+        const privateMatches = matches.matches.filter(m => m.private);
+        const publicMatches = matches.matches.filter(m => !m.private);
+        
+        if (isDebugging) {
+            console.log(`[DEBUG] Separated into ${privateMatches.length} private and ${publicMatches.length} public matches`);
+        }
+        
+        // Only resolve conflicts among non-private matches
+        // Sort matches by start position
+        publicMatches.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
+        
+        // Smart conflict resolution - prioritize specific matches over generic ones
+        const getMatchPriority = (match) => {
+            // Higher number = higher priority
+            const priorities = {
+                'container': 100,
+                'video_codec': 90,
+                'audio_codec': 90,
+                'source': 80,
+                'screen_size': 80,
+                'year': 70,
+                'episode': 60,
+                'season': 60,
+                'title': 10, // Title should have low priority as it's often very broad
+                'cleanup': 5,
+                'path': 1
+            };
+            return priorities[match.name] || 50; // Default priority for unknown types
+        };
+        
         const filtered = [];
-        for (const match of matches.matches) {
+        for (const match of publicMatches) {
             const overlapping = filtered.filter(existing => 
                 !(match.end <= existing.start || match.start >= existing.end)
             );
             
             if (overlapping.length === 0) {
                 filtered.push(match);
+                if (isDebugging) {
+                    console.log(`[DEBUG] Keeping non-overlapping match: ${match.name} (${match.start}-${match.end})`);
+                }
             } else {
-                // Keep the match with higher priority (longer for now)
-                const longer = overlapping.find(existing => existing.length < match.length);
-                if (longer) {
-                    const index = filtered.indexOf(longer);
-                    filtered.splice(index, 1);
+                if (isDebugging) {
+                    console.log(`[DEBUG] Found ${overlapping.length} overlapping matches for ${match.name} (${match.start}-${match.end})`);
+                }
+                
+                const currentPriority = getMatchPriority(match);
+                let shouldReplace = false;
+                let toReplace = [];
+                
+                for (const existing of overlapping) {
+                    const existingPriority = getMatchPriority(existing);
+                    if (currentPriority > existingPriority) {
+                        shouldReplace = true;
+                        toReplace.push(existing);
+                    } else if (currentPriority === existingPriority && match.length > existing.length) {
+                        // Same priority, prefer longer match
+                        shouldReplace = true;
+                        toReplace.push(existing);
+                    }
+                }
+                
+                if (shouldReplace) {
+                    // Remove all overlapping matches with lower priority
+                    for (const existing of toReplace) {
+                        const index = filtered.indexOf(existing);
+                        if (index !== -1) {
+                            filtered.splice(index, 1);
+                        }
+                    }
                     filtered.push(match);
+                    if (isDebugging) {
+                        console.log(`[DEBUG] Replaced ${toReplace.length} lower priority matches with ${match.name} (priority: ${currentPriority})`);
+                    }
+                } else {
+                    if (isDebugging) {
+                        console.log(`[DEBUG] Discarding ${match.name} (priority: ${currentPriority}) in favor of higher priority matches`);
+                    }
                 }
             }
         }
         
-        matches.matches = filtered;
+        // Combine filtered public matches with all private matches
+        const finalMatches = [...filtered, ...privateMatches];
+        
+        if (isDebugging) {
+            console.log(`[DEBUG] After post-processing: ${finalMatches.length} matches (${filtered.length} public + ${privateMatches.length} private)`);
+            finalMatches.forEach((match, i) => {
+                console.log(`[DEBUG]   ${i}: ${match.start}-${match.end} "${match.name}": "${match.value}" (private: ${match.private})`);
+            });
+        }
+        
+        matches.matches = finalMatches;
     }
 
     /**
