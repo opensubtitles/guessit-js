@@ -138,7 +138,7 @@ jobs:
       run: |
         echo "⚡ Testing WASM performance..."
         node -e "
-        import('./src/wasm/wasm-loader.js').then(async (wasmLoader) => {
+        import('./src/wasm/wasm-real.js').then(async (wasmLoader) => {
           await wasmLoader.initWasm();
           const result = await wasmLoader.guessitWasm('The.Matrix.1999.1080p.BluRay.x264-GROUP.mkv');
           console.log('WASM performance test result:', result);
