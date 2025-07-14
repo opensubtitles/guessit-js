@@ -1,0 +1,30 @@
+title: GuessIt JS - Live Demos
+description: High-performance JavaScript port of GuessIt for extracting metadata from video filenames
+url: https://opensubtitles.github.io/guessit-js
+
+# GitHub Pages settings
+github:
+  repository_name: guessit-js
+  repository_url: https://github.com/opensubtitles/guessit-js
+
+# Enable GitHub Pages
+plugins:
+  - jekyll-sitemap
+  - jekyll-feed
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+
+# Exclude from processing
+exclude:
+  - README.md
+  - LICENSE
+  - package.json
+  - package-lock.json
+  - node_modules
+  - .git
+  - .github
+  - build
+  - tests
+  - examples

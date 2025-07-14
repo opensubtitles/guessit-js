@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found | GuessIt JS</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .error-code {
+            font-size: 6em;
+            font-weight: bold;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .error-message {
+            font-size: 2em;
+            margin: 20px 0;
+            opacity: 0.9;
+        }
+        
+        .error-description {
+            font-size: 1.2em;
+            margin: 20px 0;
+            opacity: 0.8;
+            line-height: 1.6;
+        }
+        
+        .back-button {
+            display: inline-block;
+            padding: 15px 30px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            margin: 20px 10px;
+        }
+        
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+        
+        .links {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-code">404</div>
+    <div class="error-message">🎬 Page Not Found</div>
+    <div class="error-description">
+        The page you're looking for doesn't exist.<br>
+        But don't worry, you can still try our awesome demos!
+    </div>
+    
+    <div class="links">
+        <a href="demo-index.html" class="back-button">🏠 Demo Home</a>
+        <a href="index.html" class="back-button">📱 Basic Demo</a>
+        <a href="wasm-performance.html" class="back-button">⚡ WASM Demo</a>
+    </div>
+    
+    <div style="margin-top: 40px; opacity: 0.8;">
+        <p>Or visit our <a href="https://github.com/opensubtitles/guessit-js" style="color: #00d4aa;">GitHub repository</a></p>
+    </div>
+</body>
+</html>

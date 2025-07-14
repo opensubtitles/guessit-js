@@ -124,7 +124,7 @@ Works in all modern browsers with WebAssembly support:
 - Safari 11+ ✅
 - Edge 16+ ✅
 
-**Try it now:** [Interactive WASM Performance Demo](examples/wasm-performance-demo.html)
+**Try it now:** [Live Demo](https://opensubtitles.github.io/guessit-js/) | [WASM Performance Demo](https://opensubtitles.github.io/guessit-js/wasm-performance.html)
 
 ## 📖 Examples
 
@@ -303,7 +303,7 @@ open examples/wasm-performance-demo.html
 
 Experience the performance difference firsthand with our interactive browser demo:
 
-**[📱 Live Demo: examples/wasm-performance-demo.html](examples/wasm-performance-demo.html)**
+**[📱 Live Demo: https://opensubtitles.github.io/guessit-js/](https://opensubtitles.github.io/guessit-js/)**
 
 This demo showcases:
 - **Side-by-side comparison** of JavaScript vs WebAssembly performance
