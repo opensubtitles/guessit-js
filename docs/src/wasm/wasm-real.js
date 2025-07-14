@@ -17,7 +17,7 @@ export async function initWasm() {
         if (typeof window !== 'undefined' && !window.GuessItWasm) {
             // Load the WASM script dynamically
             const script = document.createElement('script');
-            script.src = '../../dist/guessit-wasm.js';
+            script.src = './dist/guessit-wasm.js';
             document.head.appendChild(script);
             
             // Wait for the script to load
