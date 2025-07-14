@@ -77,16 +77,21 @@ async function runDemo() {
         console.log(`  ${colors.green}✓${colors.reset} ${prop}`);
     });
 
-    // Performance test
+    // Performance test (reduced iterations to prevent memory issues)
     printHeader('Performance Test');
     const testFile = 'The.Matrix.1999.1080p.BluRay.x264-GROUP.mkv';
-    const iterations = 10000;
+    const iterations = 1000; // Reduced from 10000 to prevent memory exhaustion
     
     console.log(`Testing ${iterations} iterations on: ${testFile}`);
     
     const startTime = Date.now();
     for (let i = 0; i < iterations; i++) {
         guessit(testFile);
+        
+        // Force garbage collection every 100 iterations to prevent memory buildup
+        if (i % 100 === 0 && global.gc) {
+            global.gc();
+        }
     }
     const endTime = Date.now();
     
@@ -94,14 +99,16 @@ async function runDemo() {
     const avgTime = totalTime / iterations;
     const opsPerSec = Math.round(1000 / avgTime);
     
-    console.log(`${colors.green}Performance Results:${colors.reset}`);
+    console.log(`${colors.green}Performance Results (${iterations} iterations):${colors.reset}`);
     console.log(`  Total time: ${totalTime}ms`);
     console.log(`  Average per parse: ${avgTime.toFixed(3)}ms`);
     console.log(`  Operations per second: ${opsPerSec.toLocaleString()}`);
+    console.log(`${colors.yellow}  Note: Reduced iterations to prevent memory issues${colors.reset}`);
 
     console.log(`\n${colors.bold}${colors.cyan}🎯 Demo Complete!${colors.reset}`);
-    console.log(`${colors.yellow}Try the WebAssembly version for 8x better performance:${colors.reset}`);
-    console.log(`${colors.blue}npm run demo:wasm${colors.reset}\n`);
+    console.log(`${colors.yellow}For comprehensive benchmarks, try:${colors.reset}`);
+    console.log(`${colors.blue}npm run demo:wasm${colors.reset} (WebAssembly performance)`);
+    console.log(`${colors.blue}npm run demo:wasm-performance${colors.reset} (Interactive browser demo)\n`);
 }
 
 runDemo().catch(console.error);
