@@ -38,7 +38,7 @@ Thank you for your interest in contributing to GuessIt JS! This document provide
 
 ### Prerequisites
 
-- Node.js 18+ (latest LTS recommended)
+- Node.js 14+ (tested on 14.x, 16.x, 18.x, 20.x, 21.x; latest LTS recommended)
 - Git
 - Text editor (VS Code recommended)
 

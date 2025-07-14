@@ -81,6 +81,7 @@ guessit-js/
 
 ### **Testing & Quality**
 - ✅ **Comprehensive tests**: 91 test cases covering all functionality (100% pass rate)
+- ✅ **Node.js compatibility**: Tested on 14.x, 16.x, 18.x, 20.x, 21.x
 - ✅ **Performance benchmarks**: Speed and memory usage testing
 - ✅ **Browser compatibility**: Works in all modern browsers
 - ✅ **CI/CD ready**: GitHub Actions workflows included

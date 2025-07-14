@@ -322,7 +322,7 @@ Features demonstrated:
 ## 📋 Requirements
 
 ### Runtime
-- Node.js 14+ (for Node.js usage)
+- Node.js 14+ (tested on 14.x, 16.x, 18.x, 20.x, 21.x)
 - Modern browser with WebAssembly support (for browser usage)
 
 ### Development
