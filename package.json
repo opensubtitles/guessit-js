@@ -1,7 +1,7 @@
 {
   "name": "guessit-js",
   "version": "1.0.0",
-  "description": "JavaScript port of GuessIt - Extract metadata from video filenames with WebAssembly performance",
+  "description": "GuessIt JS (WASM) - Extract metadata from video filenames with WebAssembly performance",
   "main": "dist/guessit.js",
   "module": "src/index.js",
   "type": "module",

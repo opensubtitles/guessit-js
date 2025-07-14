@@ -1,4 +1,4 @@
-# GuessIt JS 🎬
+# GuessIt JS (WASM) 🎬
 
 > **High-performance JavaScript port of GuessIt** - Extract metadata from video filenames with WebAssembly speed
 
@@ -7,6 +7,18 @@
 [![CI](https://github.com/opensubtitles/guessit-js/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/opensubtitles/guessit-js/actions/workflows/ci.yml)
 
 GuessIt JS is a JavaScript/WebAssembly port of the popular [GuessIt](https://github.com/guessit-io/guessit) Python library. It extracts metadata from video filenames with **2000x better performance** than the original Python version.
+
+## 🌐 Live Interactive Demos
+
+**Try GuessIt JS right now in your browser:**
+
+| Demo | Description | Link |
+|------|-------------|------|
+| 🎬 **Main Demo** | Interactive filename parsing with real-time results | **[Try Now →](https://opensubtitles.github.io/guessit-js/)** |
+| ⚡ **Performance Comparison** | Side-by-side JS vs WASM speed benchmarking | **[Benchmark →](https://opensubtitles.github.io/guessit-js/wasm-performance.html)** |
+| 📱 **Demo Index** | Beautiful landing page with all features | **[Explore →](https://opensubtitles.github.io/guessit-js/demo-index.html)** |
+
+> **Experience the difference:** See how WebAssembly delivers **900K+ operations/sec** vs **12K ops/sec** in pure JavaScript!
 
 ## ✨ Features
 
@@ -124,7 +136,7 @@ Works in all modern browsers with WebAssembly support:
 - Safari 11+ ✅
 - Edge 16+ ✅
 
-**Try it now:** Download the repository and open [examples/browser-demo.html](examples/browser-demo.html) or [examples/wasm-performance-demo.html](examples/wasm-performance-demo.html) in your browser
+**Try it now:** [🌐 Live Demo](https://opensubtitles.github.io/guessit-js/) | [⚡ WASM Performance](https://opensubtitles.github.io/guessit-js/wasm-performance.html)
 
 ## 📖 Examples
 
@@ -295,15 +307,15 @@ npm run demo:wasm
 # Browser demo
 npm run demo:browser
 
-# Live WASM performance demo
-open examples/wasm-performance-demo.html
+# Live WASM performance demo  
+open https://opensubtitles.github.io/guessit-js/wasm-performance.html
 ```
 
 ### 🚀 Interactive WASM Demo
 
 Experience the performance difference firsthand with our interactive browser demo:
 
-**[📱 Interactive Demo: examples/wasm-performance-demo.html](examples/wasm-performance-demo.html)**
+**[📱 Live Interactive Demo: https://opensubtitles.github.io/guessit-js/](https://opensubtitles.github.io/guessit-js/)**
 
 This demo showcases:
 - **Side-by-side comparison** of JavaScript vs WebAssembly performance
@@ -318,6 +330,11 @@ Features demonstrated:
 - 🌐 **Universal compatibility** across modern browsers
 - 🎯 **Identical results** between JS and WASM engines
 - 🧪 **Complete test coverage** with 91/91 tests passing
+
+### 🌐 **Live Demos Available:**
+- **[Main Demo](https://opensubtitles.github.io/guessit-js/)**: Interactive filename parsing with real-time results
+- **[WASM Performance](https://opensubtitles.github.io/guessit-js/wasm-performance.html)**: Side-by-side JS vs WASM speed comparison
+- **[Demo Index](https://opensubtitles.github.io/guessit-js/demo-index.html)**: Beautiful landing page with all demos
 
 ## 📋 Requirements
 
