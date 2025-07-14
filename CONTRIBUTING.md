@@ -38,7 +38,7 @@ Thank you for your interest in contributing to GuessIt JS! This document provide
 
 ### Prerequisites
 
-- Node.js 14+ (latest LTS recommended)
+- Node.js 18+ (latest LTS recommended)
 - Git
 - Text editor (VS Code recommended)
 
@@ -151,7 +151,7 @@ When adding new features:
 
 1. Add unit tests for the specific functionality
 2. Add integration tests with real filenames
-3. Update test cases in `test-runner.js`
+3. Update test cases in `tests/test-runner.js`
 4. Ensure Python GuessIt compatibility
 
 ## 📖 Documentation
