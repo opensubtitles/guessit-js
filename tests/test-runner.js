@@ -3,7 +3,7 @@
  * Comprehensive test runner for GuessIt JS
  */
 
-import { guessit, properties } from './src/index.js';
+import { guessit, properties } from '../src/index.js';
 
 const colors = {
     green: '\x1b[32m',

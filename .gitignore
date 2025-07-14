@@ -6,7 +6,6 @@ yarn-error.log*
 yarn.lock
 
 # Build outputs (keep dist/ for WASM distribution)
-build/
 *.tgz
 
 # Cache directories
@@ -64,6 +63,7 @@ pids/
 # Test outputs
 test-results/
 .test-output/
+tests/debug/
 
 # Temporary files
 tmp/

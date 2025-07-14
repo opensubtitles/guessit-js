@@ -5,12 +5,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default {
-    entry: './src/index.js',
+    entry: path.resolve(__dirname, '../src/index.js'),
     experiments: {
         outputModule: true,
     },
     output: {
-        path: path.resolve(__dirname, 'dist'),
+        path: path.resolve(__dirname, '../dist'),
         filename: 'guessit.js',
         library: {
             type: 'module'
@@ -24,7 +24,7 @@ export default {
     },
     devServer: {
         static: {
-            directory: path.join(__dirname, 'dist'),
+            directory: path.join(__dirname, '../dist'),
         },
         compress: true,
         port: 8080,

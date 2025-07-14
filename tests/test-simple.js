@@ -3,7 +3,7 @@
  * Simple functionality test for GuessIt JS
  */
 
-import { guessit, properties } from './src/index.js';
+import { guessit, properties } from '../src/index.js';
 
 console.log('🧪 GuessIt JS - Simple Test\n');
 

@@ -31,25 +31,26 @@ async function buildBundle() {
     console.log('Building GuessIt JS bundle...');
     
     // Read all source files
+    const srcPath = path.join(__dirname, '../src');
     const files = {
-        exceptions: await readFile(path.join(__dirname, 'src/exceptions.js')),
-        options: await readFile(path.join(__dirname, 'src/options.js')),
-        config: await readFile(path.join(__dirname, 'src/config/options.js')),
-        rebulk: await readFile(path.join(__dirname, 'src/rules/rebulk.js')),
-        episodes: await readFile(path.join(__dirname, 'src/rules/properties/episodes.js')),
-        title: await readFile(path.join(__dirname, 'src/rules/properties/title.js')),
-        videoCodec: await readFile(path.join(__dirname, 'src/rules/properties/video_codec.js')),
-        screenSize: await readFile(path.join(__dirname, 'src/rules/properties/screen_size.js')),
-        container: await readFile(path.join(__dirname, 'src/rules/properties/container.js')),
-        source: await readFile(path.join(__dirname, 'src/rules/properties/source.js')),
-        audioCodec: await readFile(path.join(__dirname, 'src/rules/properties/audio_codec.js')),
-        stubs: await readFile(path.join(__dirname, 'src/rules/properties/stubs.js')),
-        path: await readFile(path.join(__dirname, 'src/rules/markers/path.js')),
-        groups: await readFile(path.join(__dirname, 'src/rules/markers/groups.js')),
-        processors: await readFile(path.join(__dirname, 'src/rules/processors.js')),
-        rulesIndex: await readFile(path.join(__dirname, 'src/rules/index.js')),
-        api: await readFile(path.join(__dirname, 'src/api.js')),
-        index: await readFile(path.join(__dirname, 'src/index.js'))
+        exceptions: await readFile(path.join(srcPath, 'exceptions.js')),
+        options: await readFile(path.join(srcPath, 'options.js')),
+        config: await readFile(path.join(srcPath, 'config/options.js')),
+        rebulk: await readFile(path.join(srcPath, 'rules/rebulk.js')),
+        episodes: await readFile(path.join(srcPath, 'rules/properties/episodes.js')),
+        title: await readFile(path.join(srcPath, 'rules/properties/title.js')),
+        videoCodec: await readFile(path.join(srcPath, 'rules/properties/video_codec.js')),
+        screenSize: await readFile(path.join(srcPath, 'rules/properties/screen_size.js')),
+        container: await readFile(path.join(srcPath, 'rules/properties/container.js')),
+        source: await readFile(path.join(srcPath, 'rules/properties/source.js')),
+        audioCodec: await readFile(path.join(srcPath, 'rules/properties/audio_codec.js')),
+        stubs: await readFile(path.join(srcPath, 'rules/properties/stubs.js')),
+        path: await readFile(path.join(srcPath, 'rules/markers/path.js')),
+        groups: await readFile(path.join(srcPath, 'rules/markers/groups.js')),
+        processors: await readFile(path.join(srcPath, 'rules/processors.js')),
+        rulesIndex: await readFile(path.join(srcPath, 'rules/index.js')),
+        api: await readFile(path.join(srcPath, 'api.js')),
+        index: await readFile(path.join(srcPath, 'index.js'))
     };
     
     // Create a simplified bundle
@@ -153,7 +154,8 @@ if (typeof module !== 'undefined' && module.exports) {
 `;
 
     // Write the bundle
-    await writeFile(path.join(__dirname, 'dist/guessit.js'), bundle);
+    const distPath = path.join(__dirname, '../dist');
+    await writeFile(path.join(distPath, 'guessit.js'), bundle);
     
     // Create a minified version (simple minification)
     const minified = bundle
@@ -162,7 +164,7 @@ if (typeof module !== 'undefined' && module.exports) {
         .replace(/\s+/g, ' ') // Collapse whitespace
         .trim();
     
-    await writeFile(path.join(__dirname, 'dist/guessit.min.js'), minified);
+    await writeFile(path.join(distPath, 'guessit.min.js'), minified);
     
     // Create package info
     const packageInfo = {
@@ -173,7 +175,7 @@ if (typeof module !== 'undefined' && module.exports) {
         files: ['guessit.js', 'guessit.min.js']
     };
     
-    await writeFile(path.join(__dirname, 'dist/package.json'), JSON.stringify(packageInfo, null, 2));
+    await writeFile(path.join(distPath, 'package.json'), JSON.stringify(packageInfo, null, 2));
     
     console.log('✅ Bundle created successfully!');
     console.log('📁 Files generated:');

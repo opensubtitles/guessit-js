@@ -1,6 +1,6 @@
 /**
  * GuessIt JS - Bundled Version
- * Generated at 2025-07-13T22:05:17.604Z
+ * Generated at 2025-07-14T07:52:05.283Z
  */
 
 // === Exceptions Module ===
@@ -603,6 +603,18 @@ class Matches {
             }
         }
         
+        // Post-process: flatten season_episode objects into separate season and episode properties
+        if (result.season_episode && typeof result.season_episode === 'object') {
+            const seasonEpisode = result.season_episode;
+            if (seasonEpisode.season !== undefined) {
+                result.season = seasonEpisode.season;
+            }
+            if (seasonEpisode.episode !== undefined) {
+                result.episode = seasonEpisode.episode;
+            }
+            // Keep the season_episode object as well for backwards compatibility
+        }
+        
         return result;
     }
 }
@@ -687,11 +699,29 @@ class Rule {
         } else {
             return [];
         }
+        
+        // Debug logging (remove in production)
+        const isDebugging = process.env.DEBUG_RULES === 'true';
+        if (isDebugging && this.name === 'container') {
+            console.log(`[DEBUG] Applying ${this.name} rule with pattern ${regex} to "${inputString}"`);
+        }
 
         const newMatches = [];
         let match;
+        let lastIndex = 0;
+        let iterations = 0;
+        const maxIterations = 1000; // Prevent infinite loops
         
-        while ((match = regex.exec(inputString)) !== null) {
+        while ((match = regex.exec(inputString)) !== null && iterations < maxIterations) {
+            iterations++;
+            
+            // Prevent infinite loop on zero-length matches
+            if (match.index === lastIndex && match[0].length === 0) {
+                regex.lastIndex = lastIndex + 1;
+                continue;
+            }
+            lastIndex = match.index + match[0].length;
+            
             const matchObj = new Match(
                 match.index,
                 match.index + match[0].length,
@@ -706,13 +736,35 @@ class Rule {
                 }
             );
             
+            // Debug logging
+            if (isDebugging && this.name === 'container' && match) {
+                console.log(`[DEBUG] Found match: ${JSON.stringify(match)} -> matchObj: ${JSON.stringify({start: matchObj.start, end: matchObj.end, name: matchObj.name, value: matchObj.value})}`);
+            }
+            
             // Apply formatting
             matchObj.format();
             
             // Validate
-            if (matchObj.validate()) {
-                newMatches.push(matchObj);
+            const isValid = matchObj.validate();
+            if (isDebugging && this.name === 'container' && match) {
+                console.log(`[DEBUG] Validation result: ${isValid}`);
             }
+            
+            if (isValid) {
+                newMatches.push(matchObj);
+                if (isDebugging && this.name === 'container') {
+                    console.log(`[DEBUG] Added match to newMatches, total: ${newMatches.length}`);
+                }
+            }
+            
+            // If regex doesn't have global flag, break after first match
+            if (!regex.global) {
+                break;
+            }
+        }
+        
+        if (isDebugging && this.name === 'container') {
+            console.log(`[DEBUG] Returning ${newMatches.length} matches from ${this.name} rule`);
         }
         
         return newMatches;
@@ -773,8 +825,15 @@ class Rebulk {
         // Apply all rules
         for (const rule of this.rules) {
             const ruleMatches = rule.apply(inputString, matches, mergedOptions);
+            const isDebugging = process.env.DEBUG_RULES === 'true';
+            if (isDebugging && rule.name === 'container' && ruleMatches.length > 0) {
+                console.log(`[DEBUG] Rule ${rule.name} returned ${ruleMatches.length} matches`);
+            }
             for (const match of ruleMatches) {
                 matches.add(match);
+                if (isDebugging && rule.name === 'container') {
+                    console.log(`[DEBUG] Added match to collection, total matches: ${matches.matches.length}`);
+                }
             }
         }
         
@@ -809,31 +868,108 @@ class Rebulk {
      * Post-process matches to resolve conflicts and clean up
      */
     postProcessMatches(matches) {
-        // Remove overlapping matches based on priorities and conflict solvers
-        // Sort matches by start position
-        matches.matches.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
+        const isDebugging = process.env.DEBUG_RULES === 'true';
+        if (isDebugging) {
+            console.log(`[DEBUG] Post-processing ${matches.matches.length} matches`);
+            matches.matches.forEach((match, i) => {
+                console.log(`[DEBUG]   ${i}: ${match.start}-${match.end} "${match.name}": "${match.value}" (private: ${match.private})`);
+            });
+        }
         
-        // Simple conflict resolution - keep longer matches
+        // Separate private and non-private matches
+        const privateMatches = matches.matches.filter(m => m.private);
+        const publicMatches = matches.matches.filter(m => !m.private);
+        
+        if (isDebugging) {
+            console.log(`[DEBUG] Separated into ${privateMatches.length} private and ${publicMatches.length} public matches`);
+        }
+        
+        // Only resolve conflicts among non-private matches
+        // Sort matches by start position
+        publicMatches.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
+        
+        // Smart conflict resolution - prioritize specific matches over generic ones
+        const getMatchPriority = (match) => {
+            // Higher number = higher priority
+            const priorities = {
+                'container': 100,
+                'video_codec': 90,
+                'audio_codec': 90,
+                'source': 80,
+                'screen_size': 80,
+                'year': 70,
+                'episode': 60,
+                'season': 60,
+                'title': 10, // Title should have low priority as it's often very broad
+                'cleanup': 5,
+                'path': 1
+            };
+            return priorities[match.name] || 50; // Default priority for unknown types
+        };
+        
         const filtered = [];
-        for (const match of matches.matches) {
+        for (const match of publicMatches) {
             const overlapping = filtered.filter(existing => 
                 !(match.end <= existing.start || match.start >= existing.end)
             );
             
             if (overlapping.length === 0) {
                 filtered.push(match);
+                if (isDebugging) {
+                    console.log(`[DEBUG] Keeping non-overlapping match: ${match.name} (${match.start}-${match.end})`);
+                }
             } else {
-                // Keep the match with higher priority (longer for now)
-                const longer = overlapping.find(existing => existing.length < match.length);
-                if (longer) {
-                    const index = filtered.indexOf(longer);
-                    filtered.splice(index, 1);
+                if (isDebugging) {
+                    console.log(`[DEBUG] Found ${overlapping.length} overlapping matches for ${match.name} (${match.start}-${match.end})`);
+                }
+                
+                const currentPriority = getMatchPriority(match);
+                let shouldReplace = false;
+                let toReplace = [];
+                
+                for (const existing of overlapping) {
+                    const existingPriority = getMatchPriority(existing);
+                    if (currentPriority > existingPriority) {
+                        shouldReplace = true;
+                        toReplace.push(existing);
+                    } else if (currentPriority === existingPriority && match.length > existing.length) {
+                        // Same priority, prefer longer match
+                        shouldReplace = true;
+                        toReplace.push(existing);
+                    }
+                }
+                
+                if (shouldReplace) {
+                    // Remove all overlapping matches with lower priority
+                    for (const existing of toReplace) {
+                        const index = filtered.indexOf(existing);
+                        if (index !== -1) {
+                            filtered.splice(index, 1);
+                        }
+                    }
                     filtered.push(match);
+                    if (isDebugging) {
+                        console.log(`[DEBUG] Replaced ${toReplace.length} lower priority matches with ${match.name} (priority: ${currentPriority})`);
+                    }
+                } else {
+                    if (isDebugging) {
+                        console.log(`[DEBUG] Discarding ${match.name} (priority: ${currentPriority}) in favor of higher priority matches`);
+                    }
                 }
             }
         }
         
-        matches.matches = filtered;
+        // Combine filtered public matches with all private matches
+        const finalMatches = [...filtered, ...privateMatches];
+        
+        if (isDebugging) {
+            console.log(`[DEBUG] After post-processing: ${finalMatches.length} matches (${filtered.length} public + ${privateMatches.length} private)`);
+            finalMatches.forEach((match, i) => {
+                console.log(`[DEBUG]   ${i}: ${match.start}-${match.end} "${match.name}": "${match.value}" (private: ${match.private})`);
+            });
+        }
+        
+        matches.matches = finalMatches;
     }
 
     /**
@@ -872,13 +1008,13 @@ function episodeRules(config) {
     const rangeSeparators = config.range_separators || ['-', '~', 'to'];
     const discreteSeparators = config.discrete_separators || ['+', '&', 'and'];
     
-    // SxxExx patterns (S01E02, 1x02, etc.)
+    // SxxExx patterns (S01E02, S01E02, 1x02, etc.)
     rules.push(new Rule(
-        `([Ss])(\\d{1,2})[\\s\\-\\.]*([Ee]|x)(\\d{1,3})`,
+        /([Ss])(\d{1,2})[\s\-\.]*([Ee])(\d{1,3})/g,
         {
             name: 'season_episode',
             formatter: (value) => {
-                const match = value.match(/([Ss])(\d{1,2})[\s\-\.]*([Ee]|x)(\d{1,3})/);
+                const match = value.match(/([Ss])(\d{1,2})[\s\-\.]*([Ee])(\d{1,3})/);
                 if (match) {
                     return {
                         season: parseInt(match[2], 10),
@@ -891,80 +1027,74 @@ function episodeRules(config) {
         }
     ));
     
-    // Season only patterns (Season 1, S02, etc.)
-    for (const marker of seasonMarkers) {
-        rules.push(new Rule(
-            `${marker}(\\d{1,2})`,
-            {
-                name: 'season',
-                formatter: (value) => {
-                    const match = value.match(/\\d+/);
-                    return match ? parseInt(match[0], 10) : value;
-                },
-                tags: ['season-only']
-            }
-        ));
-    }
-    
-    // Episode only patterns (E02, Episode 5, etc.)
-    for (const marker of episodeMarkers) {
-        rules.push(new Rule(
-            `${marker}(\\d{1,3})`,
-            {
-                name: 'episode',
-                formatter: (value) => {
-                    const match = value.match(/\\d+/);
-                    return match ? parseInt(match[0], 10) : value;
-                },
-                tags: ['episode-only']
-            }
-        ));
-    }
-    
-    // Episode words (Episode 5, Episodio 3, etc.)
-    const episodeWords = config.episode_words || ['episode', 'episodes'];
-    for (const word of episodeWords) {
-        rules.push(new Rule(
-            `${word}\\s*(\\d{1,3})`,
-            {
-                name: 'episode',
-                formatter: (value) => {
-                    const match = value.match(/\\d+/);
-                    return match ? parseInt(match[0], 10) : value;
-                },
-                tags: ['episode-word']
-            }
-        ));
-    }
-    
-    // Season words (Season 1, Temporada 2, etc.)
-    const seasonWords = config.season_words || ['season', 'seasons'];
-    for (const word of seasonWords) {
-        rules.push(new Rule(
-            `${word}\\s*(\\d{1,2})`,
-            {
-                name: 'season',
-                formatter: (value) => {
-                    const match = value.match(/\\d+/);
-                    return match ? parseInt(match[0], 10) : value;
-                },
-                tags: ['season-word']
-            }
-        ));
-    }
-    
-    // Weak episode patterns (just numbers that might be episodes)
+    // NxNN patterns (1x02, 2x10, etc.)
     rules.push(new Rule(
-        `\\b(\\d{2,4})\\b`,
+        /(\d{1,2})x(\d{1,3})/gi,
+        {
+            name: 'season_episode',
+            formatter: (value) => {
+                const match = value.match(/(\d{1,2})x(\d{1,3})/i);
+                if (match) {
+                    return {
+                        season: parseInt(match[1], 10),
+                        episode: parseInt(match[2], 10)
+                    };
+                }
+                return value;
+            },
+            tags: ['NxNN']
+        }
+    ));
+    
+    // Season only patterns (S02, etc.)
+    rules.push(new Rule(
+        /[Ss](\d{1,2})/g,
+        {
+            name: 'season',
+            formatter: (value) => {
+                const match = value.match(/(\d+)/);
+                return match ? parseInt(match[1], 10) : value;
+            },
+            tags: ['season-only']
+        }
+    ));
+    
+    // Episode only patterns (E02, etc.)
+    rules.push(new Rule(
+        /[Ee](\d{1,3})/g,
         {
             name: 'episode',
-            formatter: (value) => parseInt(value, 10),
-            tags: ['weak-episode'],
-            validator: (match) => {
-                // Only valid if it looks like an episode number
-                const num = parseInt(match.value, 10);
-                return num > 0 && num <= (config.episode_max_range || 999);
-            }
+            formatter: (value) => {
+                const match = value.match(/(\d+)/);
+                return match ? parseInt(match[1], 10) : value;
+            },
+            tags: ['episode-only']
+        }
+    ));
+    
+    // Episode words (Episode 5, Episodio 3, etc.)
+    rules.push(new Rule(
+        /\b(?:episode|episodes)\s*(\d{1,3})\b/gi,
+        {
+            name: 'episode',
+            formatter: (value) => {
+                const match = value.match(/(\d+)/);
+                return match ? parseInt(match[1], 10) : value;
+            },
+            tags: ['episode-word']
+        }
+    ));
+    
+    // Season words (Season 1, Temporada 2, etc.)
+    rules.push(new Rule(
+        /\b(?:season|seasons)\s*(\d{1,2})\b/gi,
+        {
+            name: 'season',
+            formatter: (value) => {
+                const match = value.match(/(\d+)/);
+                return match ? parseInt(match[1], 10) : value;
+            },
+            tags: ['season-word']
         }
     ));
     
@@ -992,44 +1122,63 @@ function episodeRules(config) {
 function titleRules(config) {
     const rules = [];
     
-    // Title is usually extracted from gaps between other matches
-    // This is a simplified version - the real implementation would be much more complex
-    
-    // Basic title pattern - anything that doesn't match other patterns
+    // Handle unicode and bracketed titles: [unicode].Title.year.etc
     rules.push(new Rule(
-        /([a-zA-Z0-9][a-zA-Z0-9\s\-\.\'\:]+)/g,
+        /^(?:\[[^\]]*\]\.?)([a-zA-Z\u00C0-\u017F\u4e00-\u9fff][a-zA-Z0-9\u00C0-\u017F\u4e00-\u9fff\s\-\.\'\:]*?)(?=[\.\s\-](19|20)\d{2}|[\.\s\-]\d{3,4}p|[\.\s\-](?:bluray|hdtv|web|dvd|cam|x264|x265|h264|h265|xvid|divx|dts|aac|mkv|avi|mp4|french|english|german|spanish|italian))/gi,
         {
             name: 'title',
             formatter: (value) => {
-                // Clean up title
                 return value
                     .replace(/[\.\-_]/g, ' ')
                     .replace(/\s+/g, ' ')
                     .trim();
             },
             validator: (match) => {
-                // Don't match if it's too short or looks like other properties
-                const value = match.value.toLowerCase();
-                
-                // Skip common non-title patterns
-                const skipPatterns = [
-                    /^(19|20)\d{2}$/,  // Years
-                    /^\d{3,4}p$/,      // Resolution
-                    /^[a-z]{2,3}$/,    // Short codes
-                    /^(hd|sd|uhd|4k)$/i, // Quality
-                    /^(x264|x265|h264|h265|xvid|divx)$/i, // Codecs
-                    /^(dvd|bluray|webrip|hdtv|cam)$/i, // Source
-                ];
-                
-                for (const pattern of skipPatterns) {
-                    if (pattern.test(value)) {
-                        return false;
-                    }
-                }
-                
-                return value.length > 2;
+                const value = match.value.trim();
+                return value.length >= 2 && !/^\d+$/.test(value);
             },
-            tags: ['title-candidate']
+            tags: ['title-unicode']
+        }
+    ));
+    
+    // Standard title pattern for regular filenames
+    rules.push(new Rule(
+        /^([a-zA-Z\u00C0-\u017F\u4e00-\u9fff][a-zA-Z0-9\u00C0-\u017F\u4e00-\u9fff\s\-\.\'\:]*?)(?=[\.\s\-](19|20)\d{2}|[\.\s\-]\d{3,4}p|[\.\s\-](?:bluray|hdtv|web|dvd|cam|x264|x265|h264|h265|xvid|divx|dts|aac|mkv|avi|mp4|french|english|german|spanish|italian))/gi,
+        {
+            name: 'title',
+            formatter: (value) => {
+                return value
+                    .replace(/[\.\-_]/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            },
+            validator: (match) => {
+                const value = match.value.trim();
+                return value.length >= 3 && !/^\d+$/.test(value);
+            },
+            tags: ['title']
+        }
+    ));
+    
+    // Fallback: extract word sequences from anywhere in the filename
+    rules.push(new Rule(
+        /([a-zA-Z\u00C0-\u017F\u4e00-\u9fff][a-zA-Z0-9\u00C0-\u017F\u4e00-\u9fff\s]+[a-zA-Z0-9\u00C0-\u017F\u4e00-\u9fff])/g,
+        {
+            name: 'title',
+            formatter: (value) => {
+                return value
+                    .replace(/[\.\-_]/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            },
+            validator: (match) => {
+                const value = match.value.trim();
+                // Avoid common technical terms
+                const skipTerms = ['bluray', 'hdtv', 'web', 'dvd', 'x264', 'x265', 'h264', 'h265', 'xvid', 'divx', 'aac', 'dts', 'french', 'english'];
+                return value.length >= 4 && !/^\d+$/.test(value) && !skipTerms.includes(value.toLowerCase());
+            },
+            tags: ['title-fallback'],
+            private: false
         }
     ));
     
@@ -1107,11 +1256,11 @@ function screenSizeRules(config) {
     
     // Width x Height patterns (1920x1080, 1280x720, etc.)
     rules.push(new Rule(
-        /(\\d{3,4})x(\\d{3,4})/i,
+        /(\d{3,4})x(\d{3,4})/gi,
         {
             name: 'screen_size',
             formatter: (value) => {
-                const match = value.match(/(\\d{3,4})x(\\d{3,4})/i);
+                const match = value.match(/(\d{3,4})x(\d{3,4})/i);
                 if (match) {
                     const width = parseInt(match[1], 10);
                     const height = parseInt(match[2], 10);
@@ -1181,7 +1330,9 @@ function sourceRules(config) {
     const rules = [];
     
     const sources = {
-        'BluRay': ['bluray', 'blu-ray', 'bdrip', 'brrip'],
+        'BluRay': ['bluray'],
+        'Blu-ray': ['blu-ray', 'bdrip', 'brrip'],
+        'HD-DVD': ['hddvd', 'hd-dvd'],
         'HDTV': ['hdtv'],
         'WEB': ['web', 'webrip', 'web-dl', 'webdl'],
         'DVD': ['dvd', 'dvdrip'],
@@ -1250,13 +1401,72 @@ function audioCodecRules(config) {
  * Stub implementations for remaining property modules
  */
 
+
+
 // Stub implementations that return empty rules arrays
 function websiteRules(config) { return []; }
-function dateRules(config) { return []; }
+
+function dateRules(config) { 
+    const rules = [];
+    
+    // Year detection - matches 4-digit years between 1900-2099
+    rules.push(new Rule(
+        /\b(19[0-9]{2}|20[0-9]{2})\b/g,
+        {
+            name: 'year',
+            formatter: (value) => parseInt(value, 10),
+            validator: (match) => {
+                const year = parseInt(match.value, 10);
+                return year >= 1900 && year <= 2099;
+            },
+            tags: ['date']
+        }
+    ));
+    
+    return rules; 
+}
 function episodeTitleRules(config) { return []; }
 function languageRules(config, commonWords) { return []; }
 function countryRules(config, commonWords) { return []; }
-function releaseGroupRules(config) { return []; }
+function releaseGroupRules(config) { 
+    const rules = [];
+    
+    // Release groups before file extensions: match just the group name between dash and dot
+    rules.push(new Rule(
+        /(?<=-)[A-Z0-9]+(?=\.(?:mkv|avi|mp4|mov|wmv|flv|webm|m4v|3gp|ts|m2ts|vob|iso|img|bin|mdf|nrg|cue|rar|zip|7z|tar|gz|bz2|xz)$)/gi,
+        {
+            name: 'release_group',
+            validator: (match) => {
+                const group = match.value;
+                const excludeWords = ['REPACK', 'PROPER', 'REAL', 'FINAL', 'COMPLETE', 'UNCUT', 'EXTENDED', 'DIRECTORS', 'CUT'];
+                return group.length >= 2 && group.length <= 20 && !excludeWords.includes(group.toUpperCase());
+            },
+            tags: ['release-group']
+        }
+    ));
+    
+    // Bracketed release groups [GROUP] or (GROUP) - but exclude years
+    rules.push(new Rule(
+        /[\[\(]([A-Z0-9\-_.]+)[\]\)]/gi,
+        {
+            name: 'release_group',
+            formatter: (value) => {
+                const match = value.match(/[\[\(]([A-Z0-9\-_.]+)[\]\)]/i);
+                return match ? match[1] : value;
+            },
+            validator: (match) => {
+                const group = match.value;
+                // Exclude years (1900-2099) and short numeric sequences
+                if (/^(19|20)\d{2}$/.test(group)) return false;
+                if (/^\d{1,4}$/.test(group)) return false;
+                return group.length >= 2 && group.length <= 20;
+            },
+            tags: ['release-group-bracket']
+        }
+    ));
+    
+    return rules; 
+}
 function streamingServiceRules(config) { return []; }
 function otherRules(config) { return []; }
 function sizeRules(config) { return []; }
@@ -1388,7 +1598,8 @@ function RebulkBuilder(config) {
     }
 
     const rebulk = new Rebulk();
-    const commonWords = new Set(getConfig('common_words') || []);
+    const commonWordsConfig = getConfig('common_words');
+    const commonWords = new Set(Array.isArray(commonWordsConfig) ? commonWordsConfig : []);
 
     // Add all rule modules to rebulk
     rebulk.addRules(pathRules(getConfig('path')));
