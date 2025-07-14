@@ -4,7 +4,7 @@
  */
 
 import { guessit } from '../src/index.js';
-import { guessitWasm, initWasm } from '../src/wasm/wasm-loader.js';
+import { guessitWasm, initWasm } from '../src/wasm/wasm-real.js';
 
 const colors = {
     green: '\x1b[32m',
