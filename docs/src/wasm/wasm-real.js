@@ -12,8 +12,22 @@ export async function initWasm() {
     if (wasmReady) return wasmModule;
     
     try {
-        // Import the Emscripten-generated module
-        const GuessItWasm = (await import('../../dist/guessit-wasm.js')).default;
+        // Load the Emscripten-generated module using script tag approach
+        // since the WASM file may not be proper ES module
+        if (typeof window !== 'undefined' && !window.GuessItWasm) {
+            // Load the WASM script dynamically
+            const script = document.createElement('script');
+            script.src = '../../dist/guessit-wasm.js';
+            document.head.appendChild(script);
+            
+            // Wait for the script to load
+            await new Promise((resolve, reject) => {
+                script.onload = resolve;
+                script.onerror = reject;
+            });
+        }
+        
+        const GuessItWasm = window.GuessItWasm;
         
         // Initialize the WASM module
         wasmModule = await GuessItWasm();
