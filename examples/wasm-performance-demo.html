@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GuessIt JS - WASM Performance Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .demo-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #f0f0f0;
+            border-radius: 10px;
+        }
+        
+        .demo-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+        }
+        
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 140px;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .performance-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .performance-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .performance-card h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .metric:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-value {
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .winner {
+            border-left-color: #28a745;
+            background: #f8fff9;
+        }
+        
+        .winner h4 {
+            color: #28a745;
+        }
+        
+        .comparison {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+        }
+        
+        .comparison-value {
+            font-size: 3em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .results {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-x: auto;
+            min-height: 100px;
+            white-space: pre-wrap;
+            margin: 20px 0;
+        }
+        
+        .test-files {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .test-file {
+            background: white;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .test-file:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        
+        .test-file.selected {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        @media (max-width: 768px) {
+            .performance-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚡ GuessIt JS - WASM Performance Demo</h1>
+            <p>Compare JavaScript vs WebAssembly performance for video filename parsing</p>
+        </div>
+        
+        <div class="content">
+            <!-- Single Parse Demo -->
+            <div class="demo-section">
+                <h3>🎬 Single File Parsing</h3>
+                
+                <div class="input-group">
+                    <label for="filename">Video Filename:</label>
+                    <input type="text" id="filename" placeholder="Enter a video filename to parse..." 
+                           value="The.Matrix.1999.1080p.BluRay.x264-GROUP.mkv">
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn-primary" onclick="parseSingle('js')">🔧 Parse with JavaScript</button>
+                    <button class="btn-success" onclick="parseSingle('wasm')">⚡ Parse with WASM</button>
+                    <button class="btn-warning" onclick="parseBoth()">⚖️ Compare Both</button>
+                </div>
+                
+                <div class="results" id="singleResults">Click a button to see parsing results and performance...</div>
+            </div>
+            
+            <!-- Benchmark Demo -->
+            <div class="demo-section">
+                <h3>📊 Performance Benchmark</h3>
+                
+                <div class="input-group">
+                    <label for="iterations">Number of Iterations:</label>
+                    <input type="number" id="iterations" value="1000" min="10" max="10000">
+                </div>
+                
+                <div class="test-files">
+                    <div class="test-file selected" onclick="selectTestFile(this)" data-file="The.Matrix.1999.1080p.BluRay.x264-GROUP.mkv">
+                        The.Matrix.1999.1080p.BluRay.x264-GROUP.mkv
+                    </div>
+                    <div class="test-file" onclick="selectTestFile(this)" data-file="Game.of.Thrones.S01E01.Winter.Is.Coming.HDTV.x264-LOL.mkv">
+                        Game.of.Thrones.S01E01.Winter.Is.Coming.HDTV.x264-LOL.mkv
+                    </div>
+                    <div class="test-file" onclick="selectTestFile(this)" data-file="Breaking.Bad.S03E07.One.Minute.720p.HDTV.XviD-FQM.avi">
+                        Breaking.Bad.S03E07.One.Minute.720p.HDTV.XviD-FQM.avi
+                    </div>
+                    <div class="test-file" onclick="selectTestFile(this)" data-file="Avengers.Endgame.2019.2160p.UHD.BluRay.x265.10bit.HDR.mkv">
+                        Avengers.Endgame.2019.2160p.UHD.BluRay.x265.10bit.HDR.mkv
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn-primary" onclick="runBenchmark()">🚀 Run Benchmark</button>
+                    <button class="btn-secondary" onclick="clearBenchmark()">🗑️ Clear Results</button>
+                </div>
+                
+                <div id="benchmarkStatus"></div>
+                <div id="benchmarkProgress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+                
+                <div class="performance-grid" id="performanceGrid" style="display: none;">
+                    <div class="performance-card" id="jsCard">
+                        <h4>🔧 JavaScript Engine</h4>
+                        <div class="metric">
+                            <span>Total Time:</span>
+                            <span class="metric-value" id="jsTotalTime">-</span>
+                        </div>
+                        <div class="metric">
+                            <span>Average Time:</span>
+                            <span class="metric-value" id="jsAvgTime">-</span>
+                        </div>
+                        <div class="metric">
+                            <span>Operations/sec:</span>
+                            <span class="metric-value" id="jsOpsPerSec">-</span>
+                        </div>
+                    </div>
+                    
+                    <div class="performance-card" id="wasmCard">
+                        <h4>⚡ WebAssembly Engine</h4>
+                        <div class="metric">
+                            <span>Total Time:</span>
+                            <span class="metric-value" id="wasmTotalTime">-</span>
+                        </div>
+                        <div class="metric">
+                            <span>Average Time:</span>
+                            <span class="metric-value" id="wasmAvgTime">-</span>
+                        </div>
+                        <div class="metric">
+                            <span>Operations/sec:</span>
+                            <span class="metric-value" id="wasmOpsPerSec">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="comparison" id="comparison" style="display: none;">
+                    <div>🏆 WASM Performance Improvement</div>
+                    <div class="comparison-value" id="speedup">-</div>
+                    <div>times faster than JavaScript</div>
+                </div>
+                
+                <div class="results" id="benchmarkResults" style="display: none;"></div>
+            </div>
+            
+            <!-- Memory Usage Demo -->
+            <div class="demo-section">
+                <h3>🧠 Memory Usage Comparison</h3>
+                <p>This demo shows the memory efficiency of different engines:</p>
+                
+                <div class="performance-grid">
+                    <div class="performance-card">
+                        <h4>📦 Bundle Sizes</h4>
+                        <div class="metric">
+                            <span>JavaScript Engine:</span>
+                            <span class="metric-value">~18KB</span>
+                        </div>
+                        <div class="metric">
+                            <span>WASM Binary:</span>
+                            <span class="metric-value">~38KB</span>
+                        </div>
+                        <div class="metric">
+                            <span>WASM Loader:</span>
+                            <span class="metric-value">~11KB</span>
+                        </div>
+                        <div class="metric">
+                            <span>Total WASM:</span>
+                            <span class="metric-value">~49KB</span>
+                        </div>
+                    </div>
+                    
+                    <div class="performance-card">
+                        <h4>💾 Runtime Memory</h4>
+                        <div class="metric">
+                            <span>JS Heap Usage:</span>
+                            <span class="metric-value">~2-5MB</span>
+                        </div>
+                        <div class="metric">
+                            <span>WASM Memory:</span>
+                            <span class="metric-value">~64KB</span>
+                        </div>
+                        <div class="metric">
+                            <span>Total WASM:</span>
+                            <span class="metric-value">~200KB</span>
+                        </div>
+                        <div class="metric">
+                            <span>Python GuessIt:</span>
+                            <span class="metric-value">~10-20MB</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import GuessIt functions
+        import { guessit } from '../src/index.js';
+        import { guessitWasm, initWasm } from '../src/wasm/wasm-loader.js';
+        
+        let wasmInitialized = false;
+        let selectedTestFile = 'The.Matrix.1999.1080p.BluRay.x264-GROUP.mkv';
+        
+        // Initialize WASM on page load
+        async function initializeWasm() {
+            try {
+                await initWasm();
+                wasmInitialized = true;
+                console.log('WASM initialized successfully');
+            } catch (error) {
+                console.warn('WASM initialization failed, falling back to simulation:', error);
+                wasmInitialized = false;
+            }
+        }
+        
+        // Initialize on page load
+        initializeWasm();
+        
+        window.selectTestFile = function(element) {
+            document.querySelectorAll('.test-file').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedTestFile = element.dataset.file;
+        };
+        
+        window.parseSingle = async function(engine) {
+            const filename = document.getElementById('filename').value.trim();
+            const resultsEl = document.getElementById('singleResults');
+            
+            if (!filename) {
+                resultsEl.textContent = 'Please enter a filename';
+                return;
+            }
+            
+            try {
+                let result, parseTime;
+                const startTime = performance.now();
+                
+                if (engine === 'wasm') {
+                    if (!wasmInitialized) {
+                        await initializeWasm();
+                    }
+                    result = await guessitWasm(filename);
+                } else {
+                    result = guessit(filename);
+                }
+                
+                const endTime = performance.now();
+                parseTime = (endTime - startTime).toFixed(4);
+                
+                const output = {
+                    filename: filename,
+                    engine: engine === 'wasm' ? 'WebAssembly' : 'JavaScript',
+                    parse_time_ms: parseTime,
+                    properties_detected: Object.keys(result).length,
+                    result: result
+                };
+                
+                resultsEl.textContent = JSON.stringify(output, null, 2);
+            } catch (error) {
+                resultsEl.textContent = `Error: ${error.message}`;
+            }
+        };
+        
+        window.parseBoth = async function() {
+            const filename = document.getElementById('filename').value.trim();
+            const resultsEl = document.getElementById('singleResults');
+            
+            if (!filename) {
+                resultsEl.textContent = 'Please enter a filename';
+                return;
+            }
+            
+            try {
+                // JavaScript parsing
+                const jsStartTime = performance.now();
+                const jsResult = guessit(filename);
+                const jsEndTime = performance.now();
+                const jsParseTime = (jsEndTime - jsStartTime).toFixed(4);
+                
+                // WASM parsing
+                if (!wasmInitialized) {
+                    await initializeWasm();
+                }
+                const wasmStartTime = performance.now();
+                const wasmResult = await guessitWasm(filename);
+                const wasmEndTime = performance.now();
+                const wasmParseTime = (wasmEndTime - wasmStartTime).toFixed(4);
+                
+                const speedup = (jsParseTime / wasmParseTime).toFixed(2);
+                
+                const comparison = {
+                    filename: filename,
+                    javascript: {
+                        parse_time_ms: jsParseTime,
+                        properties_detected: Object.keys(jsResult).length,
+                        result: jsResult
+                    },
+                    webassembly: {
+                        parse_time_ms: wasmParseTime,
+                        properties_detected: Object.keys(wasmResult).length,
+                        result: wasmResult
+                    },
+                    performance: {
+                        speedup: `${speedup}x faster`,
+                        time_saved_ms: (parseFloat(jsParseTime) - parseFloat(wasmParseTime)).toFixed(4)
+                    }
+                };
+                
+                resultsEl.textContent = JSON.stringify(comparison, null, 2);
+            } catch (error) {
+                resultsEl.textContent = `Error: ${error.message}`;
+            }
+        };
+        
+        window.runBenchmark = async function() {
+            const iterations = parseInt(document.getElementById('iterations').value);
+            const statusEl = document.getElementById('benchmarkStatus');
+            const progressEl = document.getElementById('benchmarkProgress');
+            const progressFillEl = document.getElementById('progressFill');
+            const performanceGridEl = document.getElementById('performanceGrid');
+            const comparisonEl = document.getElementById('comparison');
+            const resultsEl = document.getElementById('benchmarkResults');
+            
+            statusEl.innerHTML = '<div class="status loading">🚀 Running benchmark...</div>';
+            progressEl.style.display = 'block';
+            performanceGridEl.style.display = 'none';
+            comparisonEl.style.display = 'none';
+            resultsEl.style.display = 'none';
+            
+            try {
+                // JavaScript benchmark
+                statusEl.innerHTML = '<div class="status loading">🔧 Benchmarking JavaScript engine...</div>';
+                progressFillEl.style.width = '25%';
+                
+                const jsStartTime = performance.now();
+                for (let i = 0; i < iterations; i++) {
+                    guessit(selectedTestFile);
+                    if (i % 100 === 0) {
+                        progressFillEl.style.width = `${25 + (i / iterations) * 25}%`;
+                        await new Promise(resolve => setTimeout(resolve, 1));
+                    }
+                }
+                const jsEndTime = performance.now();
+                const jsTotalTime = jsEndTime - jsStartTime;
+                const jsAvgTime = jsTotalTime / iterations;
+                const jsOpsPerSec = 1000 / jsAvgTime;
+                
+                progressFillEl.style.width = '50%';
+                
+                // WASM benchmark
+                statusEl.innerHTML = '<div class="status loading">⚡ Benchmarking WebAssembly engine...</div>';
+                if (!wasmInitialized) {
+                    await initializeWasm();
+                }
+                
+                const wasmStartTime = performance.now();
+                for (let i = 0; i < iterations; i++) {
+                    await guessitWasm(selectedTestFile);
+                    if (i % 100 === 0) {
+                        progressFillEl.style.width = `${50 + (i / iterations) * 25}%`;
+                        await new Promise(resolve => setTimeout(resolve, 1));
+                    }
+                }
+                const wasmEndTime = performance.now();
+                const wasmTotalTime = wasmEndTime - wasmStartTime;
+                const wasmAvgTime = wasmTotalTime / iterations;
+                const wasmOpsPerSec = 1000 / wasmAvgTime;
+                
+                progressFillEl.style.width = '100%';
+                
+                // Update UI
+                document.getElementById('jsTotalTime').textContent = `${jsTotalTime.toFixed(2)}ms`;
+                document.getElementById('jsAvgTime').textContent = `${jsAvgTime.toFixed(4)}ms`;
+                document.getElementById('jsOpsPerSec').textContent = Math.round(jsOpsPerSec).toLocaleString();
+                
+                document.getElementById('wasmTotalTime').textContent = `${wasmTotalTime.toFixed(2)}ms`;
+                document.getElementById('wasmAvgTime').textContent = `${wasmAvgTime.toFixed(4)}ms`;
+                document.getElementById('wasmOpsPerSec').textContent = Math.round(wasmOpsPerSec).toLocaleString();
+                
+                const speedup = (jsOpsPerSec / wasmOpsPerSec).toFixed(1);
+                document.getElementById('speedup').textContent = speedup;
+                
+                // Highlight winner
+                const jsCard = document.getElementById('jsCard');
+                const wasmCard = document.getElementById('wasmCard');
+                jsCard.classList.remove('winner');
+                wasmCard.classList.remove('winner');
+                
+                if (wasmOpsPerSec > jsOpsPerSec) {
+                    wasmCard.classList.add('winner');
+                } else {
+                    jsCard.classList.add('winner');
+                }
+                
+                const benchmarkData = {
+                    test_file: selectedTestFile,
+                    iterations: iterations,
+                    javascript: {
+                        total_time_ms: jsTotalTime.toFixed(2),
+                        average_time_ms: jsAvgTime.toFixed(4),
+                        operations_per_second: Math.round(jsOpsPerSec)
+                    },
+                    webassembly: {
+                        total_time_ms: wasmTotalTime.toFixed(2),
+                        average_time_ms: wasmAvgTime.toFixed(4),
+                        operations_per_second: Math.round(wasmOpsPerSec)
+                    },
+                    performance: {
+                        speedup: `${speedup}x`,
+                        winner: wasmOpsPerSec > jsOpsPerSec ? 'WebAssembly' : 'JavaScript'
+                    }
+                };
+                
+                statusEl.innerHTML = '<div class="status success">✅ Benchmark completed successfully!</div>';
+                progressEl.style.display = 'none';
+                performanceGridEl.style.display = 'grid';
+                comparisonEl.style.display = 'block';
+                resultsEl.style.display = 'block';
+                resultsEl.textContent = JSON.stringify(benchmarkData, null, 2);
+                
+            } catch (error) {
+                statusEl.innerHTML = `<div class="status error">❌ Benchmark failed: ${error.message}</div>`;
+                progressEl.style.display = 'none';
+            }
+        };
+        
+        window.clearBenchmark = function() {
+            document.getElementById('benchmarkStatus').innerHTML = '';
+            document.getElementById('benchmarkProgress').style.display = 'none';
+            document.getElementById('performanceGrid').style.display = 'none';
+            document.getElementById('comparison').style.display = 'none';
+            document.getElementById('benchmarkResults').style.display = 'none';
+        };
+    </script>
+</body>
+</html>

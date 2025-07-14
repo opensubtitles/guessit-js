@@ -16,6 +16,7 @@
     "demo": "node examples/demo.js",
     "demo:wasm": "node examples/wasm-demo.js",
     "demo:browser": "echo 'Open examples/browser-demo.html in your browser'",
+    "demo:wasm-performance": "echo 'Open examples/wasm-performance-demo.html in your browser'",
     "dev": "webpack serve --mode=development",
     "lint": "eslint src/",
     "start": "node examples/cli.js",

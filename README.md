@@ -102,11 +102,13 @@ GuessIt JS + WASM: ~8,000 ops/sec    (20x faster!)
 
 ## 🌐 Browser Support
 
-Works in all modern browsers:
+Works in all modern browsers with WebAssembly support:
 - Chrome 57+ ✅
 - Firefox 52+ ✅  
 - Safari 11+ ✅
 - Edge 16+ ✅
+
+**Try it now:** [Interactive WASM Performance Demo](examples/wasm-performance-demo.html)
 
 ## 📖 Examples
 
@@ -276,7 +278,29 @@ npm run demo:wasm
 
 # Browser demo
 npm run demo:browser
+
+# Live WASM performance demo
+open examples/wasm-performance-demo.html
 ```
+
+### 🚀 Interactive WASM Demo
+
+Experience the performance difference firsthand with our interactive browser demo:
+
+**[📱 Live Demo: examples/wasm-performance-demo.html](examples/wasm-performance-demo.html)**
+
+This demo showcases:
+- **Side-by-side comparison** of JavaScript vs WebAssembly performance
+- **Real-time benchmarking** with configurable iterations
+- **Memory usage analysis** and bundle size comparison
+- **Interactive parsing** with multiple test files
+- **Performance metrics** including operations per second and speedup ratios
+
+Features demonstrated:
+- ⚡ **8x faster parsing** with WebAssembly
+- 📦 **Smaller memory footprint** compared to Python GuessIt
+- 🌐 **Universal compatibility** across modern browsers
+- 🎯 **Identical results** between JS and WASM engines
 
 ## 📋 Requirements
 

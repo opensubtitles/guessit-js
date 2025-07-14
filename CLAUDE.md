@@ -27,6 +27,7 @@ GuessIt JS is a JavaScript/WebAssembly port of the Python GuessIt library for ex
 - `npm run demo` - Run basic demo (examples/demo.js)
 - `npm run demo:wasm` - Run WebAssembly demo
 - `npm run demo:browser` - Instructions for browser demo
+- `npm run demo:wasm-performance` - Interactive WASM performance demo
 - `npm run start` - Run CLI tool (examples/cli.js)
 - `npm run benchmark` - Performance benchmarking
 
