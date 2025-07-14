@@ -326,7 +326,7 @@
                 
                 <div class="input-group">
                     <label for="iterations">Number of Iterations:</label>
-                    <input type="number" id="iterations" value="1000" min="10" max="10000">
+                    <input type="number" id="iterations" value="10000" min="10" max="10000">
                 </div>
                 
                 <div class="test-files">
@@ -633,7 +633,7 @@
                 document.getElementById('wasmAvgTime').textContent = `${wasmAvgTime.toFixed(4)}ms`;
                 document.getElementById('wasmOpsPerSec').textContent = Math.round(wasmOpsPerSec).toLocaleString();
                 
-                const speedup = (jsOpsPerSec / wasmOpsPerSec).toFixed(1);
+                const speedup = (wasmOpsPerSec / jsOpsPerSec).toFixed(1);
                 document.getElementById('speedup').textContent = speedup;
                 
                 // Highlight winner
@@ -662,8 +662,9 @@
                         operations_per_second: Math.round(wasmOpsPerSec)
                     },
                     performance: {
-                        speedup: `${speedup}x`,
-                        winner: wasmOpsPerSec > jsOpsPerSec ? 'WebAssembly' : 'JavaScript'
+                        speedup: `${speedup}x faster`,
+                        winner: wasmOpsPerSec > jsOpsPerSec ? 'WebAssembly' : 'JavaScript',
+                        improvement: `WASM is ${speedup}x faster than JavaScript`
                     }
                 };
                 
