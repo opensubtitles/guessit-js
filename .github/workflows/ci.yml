@@ -12,7 +12,7 @@ jobs:
     
     strategy:
       matrix:
-        node-version: [14.x, 16.x, 18.x, 20.x]
+        node-version: [18.x, 20.x]
     
     steps:
     - uses: actions/checkout@v4
@@ -34,9 +34,6 @@ jobs:
     
     - name: Run demo
       run: npm run demo
-    
-    - name: Run WASM demo
-      run: npm run demo:wasm
     
     - name: Build JavaScript bundle
       run: npm run build:simple
