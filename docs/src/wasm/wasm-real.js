@@ -13,7 +13,7 @@ export async function initWasm() {
     
     try {
         // Import the Emscripten-generated module
-        const GuessItWasm = (await import('../../dist/guessit.js')).default;
+        const GuessItWasm = (await import('../../dist/guessit-wasm.js')).default;
         
         // Initialize the WASM module
         wasmModule = await GuessItWasm();
@@ -43,20 +43,8 @@ export async function guessitWasm(filename) {
     }
     
     try {
-        // Allocate memory for the input string
-        const filenameLength = lengthBytesUTF8(filename) + 1;
-        const filenamePtr = wasmModule._malloc(filenameLength);
-        stringToUTF8(filename, filenamePtr, filenameLength);
-        
-        // Call the WASM function
-        const resultPtr = wasmModule._guessit(filenamePtr);
-        
-        // Read the result string
-        const resultString = UTF8ToString(resultPtr);
-        
-        // Free memory
-        wasmModule._free(filenamePtr);
-        // Note: Don't free resultPtr as it points to static buffer
+        // Use ccall to call the WASM function directly with string input
+        const resultString = wasmModule.ccall('guessit', 'string', ['string'], [filename]);
         
         // Parse and return JSON result
         return JSON.parse(resultString);
@@ -74,8 +62,7 @@ export async function getWasmVersion() {
         await initWasm();
     }
     
-    const versionPtr = wasmModule._version();
-    const version = UTF8ToString(versionPtr);
+    const version = wasmModule.ccall('version', 'string', [], []);
     
     return version;
 }

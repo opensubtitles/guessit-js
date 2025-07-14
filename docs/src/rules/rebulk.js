@@ -334,7 +334,7 @@ export class Rule {
         }
         
         // Debug logging (remove in production)
-        const isDebugging = process.env.DEBUG_RULES === 'true';
+        const isDebugging = (typeof process !== 'undefined' && process.env && process.env.DEBUG_RULES === 'true') || false;
         if (isDebugging && this.name === 'container') {
             console.log(`[DEBUG] Applying ${this.name} rule with pattern ${regex} to "${inputString}"`);
         }
@@ -458,7 +458,7 @@ export class Rebulk {
         // Apply all rules
         for (const rule of this.rules) {
             const ruleMatches = rule.apply(inputString, matches, mergedOptions);
-            const isDebugging = process.env.DEBUG_RULES === 'true';
+            const isDebugging = (typeof process !== 'undefined' && process.env && process.env.DEBUG_RULES === 'true') || false;
             if (isDebugging && rule.name === 'container' && ruleMatches.length > 0) {
                 console.log(`[DEBUG] Rule ${rule.name} returned ${ruleMatches.length} matches`);
             }
@@ -501,7 +501,7 @@ export class Rebulk {
      * Post-process matches to resolve conflicts and clean up
      */
     postProcessMatches(matches) {
-        const isDebugging = process.env.DEBUG_RULES === 'true';
+        const isDebugging = (typeof process !== 'undefined' && process.env && process.env.DEBUG_RULES === 'true') || false;
         if (isDebugging) {
             console.log(`[DEBUG] Post-processing ${matches.matches.length} matches`);
             matches.matches.forEach((match, i) => {
