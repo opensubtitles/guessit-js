@@ -1,0 +1,617 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "guessit-js API",
+    "description": "Extract metadata from media filenames. A TypeScript port of the Python [guessit](https://github.com/guessit-io/guessit) library.\n\nParses movie and TV episode filenames to extract properties like title, year, season, episode, resolution, codec, language, release group, and 40+ other metadata fields.\n\n## Quick Start\n\n```bash\ncurl \"/api/guessit?filename=Breaking.Bad.S01E02.720p.BluRay.x264-DEMAND.mkv\"\n```\n\n## Features\n- **99.3% compatibility** with Python guessit test suite (1018/1025 tests)\n- **3.47x faster** than Python (6.87ms vs 23.86ms per parse)\n- **Zero runtime dependencies**\n- **40+ detected properties**: title, year, season, episode, resolution, codec, language, and more",
+    "version": "3.8.1",
+    "contact": {
+      "name": "guessit-js",
+      "url": "https://opensubtitles.github.io/guessit-js"
+    },
+    "license": {
+      "name": "LGPLv3",
+      "url": "https://www.gnu.org/licenses/lgpl-3.0.en.html"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://opensubtitles.github.io/guessit-js",
+      "description": "GitHub Pages (static demo)"
+    },
+    {
+      "url": "http://localhost:3847",
+      "description": "Local development"
+    }
+  ],
+  "paths": {
+    "/api/guessit": {
+      "get": {
+        "operationId": "guessitGet",
+        "summary": "Parse a media filename",
+        "description": "Extracts metadata from a media filename using pattern matching. Returns a JSON object with all detected properties.\n\nThe filename can include directory paths (e.g., `Movies/Title (2020)/file.mkv`) — the parser uses path segments as additional context for title disambiguation.",
+        "tags": ["Parsing"],
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "query",
+            "required": true,
+            "description": "The media filename (or full path) to parse. URL-encode special characters.",
+            "schema": {
+              "type": "string",
+              "example": "The.Dark.Knight.2008.1080p.BluRay.x264-GROUP.mkv"
+            },
+            "examples": {
+              "movie": {
+                "summary": "Movie filename",
+                "value": "The.Dark.Knight.2008.1080p.BluRay.x264-GROUP.mkv"
+              },
+              "tvshow": {
+                "summary": "TV episode",
+                "value": "Breaking.Bad.S01E02.720p.BluRay.x264-DEMAND.mkv"
+              },
+              "anime": {
+                "summary": "Anime with group",
+                "value": "[SubGroup] Naruto Shippuden - 301 [720p][AAC].mkv"
+              },
+              "fullpath": {
+                "summary": "Full path with directory",
+                "value": "Movies/The Matrix (1999)/The.Matrix.1999.REMASTERED.1080p.BluRay.x264-GROUP.mkv"
+              },
+              "uhd": {
+                "summary": "UHD with HDR and Atmos",
+                "value": "Dune Part Two 2024 1080p WEB-DL DD+ 5.1 Atmos H.265-FLUX.mkv"
+              }
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "description": "Force the type detection. If omitted, the parser auto-detects based on the presence of season/episode indicators.",
+            "schema": {
+              "type": "string",
+              "enum": ["movie", "episode"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully parsed filename",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuessitResult"
+                },
+                "examples": {
+                  "movie": {
+                    "summary": "Movie result",
+                    "value": {
+                      "title": "The Dark Knight",
+                      "year": 2008,
+                      "screen_size": "1080p",
+                      "source": "Blu-ray",
+                      "video_codec": "H.264",
+                      "release_group": "GROUP",
+                      "container": "mkv",
+                      "mimetype": "video/x-matroska",
+                      "type": "movie"
+                    }
+                  },
+                  "episode": {
+                    "summary": "TV episode result",
+                    "value": {
+                      "title": "Breaking Bad",
+                      "season": 1,
+                      "episode": 2,
+                      "screen_size": "720p",
+                      "source": "Blu-ray",
+                      "video_codec": "H.264",
+                      "release_group": "DEMAND",
+                      "container": "mkv",
+                      "mimetype": "video/x-matroska",
+                      "type": "episode"
+                    }
+                  },
+                  "complex": {
+                    "summary": "Complex result with multiple codecs",
+                    "value": {
+                      "title": "Dune",
+                      "part": 2,
+                      "year": 2024,
+                      "screen_size": "1080p",
+                      "source": "Web",
+                      "audio_codec": ["Dolby Digital Plus", "Dolby Atmos"],
+                      "audio_channels": "5.1",
+                      "video_codec": "H.265",
+                      "release_group": "FLUX",
+                      "container": "mkv",
+                      "type": "movie"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing or invalid parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Missing required parameter: filename"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal parsing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "guessitPost",
+        "summary": "Parse a filename with options",
+        "description": "Parse a media filename with full options support. Use this endpoint when you need to pass additional configuration like expected titles, allowed languages, or country restrictions.\n\nThe request body accepts the same options as the Python guessit library.",
+        "tags": ["Parsing"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuessitRequest"
+              },
+              "examples": {
+                "simple": {
+                  "summary": "Simple filename",
+                  "value": {
+                    "filename": "The.Matrix.1999.REMASTERED.2160p.UHD.BluRay.x265-GROUP.mkv"
+                  }
+                },
+                "withType": {
+                  "summary": "Force movie type",
+                  "value": {
+                    "filename": "10.Cloverfield.Lane.2016.1080p.BluRay.x264.mkv",
+                    "options": {
+                      "type": "movie"
+                    }
+                  }
+                },
+                "withExpectedTitle": {
+                  "summary": "Provide expected title hint",
+                  "value": {
+                    "filename": "my 720p show S01E02.mkv",
+                    "options": {
+                      "expected_title": ["my 720p show"]
+                    }
+                  }
+                },
+                "withLanguages": {
+                  "summary": "Restrict languages and countries",
+                  "value": {
+                    "filename": "The.Office.US.S02E01.HDTV.mkv",
+                    "options": {
+                      "allowed_languages": ["en", "fr"],
+                      "allowed_countries": ["us", "gb"]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully parsed filename",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuessitResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing or invalid request body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal parsing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "operationId": "healthCheck",
+        "summary": "Health check",
+        "description": "Returns the service status and version. Use for monitoring and load balancer health checks.",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                },
+                "example": {
+                  "status": "ok",
+                  "version": "3.8.1"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "GuessitRequest": {
+        "type": "object",
+        "required": ["filename"],
+        "properties": {
+          "filename": {
+            "type": "string",
+            "description": "The media filename or path to parse",
+            "example": "The.Matrix.1999.1080p.BluRay.x264-GROUP.mkv"
+          },
+          "options": {
+            "$ref": "#/components/schemas/GuessitOptions"
+          }
+        }
+      },
+      "GuessitOptions": {
+        "type": "object",
+        "description": "Parsing options to control guessit behavior",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["movie", "episode"],
+            "description": "Force the type detection instead of auto-detecting"
+          },
+          "expected_title": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } }
+            ],
+            "description": "Expected title(s) to help the parser identify the title in ambiguous cases. Supports `re:` prefix for regex patterns (e.g., `re:my \\d+p show`)."
+          },
+          "expected_group": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } }
+            ],
+            "description": "Expected release group name(s)"
+          },
+          "allowed_languages": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Restrict language detection to these ISO 639 codes (e.g., `[\"en\", \"fr\", \"de\"]`). Languages not in this list will not be detected."
+          },
+          "allowed_countries": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Restrict country detection to these ISO 3166-1 alpha-2 codes (e.g., `[\"us\", \"gb\"]`)"
+          },
+          "includes": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Only detect these property names (whitelist). All other properties are disabled."
+          },
+          "excludes": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Do not detect these property names (blacklist)"
+          },
+          "name_only": {
+            "type": "boolean",
+            "description": "Treat the entire input as a single filename (ignore path separators)"
+          },
+          "date_year_first": {
+            "type": "boolean",
+            "description": "Assume dates are in year-first format (e.g., 2008.03.09)"
+          },
+          "date_day_first": {
+            "type": "boolean",
+            "description": "Assume dates are in day-first format (e.g., 09.03.2008)"
+          },
+          "episode_prefer_number": {
+            "type": "boolean",
+            "description": "Prefer episode number detection over other patterns"
+          }
+        }
+      },
+      "GuessitResult": {
+        "type": "object",
+        "description": "Extracted metadata from the filename. Only detected properties are included — the set of keys varies per filename.",
+        "properties": {
+          "title": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } }
+            ],
+            "description": "Main title of the movie or TV show"
+          },
+          "alternative_title": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } }
+            ],
+            "description": "Alternative title (e.g., from dash-separated segments or parenthetical titles)"
+          },
+          "year": {
+            "oneOf": [
+              { "type": "integer" },
+              { "type": "array", "items": { "type": "integer" } }
+            ],
+            "description": "Release year (e.g., 2008)"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Release date in ISO 8601 format (YYYY-MM-DD)"
+          },
+          "country": {
+            "type": "string",
+            "description": "Country code (ISO 3166-1 alpha-2, e.g., \"US\", \"GB\")"
+          },
+          "language": {
+            "oneOf": [
+              { "$ref": "#/components/schemas/Language" },
+              { "type": "array", "items": { "$ref": "#/components/schemas/Language" } }
+            ],
+            "description": "Detected language(s) as ISO 639-3 alpha3 codes"
+          },
+          "subtitle_language": {
+            "oneOf": [
+              { "$ref": "#/components/schemas/Language" },
+              { "type": "array", "items": { "$ref": "#/components/schemas/Language" } }
+            ],
+            "description": "Subtitle language(s) as ISO 639-3 alpha3 codes"
+          },
+          "season": {
+            "oneOf": [
+              { "type": "integer" },
+              { "type": "array", "items": { "type": "integer" } }
+            ],
+            "description": "Season number(s)"
+          },
+          "episode": {
+            "oneOf": [
+              { "type": "integer" },
+              { "type": "array", "items": { "type": "integer" } }
+            ],
+            "description": "Episode number(s)"
+          },
+          "episode_title": {
+            "type": "string",
+            "description": "Title of the specific episode"
+          },
+          "episode_details": {
+            "type": "string",
+            "description": "Episode details (e.g., \"Special\", \"Pilot\", \"Final\")"
+          },
+          "episode_count": {
+            "type": "integer",
+            "description": "Total episode count (from \"X of Y\" patterns)"
+          },
+          "season_count": {
+            "type": "integer",
+            "description": "Total season count (from \"Season X of Y\" patterns)"
+          },
+          "absolute_episode": {
+            "oneOf": [
+              { "type": "integer" },
+              { "type": "array", "items": { "type": "integer" } }
+            ],
+            "description": "Absolute episode number(s) for anime-style numbering"
+          },
+          "disc": {
+            "oneOf": [
+              { "type": "integer" },
+              { "type": "array", "items": { "type": "integer" } }
+            ],
+            "description": "Disc number(s)"
+          },
+          "part": {
+            "type": "integer",
+            "description": "Part number (e.g., Part 2)"
+          },
+          "film": {
+            "type": "integer",
+            "description": "Film number in a franchise"
+          },
+          "film_title": {
+            "type": "string",
+            "description": "Film franchise title"
+          },
+          "bonus": {
+            "type": "integer",
+            "description": "Bonus/extra feature number"
+          },
+          "bonus_title": {
+            "type": "string",
+            "description": "Bonus feature title"
+          },
+          "edition": {
+            "type": "string",
+            "description": "Edition (e.g., \"Director's Cut\", \"Extended\", \"IMAX\")"
+          },
+          "screen_size": {
+            "type": "string",
+            "description": "Screen resolution (e.g., \"1080p\", \"2160p\", \"720p\", \"4320p\")"
+          },
+          "aspect_ratio": {
+            "type": "number",
+            "description": "Aspect ratio computed from WxH resolution (e.g., 1.778 for 1920x1080)"
+          },
+          "frame_rate": {
+            "type": "string",
+            "description": "Frame rate (e.g., \"24fps\", \"25fps\", \"60fps\")"
+          },
+          "video_codec": {
+            "type": "string",
+            "description": "Video codec (e.g., \"H.264\", \"H.265\", \"Xvid\", \"VP9\")"
+          },
+          "video_profile": {
+            "type": "string",
+            "description": "Video codec profile (e.g., \"High\", \"Main 10\", \"Advanced\")"
+          },
+          "color_depth": {
+            "type": "string",
+            "description": "Color depth (e.g., \"8-bit\", \"10-bit\")"
+          },
+          "audio_codec": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } }
+            ],
+            "description": "Audio codec(s) (e.g., \"AAC\", \"DTS\", \"Dolby Digital\", \"Dolby Atmos\")"
+          },
+          "audio_profile": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } }
+            ],
+            "description": "Audio codec profile (e.g., \"Master Audio\", \"High Efficiency\", \"Extended Surround\")"
+          },
+          "audio_channels": {
+            "type": "string",
+            "description": "Audio channel configuration (e.g., \"5.1\", \"7.1\", \"2.0\")"
+          },
+          "audio_bit_rate": {
+            "type": "string",
+            "description": "Audio bit rate (e.g., \"448Kbps\")"
+          },
+          "video_bit_rate": {
+            "type": "string",
+            "description": "Video bit rate (e.g., \"20Mbps\")"
+          },
+          "source": {
+            "type": "string",
+            "description": "Media source (e.g., \"Blu-ray\", \"Web\", \"DVD\", \"HDTV\")"
+          },
+          "streaming_service": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } }
+            ],
+            "description": "Streaming service (e.g., \"Netflix\", \"Amazon Prime\", \"HBO Go\")"
+          },
+          "other": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } }
+            ],
+            "description": "Other properties (e.g., \"Proper\", \"Repack\", \"3D\", \"HDR\", \"Remux\", \"IMAX\")"
+          },
+          "release_group": {
+            "type": "string",
+            "description": "Scene/P2P release group name"
+          },
+          "container": {
+            "type": "string",
+            "description": "File container format (e.g., \"mkv\", \"avi\", \"mp4\")"
+          },
+          "mimetype": {
+            "type": "string",
+            "description": "MIME type derived from the container (e.g., \"video/x-matroska\")"
+          },
+          "size": {
+            "type": "string",
+            "description": "File size if present in the filename (e.g., \"4.3GB\")"
+          },
+          "crc32": {
+            "type": "string",
+            "description": "CRC32 checksum (8 hex characters, common in anime releases)"
+          },
+          "uuid": {
+            "type": "string",
+            "description": "UUID found in the filename or path"
+          },
+          "proper_count": {
+            "type": "integer",
+            "description": "Proper/repack count. Positive = proper/repack, negative = fix."
+          },
+          "type": {
+            "type": "string",
+            "enum": ["movie", "episode"],
+            "description": "Detected content type"
+          }
+        }
+      },
+      "Language": {
+        "type": "object",
+        "description": "Language object with ISO 639-3 alpha3 code",
+        "properties": {
+          "alpha3": {
+            "type": "string",
+            "description": "ISO 639-3 three-letter language code (e.g., \"eng\", \"fra\", \"deu\")"
+          }
+        },
+        "required": ["alpha3"]
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["ok"]
+          },
+          "version": {
+            "type": "string",
+            "description": "Library version"
+          }
+        },
+        "required": ["status", "version"]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "detail": {
+            "type": "string",
+            "description": "Additional error details (only for 500 errors)"
+          }
+        },
+        "required": ["error"]
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Parsing",
+      "description": "Filename parsing endpoints"
+    },
+    {
+      "name": "System",
+      "description": "System and monitoring endpoints"
+    }
+  ]
+}
