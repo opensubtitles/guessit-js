@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>guessit-js WASM Browser Test</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#0a0c10;--card:#12151c;--input:#1a1f2c;--border:#252a38;--text:#d4d7e0;--dim:#7a7f94;--heading:#eef0f6;--accent:#818cf8;--green:#34d399;--orange:#fb923c;--red:#f87171;--cyan:#22d3ee;--mono:'SF Mono','Fira Code',Menlo,Consolas,monospace}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;padding:24px}
+    .container{max-width:1000px;margin:0 auto}
+    h1{font-size:1.8rem;font-weight:800;color:var(--heading);margin-bottom:8px}
+    h1 span{color:var(--accent)}
+    .subtitle{color:var(--dim);margin-bottom:24px}
+    h2{font-size:1.2rem;font-weight:700;color:var(--heading);margin:32px 0 12px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+    .status{display:flex;align-items:center;gap:8px;font-size:.9rem;margin-bottom:8px}
+    .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+    .dot.loading{background:var(--orange);animation:pulse 1s infinite}
+    .dot.ok{background:var(--green);box-shadow:0 0 8px var(--green)}
+    .dot.err{background:var(--red);box-shadow:0 0 8px var(--red)}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:16px 0}
+    .stat{background:var(--input);border-radius:8px;padding:16px;text-align:center}
+    .stat .num{font-size:1.6rem;font-weight:800}
+    .stat .label{font-size:.75rem;color:var(--dim);margin-top:2px}
+    #log{background:var(--input);border:1px solid var(--border);border-radius:8px;padding:16px;font-family:var(--mono);font-size:.8rem;line-height:1.8;max-height:500px;overflow-y:auto;white-space:pre-wrap;word-break:break-word}
+    .pass{color:var(--green)}.fail{color:var(--red)}.info{color:var(--cyan)}.warn{color:var(--orange)}.dim{color:var(--dim)}
+    button{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:.9rem;font-weight:600;cursor:pointer;transition:opacity .15s}
+    button:hover{opacity:.85}
+    button:disabled{opacity:.4;cursor:not-allowed}
+    .btn-row{display:flex;gap:10px;margin:16px 0;flex-wrap:wrap}
+    #demo-input{width:100%;padding:12px;font-family:var(--mono);font-size:.9rem;background:var(--input);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none}
+    #demo-input:focus{border-color:var(--accent)}
+    #demo-result{margin-top:12px;font-family:var(--mono);font-size:.85rem;white-space:pre-wrap;color:var(--green)}
+    .progress{width:100%;height:6px;background:var(--input);border-radius:3px;margin:8px 0;overflow:hidden}
+    .progress-bar{height:100%;background:var(--green);border-radius:3px;transition:width .3s}
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>guessit-js <span>WASM</span> Browser Test</h1>
+  <p class="subtitle">Testing the WASM binary directly in the browser via minimal WASI polyfill</p>
+
+  <div class="card">
+    <div class="status" id="wasm-status"><div class="dot loading"></div> Loading WASM module...</div>
+    <div class="stats" id="load-stats" style="display:none">
+      <div class="stat"><div class="num" style="color:var(--accent)" id="stat-size">-</div><div class="label">WASM size</div></div>
+      <div class="stat"><div class="num" style="color:var(--orange)" id="stat-load">-</div><div class="label">Download</div></div>
+      <div class="stat"><div class="num" style="color:var(--green)" id="stat-init">-</div><div class="label">Compile + Init</div></div>
+    </div>
+  </div>
+
+  <h2>Interactive Demo</h2>
+  <div class="card">
+    <input type="text" id="demo-input" placeholder="Type a filename..." value="The.Dark.Knight.2008.1080p.BluRay.x264-GROUP.mkv">
+    <div class="btn-row">
+      <button id="btn-parse" disabled>Parse with WASM</button>
+      <button id="btn-parse-js" disabled>Parse with JS (browser)</button>
+    </div>
+    <div id="demo-result"></div>
+  </div>
+
+  <h2>Benchmark</h2>
+  <div class="card">
+    <div class="btn-row">
+      <button id="btn-bench" disabled>Run Benchmark (100 parses)</button>
+    </div>
+    <div class="stats" id="bench-stats" style="display:none">
+      <div class="stat"><div class="num" style="color:var(--cyan)" id="bench-wasm">-</div><div class="label">WASM (in-browser)</div></div>
+      <div class="stat"><div class="num" style="color:var(--green)" id="bench-js">-</div><div class="label">JS (browser)</div></div>
+      <div class="stat"><div class="num" style="color:var(--orange)" id="bench-ratio">-</div><div class="label">Ratio</div></div>
+    </div>
+  </div>
+
+  <h2>Test Suite</h2>
+  <div class="card">
+    <div class="btn-row">
+      <button id="btn-test" disabled>Run Tests (WASM vs expected)</button>
+    </div>
+    <div class="progress" id="test-progress-wrap" style="display:none"><div class="progress-bar" id="test-progress" style="width:0%"></div></div>
+    <div class="stats" id="test-stats" style="display:none">
+      <div class="stat"><div class="num" style="color:var(--green)" id="test-pass">-</div><div class="label">Passed</div></div>
+      <div class="stat"><div class="num" style="color:var(--red)" id="test-fail">-</div><div class="label">Failed</div></div>
+      <div class="stat"><div class="num" style="color:var(--accent)" id="test-total">-</div><div class="label">Total</div></div>
+    </div>
+    <div id="log"></div>
+  </div>
+</div>
+
+<script>var process = { env: {} };</script>
+<script src="dist/guessit-browser.js" onload="document.getElementById('btn-parse-js').disabled=false;"></script>
+<script>
+(function() {
+  'use strict';
+
+  // ---- Minimal WASI for Javy WASM modules ----
+  // Javy produces WASI snapshot_preview1 modules that use fd_read(stdin) / fd_write(stdout)
+
+  var wasmModule = null;  // compiled WebAssembly.Module
+  var wasmReady = false;
+  var stdinData = new Uint8Array(0);
+  var stdinPos = 0;
+  var stdoutChunks = [];
+
+  // Get fresh memory reference (buffer can be detached after growth)
+  var getMemory = null; // set after instantiation
+
+  function makeImports(memoryGetter) {
+    return {
+      wasi_snapshot_preview1: {
+        fd_read: function(fd, iovs_ptr, iovs_len, nread_ptr) {
+          var mem = memoryGetter();
+          var view = new DataView(mem.buffer);
+          var totalRead = 0;
+          for (var i = 0; i < iovs_len; i++) {
+            var bufPtr = view.getUint32(iovs_ptr + i * 8, true);
+            var bufLen = view.getUint32(iovs_ptr + i * 8 + 4, true);
+            var avail = stdinData.length - stdinPos;
+            var n = Math.min(bufLen, avail);
+            if (n > 0) {
+              // Fresh reference to buffer in case of growth
+              new Uint8Array(memoryGetter().buffer).set(
+                stdinData.subarray(stdinPos, stdinPos + n),
+                bufPtr
+              );
+              stdinPos += n;
+              totalRead += n;
+            }
+          }
+          new DataView(memoryGetter().buffer).setUint32(nread_ptr, totalRead, true);
+          return 0;
+        },
+        fd_write: function(fd, iovs_ptr, iovs_len, nwritten_ptr) {
+          var mem = memoryGetter();
+          var view = new DataView(mem.buffer);
+          var totalWritten = 0;
+          for (var i = 0; i < iovs_len; i++) {
+            var bufPtr = view.getUint32(iovs_ptr + i * 8, true);
+            var bufLen = view.getUint32(iovs_ptr + i * 8 + 4, true);
+            if (bufLen > 0) {
+              var chunk = new Uint8Array(memoryGetter().buffer, bufPtr, bufLen).slice();
+              if (fd === 1) stdoutChunks.push(chunk);
+              else if (fd === 2) console.warn('[wasm stderr]', new TextDecoder().decode(chunk));
+              totalWritten += bufLen;
+            }
+          }
+          new DataView(memoryGetter().buffer).setUint32(nwritten_ptr, totalWritten, true);
+          return 0;
+        },
+        fd_close: function() { return 0; },
+        fd_seek: function(fd, offset_lo, offset_hi, whence, newoffset_ptr) { return 0; },
+        fd_fdstat_get: function(fd, buf) {
+          var view = new DataView(memoryGetter().buffer);
+          view.setUint8(buf, 4);
+          view.setUint16(buf + 2, 0, true);
+          view.setBigUint64(buf + 8, 0n, true);
+          view.setBigUint64(buf + 16, 0n, true);
+          return 0;
+        },
+        fd_prestat_get: function() { return 8; },
+        fd_prestat_dir_name: function() { return 8; },
+        environ_sizes_get: function(count_ptr, size_ptr) {
+          var view = new DataView(memoryGetter().buffer);
+          view.setUint32(count_ptr, 0, true);
+          view.setUint32(size_ptr, 0, true);
+          return 0;
+        },
+        environ_get: function() { return 0; },
+        args_sizes_get: function(argc_ptr, argv_size_ptr) {
+          var view = new DataView(memoryGetter().buffer);
+          view.setUint32(argc_ptr, 0, true);
+          view.setUint32(argv_size_ptr, 0, true);
+          return 0;
+        },
+        args_get: function() { return 0; },
+        proc_exit: function(code) {
+          throw { __wasi_exit: true, code: code };
+        },
+        clock_time_get: function(id, precision, time_ptr) {
+          var view = new DataView(memoryGetter().buffer);
+          view.setBigUint64(time_ptr, BigInt(Date.now()) * 1000000n, true);
+          return 0;
+        },
+        random_get: function(buf, len) {
+          crypto.getRandomValues(new Uint8Array(memoryGetter().buffer, buf, len));
+          return 0;
+        }
+      }
+    };
+  }
+
+  function callWasm(inputJson) {
+    stdinData = new TextEncoder().encode(inputJson);
+    stdinPos = 0;
+    stdoutChunks = [];
+
+    // Each call needs a fresh instance (Javy modules are single-run _start)
+    var instance = new WebAssembly.Instance(wasmModule, makeImports(function() {
+      return instance.exports.memory;
+    }));
+
+    try {
+      instance.exports._start();
+    } catch(e) {
+      if (!e.__wasi_exit) throw e;
+    }
+
+    var totalLen = stdoutChunks.reduce(function(a, c) { return a + c.length; }, 0);
+    var result = new Uint8Array(totalLen);
+    var off = 0;
+    for (var i = 0; i < stdoutChunks.length; i++) {
+      result.set(stdoutChunks[i], off);
+      off += stdoutChunks[i].length;
+    }
+    return new TextDecoder().decode(result).trim();
+  }
+
+  function wasmGuessit(filename, options) {
+    var raw = callWasm(JSON.stringify({ filename: filename, options: options || {} }));
+    return JSON.parse(raw);
+  }
+
+  // ---- Load WASM ----
+  async function loadWasm() {
+    var statusEl = document.getElementById('wasm-status');
+    try {
+      var t0 = performance.now();
+      var resp = await fetch('wasm/guessit.wasm');
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      var bytes = await resp.arrayBuffer();
+      var t1 = performance.now();
+
+      document.getElementById('stat-size').textContent = (bytes.byteLength / 1024 / 1024).toFixed(1) + ' MB';
+      document.getElementById('stat-load').textContent = Math.round(t1 - t0) + 'ms';
+
+      var t2 = performance.now();
+      wasmModule = await WebAssembly.compile(bytes);
+      var t3 = performance.now();
+
+      document.getElementById('stat-init').textContent = Math.round(t3 - t2) + 'ms';
+      document.getElementById('load-stats').style.display = '';
+
+      // Smoke test
+      var result = wasmGuessit('test.mkv');
+      if (result && (result.container === 'mkv' || result.title)) {
+        wasmReady = true;
+        statusEl.innerHTML = '<div class="dot ok"></div> WASM loaded and ready (' + (bytes.byteLength / 1024 / 1024).toFixed(1) + ' MB)';
+        document.getElementById('btn-parse').disabled = false;
+        document.getElementById('btn-bench').disabled = false;
+        document.getElementById('btn-test').disabled = false;
+
+        // Auto-parse the default input
+        parseWasm();
+      } else {
+        statusEl.innerHTML = '<div class="dot err"></div> Smoke test failed: ' + JSON.stringify(result);
+      }
+    } catch(e) {
+      statusEl.innerHTML = '<div class="dot err"></div> ' + e.message;
+      console.error(e);
+    }
+  }
+
+  // ---- UI ----
+  function parseWasm() {
+    var input = document.getElementById('demo-input').value.trim();
+    if (!input || !wasmReady) return;
+    try {
+      var t0 = performance.now();
+      var result = wasmGuessit(input);
+      var ms = (performance.now() - t0).toFixed(1);
+      document.getElementById('demo-result').textContent =
+        JSON.stringify(result, null, 2) + '\n\n// WASM in-browser: ' + ms + 'ms';
+    } catch(e) {
+      document.getElementById('demo-result').textContent = 'Error: ' + e.message;
+    }
+  }
+
+  function parseJS() {
+    var input = document.getElementById('demo-input').value.trim();
+    if (!input || !window.GuessitJS) return;
+    try {
+      var t0 = performance.now();
+      var result = window.GuessitJS.guessit(input);
+      var ms = (performance.now() - t0).toFixed(1);
+      document.getElementById('demo-result').textContent =
+        JSON.stringify(result, null, 2) + '\n\n// JS (browser, IIFE bundle): ' + ms + 'ms';
+    } catch(e) {
+      document.getElementById('demo-result').textContent = 'Error: ' + e.message;
+    }
+  }
+
+  document.getElementById('btn-parse').addEventListener('click', parseWasm);
+  document.getElementById('btn-parse-js').addEventListener('click', parseJS);
+
+  // ---- Benchmark ----
+  document.getElementById('btn-bench').addEventListener('click', function() {
+    if (!wasmReady) return;
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Running...';
+    setTimeout(function() {
+      runBenchmark();
+      btn.disabled = false;
+      btn.textContent = 'Run Benchmark (100 parses)';
+    }, 50);
+  });
+
+  function runBenchmark() {
+    var filenames = [
+      'The.Dark.Knight.2008.1080p.BluRay.x264-GROUP.mkv',
+      'Breaking.Bad.S01E02.720p.BluRay.x264-DEMAND.mkv',
+      'Game.of.Thrones.S08E06.The.Iron.Throne.1080p.AMZN.WEB-DL.DDP5.1.H.264-GoT.mkv',
+      'Inception.2010.REMASTERED.2160p.UHD.BluRay.x265-TERMiNAL.mkv',
+      'Dune Part Two 2024 1080p WEB-DL DD+ 5.1 Atmos H.265-FLUX.mkv',
+      '[SubGroup] Naruto Shippuden - 301 [720p][AAC].mkv',
+      'The.Office.US.S02E01.The.Dundies.DVDRIP.XviD-TOPAZ.avi',
+      'Cowboy.Bebop.-.23.-.Brain.Scratch.[1080p.BluRay.FLAC].mkv',
+      'Interstellar 2014 IMAX 2160p UHD Blu-ray Remux HDR HEVC Atmos-GROUP.mkv',
+      'Movies/The Matrix (1999)/The.Matrix.1999.REMASTERED.1080p.BluRay.x264-GROUP.mkv',
+    ];
+
+    // WASM benchmark (in-browser, synchronous)
+    var t0 = performance.now();
+    for (var i = 0; i < 10; i++) {
+      for (var j = 0; j < filenames.length; j++) {
+        wasmGuessit(filenames[j]);
+      }
+    }
+    var wasmMs = performance.now() - t0;
+    var wasmPer = wasmMs / 100;
+    document.getElementById('bench-wasm').textContent = wasmPer.toFixed(0) + 'ms';
+    document.getElementById('bench-stats').style.display = '';
+
+    // JS benchmark (browser, IIFE bundle)
+    if (window.GuessitJS) {
+      var jsStart = performance.now();
+      for (var ii = 0; ii < 10; ii++) {
+        for (var jj = 0; jj < filenames.length; jj++) {
+          window.GuessitJS.guessit(filenames[jj]);
+        }
+      }
+      var jsPer = (performance.now() - jsStart) / 100;
+      document.getElementById('bench-js').textContent = jsPer.toFixed(1) + 'ms';
+      var faster = wasmPer > jsPer ? 'JS ' + (wasmPer / jsPer).toFixed(1) + 'x faster' : 'WASM ' + (jsPer / wasmPer).toFixed(1) + 'x faster';
+      document.getElementById('bench-ratio').textContent = faster;
+    }
+  }
+
+  // ---- Test Suite ----
+  document.getElementById('btn-test').addEventListener('click', function() {
+    if (!wasmReady) return;
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Running...';
+    setTimeout(function() {
+      runTests();
+      btn.disabled = false;
+      btn.textContent = 'Run Tests (WASM vs expected)';
+    }, 50);
+  });
+
+  function runTests() {
+    var log = document.getElementById('log');
+    var progressBar = document.getElementById('test-progress');
+    document.getElementById('test-progress-wrap').style.display = '';
+    log.innerHTML = '';
+
+    var tests = [
+      ['The.Dark.Knight.2008.1080p.BluRay.x264-GROUP.mkv', {title:'The Dark Knight',year:2008,screen_size:'1080p',source:'Blu-ray',video_codec:'H.264',release_group:'GROUP',container:'mkv',type:'movie'}],
+      ['Breaking.Bad.S01E02.720p.BluRay.x264-DEMAND.mkv', {title:'Breaking Bad',season:1,episode:2,type:'episode'}],
+      ['Game.of.Thrones.S08E06.The.Iron.Throne.1080p.AMZN.WEB-DL.DDP5.1.H.264-GoT.mkv', {title:'Game of Thrones',season:8,episode:6,episode_title:'The Iron Throne',streaming_service:'Amazon Prime'}],
+      ['Inception.2010.REMASTERED.2160p.UHD.BluRay.x265-TERMiNAL.mkv', {title:'Inception',year:2010,video_codec:'H.265'}],
+      ['Dune Part Two 2024 1080p WEB-DL DD+ 5.1 Atmos H.265-FLUX.mkv', {title:'Dune',part:2,year:2024,audio_channels:'5.1'}],
+      ['[SubGroup] Naruto Shippuden - 301 [720p][AAC].mkv', {title:'Naruto Shippuden',episode:301,release_group:'SubGroup'}],
+      ['Cowboy.Bebop.-.23.-.Brain.Scratch.[1080p.BluRay.FLAC].mkv', {episode:23,screen_size:'1080p',audio_codec:'FLAC'}],
+      ['The.Office.US.S02E01.The.Dundies.DVDRIP.XviD-TOPAZ.avi', {season:2,episode:1,source:'DVD',video_codec:'Xvid',release_group:'TOPAZ'}],
+      ['Friends.S01E01.720p.BluRay.mkv', {title:'Friends',season:1,episode:1,screen_size:'720p'}],
+      ['Movie.2024.2160p.UHD.BluRay.x265.mkv', {screen_size:'2160p',source:'Ultra HD Blu-ray',video_codec:'H.265',container:'mkv'}],
+      ['Show.S01E01.720p.HDTV.x264-LOL.avi', {season:1,episode:1,screen_size:'720p',source:'HDTV',release_group:'LOL'}],
+      ['Movie.FRENCH.DVDRip.XviD.avi', {source:'DVD',video_codec:'Xvid',container:'avi'}],
+      ['Movie.1080p.WEB-DL.DD5.1.H.264-GROUP.mkv', {source:'Web',screen_size:'1080p',video_codec:'H.264'}],
+      ['test.mkv', {container:'mkv'}],
+      ['Movie (2024).mkv', {year:2024,container:'mkv'}],
+      ['Show.Name.2x05.720p.mkv', {season:2,episode:5}],
+      ['Movie.REMASTERED.2024.mkv', {year:2024}],
+      ['Interstellar 2014 IMAX 2160p UHD Blu-ray Remux HDR HEVC Atmos-GROUP.mkv', {title:'Interstellar',year:2014}],
+      ['Movies/The Matrix (1999)/The.Matrix.1999.REMASTERED.1080p.BluRay.x264-GROUP.mkv', {title:'The Matrix',year:1999,source:'Blu-ray'}],
+      ['Fargo.-.Season.1.-.720p.BluRay.x264.mkv', {title:'Fargo',season:1,screen_size:'720p'}],
+    ];
+
+    var passed = 0, failed = 0;
+
+    function check(i) {
+      if (i >= tests.length) {
+        progressBar.style.width = '100%';
+        document.getElementById('test-stats').style.display = '';
+        document.getElementById('test-pass').textContent = passed;
+        document.getElementById('test-fail').textContent = failed;
+        document.getElementById('test-total').textContent = tests.length;
+        progressBar.style.background = failed === 0 ? 'var(--green)' : 'var(--orange)';
+        log.innerHTML += '\n<span class="' + (failed === 0 ? 'pass' : 'warn') + '">' +
+          passed + '/' + tests.length + ' passed</span>\n';
+        return;
+      }
+
+      progressBar.style.width = ((i / tests.length) * 100) + '%';
+      var fname = tests[i][0];
+      var expected = tests[i][1];
+
+      try {
+        var result = wasmGuessit(fname);
+        var ok = true;
+        var msgs = [];
+        for (var key in expected) {
+          var exp = expected[key];
+          var act = result[key];
+          var expS = typeof exp === 'string' ? exp.toLowerCase() : JSON.stringify(exp);
+          var actS = typeof act === 'string' ? act.toLowerCase() : JSON.stringify(act);
+          if (expS !== actS) {
+            if (Array.isArray(act)) {
+              var found = act.some(function(a) {
+                var aS = typeof a === 'string' ? a.toLowerCase() : JSON.stringify(a);
+                return aS === expS;
+              });
+              if (found) continue;
+            }
+            ok = false;
+            msgs.push(key + ': ' + expS + ' != ' + actS);
+          }
+        }
+        if (ok) {
+          passed++;
+          log.innerHTML += '<span class="pass">PASS</span> ' + esc(fname) + '\n';
+        } else {
+          failed++;
+          log.innerHTML += '<span class="fail">FAIL</span> ' + esc(fname) + '\n';
+          for (var m = 0; m < msgs.length; m++) {
+            log.innerHTML += '     <span class="fail">' + esc(msgs[m]) + '</span>\n';
+          }
+        }
+      } catch(e) {
+        failed++;
+        log.innerHTML += '<span class="fail">ERR </span> ' + esc(fname) + ': ' + esc(e.message) + '\n';
+      }
+
+      setTimeout(function() { check(i + 1); }, 0);
+    }
+
+    check(0);
+  }
+
+  function esc(s) {
+    var d = document.createElement('div');
+    d.appendChild(document.createTextNode(s));
+    return d.innerHTML;
+  }
+
+  // ---- Init ----
+  loadWasm();
+
+})();
+</script>
+</body>
+</html>

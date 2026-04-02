@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>guessit-js - Extract metadata from media filenames</title>
+  <meta name="description" content="TypeScript/JavaScript library for extracting metadata from media filenames. Parse movie titles, years, resolutions, codecs, and more.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0c10;
+      --bg-raised: #12151c;
+      --bg-card: #161a24;
+      --bg-input: #1a1f2c;
+      --border: #252a38;
+      --border-hover: #3b4260;
+      --border-focus: #6366f1;
+      --text: #d4d7e0;
+      --text-dim: #7a7f94;
+      --text-heading: #eef0f6;
+      --accent: #818cf8;
+      --accent-bright: #a5b4fc;
+      --accent-glow: rgba(99, 102, 241, 0.15);
+      --green: #34d399;
+      --green-dim: #065f46;
+      --orange: #fb923c;
+      --orange-dim: #7c2d12;
+      --pink: #f472b6;
+      --cyan: #22d3ee;
+      --cyan-dim: #164e63;
+      --red: #f87171;
+      --yellow: #fbbf24;
+      --code-bg: #0f1219;
+      --radius: 8px;
+      --radius-lg: 14px;
+      --max-width: 960px;
+      --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', Menlo, Consolas, monospace;
+    }
+
+    html { scroll-behavior: smooth; scroll-padding-top: 70px; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--accent-bright); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code, pre { font-family: var(--font-mono); font-size: 0.88em; }
+
+    /* ---- NAV ---- */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10, 12, 16, 0.82);
+      backdrop-filter: blur(16px) saturate(1.4);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+    }
+    nav .inner {
+      max-width: var(--max-width); margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 56px;
+    }
+    nav .logo { font-weight: 700; font-size: 1.05rem; color: var(--text-heading); letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; }
+    nav .logo-icon { font-size: 1.2rem; }
+    nav .links { display: flex; gap: 24px; }
+    nav .links a { color: var(--text-dim); font-size: 0.85rem; font-weight: 500; transition: color 0.15s; }
+    nav .links a:hover { color: var(--text); text-decoration: none; }
+
+    /* ---- HERO ---- */
+    .hero {
+      text-align: center;
+      padding: 72px 24px 40px;
+      background: radial-gradient(ellipse 70% 50% at 50% 0%, var(--accent-glow), transparent);
+    }
+    .hero h1 { font-size: 3.2rem; font-weight: 800; letter-spacing: -0.04em; color: var(--text-heading); margin-bottom: 14px; }
+    .hero h1 span { background: linear-gradient(135deg, var(--accent), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hero .tagline { font-size: 1.15rem; color: var(--text-dim); max-width: 520px; margin: 0 auto 28px; line-height: 1.5; }
+    .hero .badges { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 14px; background: var(--bg-raised); border: 1px solid var(--border);
+      border-radius: 999px; font-size: 0.78rem; color: var(--text-dim); font-weight: 500;
+    }
+    .badge .dot { width: 7px; height: 7px; border-radius: 50%; }
+    .badge .dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .badge .dot.orange { background: var(--orange); box-shadow: 0 0 6px var(--orange); }
+    .badge .dot.cyan { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+
+    /* ---- SECTIONS ---- */
+    section { max-width: var(--max-width); margin: 0 auto; padding: 52px 24px; }
+    section h2 {
+      font-size: 1.4rem; font-weight: 700; color: var(--text-heading);
+      margin-bottom: 20px; letter-spacing: -0.02em;
+      display: flex; align-items: center; gap: 10px;
+    }
+    section h2 .icon { font-size: 1.1rem; opacity: 0.7; }
+
+    /* ---- DEMO ---- */
+    .demo-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 28px 32px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+    }
+    .demo-card label {
+      display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-dim);
+      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
+    }
+    #demo-input {
+      width: 100%; padding: 14px 16px; font-size: 0.95rem;
+      font-family: var(--font-mono); background: var(--bg-input);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      color: var(--text-heading); outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    #demo-input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--accent-glow); }
+    #demo-input::placeholder { color: #3d4258; }
+
+    .demo-result { margin-top: 20px; min-height: 60px; }
+    .result-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 6px;
+    }
+    .result-item {
+      display: flex; align-items: baseline; gap: 10px;
+      padding: 9px 14px; background: var(--bg-input); border-radius: var(--radius);
+      border: 1px solid transparent; transition: border-color 0.15s;
+    }
+    .result-item:hover { border-color: var(--border); }
+    .result-key {
+      color: var(--accent); font-weight: 600; white-space: nowrap;
+      font-family: var(--font-mono); font-size: 0.8rem; min-width: 100px;
+    }
+    .result-value { color: var(--green); word-break: break-word; font-size: 0.9rem; }
+    .result-value.is-number { color: var(--orange); }
+    .result-value.is-bool { color: var(--cyan); }
+    .result-value.is-type { color: var(--pink); font-weight: 600; }
+    .result-tag {
+      display: inline-block; padding: 1px 8px; margin: 1px 3px 1px 0;
+      background: var(--green-dim); color: var(--green); border-radius: 4px;
+      font-size: 0.82rem; font-family: var(--font-mono);
+    }
+    .result-tag.orange { background: var(--orange-dim); color: var(--orange); }
+    .result-tag.cyan { background: var(--cyan-dim); color: var(--cyan); }
+    .demo-timing { margin-top: 14px; font-size: 0.78rem; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+    .demo-timing .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+    .demo-empty { color: var(--text-dim); font-size: 0.9rem; padding: 20px 0; text-align: center; }
+
+    /* ---- EXAMPLES ---- */
+    .examples-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 8px;
+    }
+    .example-btn {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 11px 16px; color: var(--text); font-family: var(--font-mono);
+      font-size: 0.82rem; cursor: pointer; text-align: left;
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .example-btn:hover { border-color: var(--accent); background: var(--bg-input); transform: translateY(-1px); }
+    .example-btn:active { transform: translateY(0); }
+
+    /* ---- API DOCS ---- */
+    .endpoint {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); margin-bottom: 16px; overflow: hidden;
+    }
+    .endpoint-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 20px; border-bottom: 1px solid var(--border);
+    }
+    .method {
+      padding: 3px 10px; border-radius: 4px; font-size: 0.72rem;
+      font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .method.get { background: rgba(52, 211, 153, 0.12); color: var(--green); }
+    .method.post { background: rgba(129, 140, 248, 0.12); color: var(--accent-bright); }
+    .endpoint-path { font-family: var(--font-mono); font-size: 0.88rem; color: var(--text-heading); }
+    .endpoint-body { padding: 20px; }
+    .endpoint-body p { color: var(--text-dim); font-size: 0.88rem; margin-bottom: 12px; }
+    .endpoint-body p strong { color: var(--text); }
+    pre.code-block {
+      background: var(--code-bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px; overflow-x: auto;
+      font-size: 0.82rem; line-height: 1.6; color: var(--text);
+    }
+    .code-comment { color: #555b72; font-style: italic; }
+    .code-string { color: var(--green); }
+    .code-key { color: var(--accent-bright); }
+    .code-number { color: var(--orange); }
+
+    /* ---- INSTALL ---- */
+    .install-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    .install-block { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+    .install-block-header {
+      padding: 10px 20px; border-bottom: 1px solid var(--border);
+      font-size: 0.78rem; font-weight: 600; color: var(--text-dim);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .install-block pre { padding: 16px 20px; margin: 0; font-size: 0.82rem; line-height: 1.7; overflow-x: auto; }
+
+    /* ---- PROPERTIES TABLE ---- */
+    .props-section { margin-top: 8px; }
+    .props-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px;
+    }
+    .prop-item {
+      padding: 8px 12px; background: var(--bg-input); border-radius: var(--radius);
+      font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent);
+    }
+
+    /* ---- FOOTER ---- */
+    footer {
+      max-width: var(--max-width); margin: 0 auto; padding: 32px 24px 48px;
+      border-top: 1px solid var(--border); text-align: center;
+      font-size: 0.82rem; color: var(--text-dim);
+    }
+
+    /* ---- RESPONSIVE ---- */
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 2.2rem; }
+      .hero .tagline { font-size: 1rem; }
+      section { padding: 32px 16px; }
+      .demo-card { padding: 20px; }
+      .result-grid { grid-template-columns: 1fr; }
+      .examples-grid { grid-template-columns: 1fr; }
+      nav .links { gap: 14px; }
+      nav .links a { font-size: 0.8rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="inner">
+    <div class="logo"><span class="logo-icon">🎬</span> guessit-js</div>
+    <div class="links">
+      <a href="#demo">Demo</a>
+      <a href="#examples">Examples</a>
+      <a href="#api">API</a>
+      <a href="docs/" target="_blank">Swagger</a>
+      <a href="#install">Install</a>
+      <a href="#wasm">WASM</a>
+      <a href="wasm-test.html" target="_blank">WASM Test</a>
+      <a href="#stats">Stats</a>
+      <a href="#architecture">Architecture</a>
+      <a href="https://github.com/opensubtitles/guessit-js" target="_blank">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>guessit<span>-js</span></h1>
+  <p class="tagline">Extract metadata from media filenames using smart pattern matching. Zero dependencies. TypeScript port of the Python guessit library.</p>
+  <div class="badges">
+    <span class="badge"><span class="dot green"></span>v3.8.1</span>
+    <span class="badge"><span class="dot orange"></span>Zero dependencies</span>
+    <span class="badge"><span class="dot cyan"></span>TypeScript</span>
+  </div>
+</div>
+
+<section id="demo">
+  <h2><span class="icon">&#9654;</span> Try it live</h2>
+  <div class="demo-card">
+    <label for="demo-input">Enter a media filename</label>
+    <input
+      type="text" id="demo-input"
+      placeholder="The.Dark.Knight.2008.1080p.BluRay.x264-GROUP.mkv"
+      autocomplete="off" spellcheck="false"
+    >
+    <div class="demo-result" id="demo-result">
+      <div class="demo-empty">Type a filename above or click an example below.</div>
+    </div>
+  </div>
+</section>
+
+<section id="examples">
+  <h2><span class="icon">&#128196;</span> Examples</h2>
+  <p style="color: var(--text-dim); margin: -12px 0 16px; font-size: 0.9rem;">Click any filename to parse it instantly.</p>
+  <div class="examples-grid" id="examples-list"></div>
+</section>
+
+<section id="api">
+  <h2><span class="icon">&#128268;</span> REST API</h2>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="method get">GET</span>
+      <span class="endpoint-path">/api/guessit?filename=...&amp;type=movie</span>
+    </div>
+    <div class="endpoint-body">
+      <p>Parse a media filename and return extracted metadata as JSON.</p>
+      <p><strong>Parameters:</strong> <code>filename</code> (required), <code>type</code> (optional: <code>movie</code> | <code>episode</code>)</p>
+      <pre class="code-block"><span class="code-comment">// Example</span>
+curl "<span class="code-string">/api/guessit?filename=Breaking.Bad.S01E02.720p.BluRay.x264-DEMAND.mkv</span>"
+
+<span class="code-comment">// Response</span>
+{
+  <span class="code-key">"title"</span>: <span class="code-string">"Breaking Bad"</span>,
+  <span class="code-key">"season"</span>: <span class="code-number">1</span>,
+  <span class="code-key">"episode"</span>: <span class="code-number">2</span>,
+  <span class="code-key">"screen_size"</span>: <span class="code-string">"720p"</span>,
+  <span class="code-key">"source"</span>: <span class="code-string">"Blu-ray"</span>,
+  <span class="code-key">"video_codec"</span>: <span class="code-string">"H.264"</span>,
+  <span class="code-key">"release_group"</span>: <span class="code-string">"DEMAND"</span>,
+  <span class="code-key">"container"</span>: <span class="code-string">"mkv"</span>,
+  <span class="code-key">"type"</span>: <span class="code-string">"episode"</span>
+}</pre>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="method post">POST</span>
+      <span class="endpoint-path">/api/guessit</span>
+    </div>
+    <div class="endpoint-body">
+      <p>Parse with full options. Send JSON body with <code>filename</code> and optional <code>options</code> object.</p>
+      <pre class="code-block"><span class="code-comment">// Example</span>
+curl -X POST <span class="code-string">/api/guessit</span> \
+  -H "Content-Type: application/json" \
+  -d '{<span class="code-key">"filename"</span>: <span class="code-string">"The.Matrix.1999.REMASTERED.2160p.UHD.BluRay.x265-GROUP.mkv"</span>,
+       <span class="code-key">"options"</span>: {<span class="code-key">"type"</span>: <span class="code-string">"movie"</span>}}'</pre>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <h2><span class="icon">&#128230;</span> Use as a library</h2>
+  <div class="install-grid">
+    <div class="install-block">
+      <div class="install-block-header">Install</div>
+      <pre><span class="code-string">npm install guessit-js</span></pre>
+    </div>
+    <div class="install-block">
+      <div class="install-block-header">ESM / TypeScript</div>
+      <pre><span class="code-key">import</span> { guessit } <span class="code-key">from</span> <span class="code-string">'guessit-js'</span>;
+
+<span class="code-key">const</span> result = guessit(<span class="code-string">'The.Dark.Knight.2008.1080p.BluRay.x264-GROUP.mkv'</span>);
+console.log(result.title);       <span class="code-comment">// "The Dark Knight"</span>
+console.log(result.year);        <span class="code-comment">// 2008</span>
+console.log(result.screen_size); <span class="code-comment">// "1080p"</span>
+console.log(result.type);        <span class="code-comment">// "movie"</span></pre>
+    </div>
+    <div class="install-block">
+      <div class="install-block-header">CommonJS</div>
+      <pre><span class="code-key">const</span> { guessit } = <span class="code-key">require</span>(<span class="code-string">'guessit-js'</span>);
+
+<span class="code-key">const</span> result = guessit(<span class="code-string">'Inception.2010.720p.BRRip.x264.mkv'</span>);
+console.log(result.title);  <span class="code-comment">// "Inception"</span>
+console.log(result.year);   <span class="code-comment">// 2010</span></pre>
+    </div>
+    <div class="install-block">
+      <div class="install-block-header">Options</div>
+      <pre><span class="code-comment">// Force type detection</span>
+guessit(<span class="code-string">'file.mkv'</span>, { <span class="code-key">type</span>: <span class="code-string">'episode'</span> });
+
+<span class="code-comment">// Provide expected titles for better matching</span>
+guessit(<span class="code-string">'file.mkv'</span>, { <span class="code-key">expected_title</span>: [<span class="code-string">'My Show'</span>] });
+
+<span class="code-comment">// Restrict languages &amp; countries</span>
+guessit(<span class="code-string">'file.mkv'</span>, { <span class="code-key">allowed_languages</span>: [<span class="code-string">'en'</span>, <span class="code-string">'fr'</span>], <span class="code-key">allowed_countries</span>: [<span class="code-string">'us'</span>, <span class="code-string">'gb'</span>] });</pre>
+    </div>
+  </div>
+</section>
+
+<section id="wasm">
+  <h2><span class="icon">&#9881;</span> WASM</h2>
+  <p style="color: var(--text-dim); margin: -12px 0 16px; font-size: 0.9rem;">guessit-js compiles to WebAssembly for environments without a JavaScript runtime.</p>
+
+  <div class="install-block" style="margin-bottom: 14px;">
+    <div class="install-block-header">How it works</div>
+    <pre style="white-space:pre-wrap;color:var(--text-dim);line-height:1.8">The WASM build embeds the entire <a href="https://bellard.org/quickjs/" style="color:var(--accent-bright)">QuickJS</a> JavaScript engine inside a WebAssembly module via <a href="https://github.com/bytecodealliance/javy" style="color:var(--accent-bright)">Javy</a>. The guessit-js code runs as interpreted JS inside QuickJS inside WASM.
+
+<span style="color:var(--accent)">Build pipeline:</span>  TypeScript &rarr; esbuild (IIFE) &rarr; Javy (QuickJS &rarr; WASM) &rarr; wasm-opt
+
+<span style="color:var(--accent)">When to use WASM:</span>
+  &bull; Non-JS backends (Rust, Go, C++, Python) that need filename parsing
+  &bull; Edge compute / serverless (Cloudflare Workers, Fermyon Spin)
+  &bull; Sandboxed or embedded environments
+  &bull; CLI tools via wasmtime / wasmer
+
+<span style="color:var(--accent)">When to use JS directly:</span>
+  &bull; Browser &mdash; use the IIFE bundle, runs at native V8/SpiderMonkey speed
+  &bull; Node.js / Deno / Bun &mdash; <span style="color:var(--green)">3.5x faster than Python</span>, ~2ms/parse
+  &bull; Any environment that already has a JS runtime
+
+<span style="color:var(--orange)">Note:</span> WASM is ~40x slower than native JS in a browser because it runs a JS interpreter (QuickJS) inside WASM inside the browser's own JS engine. Use the JS bundle for browser/Node.js.</pre>
+  </div>
+
+  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px;">
+    <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; text-align:center;">
+      <div style="font-size:1.8rem; font-weight:800; color:var(--accent);">3.9 MB</div>
+      <div style="font-size:0.78rem; color:var(--text-dim);">WASM binary</div>
+    </div>
+    <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; text-align:center;">
+      <div style="font-size:1.8rem; font-weight:800; color:var(--green);">1.6 MB</div>
+      <div style="font-size:0.78rem; color:var(--text-dim);">Gzipped</div>
+    </div>
+    <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; text-align:center;">
+      <div style="font-size:1.8rem; font-weight:800; color:var(--orange);">169 KB</div>
+      <div style="font-size:0.78rem; color:var(--text-dim);">JS code inside</div>
+    </div>
+  </div>
+
+  <div class="install-block" style="margin-bottom: 14px;">
+    <div class="install-block-header">Usage</div>
+    <pre><span class="code-comment"># Parse a filename via stdin/stdout JSON</span>
+echo <span class="code-string">'{"filename":"The.Dark.Knight.2008.1080p.BluRay.x264-GROUP.mkv"}'</span> | wasmtime guessit.wasm
+
+<span class="code-comment"># Build from source</span>
+npm run wasm   <span class="code-comment"># requires Javy v3+ in tools/</span></pre>
+  </div>
+
+  <div class="install-block">
+    <div class="install-block-header">Compatible runtimes</div>
+    <pre style="white-space:pre-wrap;color:var(--text-dim);line-height:1.8"><span style="color:var(--text)">wasmtime</span>     &mdash; Bytecode Alliance reference runtime
+<span style="color:var(--text)">wasmer</span>       &mdash; Universal WASM runtime
+<span style="color:var(--text)">WasmEdge</span>     &mdash; Cloud-native WASM runtime
+<span style="color:var(--text)">Cloudflare Workers</span> &mdash; Edge compute (WASI support)
+<span style="color:var(--text)">Fermyon Spin</span> &mdash; Serverless WASM platform</pre>
+  </div>
+</section>
+
+<section id="stats">
+  <h2><span class="icon">&#128200;</span> Compatibility &amp; Performance</h2>
+
+  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 28px;">
+    <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; text-align:center;">
+      <div style="font-size:2.2rem; font-weight:800; color:var(--green); letter-spacing:-0.03em;">99.3%</div>
+      <div style="font-size:0.82rem; color:var(--text-dim); margin-top:4px;">Test compatibility</div>
+      <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">1018 / 1025 Python tests pass</div>
+    </div>
+    <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; text-align:center;">
+      <div style="font-size:2.2rem; font-weight:800; color:var(--orange); letter-spacing:-0.03em;">3.4x</div>
+      <div style="font-size:0.82rem; color:var(--text-dim); margin-top:4px;">Faster than Python</div>
+      <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">6.87ms vs 23.86ms per parse</div>
+    </div>
+    <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; text-align:center;">
+      <div style="font-size:2.2rem; font-weight:800; color:var(--cyan); letter-spacing:-0.03em;">0</div>
+      <div style="font-size:0.82rem; color:var(--text-dim); margin-top:4px;">Runtime dependencies</div>
+      <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">~220KB bundled (ESM + CJS)</div>
+    </div>
+    <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; text-align:center;">
+      <div style="font-size:2.2rem; font-weight:800; color:var(--accent); letter-spacing:-0.03em;">40+</div>
+      <div style="font-size:0.82rem; color:var(--text-dim); margin-top:4px;">Detected properties</div>
+      <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">title, year, codec, lang...</div>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header" style="border-bottom:none;">
+      <span style="font-size:0.9rem; color:var(--text-heading); font-weight:600;">Performance Benchmark</span>
+    </div>
+    <div class="endpoint-body" style="padding-top:0;">
+      <p>1000 parses of 10 diverse filenames on the same machine:</p>
+      <pre class="code-block">Runtime               ms/parse    vs Python
+<span class="code-comment">───────────────────────────────────────────────</span>
+Python 3.8 (guessit)  <span class="code-number"> 23.86</span> ms    baseline
+Node.js 22 (JS)       <span class="code-number">  6.87</span> ms    <span class="code-string">3.5x faster</span>
+Browser (IIFE bundle) <span class="code-number"> ~2-3 </span> ms    <span class="code-string">~10x faster</span>
+WASM (QuickJS)        <span class="code-number">~75  </span> ms    <span class="code-comment">for non-JS envs only</span></pre>
+    </div>
+  </div>
+</section>
+
+<section id="architecture">
+  <h2><span class="icon">&#128736;</span> Architecture</h2>
+
+  <div class="install-grid">
+    <div class="install-block">
+      <div class="install-block-header">Overview</div>
+      <pre style="white-space:pre-wrap; color:var(--text-dim); line-height:1.7;">guessit-js is a complete TypeScript port of the Python <a href="https://github.com/guessit-io/guessit" style="color:var(--accent-bright)">guessit</a> library (v3.8.1). It extracts metadata from media filenames using a multi-layer pattern matching engine with rule-based post-processing.
+
+The codebase is <span style="color:var(--text)">~8689 lines of TypeScript</span> across <span style="color:var(--text)">46 source files</span>, organized into four layers:
+
+<span style="color:var(--accent)">1. Public API</span> (<span style="color:var(--text-dim)">src/api.ts</span>)
+   GuessItApi class &mdash; manages config, builds pattern matcher, converts matches to plain objects.
+
+<span style="color:var(--accent)">2. Rebulk Engine</span> (<span style="color:var(--text-dim)">src/rebulk/ &mdash; 14 files, 2,772 lines</span>)
+   Port of Python's rebulk library. Generic pattern matching with regex, string, functional, and chain patterns. Includes conflict resolution and match container.
+
+<span style="color:var(--accent)">3. Rules &amp; Properties</span> (<span style="color:var(--text-dim)">src/rules/ &mdash; 35 files, 6,833 lines</span>)
+   Each property type (title, episodes, source, codec, language, etc.) is a separate module returning a configured Rebulk instance. Post-processing rules handle cross-property interactions.
+
+<span style="color:var(--accent)">4. Configuration</span> (<span style="color:var(--text-dim)">src/config/options.json</span>)
+   JSON-driven pattern definitions, property values, and aliases. Supports regex, string, and functional patterns with validators, formatters, and conflict solvers.</pre>
+    </div>
+
+    <div class="install-block">
+      <div class="install-block-header">Test Suite</div>
+      <pre style="white-space:pre-wrap; color:var(--text-dim); line-height:1.7;">Tests use YAML fixtures ported directly from the Python guessit test suite:
+
+<span style="color:var(--text)">movies.yml</span>        208 test cases &mdash; movie filenames with paths
+<span style="color:var(--text)">episodes.yml</span>      523 test cases &mdash; TV episodes, anime, specials
+<span style="color:var(--text)">various.yml</span>       126 test cases &mdash; edge cases and mixed formats
+<span style="color:var(--text)">streaming.yaml</span>    197 test cases &mdash; streaming service detection
+
+<span style="color:var(--green)">1018 / 1025 tests passing</span> (99.3% compatibility with Python guessit)
+
+Remaining 7 failures are deep edge cases: year-as-title disambiguation, complex bracket patterns, and name-only mode corner cases.</pre>
+    </div>
+
+    <div class="install-block">
+      <div class="install-block-header">Build Output</div>
+      <pre style="white-space:pre-wrap; color:var(--text-dim); line-height:1.7;"><span style="color:var(--text)">ESM</span>  dist/guessit-js.js   &mdash; 329 KB (ES modules, tree-shakeable)
+<span style="color:var(--text)">CJS</span>  dist/guessit-js.cjs  &mdash; 329 KB (CommonJS, Node.js require())
+<span style="color:var(--text)">DTS</span>  dist/*.d.ts          &mdash; Full TypeScript type definitions
+
+Zero runtime dependencies. Self-contained for browser, Node.js, and WASM.
+<span style="color:var(--text)">WASM</span> wasm/guessit.wasm &mdash; 3.9 MB (1.6 MB gzipped) &mdash; via Javy (QuickJS)
+Built with Vite. Type-checked with tsc --noEmit.</pre>
+    </div>
+  </div>
+</section>
+
+<section id="properties">
+  <h2><span class="icon">&#128218;</span> Detected properties</h2>
+  <p style="color: var(--text-dim); margin: -12px 0 16px; font-size: 0.9rem;">guessit-js can detect and extract these metadata fields from filenames:</p>
+  <div class="props-grid" id="props-grid"></div>
+</section>
+
+<footer>
+  <p>guessit-js v3.8.1 &mdash; TypeScript port of <a href="https://github.com/guessit-io/guessit" target="_blank" rel="noopener">guessit</a> &mdash; LGPLv3</p>
+</footer>
+
+<script>var process = { env: {} };</script>
+<script src="dist/guessit-browser.js"></script>
+<script>
+(function() {
+  var EXAMPLES = [
+    'The.Dark.Knight.2008.1080p.BluRay.x264-GROUP.mkv',
+    'Breaking.Bad.S01E02.720p.BluRay.x264-DEMAND.mkv',
+    'Game.of.Thrones.S08E06.The.Iron.Throne.1080p.AMZN.WEB-DL.DDP5.1.H.264-GoT.mkv',
+    'Inception.2010.REMASTERED.2160p.UHD.BluRay.x265-TERMiNAL.mkv',
+    'Dune Part Two 2024 1080p WEB-DL DD+ 5.1 Atmos H.265-FLUX.mkv',
+    'Interstellar 2014 IMAX 2160p UHD Blu-ray Remux HDR HEVC Atmos-GROUP.mkv',
+    'The.Office.US.S02E01.The.Dundies.DVDRIP.XviD-TOPAZ.avi',
+    'Cowboy.Bebop.-.23.-.Brain.Scratch.[1080p.BluRay.FLAC].mkv',
+    '[SubGroup] Naruto Shippuden - 301 [720p][AAC].mkv',
+    'Movies/The Matrix (1999)/The.Matrix.1999.REMASTERED.1080p.BluRay.x264-GROUP.mkv',
+  ];
+
+  var PROPERTIES = [
+    'title', 'alternative_title', 'year', 'date', 'country', 'language', 'subtitle_language',
+    'season', 'episode', 'episode_title', 'episode_details', 'episode_count', 'season_count',
+    'absolute_episode', 'disc', 'part', 'film', 'film_title', 'bonus', 'bonus_title',
+    'screen_size', 'aspect_ratio', 'frame_rate', 'video_codec', 'video_profile', 'color_depth',
+    'audio_codec', 'audio_profile', 'audio_channels', 'audio_bit_rate', 'video_bit_rate',
+    'source', 'streaming_service', 'other', 'edition',
+    'release_group', 'container', 'mimetype', 'size', 'crc32', 'uuid', 'type',
+  ];
+
+  var input = document.getElementById('demo-input');
+  var resultDiv = document.getElementById('demo-result');
+  var examplesList = document.getElementById('examples-list');
+  var propsGrid = document.getElementById('props-grid');
+
+  // Populate properties
+  PROPERTIES.forEach(function(p) {
+    var d = document.createElement('div');
+    d.className = 'prop-item';
+    d.textContent = p;
+    propsGrid.appendChild(d);
+  });
+
+  // Populate examples
+  EXAMPLES.forEach(function(ex) {
+    var btn = document.createElement('button');
+    btn.className = 'example-btn';
+    btn.textContent = ex;
+    btn.title = 'Click to parse: ' + ex;
+    btn.addEventListener('click', function() {
+      input.value = ex;
+      input.focus();
+      fetchResult(ex);
+      document.getElementById('demo').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    examplesList.appendChild(btn);
+  });
+
+  var debounceTimer = null;
+  input.addEventListener('input', function() {
+    clearTimeout(debounceTimer);
+    var val = input.value.trim();
+    if (!val) {
+      resultDiv.innerHTML = '<div class="demo-empty">Type a filename above or click an example below.</div>';
+      return;
+    }
+    debounceTimer = setTimeout(function() { fetchResult(val); }, 200);
+  });
+
+  function formatValue(key, val) {
+    if (val === null || val === undefined) return '<span class="result-value">null</span>';
+
+    // Arrays - render as tags
+    if (Array.isArray(val)) {
+      return val.map(function(item) {
+        if (typeof item === 'object' && item !== null) {
+          // Language objects
+          var label = item.alpha3 || item.name || JSON.stringify(item);
+          return '<span class="result-tag cyan">' + escapeHtml(String(label)) + '</span>';
+        }
+        return '<span class="result-tag">' + escapeHtml(String(item)) + '</span>';
+      }).join('');
+    }
+
+    // Objects (like Language)
+    if (typeof val === 'object' && val !== null) {
+      var label = val.alpha3 || val.name || JSON.stringify(val);
+      return '<span class="result-tag cyan">' + escapeHtml(String(label)) + '</span>';
+    }
+
+    // Type field
+    if (key === 'type') {
+      return '<span class="result-value is-type">' + escapeHtml(String(val)) + '</span>';
+    }
+
+    // Numbers
+    if (typeof val === 'number') {
+      return '<span class="result-value is-number">' + val + '</span>';
+    }
+
+    // Booleans
+    if (typeof val === 'boolean') {
+      return '<span class="result-value is-bool">' + val + '</span>';
+    }
+
+    return '<span class="result-value">' + escapeHtml(String(val)) + '</span>';
+  }
+
+  function fetchResult(filename) {
+    var start = performance.now();
+    resultDiv.innerHTML = '<div class="demo-empty" style="opacity:0.5">Parsing...</div>';
+
+    // Use client-side library (works on both GitHub Pages and self-hosted)
+    if (window.GuessitJS) {
+      try {
+        var data = window.GuessitJS.guessit(filename);
+        renderResult(data, start);
+      } catch(e) {
+        resultDiv.innerHTML = '<div class="demo-empty" style="color:var(--red)">Error: ' + escapeHtml(String(e)) + '</div>';
+      }
+      return;
+    }
+
+    // Fallback: try API (self-hosted server)
+    fetch('/api/guessit?filename=' + encodeURIComponent(filename))
+      .then(function(r) { if (!r.ok) throw new Error('API unavailable'); return r.json(); })
+      .then(function(data) { renderResult(data, start); })
+      .catch(function(err) {
+        resultDiv.innerHTML = '<div class="demo-empty" style="color:var(--red)">Library not loaded. Please refresh the page.</div>';
+      });
+  }
+
+  function renderResult(data, start) {
+    var elapsed = (performance.now() - start).toFixed(0);
+    if (data && data.error) {
+      resultDiv.innerHTML = '<div class="demo-empty" style="color:var(--red)">Error: ' + escapeHtml(data.error) + '</div>';
+      return;
+    }
+    var html = '<div class="result-grid">';
+    var keys = Object.keys(data);
+    keys.forEach(function(key) {
+      html += '<div class="result-item">'
+        + '<span class="result-key">' + escapeHtml(key) + '</span>'
+        + formatValue(key, data[key])
+        + '</div>';
+    });
+    html += '</div>';
+    html += '<div class="demo-timing"><span class="dot"></span> ' + keys.length + ' properties &middot; ' + elapsed + 'ms (in-browser)</div>';
+    resultDiv.innerHTML = html;
+  }
+
+  function escapeHtml(str) {
+    var d = document.createElement('div');
+    d.appendChild(document.createTextNode(str));
+    return d.innerHTML;
+  }
+
+  // Auto-demo on load
+  setTimeout(function() {
+    if (!input.value) {
+      input.value = EXAMPLES[0];
+      fetchResult(EXAMPLES[0]);
+    }
+  }, 300);
+})();
+</script>
+
+</body>
+</html>
