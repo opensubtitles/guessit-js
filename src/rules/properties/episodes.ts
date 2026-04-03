@@ -538,6 +538,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
     FixCorruptedGroupBoundaryValues,
     new RangeExpansionRule(config),
     WeakConflictSolverRule,
+    RemoveWeakDuplicateRule,
     RemoveWeakIfSxxExxRule,
     AbsoluteEpisodeInGroupRule,
     RemoveInvalidSeasonRule,
@@ -831,6 +832,45 @@ class RemoveInvalidEpisodeRule extends Rule {
     return matches.previous?.(episode, (m: any) =>
       !m.private && ['episodeMarker', 'episodeSeparator'].includes(m.name),
     )?.[0];
+  }
+}
+
+/**
+ * RemoveWeakDuplicate — mirrors Python's RemoveWeakDuplicate.
+ *
+ * Remove weak-duplicate tagged matches if duplicate patterns exist.
+ * For example: "The 100.109" produces two weak_duplicate matches (100 and 109).
+ * Keep the LAST one (109 → season=1, episode=9) and remove the earlier (100).
+ */
+class RemoveWeakDuplicateRule extends Rule {
+  consequence = RemoveMatch;
+  priority = 64;
+
+  when(matches: any, _context: any): any {
+    const toRemove: any[] = [];
+    const fileparts = matches.markers?.named('path') || [];
+    const filepartArr: any[] = Array.isArray(fileparts) ? fileparts : fileparts ? [fileparts] : [];
+
+    for (const filepart of filepartArr) {
+      const weakDups: any[] = (matches.range?.(filepart.start, filepart.end,
+        (m: any) => m.tags?.includes('weak-duplicate'),
+      ) || []).slice().reverse(); // iterate in reverse (keep last)
+
+      const seen: Record<string, Set<any>> = {};
+      for (const match of weakDups) {
+        const name = match.name ?? '';
+        const pattern = match.initiator?.pattern ?? match.pattern ?? null;
+        if (!pattern) continue;
+        if (!seen[name]) seen[name] = new Set();
+        if (seen[name].has(pattern)) {
+          toRemove.push(match);
+        } else {
+          seen[name].add(pattern);
+        }
+      }
+    }
+
+    return toRemove.length > 0 ? toRemove : false;
   }
 }
 
