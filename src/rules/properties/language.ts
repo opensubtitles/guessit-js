@@ -639,7 +639,8 @@ class SubtitleExtensionRule extends Rule {
 
 class RemoveCommonWordsLanguageRule extends Rule {
   consequence = RemoveMatch;
-  priority = 32;
+  static override priority = 32;
+  override priority = 32;
 
   when(matches: any, context: any): any {
     const toRemove: any[] = [];
@@ -691,7 +692,8 @@ class RemoveLanguageRule extends Rule {
 
 class RemoveUndeterminedLanguagesRule extends Rule {
   consequence = RemoveMatch;
-  priority = 32;
+  static override priority = 32;
+  override priority = 32;
 
   when(matches: any, context: any): any {
     const toRemove: any[] = [];

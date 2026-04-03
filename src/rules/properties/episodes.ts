@@ -554,7 +554,8 @@ export function episodes(config: EpisodesConfig): Rebulk {
  * rename the episode matches to disc.
  */
 class DiscMarkerRule extends Rule {
-  priority = 128;
+  static override priority = 128;
+  override priority = 128;
   private config: EpisodesConfig;
 
   constructor(config: EpisodesConfig) {
@@ -741,7 +742,8 @@ class RangeExpansionRule extends Rule {
  */
 class RemoveInvalidSeasonRule extends Rule {
   consequence = RemoveMatch;
-  priority = 64;
+  static override priority = 64;
+  override priority = 64;
 
   when(matches: any, context: any): any {
     const toRemove: any[] = [];
@@ -779,7 +781,8 @@ class RemoveInvalidSeasonRule extends Rule {
  */
 class RemoveInvalidEpisodeRule extends Rule {
   consequence = RemoveMatch;
-  priority = 64;
+  static override priority = 64;
+  override priority = 64;
 
   when(matches: any, context: any): any {
     const toRemove: any[] = [];
@@ -844,7 +847,8 @@ class RemoveInvalidEpisodeRule extends Rule {
  */
 class RemoveWeakDuplicateRule extends Rule {
   consequence = RemoveMatch;
-  priority = 64;
+  static override priority = 64;
+  override priority = 64;
 
   when(matches: any, _context: any): any {
     const toRemove: any[] = [];
@@ -879,7 +883,8 @@ class RemoveWeakDuplicateRule extends Rule {
  */
 class RemoveUndeterminedLanguagesRule extends Rule {
   consequence = RemoveMatch;
-  priority = 32;
+  static override priority = 32;
+  override priority = 32;
 
   when(matches: any, context: any): any {
     // Placeholder implementation
@@ -896,7 +901,8 @@ class RemoveUndeterminedLanguagesRule extends Rule {
  */
 class WeakConflictSolverRule extends Rule {
   consequence = RemoveMatch;
-  priority = 128;
+  static override priority = 128;
+  override priority = 128;
 
   enabled(context: any): boolean {
     return context?.type !== 'movie';
@@ -994,7 +1000,8 @@ class WeakConflictSolverRule extends Rule {
  * E.g. "Fairy_Tail_2_-_16-20_(191-195)_[720p]" → episodes 16-20, absolute_episode 191-195.
  */
 class AbsoluteEpisodeInGroupRule extends Rule {
-  priority = -1;
+  static override priority = -1;
+  override priority = -1;
 
   when(matches: any, _context: any): any {
     const toRename: any[] = [];
@@ -1040,7 +1047,8 @@ class AbsoluteEpisodeInGroupRule extends Rule {
 
 class RemoveWeakIfSxxExxRule extends Rule {
   consequence = RemoveMatch;
-  priority = 64;
+  static override priority = 64;
+  override priority = 64;
 
   when(matches: any, _context: any): any {
     const toRemove: any[] = [];
