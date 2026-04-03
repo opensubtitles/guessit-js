@@ -26,6 +26,7 @@ interface FixtureEntry {
   input: string;
   expected: Record<string, unknown>;
   options?: Record<string, unknown>;
+  negated?: boolean;
 }
 
 /**
@@ -123,6 +124,7 @@ function loadFixtures(filename: string): FixtureEntry[] {
 
   for (const [key, value] of Object.entries(doc)) {
     if (key === '__default__') continue;
+    if (value === null || value === undefined) continue; // skip entries with no expected values
     const rawExpected: Record<string, unknown> = { ...defaults, ...(value as Record<string, unknown>) };
 
     // Extract and remove the special 'options' key from the expected dict.
@@ -149,15 +151,16 @@ function loadFixtures(filename: string): FixtureEntry[] {
       }
     }
 
-    // In Python guessit fixtures, a leading '-' on the filename means "name_only" mode
-    // (treat entire string as filename, no path parsing).
+    // In Python guessit fixtures, a leading '-' on the filename means this is a
+    // NEGATED test: all listed expected values should be MISSING or DIFFERENT.
+    let negated = false;
     if (input.startsWith('-')) {
       input = input.slice(1);
-      options = { ...options, name_only: true };
+      negated = true;
     }
 
     const expected = rawExpected;
-    entries.push({ input, expected, options });
+    entries.push({ input, expected, options, negated });
   }
 
   return entries;
@@ -259,9 +262,25 @@ for (const fixtureFile of FIXTURE_FILES) {
   }
 
   describe(fixtureFile, () => {
-    for (const { input, expected, options } of entries) {
-      it(input, () => {
+    for (const { input, expected, options, negated } of entries) {
+      it((negated ? '-' : '') + input, () => {
         const result = guessit(input, options);
+
+        if (negated) {
+          // Negated test: at least one expected property should be missing or different
+          const expectedKeys = Object.entries(expected).filter(([k]) => !k.startsWith('-') && k !== 'options');
+          if (expectedKeys.length === 0) return; // nothing to negate
+          let anyMissingOrDifferent = false;
+          for (const [key, expectedValue] of expectedKeys) {
+            if (expectedValue === null || expectedValue === undefined) { anyMissingOrDifferent = true; break; }
+            if (!(key in result)) { anyMissingOrDifferent = true; break; }
+            const actual = normaliseResult(result[key]);
+            const exp = normaliseExpected(expectedValue, key);
+            if (JSON.stringify(actual) !== JSON.stringify(exp)) { anyMissingOrDifferent = true; break; }
+          }
+          expect(anyMissingOrDifferent, 'Negated test: expected at least one property to be missing or different').toBe(true);
+          return;
+        }
 
         for (const [key, expectedValue] of Object.entries(expected)) {
           // Keys starting with '-' are negative assertions: the property should NOT be present
