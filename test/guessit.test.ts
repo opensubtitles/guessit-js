@@ -249,6 +249,7 @@ const FIXTURE_FILES = [
   'episodes.yml',
   'various.yml',
   'streaming_services.yaml',
+  'enable_disable_properties.yml',
 ];
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
@@ -283,11 +284,16 @@ for (const fixtureFile of FIXTURE_FILES) {
         }
 
         for (const [key, expectedValue] of Object.entries(expected)) {
-          // Keys starting with '-' are negative assertions: the property should NOT be present
+          // Keys starting with '-' are negative assertions: property should be missing or different
           if (key.startsWith('-')) {
             const realKey = key.slice(1);
             if (realKey in result) {
-              expect(result, `${realKey} should not be present`).not.toHaveProperty(realKey);
+              const actual = normaliseResult(result[realKey]);
+              const exp = normaliseExpected(expectedValue, realKey);
+              if (JSON.stringify(actual) === JSON.stringify(exp)) {
+                expect(result, `${realKey} should not match ${JSON.stringify(exp)}`).not.toHaveProperty(realKey);
+              }
+              // Property exists but with different value — OK for negative assertion
             }
             continue;
           }

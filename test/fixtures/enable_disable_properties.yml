@@ -298,6 +298,10 @@
 : options: --exclude type
   -type: episode
 
+? series s02e01
+: options: --exclude type
+  -type: episode
+
 ? Hotel.Hell.S01E01.720p.DD5.1.448kbps-ALANiS
 : options: --exclude audio_bit_rate
   -audio_bit_rate: 448Kbps
