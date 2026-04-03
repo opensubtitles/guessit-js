@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "guessit-js API",
-    "description": "Extract metadata from media filenames. A TypeScript port of the Python [guessit](https://github.com/guessit-io/guessit) library.\n\nParses movie and TV episode filenames to extract properties like title, year, season, episode, resolution, codec, language, release group, and 40+ other metadata fields.\n\n## Quick Start\n\n```bash\ncurl \"/api/guessit?filename=Breaking.Bad.S01E02.720p.BluRay.x264-DEMAND.mkv\"\n```\n\n## Features\n- **99.3% compatibility** with Python guessit test suite (1018/1025 tests)\n- **3.47x faster** than Python (6.87ms vs 23.86ms per parse)\n- **Zero runtime dependencies**\n- **40+ detected properties**: title, year, season, episode, resolution, codec, language, and more",
+    "description": "Extract metadata from media filenames. A TypeScript port of the Python [guessit](https://github.com/guessit-io/guessit) library.\n\nParses movie and TV episode filenames to extract properties like title, year, season, episode, resolution, codec, language, release group, and 40+ other metadata fields.\n\n## Quick Start\n\n```bash\ncurl \"/api/guessit?filename=Breaking.Bad.S01E02.720p.BluRay.x264-DEMAND.mkv\"\n```\n\n## Features\n- **100% compatibility** with Python guessit test suite (1035/1035 tests)\n- **3.47x faster** than Python (6.87ms vs 23.86ms per parse)\n- **Zero runtime dependencies**\n- **40+ detected properties**: title, year, season, episode, resolution, codec, language, and more",
     "version": "3.8.1",
     "contact": {
       "name": "guessit-js",

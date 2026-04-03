@@ -1,6 +1,6 @@
 {
   "name": "guessit-js",
-  "version": "3.8.1",
+  "version": "3.9.0",
   "description": "Extract metadata (title, year, season, episode, codec, language, etc.) from media filenames — TypeScript port of Python guessit",
   "keywords": [
     "guessit",

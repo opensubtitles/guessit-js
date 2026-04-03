@@ -38,9 +38,6 @@ var GuessitJS = (() => {
     reset: () => reset
   });
 
-  // <define:process.env>
-  var define_process_env_default = {};
-
   // node_modules/rebulk-js/dist/rebulk-js.js
   function defaultFormatter(value) {
     return value;
@@ -2803,13 +2800,13 @@ var GuessitJS = (() => {
     ).repeater("*");
     const episodeWordPattern = buildOrPattern(config.episode_words, "episodeMarker");
     rebulk.regex(
-      `(?<![a-zA-Z])` + episodeWordPattern + `@?(?<episode>\\d+)(?:v(?<version>\\d+))?(?:@?` + ofWordPattern + `@?(?<count>\\d+))?`,
+      `(?<![a-zA-Z\\d])` + episodeWordPattern + `@?(?<episode>\\d+)(?:v(?<version>\\d+))?(?:@?` + ofWordPattern + `@?(?<count>\\d+))?`,
       {
         disabled: /* @__PURE__ */ __name((context) => context?.type === "episode" || isDisabled(context, "episode"), "disabled")
       }
     );
     rebulk.regex(
-      `(?<![a-zA-Z])` + episodeWordPattern + `@?(?<episode>${numeral})(?:v(?<version>\\d+))?(?:@?` + ofWordPattern + `@?(?<count>\\d+))?`,
+      `(?<![a-zA-Z\\d])` + episodeWordPattern + `@?(?<episode>${numeral})(?:v(?<version>\\d+))?(?:@?` + ofWordPattern + `@?(?<count>\\d+))?`,
       {
         validator: { episode: validateRoman },
         formatter: { episode: parseNumber },
@@ -2862,7 +2859,7 @@ var GuessitJS = (() => {
     }).repeater("*");
     rebulk.chain({
       disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "episode"), "disabled")
-    }).defaults({ validator: null }).regex(`(?<![a-zA-Z])ep-?(?<episode>\\d{1,4})`).regex(`v(?<version>\\d+)`).repeater("?").regex(`(?<episodeSeparator>ep|e|x|-)(?<episode>\\d{1,4})`, {
+    }).defaults({ validator: null }).regex(`(?<![a-zA-Z\\d])ep-?(?<episode>\\d{1,4})`).regex(`v(?<version>\\d+)`).repeater("?").regex(`(?<episodeSeparator>ep|e|x|-)(?<episode>\\d{1,4})`, {
       abbreviations: null
     }).repeater("*");
     rebulk.chain({
@@ -2909,6 +2906,7 @@ var GuessitJS = (() => {
       FixCorruptedGroupBoundaryValues,
       new RangeExpansionRule(config),
       WeakConflictSolverRule,
+      RemoveWeakDuplicateRule,
       RemoveWeakIfSxxExxRule,
       AbsoluteEpisodeInGroupRule,
       RemoveInvalidSeasonRule,
@@ -2945,15 +2943,29 @@ var GuessitJS = (() => {
       }
       return toRename.length > 0 ? toRename : false;
     }
-    then(matches, toRename, _context) {
+    then(matches, toRename, context) {
+      const discExcluded = isDisabled(context, "disc");
       for (const ep of toRename) {
-        matches.remove(ep);
-        ep.name = "disc";
-        matches.append(ep);
+        if (discExcluded) {
+          const initiator = ep.initiator;
+          matches.remove(ep);
+          if (initiator) {
+            const siblings = initiator.children ? typeof initiator.children[Symbol.iterator] === "function" ? [...initiator.children] : [] : [];
+            for (const sib of siblings) {
+              if (matches.includes(sib)) matches.remove(sib);
+            }
+            if (matches.includes(initiator)) matches.remove(initiator);
+          }
+        } else {
+          matches.remove(ep);
+          ep.name = "disc";
+          matches.append(ep);
+        }
       }
     }
   };
   __name(_DiscMarkerRule, "DiscMarkerRule");
+  _DiscMarkerRule.priority = 128;
   var DiscMarkerRule = _DiscMarkerRule;
   var _FixCorruptedGroupBoundaryValues = class _FixCorruptedGroupBoundaryValues extends Rule {
     when(matches, _context) {
@@ -3086,6 +3098,7 @@ var GuessitJS = (() => {
     }
   };
   __name(_RemoveInvalidSeasonRule, "RemoveInvalidSeasonRule");
+  _RemoveInvalidSeasonRule.priority = 64;
   var RemoveInvalidSeasonRule = _RemoveInvalidSeasonRule;
   var _RemoveInvalidEpisodeRule = class _RemoveInvalidEpisodeRule extends Rule {
     constructor() {
@@ -3139,7 +3152,43 @@ var GuessitJS = (() => {
     }
   };
   __name(_RemoveInvalidEpisodeRule, "RemoveInvalidEpisodeRule");
+  _RemoveInvalidEpisodeRule.priority = 64;
   var RemoveInvalidEpisodeRule = _RemoveInvalidEpisodeRule;
+  var _RemoveWeakDuplicateRule = class _RemoveWeakDuplicateRule extends Rule {
+    constructor() {
+      super(...arguments);
+      this.consequence = RemoveMatch;
+      this.priority = 64;
+    }
+    when(matches, _context) {
+      const toRemove = [];
+      const fileparts = matches.markers?.named("path") || [];
+      const filepartArr = Array.isArray(fileparts) ? fileparts : fileparts ? [fileparts] : [];
+      for (const filepart of filepartArr) {
+        const weakDups = (matches.range?.(
+          filepart.start,
+          filepart.end,
+          (m) => m.tags?.includes("weak-duplicate")
+        ) || []).slice().reverse();
+        const seen = {};
+        for (const match of weakDups) {
+          const name = match.name ?? "";
+          const pattern = match.initiator?.pattern ?? match.pattern ?? null;
+          if (!pattern) continue;
+          if (!seen[name]) seen[name] = /* @__PURE__ */ new Set();
+          if (seen[name].has(pattern)) {
+            toRemove.push(match);
+          } else {
+            seen[name].add(pattern);
+          }
+        }
+      }
+      return toRemove.length > 0 ? toRemove : false;
+    }
+  };
+  __name(_RemoveWeakDuplicateRule, "RemoveWeakDuplicateRule");
+  _RemoveWeakDuplicateRule.priority = 64;
+  var RemoveWeakDuplicateRule = _RemoveWeakDuplicateRule;
   var _RemoveUndeterminedLanguagesRule = class _RemoveUndeterminedLanguagesRule extends Rule {
     constructor() {
       super(...arguments);
@@ -3151,6 +3200,7 @@ var GuessitJS = (() => {
     }
   };
   __name(_RemoveUndeterminedLanguagesRule, "RemoveUndeterminedLanguagesRule");
+  _RemoveUndeterminedLanguagesRule.priority = 32;
   var RemoveUndeterminedLanguagesRule = _RemoveUndeterminedLanguagesRule;
   var _WeakConflictSolverRule = class _WeakConflictSolverRule extends Rule {
     constructor() {
@@ -3233,6 +3283,7 @@ var GuessitJS = (() => {
     }
   };
   __name(_WeakConflictSolverRule, "WeakConflictSolverRule");
+  _WeakConflictSolverRule.priority = 128;
   var WeakConflictSolverRule = _WeakConflictSolverRule;
   var _AbsoluteEpisodeInGroupRule = class _AbsoluteEpisodeInGroupRule extends Rule {
     constructor() {
@@ -3274,6 +3325,7 @@ var GuessitJS = (() => {
     }
   };
   __name(_AbsoluteEpisodeInGroupRule, "AbsoluteEpisodeInGroupRule");
+  _AbsoluteEpisodeInGroupRule.priority = -1;
   var AbsoluteEpisodeInGroupRule = _AbsoluteEpisodeInGroupRule;
   var _RemoveWeakIfSxxExxRule = class _RemoveWeakIfSxxExxRule extends Rule {
     constructor() {
@@ -3342,6 +3394,7 @@ var GuessitJS = (() => {
     }
   };
   __name(_RemoveWeakIfSxxExxRule, "RemoveWeakIfSxxExxRule");
+  _RemoveWeakIfSxxExxRule.priority = 64;
   var RemoveWeakIfSxxExxRule = _RemoveWeakIfSxxExxRule;
 
   // src/rules/properties/container.ts
@@ -4084,6 +4137,9 @@ var GuessitJS = (() => {
     "Dolby Digital": "EX"
   };
   var _CompoundAudioProfileRule = class _CompoundAudioProfileRule extends Rule {
+    enabled(context) {
+      return !isDisabled(context, "audio_profile");
+    }
     when(matches) {
       const codecs = matches.named("audio_codec");
       for (const codec of codecs) {
@@ -4799,6 +4855,32 @@ var GuessitJS = (() => {
   __name(_KeepMarkedYearInFilepart, "KeepMarkedYearInFilepart");
   _KeepMarkedYearInFilepart.priority = 64;
   var KeepMarkedYearInFilepart = _KeepMarkedYearInFilepart;
+  var _RemoveGroupedYearWithSxxExx = class _RemoveGroupedYearWithSxxExx extends Rule {
+    constructor() {
+      super(...arguments);
+      this.consequence = RemoveMatch;
+    }
+    when(matches, _context) {
+      const ret = [];
+      const hasSxxExx = matches.named("episode").some(
+        (m) => m.tags?.includes("SxxExx")
+      );
+      if (!hasSxxExx) return ret;
+      for (const year of matches.named("year")) {
+        const group = matches.markers.atMatch(year, (m) => m.name === "group", 0);
+        if (!group) continue;
+        const groupLen = group.end - group.start;
+        const yearLen = year.end - year.start;
+        if (groupLen - yearLen > 4) {
+          ret.push(year);
+        }
+      }
+      return ret;
+    }
+  };
+  __name(_RemoveGroupedYearWithSxxExx, "RemoveGroupedYearWithSxxExx");
+  _RemoveGroupedYearWithSxxExx.priority = 64;
+  var RemoveGroupedYearWithSxxExx = _RemoveGroupedYearWithSxxExx;
   function date(config) {
     const rebulk = new Rebulk().defaults({ validator: sepsSurround });
     rebulk.regex("\\d{4}", {
@@ -4838,7 +4920,7 @@ var GuessitJS = (() => {
       disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "date"), "disabled"),
       conflictSolver: /* @__PURE__ */ __name((match, other2) => other2.name === "episode" || other2.name === "season" || other2.name === "crc32" ? other2 : "__default__", "conflictSolver")
     });
-    rebulk.rules(KeepMarkedYearInFilepart);
+    rebulk.rules(KeepMarkedYearInFilepart, RemoveGroupedYearWithSxxExx);
     return rebulk;
   }
   __name(date, "date");
@@ -5068,6 +5150,7 @@ var GuessitJS = (() => {
         formatter: formatters(cleanup, reorderTitle),
         ignore: /* @__PURE__ */ __name((m) => {
           if (this.isIgnored(m)) return true;
+          if (m.private && m.tags?.includes("weak-episode")) return true;
           if (m.tags?.includes("weak-episode") || m.tags?.includes("weak-duplicate")) {
             const initiator = m.initiator;
             const startsAtFilepart = m.start === filepart.start || initiator.start === filepart.start;
@@ -5080,6 +5163,19 @@ var GuessitJS = (() => {
             if (firstYearInFilepart && m.end <= firstYearInFilepart.start) {
               return true;
             }
+            if (m.tags?.includes("weak-duplicate")) {
+              const init = m.initiator || m;
+              const laterWds = matches.range(
+                init.end,
+                filepart.end,
+                (other2) => other2.tags?.includes("weak-duplicate") && !other2.private
+              ) || [];
+              const hasLaterDifferent = laterWds.some((other2) => {
+                const otherInit = other2.initiator || other2;
+                return otherInit !== init;
+              });
+              if (hasLaterDifferent) return true;
+            }
           }
           return false;
         }, "ignore"),
@@ -5089,7 +5185,7 @@ var GuessitJS = (() => {
       let processedHoles = this.holesProcess(holeArray, matches, filepart);
       for (const hole of processedHoles) {
         if (!this.holeFilter(hole)) continue;
-        if (define_process_env_default.DEBUG_TITLE_TRIM) {
+        if (process.env.DEBUG_TITLE_TRIM) {
           const inp2 = matches.inputString ?? "";
           console.log(`[trim] hole="${inp2.slice(hole.start, hole.end)}" [${hole.start},${hole.end})`);
         }
@@ -5111,7 +5207,7 @@ var GuessitJS = (() => {
           }
           trimmedHole.end--;
         }
-        if (define_process_env_default.DEBUG_TITLE_TRIM) {
+        if (process.env.DEBUG_TITLE_TRIM) {
           const ignoredNames = ignoredArray.map((m) => `${m.name}="${inp.slice(m.start, m.end)}"@[${m.start},${m.end})`).join(", ");
           console.log(`  after pre-strip hole=[${trimmedHole.start},${trimmedHole.end}) ignoredArray=[${ignoredNames}]`);
         }
@@ -5119,7 +5215,7 @@ var GuessitJS = (() => {
           const firstIgnored = ignoredArray[0];
           if (firstIgnored.start === trimmedHole.start) {
             const keep = firstIgnored.name === "country" ? false : this.shouldKeep(trimmedHole, ignoredArray, true);
-            if (define_process_env_default.DEBUG_TITLE_TRIM) {
+            if (process.env.DEBUG_TITLE_TRIM) {
               console.log(`  leading trim: shouldKeep=${keep} for "${inp.slice(firstIgnored.start, firstIgnored.end)}"`);
             }
             if (keep) {
@@ -5191,7 +5287,7 @@ var GuessitJS = (() => {
             break;
           }
         }
-        if (define_process_env_default.DEBUG_TITLE_TRIM) {
+        if (process.env.DEBUG_TITLE_TRIM) {
           console.log(`  result: hole=[${trimmedHole.start},${trimmedHole.end}) length=${trimmedHole.length} value="${trimmedHole.value}"`);
         }
         if (trimmedHole.length > 0 && !this.shouldRemove(trimmedHole) && trimmedHole.value) {
@@ -5221,7 +5317,7 @@ var GuessitJS = (() => {
         if (index === 0) continue;
         const filepart = fileparts[index];
         const fpMatches = matches.range(filepart.start, filepart.end).filter((m) => !m.private);
-        if (define_process_env_default.DEBUG_TITLE) {
+        if (process.env.DEBUG_TITLE) {
           const inp = matches.inputString ?? "";
           console.log(`[_serieNameFilepart] index=${index} fp="${inp.slice(filepart.start, filepart.end)}" fpMatches=${fpMatches.map((m) => `${m.name}="${m.value}"@[${m.start},${m.end})`).join(",")}`);
           if (fpMatches[0]) {
@@ -5251,7 +5347,7 @@ var GuessitJS = (() => {
         0
       );
       if (existingTitle) {
-        if (define_process_env_default.DEBUG_TITLE) {
+        if (process.env.DEBUG_TITLE) {
           const inp = matches.inputString ?? "";
           console.log(`[_serieNameFilepartMatch] fp="${inp.slice(serieNameFilepart.start, serieNameFilepart.end)}" found existing title="${existingTitle.value}"`);
         }
@@ -5267,7 +5363,7 @@ var GuessitJS = (() => {
       });
       const holeArray = Array.isArray(holesResult) ? holesResult : holesResult ? [holesResult] : [];
       const processedHoles = this.holesProcess(holeArray, matches, serieNameFilepart);
-      if (define_process_env_default.DEBUG_TITLE) {
+      if (process.env.DEBUG_TITLE) {
         const inp = matches.inputString ?? "";
         console.log(`[_serieNameFilepartMatch] fp="${inp.slice(serieNameFilepart.start, serieNameFilepart.end)}" holeArray=${holeArray.length} processedHoles=${processedHoles.length}`);
         processedHoles.forEach((h, i) => console.log(`  hole[${i}]="${inp.slice(h.start, h.end)}" value="${h.value}"`));
@@ -5297,7 +5393,7 @@ var GuessitJS = (() => {
       if (serieNameFilepart) {
         serieNameMatch = this._serieNameFilepartMatch(matches, serieNameFilepart, toAppend, toRemove);
       }
-      if (define_process_env_default.DEBUG_TITLE) {
+      if (process.env.DEBUG_TITLE) {
         const inp = matches.inputString ?? "";
         console.log(`[when] sortedFileparts: ${sortedFileparts.map((fp) => `"${inp.slice(fp.start, fp.end)}"`).join(", ")}`);
         console.log(`[when] serieNameFilepart: ${serieNameFilepart ? `"${inp.slice(serieNameFilepart.start, serieNameFilepart.end)}"` : "null"}`);
@@ -5350,12 +5446,21 @@ var GuessitJS = (() => {
             return s.replace(/[''`]/g, "").toLowerCase();
           }, "norm");
           const existingIdx = toAppend.findIndex((m) => {
-            if (m.name !== this.matchName) return false;
             const existingVal = String(m.value ?? "");
             return norm(existingVal) === norm(newVal) && existingVal !== newVal;
           });
           if (existingIdx !== -1) {
-            toAppend[existingIdx].value = newVal;
+            const existing = toAppend[existingIdx];
+            if (existing.name === this.matchName) {
+              existing.value = newVal;
+            } else if (existing.name === this.alternativePropertyName) {
+              existing.value = newVal;
+              const mainTitle = toAppend.find((m) => m.name === this.matchName);
+              if (mainTitle) {
+                mainTitle.name = this.alternativePropertyName || "alternative_title";
+                existing.name = this.matchName;
+              }
+            }
             continue;
           }
           const isSuperset = toAppend.some((m) => {
@@ -6792,6 +6897,7 @@ var GuessitJS = (() => {
     }
   };
   __name(_RemoveCommonWordsLanguageRule, "RemoveCommonWordsLanguageRule");
+  _RemoveCommonWordsLanguageRule.priority = 32;
   var RemoveCommonWordsLanguageRule = _RemoveCommonWordsLanguageRule;
   var _RemoveLanguageRule = class _RemoveLanguageRule extends Rule {
     constructor() {
@@ -6830,6 +6936,7 @@ var GuessitJS = (() => {
     }
   };
   __name(_RemoveUndeterminedLanguagesRule2, "RemoveUndeterminedLanguagesRule");
+  _RemoveUndeterminedLanguagesRule2.priority = 32;
   var RemoveUndeterminedLanguagesRule2 = _RemoveUndeterminedLanguagesRule2;
   function language(config, commonWords) {
     const subtitleBoth = config.subtitle_affixes;
@@ -6896,7 +7003,7 @@ var GuessitJS = (() => {
       },
       {
         properties: { language: [null] },
-        disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "language"), "disabled")
+        disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "language") && isDisabled(context, "subtitle_language"), "disabled")
       }
     );
     rebulk.rules(
