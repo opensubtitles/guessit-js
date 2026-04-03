@@ -223,6 +223,8 @@ abstract class TitleBaseRule extends Rule {
       formatter: formatters(cleanup, reorderTitle),
       ignore: (m: Match) => {
         if (this.isIgnored(m)) return true;
+        // Ignore private weak-episode remnants (children of removed weak_duplicate chains)
+        if (m.private && m.tags?.includes('weak-episode')) return true;
         if (
           (m.tags?.includes('weak-episode') || m.tags?.includes('weak-duplicate'))
         ) {
@@ -244,6 +246,22 @@ abstract class TitleBaseRule extends Rule {
           // (e.g. "Paris 2054, Renaissance (2005)" → "2054" is part of the title).
           if (firstYearInFilepart && m.end <= firstYearInFilepart.start) {
             return true;
+          }
+          // Ignore weak_duplicate matches when another weak_duplicate exists LATER
+          // in the filepart (the earlier number is part of the title).
+          // (e.g. "the.100.109" → "100" is title, "109" is season=1/episode=9)
+          if (m.tags?.includes('weak-duplicate')) {
+            const init = m.initiator || m;
+            // Find any weak_duplicate that starts AFTER this one ends
+            const laterWds = (matches.range(init.end, filepart.end,
+              (other: Match) => other.tags?.includes('weak-duplicate') && !other.private
+            ) as Match[]) || [];
+            // Check it's a DIFFERENT initiator (not same chain)
+            const hasLaterDifferent = laterWds.some((other: Match) => {
+              const otherInit = other.initiator || other;
+              return otherInit !== init;
+            });
+            if (hasLaterDifferent) return true;
           }
         }
         return false;
