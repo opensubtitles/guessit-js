@@ -188,7 +188,7 @@ const server = http.createServer(async (req, res) => {
 
   // Health check
   if (url.pathname === '/api/health') {
-    sendJson(res, 200, { status: 'ok', version: '3.8.1' });
+    sendJson(res, 200, { status: 'ok', version: '3.9.0' });
     return;
   }
 

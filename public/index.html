@@ -258,7 +258,7 @@
   <h1>guessit<span>-js</span></h1>
   <p class="tagline">Extract metadata from media filenames using smart pattern matching. Zero dependencies. TypeScript port of the Python guessit library.</p>
   <div class="badges">
-    <span class="badge"><span class="dot green"></span>v3.8.1</span>
+    <span class="badge"><span class="dot green"></span>v3.9.0</span>
     <span class="badge"><span class="dot orange"></span>Zero dependencies</span>
     <span class="badge"><span class="dot cyan"></span>TypeScript</span>
   </div>
@@ -432,9 +432,9 @@ npm run wasm   <span class="code-comment"># requires Javy v3+ in tools/</span></
 
   <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 28px;">
     <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; text-align:center;">
-      <div style="font-size:2.2rem; font-weight:800; color:var(--green); letter-spacing:-0.03em;">99.3%</div>
+      <div style="font-size:2.2rem; font-weight:800; color:var(--green); letter-spacing:-0.03em;">100%</div>
       <div style="font-size:0.82rem; color:var(--text-dim); margin-top:4px;">Test compatibility</div>
-      <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">1018 / 1025 Python tests pass</div>
+      <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">1035 / 1035 Python tests pass</div>
     </div>
     <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; text-align:center;">
       <div style="font-size:2.2rem; font-weight:800; color:var(--orange); letter-spacing:-0.03em;">3.4x</div>
@@ -475,7 +475,7 @@ WASM (QuickJS)        <span class="code-number">~75  </span> ms    <span class="
   <div class="install-grid">
     <div class="install-block">
       <div class="install-block-header">Overview</div>
-      <pre style="white-space:pre-wrap; color:var(--text-dim); line-height:1.7;">guessit-js is a complete TypeScript port of the Python <a href="https://github.com/guessit-io/guessit" style="color:var(--accent-bright)">guessit</a> library (v3.8.1). It extracts metadata from media filenames using a multi-layer pattern matching engine with rule-based post-processing.
+      <pre style="white-space:pre-wrap; color:var(--text-dim); line-height:1.7;">guessit-js is a complete TypeScript port of the Python <a href="https://github.com/guessit-io/guessit" style="color:var(--accent-bright)">guessit</a> library (v3.9.0). It extracts metadata from media filenames using a multi-layer pattern matching engine with rule-based post-processing.
 
 The codebase is <span style="color:var(--text)">~8689 lines of TypeScript</span> across <span style="color:var(--text)">46 source files</span>, organized into four layers:
 
@@ -501,9 +501,9 @@ The codebase is <span style="color:var(--text)">~8689 lines of TypeScript</span>
 <span style="color:var(--text)">various.yml</span>       126 test cases &mdash; edge cases and mixed formats
 <span style="color:var(--text)">streaming.yaml</span>    197 test cases &mdash; streaming service detection
 
-<span style="color:var(--green)">1018 / 1025 tests passing</span> (99.3% compatibility with Python guessit)
+<span style="color:var(--green)">1035 / 1035 tests passing</span> (100% compatibility with Python guessit)
 
-Remaining 7 failures are deep edge cases: year-as-title disambiguation, complex bracket patterns, and name-only mode corner cases.</pre>
+All 1035 Python guessit tests passing.
     </div>
 
     <div class="install-block">
@@ -526,7 +526,7 @@ Built with Vite. Type-checked with tsc --noEmit.</pre>
 </section>
 
 <footer>
-  <p>guessit-js v3.8.1 &mdash; TypeScript port of <a href="https://github.com/guessit-io/guessit" target="_blank" rel="noopener">guessit</a> &mdash; LGPLv3</p>
+  <p>guessit-js v3.9.0 &mdash; TypeScript port of <a href="https://github.com/guessit-io/guessit" target="_blank" rel="noopener">guessit</a> &mdash; LGPLv3</p>
 </footer>
 
 <script>var process = { env: {} };</script>

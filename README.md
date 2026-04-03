@@ -9,13 +9,13 @@ Extract metadata (title, year, season, episode, codec, language, etc.) from medi
 
 ## Features
 
-- **99.3% compatibility** with Python guessit (1018/1025 tests passing)
+- **100% compatibility** with Python guessit (1035/1035 tests passing)
 - **3.5x faster** than Python (6.87ms vs 23.86ms per parse)
 - **40+ properties** detected: title, year, season, episode, resolution, codec, language, and more
 - **Single dependency** ([rebulk-js](https://www.npmjs.com/package/rebulk-js))
 - **Dual format**: ESM and CommonJS
 - **TypeScript**: full type definitions included
-- **WASM**: runs in any WASI-compatible runtime (wasmtime, wasmer, browsers)
+- **WASM**: runs in any WASI-compatible runtime
 
 ## Install
 
@@ -29,8 +29,6 @@ npm install guessit-js
 import { guessit } from 'guessit-js';
 
 const result = guessit('The.Dark.Knight.2008.1080p.BluRay.x264-GROUP.mkv');
-
-console.log(result);
 // {
 //   title: 'The Dark Knight',
 //   year: 2008,
@@ -47,7 +45,6 @@ console.log(result);
 
 ```javascript
 const { guessit } = require('guessit-js');
-
 const result = guessit('Breaking.Bad.S01E02.720p.BluRay.x264-DEMAND.mkv');
 console.log(result.title);   // 'Breaking Bad'
 console.log(result.season);  // 1
@@ -57,20 +54,10 @@ console.log(result.episode); // 2
 ### Options
 
 ```typescript
-// Force type detection
 guessit('file.mkv', { type: 'episode' });
-
-// Provide expected title for ambiguous filenames
 guessit('my 720p show S01E02', { expected_title: ['my 720p show'] });
-
-// Restrict language/country detection
-guessit('file.mkv', { allowed_languages: ['en', 'fr'], allowed_countries: ['us', 'gb'] });
-
-// Exclude specific properties
+guessit('file.mkv', { allowed_languages: ['en', 'fr'] });
 guessit('file.mkv', { excludes: ['release_group'] });
-
-// Name-only mode (ignore path separators)
-guessit('file.mkv', { name_only: true });
 ```
 
 ## Detected Properties
@@ -86,46 +73,23 @@ guessit('file.mkv', { name_only: true });
 | **Release** | `release_group`, `edition`, `other`, `proper_count` |
 | **File** | `container`, `mimetype`, `size`, `crc32`, `uuid` |
 | **Metadata** | `language`, `subtitle_language`, `country`, `type` |
-| **Film** | `film`, `film_title`, `bonus`, `bonus_title` |
 
 ## REST API
 
-Self-host the API server:
-
 ```bash
-npm start  # starts on port 3847
-```
+npm start  # port 3847
 
-```bash
-# GET
 curl "http://localhost:3847/api/guessit?filename=Movie.2024.1080p.mkv"
-
-# POST with options
-curl -X POST http://localhost:3847/api/guessit \
-  -H "Content-Type: application/json" \
-  -d '{"filename": "file.mkv", "options": {"type": "movie"}}'
-
-# Swagger UI at http://localhost:3847/docs
-# OpenAPI spec at http://localhost:3847/openapi.json
 ```
 
 ## WASM
 
-guessit-js compiles to WebAssembly via [Javy](https://github.com/bytecodealliance/javy), which embeds a [QuickJS](https://bellard.org/quickjs/) JavaScript engine inside a WASM module. The guessit code runs as interpreted JS inside QuickJS inside WASM.
+Compiles to WebAssembly via [Javy](https://github.com/bytecodealliance/javy) (QuickJS engine). For non-JS environments (Rust, Go, C++, edge compute).
 
 ```bash
-# Build
 npm run wasm
-
-# Run (stdin/stdout JSON)
 echo '{"filename":"Movie.2024.1080p.mkv"}' | wasmtime wasm/guessit.wasm
 ```
-
-**3.9 MB** raw · **1.6 MB** gzipped · Compatible with wasmtime, wasmer, WasmEdge, Cloudflare Workers, Fermyon Spin
-
-**When to use WASM:** Non-JS backends (Rust, Go, C++), edge compute, sandboxed environments, CLI tools.
-
-**When to use JS:** Browser, Node.js, Deno, Bun — native JS is ~40x faster than WASM because it avoids the QuickJS interpreter overhead.
 
 ## Performance
 
@@ -134,45 +98,7 @@ echo '{"filename":"Movie.2024.1080p.mkv"}' | wasmtime wasm/guessit.wasm
 | **Python 3.8** (guessit 3.8.0) | 23.86 ms | baseline |
 | **Node.js 22** (guessit-js) | 6.87 ms | **3.5x faster** |
 | **Browser** (IIFE bundle) | ~2-3 ms | **~10x faster** |
-| **WASM** (QuickJS) | ~75 ms | for non-JS environments |
-
-## Compatibility
-
-Port of Python guessit v3.8.0. Test suite uses the same YAML fixtures:
-
-- `movies.yml` — 208 test cases
-- `episodes.yml` — 523 test cases
-- `various.yml` — 126 test cases
-- `streaming_services.yaml` — 197 test cases
-
-**1018 / 1025 passing** (99.3%)
-
-## Architecture
-
-4-layer design (~8,400 lines TypeScript across 46 source files):
-
-1. **Public API** (`src/api.ts`) — GuessItApi class, config management
-2. **Rebulk Engine** ([rebulk-js](https://www.npmjs.com/package/rebulk-js)) — generic pattern matching engine
-3. **Rules & Properties** (`src/rules/`) — 25 property modules with post-processing rules
-4. **Configuration** (`src/config/options.json`) — JSON-driven pattern definitions
-
-## Self-hosting
-
-```bash
-# Clone and install
-git clone https://github.com/opensubtitles/guessit-js
-cd guessit-js && npm install
-
-# Run server (port 3847)
-npm start
-
-# Run tests
-npm test
-
-# Build
-npm run build
-```
 
 ## License
 
-LGPL-3.0 — same as Python guessit.
+LGPL-3.0
