@@ -609,15 +609,25 @@ abstract class TitleBaseRule extends Rule {
           return s.replace(/[''`]/g, '').toLowerCase();
         };
         const existingIdx = toAppend.findIndex((m) => {
-          if (m.name !== this.matchName) return false;
           const existingVal = String(m.value ?? '');
           return norm(existingVal) === norm(newVal) && existingVal !== newVal;
         });
         if (existingIdx !== -1) {
-          // Update the existing title's value to the richer version (keeping its position
-          // in the original filepart so RemoveAmbiguous doesn't discard it).
-          toAppend[existingIdx].value = newVal;
-          // Don't add the parent dir title separately
+          const existing = toAppend[existingIdx];
+          if (existing.name === this.matchName) {
+            // Update the existing title's value to the richer version
+            existing.value = newVal;
+          } else if (existing.name === this.alternativePropertyName) {
+            // The year-filepart title matches an alternative_title — promote:
+            // the directory title (with year) should be the main title,
+            // and the current main title becomes alternative or stays as-is.
+            existing.value = newVal;
+            const mainTitle = toAppend.find(m => m.name === this.matchName);
+            if (mainTitle) {
+              mainTitle.name = this.alternativePropertyName || 'alternative_title';
+              existing.name = this.matchName;
+            }
+          }
           continue;
         }
         // Skip year-filepart titles that are just the existing title + country/language
