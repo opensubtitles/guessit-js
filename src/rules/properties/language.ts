@@ -800,7 +800,7 @@ export function language(config: LanguageConfig, commonWords: Set<string>): Rebu
     },
     {
       properties: { language: [null] },
-      disabled: (context: any) => isDisabled(context, 'language'),
+      disabled: (context: any) => isDisabled(context, 'language') && isDisabled(context, 'subtitle_language'),
     },
   );
 
