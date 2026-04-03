@@ -91,6 +91,10 @@ const COMPOUND_PROFILES: Record<string, string> = {
 class CompoundAudioProfileRule extends Rule {
   static consequence = AppendMatch;
 
+  enabled(context: Context): boolean {
+    return !isDisabled(context, 'audio_profile');
+  }
+
   when(matches: Matches): Match | undefined {
     const codecs = matches.named('audio_codec') as Match[];
     for (const codec of codecs) {
