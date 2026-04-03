@@ -2,6 +2,7 @@
 var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+var _a;
 Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
 function defaultFormatter(value) {
   return value;
@@ -2616,13 +2617,13 @@ function episodes(config) {
   ).repeater("*");
   const episodeWordPattern = buildOrPattern(config.episode_words, "episodeMarker");
   rebulk.regex(
-    `(?<![a-zA-Z])` + episodeWordPattern + `@?(?<episode>\\d+)(?:v(?<version>\\d+))?(?:@?` + ofWordPattern + `@?(?<count>\\d+))?`,
+    `(?<![a-zA-Z\\d])` + episodeWordPattern + `@?(?<episode>\\d+)(?:v(?<version>\\d+))?(?:@?` + ofWordPattern + `@?(?<count>\\d+))?`,
     {
       disabled: (context) => context?.type === "episode" || isDisabled(context, "episode")
     }
   );
   rebulk.regex(
-    `(?<![a-zA-Z])` + episodeWordPattern + `@?(?<episode>${numeral})(?:v(?<version>\\d+))?(?:@?` + ofWordPattern + `@?(?<count>\\d+))?`,
+    `(?<![a-zA-Z\\d])` + episodeWordPattern + `@?(?<episode>${numeral})(?:v(?<version>\\d+))?(?:@?` + ofWordPattern + `@?(?<count>\\d+))?`,
     {
       validator: { episode: validateRoman },
       formatter: { episode: parseNumber },
@@ -2675,7 +2676,7 @@ function episodes(config) {
   }).repeater("*");
   rebulk.chain({
     disabled: (context) => isDisabled(context, "episode")
-  }).defaults({ validator: null }).regex(`(?<![a-zA-Z])ep-?(?<episode>\\d{1,4})`).regex(`v(?<version>\\d+)`).repeater("?").regex(`(?<episodeSeparator>ep|e|x|-)(?<episode>\\d{1,4})`, {
+  }).defaults({ validator: null }).regex(`(?<![a-zA-Z\\d])ep-?(?<episode>\\d{1,4})`).regex(`v(?<version>\\d+)`).repeater("?").regex(`(?<episodeSeparator>ep|e|x|-)(?<episode>\\d{1,4})`, {
     abbreviations: null
   }).repeater("*");
   rebulk.chain({
@@ -2722,6 +2723,7 @@ function episodes(config) {
     FixCorruptedGroupBoundaryValues,
     new RangeExpansionRule(config),
     WeakConflictSolverRule,
+    RemoveWeakDuplicateRule,
     RemoveWeakIfSxxExxRule,
     AbsoluteEpisodeInGroupRule,
     RemoveInvalidSeasonRule,
@@ -2730,7 +2732,7 @@ function episodes(config) {
   );
   return rebulk;
 }
-class DiscMarkerRule extends Rule {
+const _DiscMarkerRule = class _DiscMarkerRule extends Rule {
   constructor(config) {
     super();
     this.priority = 128;
@@ -2757,14 +2759,29 @@ class DiscMarkerRule extends Rule {
     }
     return toRename.length > 0 ? toRename : false;
   }
-  then(matches, toRename, _context) {
+  then(matches, toRename, context) {
+    const discExcluded = isDisabled(context, "disc");
     for (const ep of toRename) {
-      matches.remove(ep);
-      ep.name = "disc";
-      matches.append(ep);
+      if (discExcluded) {
+        const initiator = ep.initiator;
+        matches.remove(ep);
+        if (initiator) {
+          const siblings = initiator.children ? typeof initiator.children[Symbol.iterator] === "function" ? [...initiator.children] : [] : [];
+          for (const sib of siblings) {
+            if (matches.includes(sib)) matches.remove(sib);
+          }
+          if (matches.includes(initiator)) matches.remove(initiator);
+        }
+      } else {
+        matches.remove(ep);
+        ep.name = "disc";
+        matches.append(ep);
+      }
     }
   }
-}
+};
+_DiscMarkerRule.priority = 128;
+let DiscMarkerRule = _DiscMarkerRule;
 class FixCorruptedGroupBoundaryValues extends Rule {
   when(matches, _context) {
     const toFix = [];
@@ -2857,7 +2874,7 @@ class RangeExpansionRule extends Rule {
     return toAppend.length > 0 ? toAppend : false;
   }
 }
-class RemoveInvalidSeasonRule extends Rule {
+const _RemoveInvalidSeasonRule = class _RemoveInvalidSeasonRule extends Rule {
   constructor() {
     super(...arguments);
     this.consequence = RemoveMatch;
@@ -2890,8 +2907,10 @@ class RemoveInvalidSeasonRule extends Rule {
     }
     return toRemove.length > 0 ? toRemove : false;
   }
-}
-class RemoveInvalidEpisodeRule extends Rule {
+};
+_RemoveInvalidSeasonRule.priority = 64;
+let RemoveInvalidSeasonRule = _RemoveInvalidSeasonRule;
+const _RemoveInvalidEpisodeRule = class _RemoveInvalidEpisodeRule extends Rule {
   constructor() {
     super(...arguments);
     this.consequence = RemoveMatch;
@@ -2941,8 +2960,44 @@ class RemoveInvalidEpisodeRule extends Rule {
       (m) => !m.private && ["episodeMarker", "episodeSeparator"].includes(m.name)
     )?.[0];
   }
-}
-let RemoveUndeterminedLanguagesRule$1 = class RemoveUndeterminedLanguagesRule extends Rule {
+};
+_RemoveInvalidEpisodeRule.priority = 64;
+let RemoveInvalidEpisodeRule = _RemoveInvalidEpisodeRule;
+const _RemoveWeakDuplicateRule = class _RemoveWeakDuplicateRule extends Rule {
+  constructor() {
+    super(...arguments);
+    this.consequence = RemoveMatch;
+    this.priority = 64;
+  }
+  when(matches, _context) {
+    const toRemove = [];
+    const fileparts = matches.markers?.named("path") || [];
+    const filepartArr = Array.isArray(fileparts) ? fileparts : fileparts ? [fileparts] : [];
+    for (const filepart of filepartArr) {
+      const weakDups = (matches.range?.(
+        filepart.start,
+        filepart.end,
+        (m) => m.tags?.includes("weak-duplicate")
+      ) || []).slice().reverse();
+      const seen = {};
+      for (const match of weakDups) {
+        const name = match.name ?? "";
+        const pattern = match.initiator?.pattern ?? match.pattern ?? null;
+        if (!pattern) continue;
+        if (!seen[name]) seen[name] = /* @__PURE__ */ new Set();
+        if (seen[name].has(pattern)) {
+          toRemove.push(match);
+        } else {
+          seen[name].add(pattern);
+        }
+      }
+    }
+    return toRemove.length > 0 ? toRemove : false;
+  }
+};
+_RemoveWeakDuplicateRule.priority = 64;
+let RemoveWeakDuplicateRule = _RemoveWeakDuplicateRule;
+let RemoveUndeterminedLanguagesRule$1 = (_a = class extends Rule {
   constructor() {
     super(...arguments);
     this.consequence = RemoveMatch;
@@ -2951,8 +3006,8 @@ let RemoveUndeterminedLanguagesRule$1 = class RemoveUndeterminedLanguagesRule ex
   when(matches, context) {
     return false;
   }
-};
-class WeakConflictSolverRule extends Rule {
+}, _a.priority = 32, _a);
+const _WeakConflictSolverRule = class _WeakConflictSolverRule extends Rule {
   constructor() {
     super(...arguments);
     this.consequence = RemoveMatch;
@@ -3031,8 +3086,10 @@ class WeakConflictSolverRule extends Rule {
     }
     return toRemove.length > 0 ? toRemove : false;
   }
-}
-class AbsoluteEpisodeInGroupRule extends Rule {
+};
+_WeakConflictSolverRule.priority = 128;
+let WeakConflictSolverRule = _WeakConflictSolverRule;
+const _AbsoluteEpisodeInGroupRule = class _AbsoluteEpisodeInGroupRule extends Rule {
   constructor() {
     super(...arguments);
     this.priority = -1;
@@ -3070,8 +3127,10 @@ class AbsoluteEpisodeInGroupRule extends Rule {
       matches.append(match);
     }
   }
-}
-class RemoveWeakIfSxxExxRule extends Rule {
+};
+_AbsoluteEpisodeInGroupRule.priority = -1;
+let AbsoluteEpisodeInGroupRule = _AbsoluteEpisodeInGroupRule;
+const _RemoveWeakIfSxxExxRule = class _RemoveWeakIfSxxExxRule extends Rule {
   constructor() {
     super(...arguments);
     this.consequence = RemoveMatch;
@@ -3136,7 +3195,9 @@ class RemoveWeakIfSxxExxRule extends Rule {
       matches.append(match);
     }
   }
-}
+};
+_RemoveWeakIfSxxExxRule.priority = 64;
+let RemoveWeakIfSxxExxRule = _RemoveWeakIfSxxExxRule;
 function container(config) {
   const rebulk = new Rebulk({ disabled: (context) => isDisabled(context, "container") });
   rebulk.regexDefaults({ flags: "i" }).stringDefaults({ ignoreCase: true });
@@ -3844,6 +3905,9 @@ const COMPOUND_PROFILES = {
   "Dolby Digital": "EX"
 };
 const _CompoundAudioProfileRule = class _CompoundAudioProfileRule extends Rule {
+  enabled(context) {
+    return !isDisabled(context, "audio_profile");
+  }
   when(matches) {
     const codecs = matches.named("audio_codec");
     for (const codec of codecs) {
@@ -4513,6 +4577,31 @@ const _KeepMarkedYearInFilepart = class _KeepMarkedYearInFilepart extends Rule {
 };
 _KeepMarkedYearInFilepart.priority = 64;
 let KeepMarkedYearInFilepart = _KeepMarkedYearInFilepart;
+const _RemoveGroupedYearWithSxxExx = class _RemoveGroupedYearWithSxxExx extends Rule {
+  constructor() {
+    super(...arguments);
+    this.consequence = RemoveMatch;
+  }
+  when(matches, _context) {
+    const ret = [];
+    const hasSxxExx = matches.named("episode").some(
+      (m) => m.tags?.includes("SxxExx")
+    );
+    if (!hasSxxExx) return ret;
+    for (const year of matches.named("year")) {
+      const group = matches.markers.atMatch(year, (m) => m.name === "group", 0);
+      if (!group) continue;
+      const groupLen = group.end - group.start;
+      const yearLen = year.end - year.start;
+      if (groupLen - yearLen > 4) {
+        ret.push(year);
+      }
+    }
+    return ret;
+  }
+};
+_RemoveGroupedYearWithSxxExx.priority = 64;
+let RemoveGroupedYearWithSxxExx = _RemoveGroupedYearWithSxxExx;
 function date(config) {
   const rebulk = new Rebulk().defaults({ validator: sepsSurround });
   rebulk.regex("\\d{4}", {
@@ -4552,7 +4641,7 @@ function date(config) {
     disabled: (context) => isDisabled(context, "date"),
     conflictSolver: (match, other2) => other2.name === "episode" || other2.name === "season" || other2.name === "crc32" ? other2 : "__default__"
   });
-  rebulk.rules(KeepMarkedYearInFilepart);
+  rebulk.rules(KeepMarkedYearInFilepart, RemoveGroupedYearWithSxxExx);
   return rebulk;
 }
 function markerComparatorPredicate(m) {
@@ -4770,6 +4859,7 @@ const _TitleBaseRule = class _TitleBaseRule extends Rule {
       formatter: formatters(cleanup, reorderTitle),
       ignore: (m) => {
         if (this.isIgnored(m)) return true;
+        if (m.private && m.tags?.includes("weak-episode")) return true;
         if (m.tags?.includes("weak-episode") || m.tags?.includes("weak-duplicate")) {
           const initiator = m.initiator;
           const startsAtFilepart = m.start === filepart.start || initiator.start === filepart.start;
@@ -4781,6 +4871,19 @@ const _TitleBaseRule = class _TitleBaseRule extends Rule {
           }
           if (firstYearInFilepart && m.end <= firstYearInFilepart.start) {
             return true;
+          }
+          if (m.tags?.includes("weak-duplicate")) {
+            const init = m.initiator || m;
+            const laterWds = matches.range(
+              init.end,
+              filepart.end,
+              (other2) => other2.tags?.includes("weak-duplicate") && !other2.private
+            ) || [];
+            const hasLaterDifferent = laterWds.some((other2) => {
+              const otherInit = other2.initiator || other2;
+              return otherInit !== init;
+            });
+            if (hasLaterDifferent) return true;
           }
         }
         return false;
@@ -5052,12 +5155,21 @@ const _TitleBaseRule = class _TitleBaseRule extends Rule {
           return s.replace(/[''`]/g, "").toLowerCase();
         };
         const existingIdx = toAppend.findIndex((m) => {
-          if (m.name !== this.matchName) return false;
           const existingVal = String(m.value ?? "");
           return norm(existingVal) === norm(newVal) && existingVal !== newVal;
         });
         if (existingIdx !== -1) {
-          toAppend[existingIdx].value = newVal;
+          const existing = toAppend[existingIdx];
+          if (existing.name === this.matchName) {
+            existing.value = newVal;
+          } else if (existing.name === this.alternativePropertyName) {
+            existing.value = newVal;
+            const mainTitle = toAppend.find((m) => m.name === this.matchName);
+            if (mainTitle) {
+              mainTitle.name = this.alternativePropertyName || "alternative_title";
+              existing.name = this.matchName;
+            }
+          }
           continue;
         }
         const isSuperset = toAppend.some((m) => {
@@ -6412,7 +6524,7 @@ const _SubtitleExtensionRule = class _SubtitleExtensionRule extends Rule {
 };
 _SubtitleExtensionRule.SUBTITLE_EXTENSIONS = /* @__PURE__ */ new Set(["srt", "sub", "smi", "ssa", "ass", "vtt", "idx", "sup"]);
 let SubtitleExtensionRule = _SubtitleExtensionRule;
-class RemoveCommonWordsLanguageRule extends Rule {
+const _RemoveCommonWordsLanguageRule = class _RemoveCommonWordsLanguageRule extends Rule {
   constructor() {
     super(...arguments);
     this.consequence = RemoveMatch;
@@ -6445,7 +6557,9 @@ class RemoveCommonWordsLanguageRule extends Rule {
     }
     return toRemove.length > 0 ? toRemove : false;
   }
-}
+};
+_RemoveCommonWordsLanguageRule.priority = 32;
+let RemoveCommonWordsLanguageRule = _RemoveCommonWordsLanguageRule;
 class RemoveLanguageRule extends Rule {
   constructor() {
     super(...arguments);
@@ -6458,7 +6572,7 @@ class RemoveLanguageRule extends Rule {
     return matches.named("language") || false;
   }
 }
-class RemoveUndeterminedLanguagesRule2 extends Rule {
+const _RemoveUndeterminedLanguagesRule = class _RemoveUndeterminedLanguagesRule extends Rule {
   constructor() {
     super(...arguments);
     this.consequence = RemoveMatch;
@@ -6479,7 +6593,9 @@ class RemoveUndeterminedLanguagesRule2 extends Rule {
     }
     return toRemove.length > 0 ? toRemove : false;
   }
-}
+};
+_RemoveUndeterminedLanguagesRule.priority = 32;
+let RemoveUndeterminedLanguagesRule = _RemoveUndeterminedLanguagesRule;
 function language(config, commonWords) {
   const subtitleBoth = config.subtitle_affixes;
   const subtitlePrefixes = [
@@ -6545,7 +6661,7 @@ function language(config, commonWords) {
     },
     {
       properties: { language: [null] },
-      disabled: (context) => isDisabled(context, "language")
+      disabled: (context) => isDisabled(context, "language") && isDisabled(context, "subtitle_language")
     }
   );
   rebulk.rules(
@@ -6554,7 +6670,7 @@ function language(config, commonWords) {
     SubtitleExtensionRule,
     RemoveCommonWordsLanguageRule,
     RemoveLanguageRule,
-    RemoveUndeterminedLanguagesRule2
+    RemoveUndeterminedLanguagesRule
   );
   return rebulk;
 }
