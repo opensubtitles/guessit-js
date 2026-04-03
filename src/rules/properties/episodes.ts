@@ -341,7 +341,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
   const episodeWordPattern = buildOrPattern(config.episode_words, 'episodeMarker');
 
   rebulk.regex(
-    `(?<![a-zA-Z])` + episodeWordPattern + `@?(?<episode>\\d+)` +
+    `(?<![a-zA-Z\\d])` + episodeWordPattern + `@?(?<episode>\\d+)` +
       `(?:v(?<version>\\d+))?` +
       `(?:@?` + ofWordPattern + `@?(?<count>\\d+))?`,
     {
@@ -351,7 +351,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
   );
 
   rebulk.regex(
-    `(?<![a-zA-Z])` + episodeWordPattern + `@?(?<episode>${numeral})` +
+    `(?<![a-zA-Z\\d])` + episodeWordPattern + `@?(?<episode>${numeral})` +
       `(?:v(?<version>\\d+))?` +
       `(?:@?` + ofWordPattern + `@?(?<count>\\d+))?`,
     {
@@ -458,7 +458,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
     disabled: (context: any) => isDisabled(context, 'episode'),
   })
     .defaults({ validator: null })
-    .regex(`(?<![a-zA-Z])ep-?(?<episode>\\d{1,4})`)
+    .regex(`(?<![a-zA-Z\\d])ep-?(?<episode>\\d{1,4})`)
     .regex(`v(?<version>\\d+)`)
     .repeater('?')
     .regex(`(?<episodeSeparator>ep|e|x|-)(?<episode>\\d{1,4})`, {
@@ -588,11 +588,30 @@ class DiscMarkerRule extends Rule {
     return toRename.length > 0 ? toRename : false;
   }
 
-  then(matches: any, toRename: any, _context: any): void {
+  then(matches: any, toRename: any, context: any): void {
+    const discExcluded = isDisabled(context, 'disc');
     for (const ep of toRename) {
-      matches.remove(ep);
-      ep.name = 'disc';
-      matches.append(ep);
+      if (discExcluded) {
+        // Disc is excluded — remove the episode AND its associated season from the same chain
+        const initiator = ep.initiator;
+        matches.remove(ep);
+        if (initiator) {
+          // Remove all children of this initiator (season, episode, markers)
+          const siblings = initiator.children
+            ? (typeof initiator.children[Symbol.iterator] === 'function'
+                ? [...initiator.children]
+                : [])
+            : [];
+          for (const sib of siblings) {
+            if (matches.includes(sib)) matches.remove(sib);
+          }
+          if (matches.includes(initiator)) matches.remove(initiator);
+        }
+      } else {
+        matches.remove(ep);
+        ep.name = 'disc';
+        matches.append(ep);
+      }
     }
   }
 }
