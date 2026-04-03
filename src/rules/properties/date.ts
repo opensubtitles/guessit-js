@@ -76,6 +76,37 @@ class KeepMarkedYearInFilepart extends Rule {
 }
 
 /**
+ * Remove years inside group markers when a strong SxxExx episode pattern exists.
+ * e.g. "feud.s01e05.and.the.winner.is.(the.oscars.of.1963)" — 1963 is episode content, not year.
+ */
+class RemoveGroupedYearWithSxxExx extends Rule {
+  static override priority = 64;
+  override consequence = RemoveMatch;
+
+  override when(matches: Matches, _context: Context): Match[] {
+    const ret: Match[] = [];
+    const hasSxxExx = (matches.named('episode') as Match[]).some(
+      (m: Match) => m.tags?.includes('SxxExx')
+    );
+    if (!hasSxxExx) return ret;
+
+    for (const year of (matches.named('year') as Match[])) {
+      const group = matches.markers.atMatch(year, (m: Match) => m.name === 'group', 0) as Match | undefined;
+      if (!group) continue;
+      // Only remove if the group contains significant non-year content
+      // e.g. "(the.oscars.of.1963)" has lots of text, but "(2005)" is just a year
+      const groupLen = group.end - group.start;
+      const yearLen = year.end - year.start;
+      if (groupLen - yearLen > 4) {
+        // Group has significant content beyond the year - it's episode title content
+        ret.push(year);
+      }
+    }
+    return ret;
+  }
+}
+
+/**
  * Create a rebulk pattern for date detection.
  */
 export function date(config: Record<string, unknown>): Rebulk {
@@ -138,6 +169,6 @@ export function date(config: Record<string, unknown>): Rebulk {
         : '__default__',
   });
 
-  rebulk.rules(KeepMarkedYearInFilepart);
+  rebulk.rules(KeepMarkedYearInFilepart, RemoveGroupedYearWithSxxExx);
   return rebulk;
 }
