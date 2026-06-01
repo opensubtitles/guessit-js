@@ -11,14 +11,14 @@ Grouped by verdict: ① TO FIX (we're wrong) · ② NEUTRAL (undecided) · ③ W
   (verdicts live as data in `scripts/pydiff.mjs`; edit there, not here)
 - Diff format: `key: <python value> vs <js value>`; `undefined` = absent on that side.
     ----
-    Total diverging: 78  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
-    Real (excl. 11 env-specific mimetype): 67
-    Verdicts: FIX 39 · NEUTRAL 11 · KEEP 28
+    Total diverging: 76  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
+    Real (excl. 11 env-specific mimetype): 65
+    Verdicts: FIX 37 · NEUTRAL 11 · KEEP 28
 
 ```
 
 
-############## ① TO FIX — guessit-js is wrong (39) ##############
+############## ① TO FIX — guessit-js is wrong (37) ##############
 
 ===== ep_title → list w/ stray fragment =====
 [/mnt/NAS/NoSubsTVShows/Babylon 5/Season 01/Ep. 02 - Soul Hunter]
@@ -102,14 +102,8 @@ Grouped by verdict: ① TO FIX (we're wrong) · ② NEUTRAL (undecided) · ③ W
 
 ===== phantom language =====
 [Fear the Walking Dead - 01x02 - En Close, Yet En Far.REPACK-KILLERS.French.C.updated.Addic7ed.com.mkv]
-    language: "fra" vs ["eng","eng","fra"]
+    language: "fra" vs ["eng","fra"]
     » drop phantom eng (from "En")
-[Fear.the.Walking.Dead.-.Season.2.epi.02.XviD.Eng.Ac3-5.1.sub.ita.eng.iCV-MIRCrew]
-    language: "eng" vs ["eng","eng"]
-    » dedup eng
-[Underworld Quadrilogie VO+VFF+VFQ 1080p HDlight.x264~Tonyk~Monde Infernal]
-    language: "fra" vs ["fra","fra"]
-    » dedup fra (VFF+VFQ)
 
 ===== title absorbs junk =====
 [French Maid Services - Lola At Your Service - Marc Dorcel WEB-DL SPLIT SCENES MP4-RARBG]
@@ -306,18 +300,18 @@ Grouped by verdict: ① TO FIX (we're wrong) · ② NEUTRAL (undecided) · ③ W
   10  title
    8  other:episode_title
    4  other:other
-   3  dup-language
    2  language
    2  other:absolute_episode
    2  other:other,streaming_service
    2  release_group
    1  episode-range
+   1  dup-language
    1  other:country,episode_title
    1  other:alternative_title
    1  other:episode,episode_title
    1  other:version
 ----
-Total diverging: 78  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
-Real (excl. 11 env-specific mimetype): 67
-Verdicts: FIX 39 · NEUTRAL 11 · KEEP 28
+Total diverging: 76  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
+Real (excl. 11 env-specific mimetype): 65
+Verdicts: FIX 37 · NEUTRAL 11 · KEEP 28
 ```
