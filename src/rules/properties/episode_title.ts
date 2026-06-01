@@ -270,6 +270,17 @@ class EpisodeTitleFromPosition extends Rule {
 
       const inp: string = (matches as any).inputString || '';
       for (const hole of holeArray) {
+        // A parenthetical/bracket group that ALSO contains a year is metadata,
+        // typically "(Director - YYYY)" (e.g. "(Michel Deville - 1983)") — not a
+        // title. Skip it so it doesn't become an episode_title (which for movies
+        // is then renamed to alternative_title). Legit alt-title parens like
+        // "(The Killers)" carry no year, so they're unaffected.
+        const groupMarker = (matches.markers as any)?.atMatch?.(hole, (m: Match) => m.name === 'group', 0) as Match | undefined;
+        if (groupMarker) {
+          const yearInGroup = matches.range(groupMarker.start, groupMarker.end,
+            (m: Match) => (m.name === 'year' || m.name === 'date') && !m.private, 0) as Match | undefined;
+          if (yearInGroup) continue;
+        }
         // Crop leading/trailing ignored (language/country/episode_details) matches
         // out of the hole — Python's TitleBaseRule does this via should_keep, but
         // this standalone port did not. Without it a hole that is wholly or partly
