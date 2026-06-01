@@ -451,7 +451,7 @@ abstract class TitleBaseRule extends Rule {
     const mainTitle = toAppend.find((t) => t.name === this.matchName);
     if (mainTitle) {
       const absorbedRaw = matches.range(mainTitle.start, mainTitle.end,
-        (m: Match) => m.name === 'episode_details' || m.name === 'country') as Match[] | Match | undefined;
+        (m: Match) => m.name === 'episode_details' || m.name === 'country' || m.name === 'language') as Match[] | Match | undefined;
       const absorbed = Array.isArray(absorbedRaw) ? absorbedRaw : absorbedRaw ? [absorbedRaw] : [];
       for (const m of absorbed) if (!toRemove.includes(m)) toRemove.push(m);
     }

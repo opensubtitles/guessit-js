@@ -11,14 +11,14 @@ Grouped by verdict: ① TO FIX (we're wrong) · ② NEUTRAL (undecided) · ③ W
   (verdicts live as data in `scripts/pydiff.mjs`; edit there, not here)
 - Diff format: `key: <python value> vs <js value>`; `undefined` = absent on that side.
     ----
-    Total diverging: 82  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
-    Real (excl. 11 env-specific mimetype): 71
-    Verdicts: FIX 43 · NEUTRAL 11 · KEEP 28
+    Total diverging: 78  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
+    Real (excl. 11 env-specific mimetype): 67
+    Verdicts: FIX 39 · NEUTRAL 11 · KEEP 28
 
 ```
 
 
-############## ① TO FIX — guessit-js is wrong (43) ##############
+############## ① TO FIX — guessit-js is wrong (39) ##############
 
 ===== ep_title → list w/ stray fragment =====
 [/mnt/NAS/NoSubsTVShows/Babylon 5/Season 01/Ep. 02 - Soul Hunter]
@@ -101,24 +101,12 @@ Grouped by verdict: ① TO FIX (we're wrong) · ② NEUTRAL (undecided) · ③ W
     » "cx" broadcaster → drop
 
 ===== phantom language =====
-[Ejecutiva.En.Apuros(2009).BLURAY.SCR.Xvid.Spanish.LanzamientosD.nfo]
-    language: "spa" vs ["eng","spa"]
-    » drop phantom eng (from "En")
-[Elle.s.en.va.720p.mkv]
-    language: undefined vs "eng"
-    » drop phantom eng
 [Fear the Walking Dead - 01x02 - En Close, Yet En Far.REPACK-KILLERS.French.C.updated.Addic7ed.com.mkv]
     language: "fra" vs ["eng","eng","fra"]
     » drop phantom eng (from "En")
 [Fear.the.Walking.Dead.-.Season.2.epi.02.XviD.Eng.Ac3-5.1.sub.ita.eng.iCV-MIRCrew]
     language: "eng" vs ["eng","eng"]
     » dedup eng
-[French.Immersion.2011.STV.READNFO.QC.ENGLISH.NTSC.DVDR.nfo]
-    language: "eng" vs ["eng","fra"]
-    » drop phantom fra (from title "French")
-[The_Italian_Job.mkv]
-    language: undefined vs "ita"
-    » drop phantom ita (from title "Italian")
 [Underworld Quadrilogie VO+VFF+VFQ 1080p HDlight.x264~Tonyk~Monde Infernal]
     language: "fra" vs ["fra","fra"]
     » dedup fra (VFF+VFQ)
@@ -126,11 +114,9 @@ Grouped by verdict: ① TO FIX (we're wrong) · ② NEUTRAL (undecided) · ③ W
 ===== title absorbs junk =====
 [French Maid Services - Lola At Your Service - Marc Dorcel WEB-DL SPLIT SCENES MP4-RARBG]
     title: "french maid services" vs ["french maid services","split scenes"]
-    language: undefined vs "fra"
     » drop "split scenes" + phantom language fra
 [French Maid Services - Lola At Your Service WEB-DL SPLIT SCENES MP4-RARBG]
     title: "french maid services" vs ["french maid services","split scenes"]
-    language: undefined vs "fra"
     » drop "split scenes" + phantom language fra
 [From [ WWW.TORRENTING.COM ] - White.Rabbit.Project.S01E08.1080p.NF.WEBRip.DD5.1.x264-ViSUM/White.Rabbit.Project.S01E08.1080p.NF.WEBRip.DD5.1.x264-ViSUM.mkv]
     title: "white rabbit project" vs ["from","white rabbit project"]
@@ -319,9 +305,9 @@ Grouped by verdict: ① TO FIX (we're wrong) · ② NEUTRAL (undecided) · ③ W
   11  mimetype
   10  title
    8  other:episode_title
-   5  dup-language
    4  other:other
-   4  language
+   3  dup-language
+   2  language
    2  other:absolute_episode
    2  other:other,streaming_service
    2  release_group
@@ -331,7 +317,7 @@ Grouped by verdict: ① TO FIX (we're wrong) · ② NEUTRAL (undecided) · ③ W
    1  other:episode,episode_title
    1  other:version
 ----
-Total diverging: 82  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
-Real (excl. 11 env-specific mimetype): 71
-Verdicts: FIX 43 · NEUTRAL 11 · KEEP 28
+Total diverging: 78  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
+Real (excl. 11 env-specific mimetype): 67
+Verdicts: FIX 39 · NEUTRAL 11 · KEEP 28
 ```
