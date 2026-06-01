@@ -2,6 +2,7 @@ import { Rebulk } from 'rebulk-js';
 import { Rule, AppendMatch } from 'rebulk-js';
 import { Match, Matches } from 'rebulk-js';
 import { cleanup } from '../common/formatters.js';
+import { seps } from '../common/index.js';
 import { isDisabled } from '../common/pattern.js';
 import { loadConfigPatterns } from '../../config/index.js';
 
@@ -11,9 +12,52 @@ export function bonus(config: Record<string, unknown>) {
 
   loadConfigPatterns(rebulk, config['bonus'] as Record<string, unknown>);
 
-  rebulk.rules(BonusToEpisodeRule, BonusTitleRule);
+  rebulk.rules(BonusAtFilepartStartRule, BonusToEpisodeRule, BonusTitleRule);
 
   return rebulk;
+}
+
+/**
+ * The `x\d+` bonus pattern is a feature *appended after a title* (e.g.
+ * "Band_of_Brothers-x02-...", "Moon_(2009)-x02-Making_Of"). When it instead sits
+ * at the very start of its filepart with no title content before it, it isn't a
+ * bonus at all — it's the title itself (e.g. "X2.2003.720p..." -> title "X2",
+ * the film https://en.wikipedia.org/wiki/X2_(film)).
+ *
+ * Remove such matches before title detection runs so the text becomes a hole and
+ * is picked up as the title (and a following year stays a year, not a bonus_title).
+ * Runs at priority 128 — ahead of BonusToEpisodeRule (64), BonusTitleRule and
+ * TitleFromPosition (0).
+ */
+class BonusAtFilepartStartRule extends Rule {
+  static override priority = 128;
+
+  override when(matches: Matches): Match[] {
+    const inputString = matches.inputString || '';
+    const bonuses = (matches.named('bonus') as Match[])?.filter((m: Match) => !m.private) ?? [];
+    const toRemove: Match[] = [];
+    for (const bonus of bonuses) {
+      const filepart = matches.markers.atMatch(bonus, (m: Match) => m.name === 'path', 0) as Match | undefined;
+      if (!filepart) continue;
+      // The bonus child captures only the digits; the private parent spans the
+      // leading "x" too. Fall back to the char before the digits if no parent.
+      const parent = (bonus as any).parent as Match | undefined;
+      const xStart = parent ? parent.start : bonus.start - 1;
+      // Title-position only when nothing but separators precede the "x" in the filepart.
+      const before = inputString.slice(filepart.start, xStart);
+      if ([...before].every((c) => seps.includes(c))) {
+        toRemove.push(bonus);
+        if (parent) toRemove.push(parent);
+      }
+    }
+    return toRemove;
+  }
+
+  override then(matches: Matches, whenResponse: unknown): void {
+    for (const m of whenResponse as Match[]) {
+      matches.remove(m);
+    }
+  }
 }
 
 /**

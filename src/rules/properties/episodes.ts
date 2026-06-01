@@ -724,20 +724,26 @@ class RangeExpansionRule extends Rule {
         const gap = nextVal - curVal;
         if (gap <= 1 || gap > maxRange) continue;
 
-        // Check if connected by a range separator (look at text between them)
+        // Check if connected by a range separator (look at text between them).
+        // Only strip whitespace and dots: a dot is a discrete separator
+        // ("Season.1.3.4" -> [1,3,4]) while "_" is a range separator within a
+        // chain ("Cap.102_104" -> [2,3,4]), so the two must not be conflated.
         const between = matches.inputString?.slice(current.end, next.start) || '';
-        // Strip separator chars and private match text (like season/episode markers) to isolate the range separator
-        const betweenClean = between.replace(/[\s._]/g, '').toLowerCase();
-        // Also check after stripping known marker letters (s, e, x, etc.)
-        const betweenStripMarkers = betweenClean.replace(/[sex]/gi, '');
-        const isRange = rangeSeps.has(betweenClean) || rangeSeps.has(betweenStripMarkers);
+        const betweenClean = between.replace(/[\s.]/g, '').toLowerCase();
+        // Also check after stripping marker letters (s/e/x/p) so the "-" in
+        // "E01-E07" is still recognised as the range separator.
+        const betweenStripMarkers = betweenClean.replace(/[sexp]/gi, '');
+        // A single-char range separator (-, ~, _) anywhere between the two
+        // numbers marks a range, even when adjacent digits/markers cling to it
+        // (e.g. "Cap.102_104" leaves "_1" between the "02" and "04" matches).
+        // "_" counts here although it is not in the configured range_separators.
+        const hasRangeChar = /[-~_]/.test(between);
+        const isRange = hasRangeChar || rangeSeps.has(betweenClean) || rangeSeps.has(betweenStripMarkers);
 
-        // Also check if they share the same initiator (part of same chain)
-        const sameChain = current.initiator && current.initiator === next.initiator;
-        const discreteSeps = new Set((this.config.discrete_separators || ['+', '&', 'and', 'et']).map((s: string) => s.toLowerCase()));
-        const isDiscrete = discreteSeps.has(betweenClean);
-
-        if (isRange || (sameChain && !isDiscrete)) {
+        // Expand only on an explicit range separator. A bare episode/season
+        // marker between the numbers means a new explicit value, not a range
+        // ("S01E01E07" -> [1,7], not [1..7]); a dot is likewise discrete.
+        if (isRange) {
           // Fill intermediate values
           for (let v = curVal + 1; v < nextVal; v++) {
             const m = new Match(current.start, next.end, {

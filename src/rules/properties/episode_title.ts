@@ -229,7 +229,17 @@ class EpisodeTitleFromPosition extends Rule {
   previousNames = ['episode', 'episode_count', 'season', 'season_count', 'date', 'title', 'year'];
 
   protected isIgnored(match: Match): boolean {
-    return match.name === 'language' || match.name === 'country' || match.name === 'episode_details';
+    if (!(match.name === 'language' || match.name === 'country' || match.name === 'episode_details')) {
+      return false;
+    }
+    // Python parity: a full-word (len > 3) UPPERCASE language/country is a real
+    // token, not title filler — e.g. "...S01E12.FRENCH.BDRip..." must NOT pull
+    // "FRENCH" into the episode_title. Lowercase/short ones stay ignored.
+    const raw = match.raw ?? '';
+    if (match.end - match.start > 3 && raw !== '' && raw === raw.toUpperCase() && raw !== raw.toLowerCase()) {
+      return false;
+    }
+    return true;
   }
 
   override when(matches: Matches, _context: any): Match[] {
@@ -258,7 +268,38 @@ class EpisodeTitleFromPosition extends Rule {
       });
       const holeArray = Array.isArray(holesResult) ? holesResult : holesResult ? [holesResult] : [];
 
+      const inp: string = (matches as any).inputString || '';
       for (const hole of holeArray) {
+        // Crop leading/trailing ignored (language/country/episode_details) matches
+        // out of the hole — Python's TitleBaseRule does this via should_keep, but
+        // this standalone port did not. Without it a hole that is wholly or partly
+        // a lowercase language ("...French...", "...multi...") survives as an
+        // episode_title (and is later renamed to alternative_title for movies).
+        // Only crop language/country — episode_details ("Pilot", "Special") are
+        // legitimate episode_title content and must be kept.
+        const cropName = (m: Match) => m.name === 'language' || m.name === 'country';
+        const ignoredRaw = matches.range(hole.start, hole.end, (m: Match) => cropName(m)) as Match[] | Match | undefined;
+        const ignoredArr = (Array.isArray(ignoredRaw) ? ignoredRaw : ignoredRaw ? [ignoredRaw] : [])
+          .slice()
+          .sort((a: Match, b: Match) => a.start - b.start);
+        // Trim trailing ignored matches sitting at the hole's edge.
+        while (ignoredArr.length > 0) {
+          let e = hole.end;
+          while (e > hole.start && seps.includes(inp[e - 1])) e--;
+          const last = ignoredArr[ignoredArr.length - 1];
+          if (last.end === e) { hole.end = last.start; ignoredArr.pop(); } else break;
+        }
+        // Trim leading ignored matches sitting at the hole's edge.
+        while (ignoredArr.length > 0) {
+          let s = hole.start;
+          while (s < hole.end && seps.includes(inp[s])) s++;
+          const first = ignoredArr[0];
+          if (first.start === s) { hole.start = first.end; ignoredArr.shift(); } else break;
+        }
+        while (hole.start < hole.end && seps.includes(inp[hole.start])) hole.start++;
+        while (hole.end > hole.start && seps.includes(inp[hole.end - 1])) hole.end--;
+        if (hole.end <= hole.start || !hole.value) continue;
+
         // Check there's an episode/crc32/etc. BEFORE this hole in the same filepart
         // Work around rebulk-js previous() bug by using range()
         const prevPred = (m: Match) => !m.private && this.previousNames.includes(m.name ?? '');

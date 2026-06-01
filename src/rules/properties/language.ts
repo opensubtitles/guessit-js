@@ -144,11 +144,25 @@ class LanguageFinder {
       }
     }
 
+    // Dedup yielded matches by (name, span, language). Python stores
+    // LanguageMatch in a set keyed by value equality, so two identical matches
+    // (same word, same language) collapse to one; the JS Set above keys by
+    // object identity, so without this an exact-duplicate match would be emitted
+    // twice (e.g. "German.Sub" -> subtitle_language ["deu","deu"]).
+    const emitted = new Set<string>();
+    const emit = (m: LanguageMatch): [number, number, Record<string, any>] | undefined => {
+      const key = `${m.propertyName}:${m.word.start}-${m.word.end}:${m.lang.alpha3}`;
+      if (emitted.has(key)) return undefined;
+      emitted.add(key);
+      return this.toRebulkMatch(m);
+    };
+
     // Yield multi matches if there are regular or no undetermined
     for (const [key, values] of multiMap) {
       if (regularLangMap.has(key) || !undeterminedMap.has(key)) {
         for (const value of values) {
-          yield this.toRebulkMatch(value);
+          const r = emit(value);
+          if (r) yield r;
         }
       }
     }
@@ -157,7 +171,8 @@ class LanguageFinder {
     for (const [key, values] of undeterminedMap) {
       if (!regularLangMap.has(key)) {
         for (const value of values) {
-          yield this.toRebulkMatch(value);
+          const r = emit(value);
+          if (r) yield r;
         }
       }
     }
@@ -165,7 +180,8 @@ class LanguageFinder {
     // Yield regular
     for (const values of regularLangMap.values()) {
       for (const value of values) {
-        yield this.toRebulkMatch(value);
+        const r = emit(value);
+        if (r) yield r;
       }
     }
   }
@@ -330,9 +346,20 @@ class LanguageFinder {
             let matchStart = currentWord.start;
             let matchEnd = currentWord.end;
             if (currentWord !== word) {
-              // This is an extendedWord match — narrow to non-affix portion
+              // This is an extendedWord match — narrow to the sub-word that
+              // actually holds the stripped (non-affix) value. The value can be
+              // the leading word ("German.Sub", suffix "sub" -> value "german"
+              // lives in "German") or the trailing word ("Dubbed.DL", value "dl"
+              // lives in "DL"). Narrowing blindly to fallbackWord put the value on
+              // the affix word (e.g. "Sub" -> deu).
               const trimmedValue = value.trim();
-              if (trimmedValue && fallbackWord) {
+              if (trimmedValue && word && word.value.toLowerCase() === trimmedValue) {
+                // Value lives in the leading word ("German.Sub" -> "german").
+                matchStart = word.start;
+                matchEnd = word.end;
+              } else if (trimmedValue && fallbackWord) {
+                // Default: value lives in the trailing word ("Dubbed.DL" -> "dl"),
+                // or a compound the affix applies to ("Sub.Fr-Eng").
                 matchStart = fallbackWord.start;
                 matchEnd = fallbackWord.end;
               }
@@ -642,37 +669,33 @@ class RemoveCommonWordsLanguageRule extends Rule {
   static override priority = 32;
   override priority = 32;
 
-  when(matches: any, context: any): any {
+  when(matches: any, _context: any): any {
+    // Faithful port of Python's RemoveInvalidLanguages: remove every
+    // language/subtitle_language match whose raw text is a blacklisted common
+    // word (e.g. "De", "no", "it") — UNLESS it sits in a group marker that
+    // contains nothing but language matches (e.g. "[Multiple Subtitles]"), in
+    // which case it is a real tag. The finder tags such matches 'common', which
+    // is equivalent to `raw.toLowerCase() in common_words`.
     const toRemove: any[] = [];
-    const fileparts = matches.markers?.named('path') || [];
-    const filepartArr: any[] = Array.isArray(fileparts) ? fileparts : fileparts ? [fileparts] : [];
+    const all = matches.range?.(0, matches.inputString?.length ?? 0, (m: any) =>
+      m.name === 'language' || m.name === 'subtitle_language') || [];
+    const allArr: any[] = Array.isArray(all) ? all : all ? [all] : [];
 
-    for (const filepart of filepartArr) {
-      const langs: any[] = matches.range?.(filepart.start, filepart.end, (m: any) =>
-        m.name === 'language' || m.name === 'subtitle_language',
-      ) || [];
-      const commonLangs = langs.filter((m: any) => m.tags?.includes('common'));
-      const nonCommonLangs = langs.filter((m: any) => !m.tags?.includes('common'));
-      if (nonCommonLangs.length === 0) {
-        toRemove.push(...commonLangs);
-      } else {
-        // Also remove common-word languages that are NOT inside a group marker
-        // when all non-common languages ARE inside group markers.
-        // This prevents false positives like "no" being kept as Norwegian
-        // just because "Multiple" exists inside [Multiple Subtitle].
-        const groups = matches.markers?.named?.('group') || [];
-        const groupArr: any[] = Array.isArray(groups) ? groups : groups ? [groups] : [];
+    for (const match of allArr) {
+      if (!match.tags?.includes('common')) continue;
 
-        const isInGroup = (m: any) =>
-          groupArr.some((g: any) => m.start >= g.start && m.end <= g.end);
-
-        const nonCommonOutsideGroups = nonCommonLangs.filter((m: any) => !isInGroup(m));
-        if (nonCommonOutsideGroups.length === 0) {
-          // All non-common languages are inside groups — remove common languages outside groups
-          const commonOutsideGroups = commonLangs.filter((m: any) => !isInGroup(m));
-          toRemove.push(...commonOutsideGroups);
-        }
+      const group = matches.markers?.atMatch?.(match, (m: any) => m.name === 'group', 0);
+      if (group) {
+        const nonLang = matches.range?.(group.start, group.end,
+          (m: any) => m.name !== 'language' && m.name !== 'subtitle_language');
+        const hasNonLang = Array.isArray(nonLang) ? nonLang.length > 0 : !!nonLang;
+        const holesRes = matches.holes?.(group.start, group.end,
+          { predicate: (m: any) => m.value && [...String(m.value)].some((c: string) => !seps.includes(c)) });
+        const hasContentHoles = Array.isArray(holesRes) ? holesRes.length > 0 : !!holesRes;
+        if (!hasNonLang && !hasContentHoles) continue; // group is all-languages → keep
       }
+
+      toRemove.push(match);
     }
     return toRemove.length > 0 ? toRemove : false;
   }
@@ -715,6 +738,42 @@ class RemoveUndeterminedLanguagesRule extends Rule {
       }
     }
 
+    return toRemove.length > 0 ? toRemove : false;
+  }
+}
+
+/**
+ * Remove exact-duplicate language / subtitle_language matches — same span AND
+ * same language. The subtitle rename rules can append a copy of a match that the
+ * finder already produced (e.g. "German.Sub" -> two subtitle_language matches at
+ * the same span). Python never reports the same language twice. Only same-span +
+ * same-value copies are removed; distinct positions and genuine multi-language
+ * releases are untouched. Runs after the subtitle rename rules.
+ */
+class DedupLanguageRule extends Rule {
+  consequence = RemoveMatch;
+  dependency = [SubtitlePrefixLanguageRule, SubtitleSuffixLanguageRule, SubtitleExtensionRule];
+
+  private identity(match: any): string {
+    const v = match.value;
+    if (v instanceof Language) {
+      const country = (v as any).country;
+      return `${v.alpha3}:${country ? String(country) : ''}`;
+    }
+    return String(v);
+  }
+
+  when(matches: any): any {
+    const toRemove: any[] = [];
+    for (const name of ['language', 'subtitle_language']) {
+      const list = [...(matches.named(name) || [])].sort((a: any, b: any) => a.start - b.start || a.end - b.end);
+      const seen = new Set<string>();
+      for (const m of list) {
+        const key = `${m.start}-${m.end}:${this.identity(m)}`;
+        if (seen.has(key)) toRemove.push(m);
+        else seen.add(key);
+      }
+    }
     return toRemove.length > 0 ? toRemove : false;
   }
 }
@@ -812,6 +871,7 @@ export function language(config: LanguageConfig, commonWords: Set<string>): Rebu
     RemoveCommonWordsLanguageRule,
     RemoveLanguageRule,
     RemoveUndeterminedLanguagesRule,
+    DedupLanguageRule,
   );
 
   return rebulk;
