@@ -81,4 +81,9 @@ if (arg && arg !== '--cat') {
 }
 console.log('\n----- category counts -----');
 for (const c of Object.keys(cats).sort((a, b) => cats[b] - cats[a])) console.log(`${String(cats[c]).padStart(4)}  ${c}`);
+// mimetype diffs come from Python's OS-specific /etc/mime.types (e.g. .ts ->
+// "text/vnd.trolltech.linguist"); they are environment-dependent and bogus, so
+// they are excluded from the "real" parity count.
+const mimeOnly = cats['mimetype'] || 0;
 console.log(`----\nTotal diverging: ${nDiff}  (known-OK skipped: ${nKnown})  of ${inputs.length} (vs Python ${golden.guessit_version})`);
+console.log(`Real (excl. ${mimeOnly} env-specific mimetype): ${nDiff - mimeOnly}`);

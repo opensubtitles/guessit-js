@@ -278,23 +278,26 @@ class EpisodeTitleFromPosition extends Rule {
         // Only crop language/country — episode_details ("Pilot", "Special") are
         // legitimate episode_title content and must be kept.
         const cropName = (m: Match) => m.name === 'language' || m.name === 'country';
-        const ignoredRaw = matches.range(hole.start, hole.end, (m: Match) => cropName(m)) as Match[] | Match | undefined;
-        const ignoredArr = (Array.isArray(ignoredRaw) ? ignoredRaw : ignoredRaw ? [ignoredRaw] : [])
-          .slice()
-          .sort((a: Match, b: Match) => a.start - b.start);
-        // Trim trailing ignored matches sitting at the hole's edge.
-        while (ignoredArr.length > 0) {
+        const fpLangsRaw = matches.range(filepart.start, filepart.end, (m: Match) => cropName(m)) as Match[] | Match | undefined;
+        const langArr = (Array.isArray(fpLangsRaw) ? fpLangsRaw : fpLangsRaw ? [fpLangsRaw] : []);
+        // Trim, from each edge, any region covered by a language/country match —
+        // including a match that *encloses* the edge (e.g. "[Espanol Castellano]"
+        // where the language spans the whole bracket around the hole).
+        let guard = 0;
+        while (guard++ < 64) {
           let e = hole.end;
           while (e > hole.start && seps.includes(inp[e - 1])) e--;
-          const last = ignoredArr[ignoredArr.length - 1];
-          if (last.end === e) { hole.end = last.start; ignoredArr.pop(); } else break;
+          if (e <= hole.start) break;
+          const cover = langArr.find((m: Match) => m.start <= e - 1 && m.end >= e);
+          if (cover && cover.start < hole.end) { hole.end = Math.min(hole.end, cover.start); } else break;
         }
-        // Trim leading ignored matches sitting at the hole's edge.
-        while (ignoredArr.length > 0) {
+        guard = 0;
+        while (guard++ < 64) {
           let s = hole.start;
           while (s < hole.end && seps.includes(inp[s])) s++;
-          const first = ignoredArr[0];
-          if (first.start === s) { hole.start = first.end; ignoredArr.shift(); } else break;
+          if (s >= hole.end) break;
+          const cover = langArr.find((m: Match) => m.start <= s && m.end >= s + 1);
+          if (cover && cover.end > hole.start) { hole.start = Math.max(hole.start, cover.end); } else break;
         }
         while (hole.start < hole.end && seps.includes(inp[hole.start])) hole.start++;
         while (hole.end > hole.start && seps.includes(inp[hole.end - 1])) hole.end--;
