@@ -101,6 +101,26 @@ export class GuessItApi {
 
       // Convert Map → plain object so callers can do result[key]
       const result: GuessItResult = Object.fromEntries(matchesDict);
+
+      // Dedup language / subtitle_language VALUES at render time. Python never
+      // lists the same language twice (e.g. "VFF+VFQ" -> a single fra, two "eng"
+      // tags -> one). We dedup here rather than removing matches, because those
+      // duplicate matches are load-bearing — they suppress their text from
+      // adjacent title/episode_title holes. Distinct languages are preserved.
+      for (const key of ['language', 'subtitle_language']) {
+        const v = result[key];
+        if (!Array.isArray(v)) continue;
+        const seen = new Set<string>();
+        const deduped = v.filter((lang) => {
+          const id = lang && typeof lang === 'object' && 'alpha3' in lang
+            ? `${(lang as any).alpha3}:${(lang as any).country ?? ''}`
+            : String(lang);
+          if (seen.has(id)) return false;
+          seen.add(id);
+          return true;
+        });
+        result[key] = deduped.length === 1 ? deduped[0] : deduped;
+      }
       if (mergedOptions['outputInputString'] || mergedOptions['output_input_string']) {
         result['input_string'] = matches.inputString;
       }
