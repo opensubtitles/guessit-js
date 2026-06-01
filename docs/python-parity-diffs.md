@@ -7,7 +7,7 @@ Full list of every case where **guessit-js** output differs from reference
 **Format:** each entry is `key: <python value> vs <js value>`.
 So `vs` reads *Python-value* **vs** *JS-value*. `undefined` = property absent on that side.
 
-**As of this snapshot:** 116 inputs differ (90 excluding the env-specific `mimetype`
+**As of this snapshot:** 92 inputs differ (81 excluding the env-specific `mimetype`
 category). `X2.2003...` is intentionally excluded (we deliberately return title "X2").
 
 **Category guide:**
@@ -16,71 +16,7 @@ category). `X2.2003...` is intentionally excluded (we deliberately return title 
   bogus, so guessit-js returns `undefined`. **Not planned to fix.**
 - `spurious-alternative_title` / `spurious-episode_title` — JS emits a title-ish field
   Python doesn't (parentheticals, edition words, leftover language/format tokens).
-- `dup-language` — JS lists the same language more than once, or adds a phantom one.
-- `title` / `language` / `release_group` / `other:*` — assorted single-field diffs.
-
----
-
 ```
-
-========== mimetype (26) ==========
-[-Show.Name.S01E07.Super, Title.WEB-DL 720p.br.srt]
-    mimetype: "text/plain" vs undefined
-[Bad Boys 2 1080i.mpg2.rus.eng.ts]
-    mimetype: "text/vnd.trolltech.linguist" vs undefined
-[Game of Thrones S03E06 1080i HDTV DD5.1 MPEG2-TrollHD.ts]
-    mimetype: "text/vnd.trolltech.linguist" vs undefined
-[Its.A.Wonderful.Life.1946.Colorized.720p.BRRip.999MB.MkvCage.com]
-    mimetype: "application/x-msdos-program" vs undefined
-[Justin Timberlake - MTV Video Music Awards 2013 1080i 32 Mbps DTS-HD 5.1.ts]
-    mimetype: "text/vnd.trolltech.linguist" vs undefined
-[Katy Perry - Pepsi & Billboard Summer Beats Concert Series 2012 1080i HDTV 20 Mbps DD2.0 MPEG2-TrollHD.ts]
-    mimetype: "text/vnd.trolltech.linguist" vs undefined
-[Mind.Field.S02E06.The.Power.of.Suggestion.1440p.H264.WEBDL.Subtitles/The Power of Suggestion - Mind Field S2 (Ep 6) (English).srt]
-    mimetype: "text/plain" vs undefined
-[Mind.Field.S02E06.The.Power.of.Suggestion.1440p.H264.WEBDL.Subtitles/The Power of Suggestion - Mind Field S2 (Ep 6) (Korean).srt]
-    mimetype: "text/plain" vs undefined
-[Movies/Ratatouille/video_ts-ratatouille.srt]
-    mimetype: "text/plain" vs undefined
-[Retour de Flammes (Gregor Schnitzler 2003) FULL DVD.iso]
-    mimetype: "application/x-iso9660-image" vs undefined
-[Show.Name.S01.Season.Complet.WEBRiP.Ro.Subbed.TM]
-    mimetype: "text/texmacs" vs undefined
-    subtitle_language: "ron" vs "rum"
-[Show.Name.S01E03.HDTV.Subtitulado.Esp.SC]
-    mimetype: "application/vnd.ibm.secure-container" vs undefined
-    subtitle_language: "spa" vs ["spa","spa"]
-[Show.Name.S01E03.HDTV.Subtitulado.Espanol.SC]
-    mimetype: "application/vnd.ibm.secure-container" vs undefined
-    subtitle_language: "spa" vs ["spa","spa"]
-[Show.Name.S01E03.HDTV.Subtitulado.Español.SC]
-    mimetype: "application/vnd.ibm.secure-container" vs undefined
-    subtitle_language: "spa" vs ["spa","spa"]
-[Show.Name.S01E07.Super, Title.WEB-DL 720p.br.srt]
-    mimetype: "text/plain" vs undefined
-[Show.Name.S03.1080p.BlurayMUX.AVC.DTS-HD.MA]
-    mimetype: "application/mathematica" vs undefined
-[Show.Name.S06E05.1080p.WEBRip.Legendado.PT]
-    mimetype: "application/vnd.snesdev-page-table" vs undefined
-    subtitle_language: "por" vs ["por","por"]
-[Something.Other.Season.3of5.Complete.HDTV.torrent]
-    mimetype: "application/x-bittorrent" vs undefined
-[Something.Season.2.1of4.Ep.Title.HDTV.torrent]
-    mimetype: "application/x-bittorrent" vs undefined
-[Something.Season.2of5.3of9.Ep.Title.HDTV.torrent]
-    mimetype: "application/x-bittorrent" vs undefined
-[[Hatsuyuki-Kaitou]_Fairy_Tail_2_-_16-20_(191-195)_[720p][10bit].torrent]
-    mimetype: "application/x-bittorrent" vs undefined
-[[Hatsuyuki-Kaitou]_Fairy_Tail_2_-_16-20_[720p][10bit].torrent]
-    mimetype: "application/x-bittorrent" vs undefined
-[frasier.s8e6-768660.srt]
-    mimetype: "text/plain" vs undefined
-[gossip.girl.s01e18.hdtv.xvid-2hd.eng.srt]
-    mimetype: "text/plain" vs undefined
-[series/Freaks And Geeks/Season 1/Episode 4 - Kim Kelly Is My Friend-eng(1).srt]
-    mimetype: "text/plain" vs undefined
-[series/Psych/Psych S02 Season 2 Complete English DVD/Psych.S02E03.Psy.Vs.Psy.Français.srt]
-    mimetype: "text/plain" vs undefined
 
 ========== spurious-alternative_title (23) ==========
 [/share/Download/movie/Dead Man Down (2013) BRRiP XViD DD5_1 Custom NLSubs =-_lt Q_o_Q gt-=_/XD607ebb-BRc59935-5155473f-1c5f49/XD607ebb-BRc59935-5155473f-1c5f49.avi]
@@ -149,7 +85,6 @@ category). `X2.2003...` is intentionally excluded (we deliberately return title 
 [Show Name 445 VOSTFR par Fansub-Resistance (1280*720) - version MQ]
     episode_title: undefined vs "par fansub-resistance"
 [Show Name S01e10[Mux - 1080p - H264 - Ita Eng Ac3 - Sub Ita Eng]DLMux By GiuseppeTnT Littlelinx]
-    subtitle_language: ["eng","ita"] vs ["eng","ita","ita"]
     episode_title: undefined vs "mux"
 [Show Name S02e19 [Mux - H264 - Ita Aac] DLMux by UBi]
     episode_title: undefined vs "mux"
@@ -169,31 +104,29 @@ category). `X2.2003...` is intentionally excluded (we deliberately return title 
 [[ShinBunBu-Subs] Bleach - 02-03 (CX 1280x720 x264 AAC)]
     episode_title: undefined vs "cx"
 
-========== dup-language (12) ==========
-[Criminal.Minds.5x03.Reckoner.ENG.-.sub.FR.HDTV.XviD-STi.[tvu.org.ru].avi]
-    subtitle_language: "fra" vs ["fra","fra"]
-[Ejecutiva.En.Apuros(2009).BLURAY.SCR.Xvid.Spanish.LanzamientosD.nfo]
-    language: "spa" vs ["eng","spa"]
-[Fear the Walking Dead - 01x02 - En Close, Yet En Far.REPACK-KILLERS.French.C.updated.Addic7ed.com.mkv]
-    language: "fra" vs ["eng","eng","fra"]
-[Fear.the.Walking.Dead.-.Season.2.epi.02.XviD.Eng.Ac3-5.1.sub.ita.eng.iCV-MIRCrew]
-    language: "eng" vs ["eng","eng"]
-[French.Immersion.2011.STV.READNFO.QC.ENGLISH.NTSC.DVDR.nfo]
-    language: "eng" vs ["eng","fra"]
-[Le Cinquieme Commando 1971 SUBFORCED FRENCH DVDRiP XViD AC3 Bandix.mkv]
-    subtitle_language: "fra" vs ["fra","fra"]
-[Series/dexter/Dexter.5x02.Hello,.Bandit.ENG.-.sub.FR.HDTV.XviD-AlFleNi-TeaM.[tvu.org.ru].avi]
-    subtitle_language: "fra" vs ["fra","fra"]
-[Show.Name.S06E05.1080p.WEBRip.Legenda.PT-BR]
-    subtitle_language: "por" vs ["por","por"]
-[Show.Name.S06E05.1080p.WEBRip.Legendado.PT-BR]
-    subtitle_language: "por" vs ["por","por"]
-[Show.Name.S06E05.1080p.WEBRip.Legendas.PT-BR]
-    subtitle_language: "por" vs ["por","por"]
-[The.Mentalist.2x21.18-5-4.ENG.-.sub.FR.HDTV.XviD-AlFleNi-TeaM.[tvu.org.ru].avi]
-    subtitle_language: "fra" vs ["fra","fra"]
-[Underworld Quadrilogie VO+VFF+VFQ 1080p HDlight.x264~Tonyk~Monde Infernal]
-    language: "fra" vs ["fra","fra"]
+========== mimetype (11) ==========
+[Bad Boys 2 1080i.mpg2.rus.eng.ts]
+    mimetype: "text/vnd.trolltech.linguist" vs "video/mp2t"
+[Game of Thrones S03E06 1080i HDTV DD5.1 MPEG2-TrollHD.ts]
+    mimetype: "text/vnd.trolltech.linguist" vs "video/mp2t"
+[Its.A.Wonderful.Life.1946.Colorized.720p.BRRip.999MB.MkvCage.com]
+    mimetype: "application/x-msdos-program" vs undefined
+[Justin Timberlake - MTV Video Music Awards 2013 1080i 32 Mbps DTS-HD 5.1.ts]
+    mimetype: "text/vnd.trolltech.linguist" vs "video/mp2t"
+[Katy Perry - Pepsi & Billboard Summer Beats Concert Series 2012 1080i HDTV 20 Mbps DD2.0 MPEG2-TrollHD.ts]
+    mimetype: "text/vnd.trolltech.linguist" vs "video/mp2t"
+[Show.Name.S01.Season.Complet.WEBRiP.Ro.Subbed.TM]
+    mimetype: "text/texmacs" vs undefined
+[Show.Name.S01E03.HDTV.Subtitulado.Esp.SC]
+    mimetype: "application/vnd.ibm.secure-container" vs undefined
+[Show.Name.S01E03.HDTV.Subtitulado.Espanol.SC]
+    mimetype: "application/vnd.ibm.secure-container" vs undefined
+[Show.Name.S01E03.HDTV.Subtitulado.Español.SC]
+    mimetype: "application/vnd.ibm.secure-container" vs undefined
+[Show.Name.S03.1080p.BlurayMUX.AVC.DTS-HD.MA]
+    mimetype: "application/mathematica" vs undefined
+[Show.Name.S06E05.1080p.WEBRip.Legendado.PT]
+    mimetype: "application/vnd.snesdev-page-table" vs undefined
 
 ========== title (10) ==========
 [555.S01.1080p.VMEO.WEBRip.AAC2.0.x264-BTN]
@@ -240,19 +173,17 @@ category). `X2.2003...` is intentionally excluded (we deliberately return title 
 [[GroupName].Show.Name.-.02.5.(Special).[BD.1080p]]
     episode_title: "5" vs "5 special"
 
-========== language (6) ==========
-[Elle.s.en.va.720p.mkv]
-    language: undefined vs "eng"
-[Masala (2013) Telugu Movie HD DVDScr XviD - Exclusive.avi]
-    language: undefined vs "tel"
-[Movies/Fantastic Mr Fox/Fantastic.Mr.Fox.2009.DVDRip.{x264+LC-AAC.5.1}{Fr-Eng}{Sub.Fr-Eng}-™.[sharethefiles.com].mkv]
-    subtitle_language: ["eng","fra"] vs ["eng","fra","fra"]
-[PutaLocura.15.12.22.Spanish.Luzzy.XXX.720p.MP4-oRo]
-    language: undefined vs "spa"
-[S.W.A.T.2017.S01E21.Treibjagd.German.Dubbed.DL.AmazonHD.x264-TVS]
-    language: ["deu","mul"] vs ["deu","mul","mul"]
-[The_Italian_Job.mkv]
-    language: undefined vs "ita"
+========== dup-language (5) ==========
+[Ejecutiva.En.Apuros(2009).BLURAY.SCR.Xvid.Spanish.LanzamientosD.nfo]
+    language: "spa" vs ["eng","spa"]
+[Fear the Walking Dead - 01x02 - En Close, Yet En Far.REPACK-KILLERS.French.C.updated.Addic7ed.com.mkv]
+    language: "fra" vs ["eng","eng","fra"]
+[Fear.the.Walking.Dead.-.Season.2.epi.02.XviD.Eng.Ac3-5.1.sub.ita.eng.iCV-MIRCrew]
+    language: "eng" vs ["eng","eng"]
+[French.Immersion.2011.STV.READNFO.QC.ENGLISH.NTSC.DVDR.nfo]
+    language: "eng" vs ["eng","fra"]
+[Underworld Quadrilogie VO+VFF+VFQ 1080p HDlight.x264~Tonyk~Monde Infernal]
+    language: "fra" vs ["fra","fra"]
 
 ========== other:episode_details (4) ==========
 [-Special.Correspondents.2016.iTA.ENG.4K.2160p.NetflixUHD.TeamPremium.mp4]
@@ -263,6 +194,16 @@ category). `X2.2003...` is intentionally excluded (we deliberately return title 
     episode_details: undefined vs "final"
 [Special.Correspondents.2016.iTA.ENG.4K.2160p.NetflixUHD.TeamPremium.mp4]
     episode_details: undefined vs "special"
+
+========== language (4) ==========
+[Elle.s.en.va.720p.mkv]
+    language: undefined vs "eng"
+[Masala (2013) Telugu Movie HD DVDScr XviD - Exclusive.avi]
+    language: undefined vs "tel"
+[PutaLocura.15.12.22.Spanish.Luzzy.XXX.720p.MP4-oRo]
+    language: undefined vs "spa"
+[The_Italian_Job.mkv]
+    language: undefined vs "ita"
 
 ========== release_group (3) ==========
 [03-Criminal.Minds.avi]
@@ -313,14 +254,14 @@ category). `X2.2003...` is intentionally excluded (we deliberately return title 
     country: undefined vs "au"
 
 ----- category counts -----
-  26  mimetype
   23  spurious-alternative_title
   14  spurious-episode_title
-  12  dup-language
+  11  mimetype
   10  title
    8  other:episode_title
-   6  language
+   5  dup-language
    4  other:episode_details
+   4  language
    3  release_group
    2  other:other
    2  other:absolute_episode
@@ -331,6 +272,6 @@ category). `X2.2003...` is intentionally excluded (we deliberately return title 
    1  other:version
    1  other:country
 ----
-Total diverging: 116  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
-Real (excl. 26 env-specific mimetype): 90
+Total diverging: 92  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
+Real (excl. 11 env-specific mimetype): 81
 ```

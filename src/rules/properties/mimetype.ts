@@ -27,6 +27,15 @@ const MIMETYPE_MAP: Record<string, string> = {
   'zip': 'application/zip',
   'rar': 'application/x-rar-compressed',
   'pdf': 'application/pdf',
+  // .srt subtitles are plain text (matches Python's text/plain).
+  'srt': 'text/plain',
+  // MPEG transport stream (Blu-ray/DVD/broadcast). video/mp2t is the correct
+  // IANA type — Python's mimetypes returns a bogus "text/vnd.trolltech.linguist"
+  // for .ts, so here we intentionally diverge to the *correct* value.
+  'ts': 'video/mp2t',
+  // Disc image and torrent — both correct and match Python.
+  'iso': 'application/x-iso9660-image',
+  'torrent': 'application/x-bittorrent',
 };
 
 export function mimetype(_config: Record<string, unknown>) {
