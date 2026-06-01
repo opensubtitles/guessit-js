@@ -1,4 +1,3 @@
-if(typeof process==="undefined")var process={env:{}};
 "use strict";
 var GuessitJS = (() => {
   var __defProp = Object.defineProperty;
@@ -3039,13 +3038,11 @@ var GuessitJS = (() => {
           const gap = nextVal - curVal;
           if (gap <= 1 || gap > maxRange) continue;
           const between = matches.inputString?.slice(current.end, next.start) || "";
-          const betweenClean = between.replace(/[\s._]/g, "").toLowerCase();
-          const betweenStripMarkers = betweenClean.replace(/[sex]/gi, "");
-          const isRange = rangeSeps.has(betweenClean) || rangeSeps.has(betweenStripMarkers);
-          const sameChain = current.initiator && current.initiator === next.initiator;
-          const discreteSeps = new Set((this.config.discrete_separators || ["+", "&", "and", "et"]).map((s) => s.toLowerCase()));
-          const isDiscrete = discreteSeps.has(betweenClean);
-          if (isRange || sameChain && !isDiscrete) {
+          const betweenClean = between.replace(/[\s.]/g, "").toLowerCase();
+          const betweenStripMarkers = betweenClean.replace(/[sexp]/gi, "");
+          const hasRangeChar = /[-~_]/.test(between);
+          const isRange = hasRangeChar || rangeSeps.has(betweenClean) || rangeSeps.has(betweenStripMarkers);
+          if (isRange) {
             for (let v = curVal + 1; v < nextVal; v++) {
               const m = new Match(current.start, next.end, {
                 name,
@@ -5039,9 +5036,21 @@ var GuessitJS = (() => {
     }
     /**
      * Determine if a match should be ignored (e.g., language, country).
+     *
+     * Python parity: a full-word (len > 3) UPPERCASE language/country is a real
+     * token, not title filler, so it is NOT ignored — e.g. the trailing "FRENCH"
+     * in "...XViD-NTK.FRENCH..." must not be pulled into an alternative_title.
+     * Lowercase or short (<= 3 char) language/country codes remain ignored.
      */
     isIgnored(match) {
-      return match.name === "language" || match.name === "country" || match.name === "episode_details";
+      if (!(match.name === "language" || match.name === "country" || match.name === "episode_details")) {
+        return false;
+      }
+      const raw = match.raw ?? "";
+      if (match.end - match.start > 3 && raw !== "" && raw === raw.toUpperCase() && raw !== raw.toLowerCase()) {
+        return false;
+      }
+      return true;
     }
     /**
      * Determine if we should keep a hole boundary (don't trim this side).
@@ -5185,7 +5194,7 @@ var GuessitJS = (() => {
       let processedHoles = this.holesProcess(holeArray, matches, filepart);
       for (const hole of processedHoles) {
         if (!this.holeFilter(hole)) continue;
-        if (process.env.DEBUG_TITLE_TRIM) {
+        if (false) {
           const inp2 = matches.inputString ?? "";
           console.log(`[trim] hole="${inp2.slice(hole.start, hole.end)}" [${hole.start},${hole.end})`);
         }
@@ -5207,7 +5216,7 @@ var GuessitJS = (() => {
           }
           trimmedHole.end--;
         }
-        if (process.env.DEBUG_TITLE_TRIM) {
+        if (false) {
           const ignoredNames = ignoredArray.map((m) => `${m.name}="${inp.slice(m.start, m.end)}"@[${m.start},${m.end})`).join(", ");
           console.log(`  after pre-strip hole=[${trimmedHole.start},${trimmedHole.end}) ignoredArray=[${ignoredNames}]`);
         }
@@ -5215,7 +5224,7 @@ var GuessitJS = (() => {
           const firstIgnored = ignoredArray[0];
           if (firstIgnored.start === trimmedHole.start) {
             const keep = firstIgnored.name === "country" ? false : this.shouldKeep(trimmedHole, ignoredArray, true);
-            if (process.env.DEBUG_TITLE_TRIM) {
+            if (false) {
               console.log(`  leading trim: shouldKeep=${keep} for "${inp.slice(firstIgnored.start, firstIgnored.end)}"`);
             }
             if (keep) {
@@ -5287,7 +5296,7 @@ var GuessitJS = (() => {
             break;
           }
         }
-        if (process.env.DEBUG_TITLE_TRIM) {
+        if (false) {
           console.log(`  result: hole=[${trimmedHole.start},${trimmedHole.end}) length=${trimmedHole.length} value="${trimmedHole.value}"`);
         }
         if (trimmedHole.length > 0 && !this.shouldRemove(trimmedHole) && trimmedHole.value) {
@@ -5305,6 +5314,16 @@ var GuessitJS = (() => {
           }
         }
       }
+      const mainTitle = toAppend.find((t) => t.name === this.matchName);
+      if (mainTitle) {
+        const absorbedRaw = matches.range(
+          mainTitle.start,
+          mainTitle.end,
+          (m) => m.name === "episode_details" || m.name === "country" || m.name === "language"
+        );
+        const absorbed = Array.isArray(absorbedRaw) ? absorbedRaw : absorbedRaw ? [absorbedRaw] : [];
+        for (const m of absorbed) if (!toRemove.includes(m)) toRemove.push(m);
+      }
       return { toAppend, toRemove };
     }
     /**
@@ -5317,7 +5336,7 @@ var GuessitJS = (() => {
         if (index === 0) continue;
         const filepart = fileparts[index];
         const fpMatches = matches.range(filepart.start, filepart.end).filter((m) => !m.private);
-        if (process.env.DEBUG_TITLE) {
+        if (false) {
           const inp = matches.inputString ?? "";
           console.log(`[_serieNameFilepart] index=${index} fp="${inp.slice(filepart.start, filepart.end)}" fpMatches=${fpMatches.map((m) => `${m.name}="${m.value}"@[${m.start},${m.end})`).join(",")}`);
           if (fpMatches[0]) {
@@ -5347,7 +5366,7 @@ var GuessitJS = (() => {
         0
       );
       if (existingTitle) {
-        if (process.env.DEBUG_TITLE) {
+        if (false) {
           const inp = matches.inputString ?? "";
           console.log(`[_serieNameFilepartMatch] fp="${inp.slice(serieNameFilepart.start, serieNameFilepart.end)}" found existing title="${existingTitle.value}"`);
         }
@@ -5363,7 +5382,7 @@ var GuessitJS = (() => {
       });
       const holeArray = Array.isArray(holesResult) ? holesResult : holesResult ? [holesResult] : [];
       const processedHoles = this.holesProcess(holeArray, matches, serieNameFilepart);
-      if (process.env.DEBUG_TITLE) {
+      if (false) {
         const inp = matches.inputString ?? "";
         console.log(`[_serieNameFilepartMatch] fp="${inp.slice(serieNameFilepart.start, serieNameFilepart.end)}" holeArray=${holeArray.length} processedHoles=${processedHoles.length}`);
         processedHoles.forEach((h, i) => console.log(`  hole[${i}]="${inp.slice(h.start, h.end)}" value="${h.value}"`));
@@ -5393,7 +5412,7 @@ var GuessitJS = (() => {
       if (serieNameFilepart) {
         serieNameMatch = this._serieNameFilepartMatch(matches, serieNameFilepart, toAppend, toRemove);
       }
-      if (process.env.DEBUG_TITLE) {
+      if (false) {
         const inp = matches.inputString ?? "";
         console.log(`[when] sortedFileparts: ${sortedFileparts.map((fp) => `"${inp.slice(fp.start, fp.end)}"`).join(", ")}`);
         console.log(`[when] serieNameFilepart: ${serieNameFilepart ? `"${inp.slice(serieNameFilepart.start, serieNameFilepart.end)}"` : "null"}`);
@@ -5766,7 +5785,14 @@ var GuessitJS = (() => {
       this.previousNames = ["episode", "episode_count", "season", "season_count", "date", "title", "year"];
     }
     isIgnored(match) {
-      return match.name === "language" || match.name === "country" || match.name === "episode_details";
+      if (!(match.name === "language" || match.name === "country" || match.name === "episode_details")) {
+        return false;
+      }
+      const raw = match.raw ?? "";
+      if (match.end - match.start > 3 && raw !== "" && raw === raw.toUpperCase() && raw !== raw.toLowerCase()) {
+        return false;
+      }
+      return true;
     }
     when(matches, _context) {
       const toAppend = [];
@@ -5798,7 +5824,44 @@ var GuessitJS = (() => {
           predicate: /* @__PURE__ */ __name((m) => !!m.value, "predicate")
         });
         const holeArray = Array.isArray(holesResult) ? holesResult : holesResult ? [holesResult] : [];
+        const inp = matches.inputString || "";
         for (const hole of holeArray) {
+          const groupMarker = matches.markers?.atMatch?.(hole, (m) => m.name === "group", 0);
+          if (groupMarker) {
+            const yearInGroup = matches.range(
+              groupMarker.start,
+              groupMarker.end,
+              (m) => (m.name === "year" || m.name === "date") && !m.private,
+              0
+            );
+            if (yearInGroup) continue;
+          }
+          const cropName = /* @__PURE__ */ __name((m) => m.name === "language" || m.name === "country", "cropName");
+          const fpLangsRaw = matches.range(filepart.start, filepart.end, (m) => cropName(m));
+          const langArr = Array.isArray(fpLangsRaw) ? fpLangsRaw : fpLangsRaw ? [fpLangsRaw] : [];
+          let guard = 0;
+          while (guard++ < 64) {
+            let e = hole.end;
+            while (e > hole.start && seps.includes(inp[e - 1])) e--;
+            if (e <= hole.start) break;
+            const cover = langArr.find((m) => m.start <= e - 1 && m.end >= e);
+            if (cover && cover.start < hole.end) {
+              hole.end = Math.min(hole.end, cover.start);
+            } else break;
+          }
+          guard = 0;
+          while (guard++ < 64) {
+            let s = hole.start;
+            while (s < hole.end && seps.includes(inp[s])) s++;
+            if (s >= hole.end) break;
+            const cover = langArr.find((m) => m.start <= s && m.end >= s + 1);
+            if (cover && cover.end > hole.start) {
+              hole.start = Math.max(hole.start, cover.end);
+            } else break;
+          }
+          while (hole.start < hole.end && seps.includes(inp[hole.start])) hole.start++;
+          while (hole.end > hole.start && seps.includes(inp[hole.end - 1])) hole.end--;
+          if (hole.end <= hole.start || !hole.value) continue;
           const prevPred = /* @__PURE__ */ __name((m) => !m.private && this.previousNames.includes(m.name ?? ""), "prevPred");
           const prevMatches = matches.range(filepart.start, hole.start, prevPred);
           const prevArr = Array.isArray(prevMatches) ? prevMatches : prevMatches ? [prevMatches] : [];
@@ -6115,7 +6178,7 @@ var GuessitJS = (() => {
     { alpha3: "fin", alpha2: "fi", name: "Finnish", opensubtitles: "fin" },
     { alpha3: "hun", alpha2: "hu", name: "Hungarian", opensubtitles: "hun" },
     { alpha3: "ces", alpha2: "cs", name: "Czech", opensubtitles: "cze" },
-    { alpha3: "rum", alpha2: "ro", name: "Romanian", opensubtitles: "rum" },
+    { alpha3: "ron", alpha2: "ro", name: "Romanian", opensubtitles: "rum" },
     { alpha3: "ukr", alpha2: "uk", name: "Ukrainian", opensubtitles: "ukr" },
     { alpha3: "heb", alpha2: "he", name: "Hebrew", opensubtitles: "heb" },
     { alpha3: "cat", alpha2: "ca", name: "Catalan", opensubtitles: "cat" },
@@ -6474,23 +6537,33 @@ var GuessitJS = (() => {
           regularLangMap.get(key).add(match);
         }
       }
+      const emitted = /* @__PURE__ */ new Set();
+      const emit = /* @__PURE__ */ __name((m) => {
+        const key = `${m.propertyName}:${m.word.start}-${m.word.end}:${m.lang.alpha3}`;
+        if (emitted.has(key)) return void 0;
+        emitted.add(key);
+        return this.toRebulkMatch(m);
+      }, "emit");
       for (const [key, values] of multiMap) {
         if (regularLangMap.has(key) || !undeterminedMap.has(key)) {
           for (const value of values) {
-            yield this.toRebulkMatch(value);
+            const r = emit(value);
+            if (r) yield r;
           }
         }
       }
       for (const [key, values] of undeterminedMap) {
         if (!regularLangMap.has(key)) {
           for (const value of values) {
-            yield this.toRebulkMatch(value);
+            const r = emit(value);
+            if (r) yield r;
           }
         }
       }
       for (const values of regularLangMap.values()) {
         for (const value of values) {
-          yield this.toRebulkMatch(value);
+          const r = emit(value);
+          if (r) yield r;
         }
       }
     }
@@ -6612,7 +6685,13 @@ var GuessitJS = (() => {
               let matchEnd = currentWord.end;
               if (currentWord !== word) {
                 const trimmedValue = value.trim();
-                if (trimmedValue && fallbackWord) {
+                if (trimmedValue && word && word.value.toLowerCase() === trimmedValue) {
+                  matchStart = word.start;
+                  matchEnd = word.end;
+                } else if (trimmedValue && word && word.nextWord && word.nextWord.value.toLowerCase() === trimmedValue) {
+                  matchStart = word.nextWord.start;
+                  matchEnd = word.nextWord.end;
+                } else if (trimmedValue && fallbackWord) {
                   matchStart = fallbackWord.start;
                   matchEnd = fallbackWord.end;
                 }
@@ -6868,30 +6947,29 @@ var GuessitJS = (() => {
       this.consequence = RemoveMatch;
       this.priority = 32;
     }
-    when(matches, context) {
+    when(matches, _context) {
       const toRemove = [];
-      const fileparts = matches.markers?.named("path") || [];
-      const filepartArr = Array.isArray(fileparts) ? fileparts : fileparts ? [fileparts] : [];
-      for (const filepart of filepartArr) {
-        const langs = matches.range?.(
-          filepart.start,
-          filepart.end,
-          (m) => m.name === "language" || m.name === "subtitle_language"
-        ) || [];
-        const commonLangs = langs.filter((m) => m.tags?.includes("common"));
-        const nonCommonLangs = langs.filter((m) => !m.tags?.includes("common"));
-        if (nonCommonLangs.length === 0) {
-          toRemove.push(...commonLangs);
-        } else {
-          const groups2 = matches.markers?.named?.("group") || [];
-          const groupArr = Array.isArray(groups2) ? groups2 : groups2 ? [groups2] : [];
-          const isInGroup = /* @__PURE__ */ __name((m) => groupArr.some((g) => m.start >= g.start && m.end <= g.end), "isInGroup");
-          const nonCommonOutsideGroups = nonCommonLangs.filter((m) => !isInGroup(m));
-          if (nonCommonOutsideGroups.length === 0) {
-            const commonOutsideGroups = commonLangs.filter((m) => !isInGroup(m));
-            toRemove.push(...commonOutsideGroups);
-          }
+      const all = matches.range?.(0, matches.inputString?.length ?? 0, (m) => m.name === "language" || m.name === "subtitle_language") || [];
+      const allArr = Array.isArray(all) ? all : all ? [all] : [];
+      for (const match of allArr) {
+        if (!match.tags?.includes("common")) continue;
+        const group = matches.markers?.atMatch?.(match, (m) => m.name === "group", 0);
+        if (group) {
+          const nonLang = matches.range?.(
+            group.start,
+            group.end,
+            (m) => m.name !== "language" && m.name !== "subtitle_language"
+          );
+          const hasNonLang = Array.isArray(nonLang) ? nonLang.length > 0 : !!nonLang;
+          const holesRes = matches.holes?.(
+            group.start,
+            group.end,
+            { predicate: /* @__PURE__ */ __name((m) => m.value && [...String(m.value)].some((c) => !seps.includes(c)), "predicate") }
+          );
+          const hasContentHoles = Array.isArray(holesRes) ? holesRes.length > 0 : !!holesRes;
+          if (!hasNonLang && !hasContentHoles) continue;
         }
+        toRemove.push(match);
       }
       return toRemove.length > 0 ? toRemove : false;
     }
@@ -6938,6 +7016,36 @@ var GuessitJS = (() => {
   __name(_RemoveUndeterminedLanguagesRule2, "RemoveUndeterminedLanguagesRule");
   _RemoveUndeterminedLanguagesRule2.priority = 32;
   var RemoveUndeterminedLanguagesRule2 = _RemoveUndeterminedLanguagesRule2;
+  var _DedupLanguageRule = class _DedupLanguageRule extends Rule {
+    constructor() {
+      super(...arguments);
+      this.consequence = RemoveMatch;
+      this.dependency = [SubtitlePrefixLanguageRule, SubtitleSuffixLanguageRule, SubtitleExtensionRule];
+    }
+    identity(match) {
+      const v = match.value;
+      if (v instanceof Language) {
+        const country2 = v.country;
+        return `${v.alpha3}:${country2 ? String(country2) : ""}`;
+      }
+      return String(v);
+    }
+    when(matches) {
+      const toRemove = [];
+      for (const name of ["language", "subtitle_language"]) {
+        const list = [...matches.named(name) || []].sort((a, b) => a.start - b.start || a.end - b.end);
+        const seen = /* @__PURE__ */ new Set();
+        for (const m of list) {
+          const key = `${m.start}-${m.end}:${this.identity(m)}`;
+          if (seen.has(key)) toRemove.push(m);
+          else seen.add(key);
+        }
+      }
+      return toRemove.length > 0 ? toRemove : false;
+    }
+  };
+  __name(_DedupLanguageRule, "DedupLanguageRule");
+  var DedupLanguageRule = _DedupLanguageRule;
   function language(config, commonWords) {
     const subtitleBoth = config.subtitle_affixes;
     const subtitlePrefixes = [
@@ -7012,7 +7120,8 @@ var GuessitJS = (() => {
       SubtitleExtensionRule,
       RemoveCommonWordsLanguageRule,
       RemoveLanguageRule,
-      RemoveUndeterminedLanguagesRule2
+      RemoveUndeterminedLanguagesRule2,
+      DedupLanguageRule
     );
     return rebulk;
   }
@@ -7181,6 +7290,9 @@ var GuessitJS = (() => {
           return false;
         }
         if (matches.markers.atMatch(candidate, (m) => m.name === "group", 0)) {
+          return false;
+        }
+        if (matches.range(candidate.start, candidate.end, (m) => m.name === "episode", 0)) {
           return false;
         }
         const firstHole = matches.holes(
@@ -8006,10 +8118,37 @@ var GuessitJS = (() => {
     const rebulk = new Rebulk({ disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "bonus"), "disabled") });
     rebulk.regexDefaults({ name: "bonus", flags: "i" });
     loadConfigPatterns(rebulk, config["bonus"]);
-    rebulk.rules(BonusToEpisodeRule, BonusTitleRule);
+    rebulk.rules(BonusAtFilepartStartRule, BonusToEpisodeRule, BonusTitleRule);
     return rebulk;
   }
   __name(bonus, "bonus");
+  var _BonusAtFilepartStartRule = class _BonusAtFilepartStartRule extends Rule {
+    when(matches) {
+      const inputString = matches.inputString || "";
+      const bonuses = matches.named("bonus")?.filter((m) => !m.private) ?? [];
+      const toRemove = [];
+      for (const bonus2 of bonuses) {
+        const filepart = matches.markers.atMatch(bonus2, (m) => m.name === "path", 0);
+        if (!filepart) continue;
+        const parent = bonus2.parent;
+        const xStart = parent ? parent.start : bonus2.start - 1;
+        const before = inputString.slice(filepart.start, xStart);
+        if ([...before].every((c) => seps.includes(c))) {
+          toRemove.push(bonus2);
+          if (parent) toRemove.push(parent);
+        }
+      }
+      return toRemove;
+    }
+    then(matches, whenResponse) {
+      for (const m of whenResponse) {
+        matches.remove(m);
+      }
+    }
+  };
+  __name(_BonusAtFilepartStartRule, "BonusAtFilepartStartRule");
+  _BonusAtFilepartStartRule.priority = 128;
+  var BonusAtFilepartStartRule = _BonusAtFilepartStartRule;
   var _BonusToEpisodeRule = class _BonusToEpisodeRule extends Rule {
     when(matches) {
       const bonuses = matches.named("bonus")?.filter((m) => !m.private) ?? [];
@@ -8380,7 +8519,16 @@ var GuessitJS = (() => {
     "gif": "image/gif",
     "zip": "application/zip",
     "rar": "application/x-rar-compressed",
-    "pdf": "application/pdf"
+    "pdf": "application/pdf",
+    // .srt subtitles are plain text (matches Python's text/plain).
+    "srt": "text/plain",
+    // MPEG transport stream (Blu-ray/DVD/broadcast). video/mp2t is the correct
+    // IANA type — Python's mimetypes returns a bogus "text/vnd.trolltech.linguist"
+    // for .ts, so here we intentionally diverge to the *correct* value.
+    "ts": "video/mp2t",
+    // Disc image and torrent — both correct and match Python.
+    "iso": "application/x-iso9660-image",
+    "torrent": "application/x-bittorrent"
   };
   function mimetype(_config) {
     const rebulk = new Rebulk({ disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "mimetype"), "disabled") });
@@ -9396,6 +9544,8 @@ var GuessitJS = (() => {
           XXX: "XXX",
           "2in1": "2in1",
           "3D": { string: "3D", tags: "has-neighbor" },
+          "Half SBS": { string: ["HSBS"], regex: ["Half-?SBS"], tags: "has-neighbor" },
+          "Half OU": { string: ["HOU", "HTAB"], regex: ["Half-?OU", "Half-?TAB"], tags: "has-neighbor" },
           "High Quality": { string: "HQ", tags: "uhdbluray-neighbor" },
           "High Resolution": "HR",
           "Line Dubbed": "LD",
@@ -9905,6 +10055,18 @@ options=${JSON.stringify(options)}
           !!mergedOptions["enforceList"] || !!mergedOptions["enforce_list"]
         );
         const result = Object.fromEntries(matchesDict);
+        for (const key of ["language", "subtitle_language"]) {
+          const v = result[key];
+          if (!Array.isArray(v)) continue;
+          const seen = /* @__PURE__ */ new Set();
+          const deduped = v.filter((lang) => {
+            const id = lang && typeof lang === "object" && "alpha3" in lang ? `${lang.alpha3}:${lang.country ?? ""}` : String(lang);
+            if (seen.has(id)) return false;
+            seen.add(id);
+            return true;
+          });
+          result[key] = deduped.length === 1 ? deduped[0] : deduped;
+        }
         if (mergedOptions["outputInputString"] || mergedOptions["output_input_string"]) {
           result["input_string"] = matches.inputString;
         }
