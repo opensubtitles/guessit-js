@@ -104,6 +104,12 @@ class DashSeparatedReleaseGroup extends Rule {
         return false;
       }
 
+      // A leading token that is already an episode number (e.g. "03" in
+      // "03-Criminal.Minds") is the episode, not a release group.
+      if (matches.range(candidate.start, candidate.end, (m: Match) => m.name === 'episode', 0)) {
+        return false;
+      }
+
       // Fix: pass predicate correctly in opts object
       const firstHole = matches.holes(
         candidate.end,
