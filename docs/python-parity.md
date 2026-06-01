@@ -1,13 +1,143 @@
-# Python ↔ JS parity differences
+# Python ↔ JS parity — one-page status
 
-Full list of every case where **guessit-js** output differs from reference
-**Python guessit 3.8.0** (golden snapshot in `test/fixtures/python-reference.json`,
-1009 unique fixture inputs). Regenerate with: `node --import tsx scripts/pydiff.mjs --cat`.
+Everything about how **guessit-js** differs from reference **Python guessit 3.8.0**:
+what we'll fix (top), what's undecided (middle), what we deliberately keep (bottom),
+and the full auto-generated diff (appendix).
 
-**Format:** each entry is `key: <python value> vs <js value>`.
-So `vs` reads *Python-value* **vs** *JS-value*. `undefined` = property absent on that side.
+- Golden snapshot of Python output: `test/fixtures/python-reference.json` (1009 inputs)
+- Regenerate the appendix / live numbers: `node --import tsx scripts/pydiff.mjs --cat`
+- **Diff format:** `key: <python value> vs <js value>`. `undefined` = absent on that side.
+- Goal is **"JS should be correct"**, not blind parity — Python has real bugs too.
 
-**As of this snapshot:** 88 inputs differ (77 excluding the env-specific `mimetype` category). `X2.2003...` intentionally excluded.
+**Snapshot:** 88 inputs differ; ~55 are real defects to fix, the rest are KEEP/NEUTRAL.
+
+---
+
+# ① TO FIX — guessit-js is wrong (current → desired)
+
+### alternative_title that is a label / edition / region / junk
+- [ ] `…Criterion.Collection…` — alt `"collection"` → drop (edition)
+- [ ] `The.Stranger.1946.US.(Kino.Classics)…` — alt `"kino classics"` → drop (label)
+- [ ] `Heathers…ARROW…Plus.Comm…` — alt `["arrow","plus comm"]` → drop (label + commentary)
+- [ ] `InDefinitely.Maybe…EUR.BluRay…` — alt `"eur"` → drop (region code)
+- [ ] `Suicide Squad…(HEVC 10bit BT709)…` — alt `"bt"` → drop (color-space fragment)
+- [ ] `Dead Man Down…Custom NLSubs…` — alt `"custom"` → drop (release descriptor)
+- [ ] `Hacksaw Ridge…& ATMOS…` — alt `"&"` → drop (punctuation)
+- [ ] `MASH.(1970).[Divx.5.02]…` — alt `"5"` → drop (codec-version fragment)
+
+### alternative_title / episode_title that is an episode or absolute number
+- [ ] `Show!.Name.2.-.10.(2016)…` — alt `"10"` → drop (duplicates `episode: 10`)
+- [ ] `Show.Name.-.07.(2016)…` — alt `"07"` → drop (episode)
+- [ ] `Show.Name.-.476-479.(2007)…` — alt `"476-479"` → should be `absolute_episode`
+- [ ] `Show.Name.s10e15(233)…` — episode_title `"233"` → should be `absolute_episode`
+
+### episode_title that is a tag / broadcaster / credit
+- [ ] `Bleach.s16e03-04.313-314-GROUP` — episode_title `"group"` → should be `release_group`
+- [ ] `Show.Name.16x03-05.313-315-GROUP` — episode_title `"group"` → `release_group`
+- [ ] `…S01e10[Mux …]` / `…S02e19 [Mux …]` — episode_title `"mux"` → drop
+- [ ] `…Eng.Soft.Subtitles…` — episode_title `"soft"` → drop
+- [ ] `…[Cap.112_114.Final]…` — episode_title `"final"` → drop
+- [ ] `[Ayako-Shikkaku]…[LQ]…` — episode_title `"lq"` → drop (quality tag)
+- [ ] `[ShinBunBu-Subs] Bleach …(CX …)` — episode_title `"cx"` → drop (broadcaster)
+- [ ] `Show Name 445 VOSTFR par Fansub-Resistance…` — episode_title `"par fansub-resistance"` → drop
+- [ ] `Blue.Bloods…Obfuscated/afaae96…` — episode_title `["0e","ae7a","ced2a"]` → drop (hash junk)
+
+### episode_title returned as a LIST with a stray extra fragment
+- [ ] `Ep. 02 - Soul Hunter` — `["ep","soul hunter"]` → `"soul hunter"`
+- [ ] `NHL…Away.Feed…` — `["away feed", …]` → drop "away feed"
+- [ ] `NHL…Home.Feed…` — `["home feed", …]` → drop "home feed"
+- [ ] `…1x01.eps1.0…By.Malaguita…` — `["by malaguita", …]` → drop credit
+- [ ] `…S04E21…German.Custom.Subbed…` — `[title,"custom"]` → drop "custom"
+- [ ] `Tales S01E08…BET WEBRip…` — `[title,"bet"]` → drop broadcaster
+
+### title that absorbed junk tokens
+- [ ] `From [WWW.TORRENTING.COM] - White.Rabbit.Project…` — title gains `"from"` → drop
+- [ ] `Show.Name.Part.1.and.Part.2.Blah-Group` — title gains `"and","blah-group"` → drop
+- [ ] `The.Arrival…MadVR…` — title gains `"madvr"` → drop
+- [ ] `Show-A (US) - Episode Title S02E09…` — title gains `"episode title"` → should be episode_title
+- [ ] `French Maid Services…SPLIT SCENES…` (×2) — title gains `"split scenes"` + phantom `language fra` → drop both
+
+### phantom languages (a word read as a language)
+- [ ] `Ejecutiva.En.Apuros…` — `["eng","spa"]` → `"spa"` (phantom `eng` from "En")
+- [ ] `Fear…En Close, Yet En Far…French…` — `["eng","eng","fra"]` → `"fra"`
+- [ ] `Fear…Eng.Ac3…sub.ita.eng` — `["eng","eng"]` → `"eng"`
+- [ ] `French.Immersion…ENGLISH…` — `["eng","fra"]` → `"eng"` (phantom `fra` from title "French")
+- [ ] `Elle.s.en.va…` — phantom `language eng` → none
+- [ ] `The_Italian_Job.mkv` — phantom `language ita` (from title "Italian") → none
+- [ ] `Underworld…VFF+VFQ…` — `["fra","fra"]` → `"fra"` (one real remaining dup)
+
+### episode_details / release_group / version / country phantoms
+- [ ] `Special.Correspondents.2016…` (×2) — phantom `episode_details "special"` → none (movie title)
+- [ ] `Ouija.Seance.The.Final.Game…` — phantom `episode_details "final"` → none
+- [ ] `03-Criminal.Minds.avi` — phantom `release_group "03"` → none
+- [ ] `Westworld…[Season.2.Full]…` — `release_group "[season.2.full]"` → none
+- [ ] `We.Bare.Bears…Obfuscated/mxN…3PHD` — phantom `version 3` (hash) → none
+- [ ] `Bienvenue.Au.Gondwana…` — phantom `country au` (French "Au") → none
+
+---
+
+# ② NEUTRAL — decide before touching (no clear winner)
+
+- Python's **`season = <year>` quirk** (we emit it inconsistently): `Show!.Name.2.-.10.(2016)`,
+  `Show.Name.-.07.(2016)`, `Show.Name.-.476-479.(2007)` show `season: <year>` in Python, not JS.
+- `11.22.63.106.hdtv-abc` — date-show; py `episode [11,22,63]`+`date 1963-11-22` vs js `[11,22,6,63]`+title "06"
+- `MacGyver…CD-ROM.and.Hoagie.Foil…Scrambled/…` — js partial episode_title; py none
+- `MotoGP.2016x03.USA.Race…` — js `country: us`+episode_title "race…"; py episode_title "usa race…"
+- `BarFood christmas special HDTV` — title/type/episode_details disagreement
+- `A.Common.Title.Special.2014` — js `episode_details "special"`; "Special" may be the title
+- `FooBar.7v3.PDTV` — js `version 3`+title "foobar 7"; py title "foobar 7v3"
+- `555.S01…` — py `absolute_episode 555`; js `title "555"`
+- `[GroupName]…02.5.(Special)` — py episode_title "5"; js "5 special"
+- `[7.1.7.8.5] Foo Bar - 11 [5235532D]` — py `release_group "7.8.5"`; js none
+- `Bunker Palace Hôtel (Enki Bilal)…` — the known accent case (also the 1 JS↔WASM diff)
+- `Something…1&3-1to12ep` — py episode_title "1to12ep"; js `episode 12`+["1to","ep"]
+
+---
+
+# ③ WON'T FIX — guessit-js is already more correct (intentional)
+
+### mimetype — Python's values come from the host OS `/etc/mime.types`
+We add only correct entries and leave bogus ones `undefined`.
+
+| ext | guessit-js | Python | decision |
+|-----|-----------|--------|----------|
+| `.srt` | `text/plain` | `text/plain` | ✅ added (match) |
+| `.ts`  | `video/mp2t` | `text/vnd.trolltech.linguist` | ✅ added — **diverge to correct** (MPEG-TS) |
+| `.iso` | `application/x-iso9660-image` | same | ✅ added |
+| `.torrent` | `application/x-bittorrent` | same | ✅ added |
+| `.com` | `undefined` | `application/x-msdos-program` | 🚫 keep undefined — it's `MkvCage.com` |
+| `.sc`  | `undefined` | `application/vnd.ibm.secure-container` | 🚫 `Esp.SC` release tag |
+| `.tm`  | `undefined` | `text/texmacs` | 🚫 `…Subbed.TM` tag |
+| `.ma`  | `undefined` | `application/mathematica` | 🚫 `DTS-HD.MA` = **Master Audio** (captured as `audio_profile`) |
+| `.pt`  | `undefined` | `application/vnd.snesdev-page-table` | 🚫 `Legendado.PT` = **Portuguese** |
+
+### Genuinely better parses (JS captures what Python misses)
+- `Masala…Telugu Movie…` — JS `language: tel` (**Telugu**); Python misses it
+- `PutaLocura…Spanish…` — JS `language: spa`; Python misses it
+- `60.Minutes.2008…` — JS title `"60 Minutes"` (correct show); Python drops "60" → "minutes"
+- `TEST…HC.WEBRip…` — JS `other: "Hardcoded Subtitles"` (HC = hardcoded, correct); Python omits
+- `Deadpool…UHD…` — JS `other` adds "Ultra HD"; Python omits
+- `TEST…3D.BluRay.Half-OU/Half-SBS…` — JS `other: "Half OU"/"Half SBS"` (stereoscopic 3D); Python drops
+- `PlayboyPlus.com_…` — JS `website: playboyplus.com`; Python keeps it in title
+- `Duckman - 101 (01)…` / `- 110 (10)…` — JS `absolute_episode` 1/10
+- `The Big Bang Theory S01E00…Unaired Pilot…` — JS episode_title "Unaired Pilot"
+
+### Legit alternative titles (Python misses them; **verified**)
+A parenthetical that is a real foreign/original title — distinguished from director
+metadata by the **absence of a year inside the parens**.
+- `A Bout Portant (The Killers)…` — alt "The Killers" (French title of the 1964 film)
+- `[XCT].Le.Prestige.(The.Prestige)…` — alt "The Prestige" (English original)
+- `Battle.Royale.(Batoru.Rowaiaru)…` — alt "Batoru Rowaiaru" (Japanese romaji)
+- `Youth.In.Revolt.(Be.Bad)…` — alt "Be Bad" ("Be Bad!" French/intl release title)
+
+### Intentional product divergence
+- `X2.2003…` — title `"X2"` (the film). Python returns `bonus: 2` with no title.
+
+---
+# ④ APPENDIX — full auto-generated diff (Python vs JS)
+
+Every differing input. Regenerate this section with `node --import tsx scripts/pydiff.mjs --cat`.
+
 ```
 
 ========== spurious-alternative_title (15) ==========
