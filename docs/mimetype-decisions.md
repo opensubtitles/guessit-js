@@ -21,8 +21,8 @@ that are *correct*, and intentionally leave the bogus ones as `undefined`.
 | `.com` | `application/x-msdos-program` | it's a domain in the release name (`MkvCage.com`), not an executable |
 | `.sc`  | `application/vnd.ibm.secure-container` | `Esp.SC` is a Spanish-subtitle release tag, not a file type |
 | `.tm`  | `text/texmacs` | `…Subbed.TM` is a release-group/tag suffix, not a TeXmacs file |
-| `.ma`  | `application/mathematica` | from `…DTS-HD.MA` (Master Audio), not a Mathematica file |
-| `.pt`  | `application/vnd.snesdev-page-table` | from `…Legendado.PT` (Portuguese), not an SNES page table |
+| `.ma`  | `application/mathematica` | from `…DTS-HD.MA` = **DTS-HD Master Audio** — already captured as `audio_profile: "Master Audio"`; the trailing `.MA` is not a file extension at all |
+| `.pt`  | `application/vnd.snesdev-page-table` | from `…Legendado.PT` = **Portuguese** (subtitle language), not an SNES page table |
 
 After this change, `.ts` still shows as a pydiff *difference* (our `video/mp2t`
 vs Python's bogus value) but it is a **KEEP** (we're more correct), not a defect.
