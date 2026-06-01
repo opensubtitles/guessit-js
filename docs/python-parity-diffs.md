@@ -9,16 +9,9 @@ So `vs` reads *Python-value* **vs** *JS-value*. `undefined` = property absent on
 
 **As of this snapshot:** 92 inputs differ (81 excluding the env-specific `mimetype`
 category). `X2.2003...` is intentionally excluded (we deliberately return title "X2").
-
-**Category guide:**
-- `mimetype` — Python derives these from the host OS `/etc/mime.types` (e.g. `.ts` →
-  `text/vnd.trolltech.linguist`); values are environment-specific and semantically
-  bogus, so guessit-js returns `undefined`. **Not planned to fix.**
-- `spurious-alternative_title` / `spurious-episode_title` — JS emits a title-ish field
-  Python doesn't (parentheticals, edition words, leftover language/format tokens).
 ```
 
-========== spurious-alternative_title (23) ==========
+========== spurious-alternative_title (19) ==========
 [/share/Download/movie/Dead Man Down (2013) BRRiP XViD DD5_1 Custom NLSubs =-_lt Q_o_Q gt-=_/XD607ebb-BRc59935-5155473f-1c5f49/XD607ebb-BRc59935-5155473f-1c5f49.avi]
     alternative_title: undefined vs "custom"
 [A Bout Portant (The Killers).PAL.Multi.DVD-R-KZ]
@@ -54,14 +47,6 @@ category). `X2.2003...` is intentionally excluded (we deliberately return title 
     alternative_title: undefined vs "476-479"
 [Suicide Squad EXTENDED (2016) 2160p 4K UltraHD Blu-Ray x265 (HEVC 10bit BT709) Dolby Atmos 7.1 -DDR]
     alternative_title: undefined vs "bt"
-[TEST.2015.1080p.3D.BluRay.Half-OU.x264.DTS-HD.MA.7.1-ABC]
-    alternative_title: undefined vs "half-ou"
-[TEST.2015.1080p.3D.BluRay.Half-OU.x264.DTS-HD.MA.TrueHD.7.1.Atmos-ABC]
-    alternative_title: undefined vs "half-ou"
-[TEST.2015.1080p.3D.BluRay.Half-SBS.x264.DTS-HD.MA.7.1-ABC]
-    alternative_title: undefined vs "half"
-[TEST.2015.1080p.3D.BluRay.Half-SBS.x264.DTS-HD.MA.TrueHD.7.1.Atmos-ABC]
-    alternative_title: undefined vs "half"
 [The.Stranger.1946.US.(Kino.Classics).Bluray.1080p.LPCM.DD-2.0.x264-Grym@BTNET]
     alternative_title: undefined vs "kino classics"
 [Youth.In.Revolt.(Be.Bad).2009.MULTI.1080p.LAME3*92-MEDIOZZ]
@@ -195,6 +180,16 @@ category). `X2.2003...` is intentionally excluded (we deliberately return title 
 [Special.Correspondents.2016.iTA.ENG.4K.2160p.NetflixUHD.TeamPremium.mp4]
     episode_details: undefined vs "special"
 
+========== other:other (4) ==========
+[Deadpool.2016.4K.2160p.UHD.HQ.8bit.BluRay.8CH.x265.HEVC-MZABI.mkv]
+    other: "high quality" vs ["high quality","ultra hd"]
+[TEST.2015.1080p.3D.BluRay.Half-OU.x264.DTS-HD.MA.7.1-ABC]
+    other: "3d" vs ["3d","half ou"]
+[TEST.2015.1080p.3D.BluRay.Half-OU.x264.DTS-HD.MA.TrueHD.7.1.Atmos-ABC]
+    other: "3d" vs ["3d","half ou"]
+[TEST.2015.1080p.HC.WEBRip.x264.AAC2.0-ABC]
+    other: "rip" vs ["hardcoded subtitles","rip"]
+
 ========== language (4) ==========
 [Elle.s.en.va.720p.mkv]
     language: undefined vs "eng"
@@ -213,17 +208,19 @@ category). `X2.2003...` is intentionally excluded (we deliberately return title 
 [[TorrentCouch.com].Westworld.S02.Complete.720p.WEB-DL.x264.[MP4].[5.3GB].[Season.2.Full]/[TorrentCouch.com].Westworld.S02E03.720p.WEB-DL.x264.mp4]
     release_group: undefined vs "[season.2.full]"
 
-========== other:other (2) ==========
-[Deadpool.2016.4K.2160p.UHD.HQ.8bit.BluRay.8CH.x265.HEVC-MZABI.mkv]
-    other: "high quality" vs ["high quality","ultra hd"]
-[TEST.2015.1080p.HC.WEBRip.x264.AAC2.0-ABC]
-    other: "rip" vs ["hardcoded subtitles","rip"]
-
 ========== other:absolute_episode (2) ==========
 [Series/Duckman/Duckman - 101 (01) - 20021107 - I, Duckman.avi]
     absolute_episode: undefined vs 1
 [Series/Duckman/Duckman - 110 (10) - 20021218 - Cellar Beware.avi]
     absolute_episode: undefined vs 10
+
+========== other:other,streaming_service (2) ==========
+[TEST.2015.1080p.3D.BluRay.Half-SBS.x264.DTS-HD.MA.7.1-ABC]
+    other: "3d" vs ["3d","half sbs"]
+    streaming_service: "sbs" vs undefined
+[TEST.2015.1080p.3D.BluRay.Half-SBS.x264.DTS-HD.MA.TrueHD.7.1.Atmos-ABC]
+    other: "3d" vs ["3d","half sbs"]
+    streaming_service: "sbs" vs undefined
 
 ========== episode-range (1) ==========
 [/11.22.63/Season 1/11.22.63.106.hdtv-abc]
@@ -254,17 +251,18 @@ category). `X2.2003...` is intentionally excluded (we deliberately return title 
     country: undefined vs "au"
 
 ----- category counts -----
-  23  spurious-alternative_title
+  19  spurious-alternative_title
   14  spurious-episode_title
   11  mimetype
   10  title
    8  other:episode_title
    5  dup-language
    4  other:episode_details
+   4  other:other
    4  language
    3  release_group
-   2  other:other
    2  other:absolute_episode
+   2  other:other,streaming_service
    1  episode-range
    1  other:country,episode_title
    1  other:alternative_title
