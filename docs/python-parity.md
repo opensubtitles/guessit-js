@@ -11,37 +11,14 @@ Grouped by verdict: ① TO FIX (we're wrong) · ② NEUTRAL (undecided) · ③ W
   (verdicts live as data in `scripts/pydiff.mjs`; edit there, not here)
 - Diff format: `key: <python value> vs <js value>`; `undefined` = absent on that side.
     ----
-    Total diverging: 88  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
-    Real (excl. 11 env-specific mimetype): 77
-    Verdicts: FIX 48 · NEUTRAL 12 · KEEP 28
+    Total diverging: 82  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
+    Real (excl. 11 env-specific mimetype): 71
+    Verdicts: FIX 43 · NEUTRAL 11 · KEEP 28
 
 ```
 
 
-############## ① TO FIX — guessit-js is wrong (48) ##############
-
-===== episode_details / rg / version / country phantom =====
-[-Special.Correspondents.2016.iTA.ENG.4K.2160p.NetflixUHD.TeamPremium.mp4]
-    episode_details: undefined vs "special"
-    » drop episode_details "special" (movie title)
-[03-Criminal.Minds.avi]
-    release_group: undefined vs "03"
-    » drop release_group "03"
-[Ouija.Seance.The.Final.Game.2018.1080p.WEB-DL.DD5.1.H264-CMRG]
-    episode_details: undefined vs "final"
-    » drop episode_details "final"
-[Special.Correspondents.2016.iTA.ENG.4K.2160p.NetflixUHD.TeamPremium.mp4]
-    episode_details: undefined vs "special"
-    » drop episode_details "special" (movie title)
-[We.Bare.Bears.S01E14.Brother.Up.1080p.WEB-DL.AAC2.0.H.264-TVSmash/mxNMuJWeO7PUWCMEwqKSsS6D8Vs9S6V3PHD.mkv]
-    version: undefined vs 3
-    » drop version 3 (from hash)
-[[TorrentCouch.com].Westworld.S02.Complete.720p.WEB-DL.x264.[MP4].[5.3GB].[Season.2.Full]/[TorrentCouch.com].Westworld.S02E03.720p.WEB-DL.x264.mp4]
-    release_group: undefined vs "[season.2.full]"
-    » drop junk release_group "[season.2.full]"
-[[nextorrent.org] Bienvenue.Au.Gondwana.2016.FRENCH.DVDRiP.XViD-AViTECH.avi]
-    country: undefined vs "au"
-    » drop country au (French "Au")
+############## ① TO FIX — guessit-js is wrong (43) ##############
 
 ===== ep_title → list w/ stray fragment =====
 [/mnt/NAS/NoSubsTVShows/Babylon 5/Season 01/Ep. 02 - Soul Hunter]
@@ -185,8 +162,16 @@ Grouped by verdict: ① TO FIX (we're wrong) · ② NEUTRAL (undecided) · ③ W
     episode_title: undefined vs "233"
     » episode_title "233" → absolute_episode
 
+===== episode_details / rg / version / country phantom =====
+[We.Bare.Bears.S01E14.Brother.Up.1080p.WEB-DL.AAC2.0.H.264-TVSmash/mxNMuJWeO7PUWCMEwqKSsS6D8Vs9S6V3PHD.mkv]
+    version: undefined vs 3
+    » drop version 3 (from hash)
+[[TorrentCouch.com].Westworld.S02.Complete.720p.WEB-DL.x264.[MP4].[5.3GB].[Season.2.Full]/[TorrentCouch.com].Westworld.S02E03.720p.WEB-DL.x264.mp4]
+    release_group: undefined vs "[season.2.full]"
+    » drop junk release_group "[season.2.full]"
 
-############## ② NEUTRAL — undecided (12) ##############
+
+############## ② NEUTRAL — undecided (11) ##############
 
 ===== undecided =====
 [/11.22.63/Season 1/11.22.63.106.hdtv-abc]
@@ -198,9 +183,6 @@ Grouped by verdict: ① TO FIX (we're wrong) · ② NEUTRAL (undecided) · ③ W
     absolute_episode: 555 vs undefined
     title: undefined vs "555"
     » py absolute_episode 555 vs js title "555"
-[A.Common.Title.Special.2014.avi]
-    episode_details: undefined vs "special"
-    » "Special" may be the title
 [BarFood christmas special HDTV]
     title: "barfood christmas special" vs "barfood christmas"
     type: "movie" vs "episode"
@@ -338,20 +320,18 @@ Grouped by verdict: ① TO FIX (we're wrong) · ② NEUTRAL (undecided) · ③ W
   10  title
    8  other:episode_title
    5  dup-language
-   4  other:episode_details
    4  other:other
    4  language
-   3  release_group
    2  other:absolute_episode
    2  other:other,streaming_service
+   2  release_group
    1  episode-range
    1  other:country,episode_title
    1  other:alternative_title
    1  other:episode,episode_title
    1  other:version
-   1  other:country
 ----
-Total diverging: 88  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
-Real (excl. 11 env-specific mimetype): 77
-Verdicts: FIX 48 · NEUTRAL 12 · KEEP 28
+Total diverging: 82  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
+Real (excl. 11 env-specific mimetype): 71
+Verdicts: FIX 43 · NEUTRAL 11 · KEEP 28
 ```

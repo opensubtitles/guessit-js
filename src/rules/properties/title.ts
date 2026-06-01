@@ -439,6 +439,23 @@ abstract class TitleBaseRule extends Rule {
       }
     }
 
+    // Python's TitleBaseRule.should_remove: an episode_details or country match
+    // absorbed INTO the main title hole (it's "ignored" for hole purposes) is
+    // removed. So "Special.Correspondents" keeps title "Special Correspondents"
+    // without a phantom episode_details "Special", and "Bienvenue.Au.Gondwana"
+    // keeps the title without a phantom country "Au" (French "au"). A country at
+    // the title's *edge* was already cropped out of the hole, so it survives
+    // (e.g. "Show.Name.Au.S01E01" → title "Show Name" + country AU). Only the
+    // first/main title is considered — a later hole that becomes an episode_title
+    // (e.g. "Christmas Special …") keeps its episode_details so the type holds.
+    const mainTitle = toAppend.find((t) => t.name === this.matchName);
+    if (mainTitle) {
+      const absorbedRaw = matches.range(mainTitle.start, mainTitle.end,
+        (m: Match) => m.name === 'episode_details' || m.name === 'country') as Match[] | Match | undefined;
+      const absorbed = Array.isArray(absorbedRaw) ? absorbedRaw : absorbedRaw ? [absorbedRaw] : [];
+      for (const m of absorbed) if (!toRemove.includes(m)) toRemove.push(m);
+    }
+
     return { toAppend, toRemove };
   }
 
