@@ -7,11 +7,10 @@ Full list of every case where **guessit-js** output differs from reference
 **Format:** each entry is `key: <python value> vs <js value>`.
 So `vs` reads *Python-value* **vs** *JS-value*. `undefined` = property absent on that side.
 
-**As of this snapshot:** 92 inputs differ (81 excluding the env-specific `mimetype`
-category). `X2.2003...` is intentionally excluded (we deliberately return title "X2").
+**As of this snapshot:** 88 inputs differ (77 excluding the env-specific `mimetype` category). `X2.2003...` intentionally excluded.
 ```
 
-========== spurious-alternative_title (19) ==========
+========== spurious-alternative_title (15) ==========
 [/share/Download/movie/Dead Man Down (2013) BRRiP XViD DD5_1 Custom NLSubs =-_lt Q_o_Q gt-=_/XD607ebb-BRc59935-5155473f-1c5f49/XD607ebb-BRc59935-5155473f-1c5f49.avi]
     alternative_title: undefined vs "custom"
 [A Bout Portant (The Killers).PAL.Multi.DVD-R-KZ]
@@ -24,14 +23,6 @@ category). `X2.2003...` is intentionally excluded (we deliberately return title 
     alternative_title: undefined vs ["arrow","plus comm"]
 [InDefinitely.Maybe.2008.1080p.EUR.BluRay.VC-1.DTS-HD.MA.5.1-FGT]
     alternative_title: undefined vs "eur"
-[La petite bande (Michel Deville - 1983) VF PAL MP4 x264 AAC.mkv]
-    alternative_title: undefined vs "michel deville"
-[Mise à Sac (Alain Cavalier, 1967) [Vhs.Rip.Vff]]
-    alternative_title: undefined vs "alain cavalier"
-[Movies/El Bosque Animado (1987)/El.Bosque.Animado.[Jose.Luis.Cuerda.1987].[Xvid-Dvdrip-720 * 432].avi]
-    alternative_title: undefined vs "jose luis cuerda"
-[Movies/El Bosque Animado (1987)/El.Bosque.Animado.[Jose.Luis.Cuerda.1987].[Xvid-Dvdrip-720x432].avi]
-    alternative_title: undefined vs "jose luis cuerda"
 [Movies/M.A.S.H. (1970)/MASH.(1970).[Divx.5.02][Dual-Subtitulos][DVDRip].ogm]
     alternative_title: undefined vs "5"
 [Movies/Picnic.at.Hanging.Rock.1975.Criterion.Collection.1080p.BluRay.x264.DTS-WiKi]
@@ -251,7 +242,7 @@ category). `X2.2003...` is intentionally excluded (we deliberately return title 
     country: undefined vs "au"
 
 ----- category counts -----
-  19  spurious-alternative_title
+  15  spurious-alternative_title
   14  spurious-episode_title
   11  mimetype
   10  title
@@ -270,6 +261,6 @@ category). `X2.2003...` is intentionally excluded (we deliberately return title 
    1  other:version
    1  other:country
 ----
-Total diverging: 92  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
-Real (excl. 11 env-specific mimetype): 81
+Total diverging: 88  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
+Real (excl. 11 env-specific mimetype): 77
 ```
