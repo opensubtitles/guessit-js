@@ -2852,13 +2852,11 @@ class RangeExpansionRule extends Rule {
         const gap = nextVal - curVal;
         if (gap <= 1 || gap > maxRange) continue;
         const between = matches.inputString?.slice(current.end, next.start) || "";
-        const betweenClean = between.replace(/[\s._]/g, "").toLowerCase();
-        const betweenStripMarkers = betweenClean.replace(/[sex]/gi, "");
-        const isRange = rangeSeps.has(betweenClean) || rangeSeps.has(betweenStripMarkers);
-        const sameChain = current.initiator && current.initiator === next.initiator;
-        const discreteSeps = new Set((this.config.discrete_separators || ["+", "&", "and", "et"]).map((s) => s.toLowerCase()));
-        const isDiscrete = discreteSeps.has(betweenClean);
-        if (isRange || sameChain && !isDiscrete) {
+        const betweenClean = between.replace(/[\s.]/g, "").toLowerCase();
+        const betweenStripMarkers = betweenClean.replace(/[sexp]/gi, "");
+        const hasRangeChar = /[-~_]/.test(between);
+        const isRange = hasRangeChar || rangeSeps.has(betweenClean) || rangeSeps.has(betweenStripMarkers);
+        if (isRange) {
           for (let v = curVal + 1; v < nextVal; v++) {
             const m = new Match(current.start, next.end, {
               name,
@@ -4748,9 +4746,21 @@ const _TitleBaseRule = class _TitleBaseRule extends Rule {
   }
   /**
    * Determine if a match should be ignored (e.g., language, country).
+   *
+   * Python parity: a full-word (len > 3) UPPERCASE language/country is a real
+   * token, not title filler, so it is NOT ignored — e.g. the trailing "FRENCH"
+   * in "...XViD-NTK.FRENCH..." must not be pulled into an alternative_title.
+   * Lowercase or short (<= 3 char) language/country codes remain ignored.
    */
   isIgnored(match) {
-    return match.name === "language" || match.name === "country" || match.name === "episode_details";
+    if (!(match.name === "language" || match.name === "country" || match.name === "episode_details")) {
+      return false;
+    }
+    const raw = match.raw ?? "";
+    if (match.end - match.start > 3 && raw !== "" && raw === raw.toUpperCase() && raw !== raw.toLowerCase()) {
+      return false;
+    }
+    return true;
   }
   /**
    * Determine if we should keep a hole boundary (don't trim this side).
@@ -5013,6 +5023,16 @@ const _TitleBaseRule = class _TitleBaseRule extends Rule {
           toAppend.push(trimmedHole);
         }
       }
+    }
+    const mainTitle = toAppend.find((t) => t.name === this.matchName);
+    if (mainTitle) {
+      const absorbedRaw = matches.range(
+        mainTitle.start,
+        mainTitle.end,
+        (m) => m.name === "episode_details" || m.name === "country" || m.name === "language"
+      );
+      const absorbed = Array.isArray(absorbedRaw) ? absorbedRaw : absorbedRaw ? [absorbedRaw] : [];
+      for (const m of absorbed) if (!toRemove.includes(m)) toRemove.push(m);
     }
     return { toAppend, toRemove };
   }
@@ -5459,7 +5479,14 @@ const _EpisodeTitleFromPosition = class _EpisodeTitleFromPosition extends Rule {
     this.previousNames = ["episode", "episode_count", "season", "season_count", "date", "title", "year"];
   }
   isIgnored(match) {
-    return match.name === "language" || match.name === "country" || match.name === "episode_details";
+    if (!(match.name === "language" || match.name === "country" || match.name === "episode_details")) {
+      return false;
+    }
+    const raw = match.raw ?? "";
+    if (match.end - match.start > 3 && raw !== "" && raw === raw.toUpperCase() && raw !== raw.toLowerCase()) {
+      return false;
+    }
+    return true;
   }
   when(matches, _context) {
     const toAppend = [];
@@ -5491,7 +5518,44 @@ const _EpisodeTitleFromPosition = class _EpisodeTitleFromPosition extends Rule {
         predicate: (m) => !!m.value
       });
       const holeArray = Array.isArray(holesResult) ? holesResult : holesResult ? [holesResult] : [];
+      const inp = matches.inputString || "";
       for (const hole of holeArray) {
+        const groupMarker = matches.markers?.atMatch?.(hole, (m) => m.name === "group", 0);
+        if (groupMarker) {
+          const yearInGroup = matches.range(
+            groupMarker.start,
+            groupMarker.end,
+            (m) => (m.name === "year" || m.name === "date") && !m.private,
+            0
+          );
+          if (yearInGroup) continue;
+        }
+        const cropName = (m) => m.name === "language" || m.name === "country";
+        const fpLangsRaw = matches.range(filepart.start, filepart.end, (m) => cropName(m));
+        const langArr = Array.isArray(fpLangsRaw) ? fpLangsRaw : fpLangsRaw ? [fpLangsRaw] : [];
+        let guard = 0;
+        while (guard++ < 64) {
+          let e = hole.end;
+          while (e > hole.start && seps.includes(inp[e - 1])) e--;
+          if (e <= hole.start) break;
+          const cover = langArr.find((m) => m.start <= e - 1 && m.end >= e);
+          if (cover && cover.start < hole.end) {
+            hole.end = Math.min(hole.end, cover.start);
+          } else break;
+        }
+        guard = 0;
+        while (guard++ < 64) {
+          let s = hole.start;
+          while (s < hole.end && seps.includes(inp[s])) s++;
+          if (s >= hole.end) break;
+          const cover = langArr.find((m) => m.start <= s && m.end >= s + 1);
+          if (cover && cover.end > hole.start) {
+            hole.start = Math.max(hole.start, cover.end);
+          } else break;
+        }
+        while (hole.start < hole.end && seps.includes(inp[hole.start])) hole.start++;
+        while (hole.end > hole.start && seps.includes(inp[hole.end - 1])) hole.end--;
+        if (hole.end <= hole.start || !hole.value) continue;
         const prevPred = (m) => !m.private && this.previousNames.includes(m.name ?? "");
         const prevMatches = matches.range(filepart.start, hole.start, prevPred);
         const prevArr = Array.isArray(prevMatches) ? prevMatches : prevMatches ? [prevMatches] : [];
@@ -5796,7 +5860,7 @@ const LANGUAGES = [
   { alpha3: "fin", alpha2: "fi", name: "Finnish", opensubtitles: "fin" },
   { alpha3: "hun", alpha2: "hu", name: "Hungarian", opensubtitles: "hun" },
   { alpha3: "ces", alpha2: "cs", name: "Czech", opensubtitles: "cze" },
-  { alpha3: "rum", alpha2: "ro", name: "Romanian", opensubtitles: "rum" },
+  { alpha3: "ron", alpha2: "ro", name: "Romanian", opensubtitles: "rum" },
   { alpha3: "ukr", alpha2: "uk", name: "Ukrainian", opensubtitles: "ukr" },
   { alpha3: "heb", alpha2: "he", name: "Hebrew", opensubtitles: "heb" },
   { alpha3: "cat", alpha2: "ca", name: "Catalan", opensubtitles: "cat" },
@@ -6143,23 +6207,33 @@ class LanguageFinder {
         regularLangMap.get(key).add(match);
       }
     }
+    const emitted = /* @__PURE__ */ new Set();
+    const emit = (m) => {
+      const key = `${m.propertyName}:${m.word.start}-${m.word.end}:${m.lang.alpha3}`;
+      if (emitted.has(key)) return void 0;
+      emitted.add(key);
+      return this.toRebulkMatch(m);
+    };
     for (const [key, values] of multiMap) {
       if (regularLangMap.has(key) || !undeterminedMap.has(key)) {
         for (const value of values) {
-          yield this.toRebulkMatch(value);
+          const r = emit(value);
+          if (r) yield r;
         }
       }
     }
     for (const [key, values] of undeterminedMap) {
       if (!regularLangMap.has(key)) {
         for (const value of values) {
-          yield this.toRebulkMatch(value);
+          const r = emit(value);
+          if (r) yield r;
         }
       }
     }
     for (const values of regularLangMap.values()) {
       for (const value of values) {
-        yield this.toRebulkMatch(value);
+        const r = emit(value);
+        if (r) yield r;
       }
     }
   }
@@ -6281,7 +6355,13 @@ class LanguageFinder {
             let matchEnd = currentWord.end;
             if (currentWord !== word) {
               const trimmedValue = value.trim();
-              if (trimmedValue && fallbackWord) {
+              if (trimmedValue && word && word.value.toLowerCase() === trimmedValue) {
+                matchStart = word.start;
+                matchEnd = word.end;
+              } else if (trimmedValue && word && word.nextWord && word.nextWord.value.toLowerCase() === trimmedValue) {
+                matchStart = word.nextWord.start;
+                matchEnd = word.nextWord.end;
+              } else if (trimmedValue && fallbackWord) {
                 matchStart = fallbackWord.start;
                 matchEnd = fallbackWord.end;
               }
@@ -6530,30 +6610,29 @@ const _RemoveCommonWordsLanguageRule = class _RemoveCommonWordsLanguageRule exte
     this.consequence = RemoveMatch;
     this.priority = 32;
   }
-  when(matches, context) {
+  when(matches, _context) {
     const toRemove = [];
-    const fileparts = matches.markers?.named("path") || [];
-    const filepartArr = Array.isArray(fileparts) ? fileparts : fileparts ? [fileparts] : [];
-    for (const filepart of filepartArr) {
-      const langs = matches.range?.(
-        filepart.start,
-        filepart.end,
-        (m) => m.name === "language" || m.name === "subtitle_language"
-      ) || [];
-      const commonLangs = langs.filter((m) => m.tags?.includes("common"));
-      const nonCommonLangs = langs.filter((m) => !m.tags?.includes("common"));
-      if (nonCommonLangs.length === 0) {
-        toRemove.push(...commonLangs);
-      } else {
-        const groups2 = matches.markers?.named?.("group") || [];
-        const groupArr = Array.isArray(groups2) ? groups2 : groups2 ? [groups2] : [];
-        const isInGroup = (m) => groupArr.some((g) => m.start >= g.start && m.end <= g.end);
-        const nonCommonOutsideGroups = nonCommonLangs.filter((m) => !isInGroup(m));
-        if (nonCommonOutsideGroups.length === 0) {
-          const commonOutsideGroups = commonLangs.filter((m) => !isInGroup(m));
-          toRemove.push(...commonOutsideGroups);
-        }
+    const all = matches.range?.(0, matches.inputString?.length ?? 0, (m) => m.name === "language" || m.name === "subtitle_language") || [];
+    const allArr = Array.isArray(all) ? all : all ? [all] : [];
+    for (const match of allArr) {
+      if (!match.tags?.includes("common")) continue;
+      const group = matches.markers?.atMatch?.(match, (m) => m.name === "group", 0);
+      if (group) {
+        const nonLang = matches.range?.(
+          group.start,
+          group.end,
+          (m) => m.name !== "language" && m.name !== "subtitle_language"
+        );
+        const hasNonLang = Array.isArray(nonLang) ? nonLang.length > 0 : !!nonLang;
+        const holesRes = matches.holes?.(
+          group.start,
+          group.end,
+          { predicate: (m) => m.value && [...String(m.value)].some((c) => !seps.includes(c)) }
+        );
+        const hasContentHoles = Array.isArray(holesRes) ? holesRes.length > 0 : !!holesRes;
+        if (!hasNonLang && !hasContentHoles) continue;
       }
+      toRemove.push(match);
     }
     return toRemove.length > 0 ? toRemove : false;
   }
@@ -6596,6 +6675,34 @@ const _RemoveUndeterminedLanguagesRule = class _RemoveUndeterminedLanguagesRule 
 };
 _RemoveUndeterminedLanguagesRule.priority = 32;
 let RemoveUndeterminedLanguagesRule = _RemoveUndeterminedLanguagesRule;
+class DedupLanguageRule extends Rule {
+  constructor() {
+    super(...arguments);
+    this.consequence = RemoveMatch;
+    this.dependency = [SubtitlePrefixLanguageRule, SubtitleSuffixLanguageRule, SubtitleExtensionRule];
+  }
+  identity(match) {
+    const v = match.value;
+    if (v instanceof Language) {
+      const country2 = v.country;
+      return `${v.alpha3}:${country2 ? String(country2) : ""}`;
+    }
+    return String(v);
+  }
+  when(matches) {
+    const toRemove = [];
+    for (const name of ["language", "subtitle_language"]) {
+      const list = [...matches.named(name) || []].sort((a, b) => a.start - b.start || a.end - b.end);
+      const seen = /* @__PURE__ */ new Set();
+      for (const m of list) {
+        const key = `${m.start}-${m.end}:${this.identity(m)}`;
+        if (seen.has(key)) toRemove.push(m);
+        else seen.add(key);
+      }
+    }
+    return toRemove.length > 0 ? toRemove : false;
+  }
+}
 function language(config, commonWords) {
   const subtitleBoth = config.subtitle_affixes;
   const subtitlePrefixes = [
@@ -6670,7 +6777,8 @@ function language(config, commonWords) {
     SubtitleExtensionRule,
     RemoveCommonWordsLanguageRule,
     RemoveLanguageRule,
-    RemoveUndeterminedLanguagesRule
+    RemoveUndeterminedLanguagesRule,
+    DedupLanguageRule
   );
   return rebulk;
 }
@@ -6828,6 +6936,9 @@ class DashSeparatedReleaseGroup extends Rule {
         return false;
       }
       if (matches.markers.atMatch(candidate, (m) => m.name === "group", 0)) {
+        return false;
+      }
+      if (matches.range(candidate.start, candidate.end, (m) => m.name === "episode", 0)) {
         return false;
       }
       const firstHole = matches.holes(
@@ -7613,9 +7724,35 @@ function bonus(config) {
   const rebulk = new Rebulk({ disabled: (context) => isDisabled(context, "bonus") });
   rebulk.regexDefaults({ name: "bonus", flags: "i" });
   loadConfigPatterns(rebulk, config["bonus"]);
-  rebulk.rules(BonusToEpisodeRule, BonusTitleRule);
+  rebulk.rules(BonusAtFilepartStartRule, BonusToEpisodeRule, BonusTitleRule);
   return rebulk;
 }
+const _BonusAtFilepartStartRule = class _BonusAtFilepartStartRule extends Rule {
+  when(matches) {
+    const inputString = matches.inputString || "";
+    const bonuses = matches.named("bonus")?.filter((m) => !m.private) ?? [];
+    const toRemove = [];
+    for (const bonus2 of bonuses) {
+      const filepart = matches.markers.atMatch(bonus2, (m) => m.name === "path", 0);
+      if (!filepart) continue;
+      const parent = bonus2.parent;
+      const xStart = parent ? parent.start : bonus2.start - 1;
+      const before = inputString.slice(filepart.start, xStart);
+      if ([...before].every((c) => seps.includes(c))) {
+        toRemove.push(bonus2);
+        if (parent) toRemove.push(parent);
+      }
+    }
+    return toRemove;
+  }
+  then(matches, whenResponse) {
+    for (const m of whenResponse) {
+      matches.remove(m);
+    }
+  }
+};
+_BonusAtFilepartStartRule.priority = 128;
+let BonusAtFilepartStartRule = _BonusAtFilepartStartRule;
 const _BonusToEpisodeRule = class _BonusToEpisodeRule extends Rule {
   when(matches) {
     const bonuses = matches.named("bonus")?.filter((m) => !m.private) ?? [];
@@ -7970,7 +8107,16 @@ const MIMETYPE_MAP = {
   "gif": "image/gif",
   "zip": "application/zip",
   "rar": "application/x-rar-compressed",
-  "pdf": "application/pdf"
+  "pdf": "application/pdf",
+  // .srt subtitles are plain text (matches Python's text/plain).
+  "srt": "text/plain",
+  // MPEG transport stream (Blu-ray/DVD/broadcast). video/mp2t is the correct
+  // IANA type — Python's mimetypes returns a bogus "text/vnd.trolltech.linguist"
+  // for .ts, so here we intentionally diverge to the *correct* value.
+  "ts": "video/mp2t",
+  // Disc image and torrent — both correct and match Python.
+  "iso": "application/x-iso9660-image",
+  "torrent": "application/x-bittorrent"
 };
 function mimetype(_config) {
   const rebulk = new Rebulk({ disabled: (context) => isDisabled(context, "mimetype") });
@@ -9392,6 +9538,26 @@ const advanced_config = {
         string: "3D",
         tags: "has-neighbor"
       },
+      "Half SBS": {
+        string: [
+          "HSBS"
+        ],
+        regex: [
+          "Half-?SBS"
+        ],
+        tags: "has-neighbor"
+      },
+      "Half OU": {
+        string: [
+          "HOU",
+          "HTAB"
+        ],
+        regex: [
+          "Half-?OU",
+          "Half-?TAB"
+        ],
+        tags: "has-neighbor"
+      },
       "High Quality": {
         string: "HQ",
         tags: "uhdbluray-neighbor"
@@ -10091,6 +10257,18 @@ class GuessItApi {
         !!mergedOptions["enforceList"] || !!mergedOptions["enforce_list"]
       );
       const result = Object.fromEntries(matchesDict);
+      for (const key of ["language", "subtitle_language"]) {
+        const v = result[key];
+        if (!Array.isArray(v)) continue;
+        const seen = /* @__PURE__ */ new Set();
+        const deduped = v.filter((lang) => {
+          const id = lang && typeof lang === "object" && "alpha3" in lang ? `${lang.alpha3}:${lang.country ?? ""}` : String(lang);
+          if (seen.has(id)) return false;
+          seen.add(id);
+          return true;
+        });
+        result[key] = deduped.length === 1 ? deduped[0] : deduped;
+      }
       if (mergedOptions["outputInputString"] || mergedOptions["output_input_string"]) {
         result["input_string"] = matches.inputString;
       }
