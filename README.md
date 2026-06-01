@@ -41,6 +41,11 @@ const result = guessit('The.Dark.Knight.2008.1080p.BluRay.x264-GROUP.mkv');
 //   container: 'mkv',
 //   type: 'movie'
 // }
+
+// Short titles are handled correctly too:
+guessit('X2.2003.720p.DSNP.WEB-DL.DDP5.1.H.264-EVO.mkv');
+// { title: 'X2', year: 2003, screen_size: '720p',
+//   streaming_service: 'Disney+', source: 'Web', ... }
 ```
 
 ### CommonJS
