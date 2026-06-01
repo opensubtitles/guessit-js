@@ -92,6 +92,11 @@ npm run wasm
 echo '{"filename":"Movie.2024.1080p.mkv"}' | wasmtime wasm/guessit.wasm
 ```
 
+**Known limitation:** the QuickJS runtime used by Javy does not provide JS-engine
+Unicode accent normalization, so filenames with diacritics may yield titles that
+differ slightly from the JS build (e.g. `Rêves` → `Reves`). Non-accented input
+matches the JS build exactly.
+
 ## Performance
 
 | Runtime | ms/parse | vs Python |

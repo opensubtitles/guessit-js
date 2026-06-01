@@ -91,9 +91,21 @@ abstract class TitleBaseRule extends Rule {
 
   /**
    * Determine if a match should be ignored (e.g., language, country).
+   *
+   * Python parity: a full-word (len > 3) UPPERCASE language/country is a real
+   * token, not title filler, so it is NOT ignored — e.g. the trailing "FRENCH"
+   * in "...XViD-NTK.FRENCH..." must not be pulled into an alternative_title.
+   * Lowercase or short (<= 3 char) language/country codes remain ignored.
    */
   protected isIgnored(match: Match): boolean {
-    return match.name === 'language' || match.name === 'country' || match.name === 'episode_details';
+    if (!(match.name === 'language' || match.name === 'country' || match.name === 'episode_details')) {
+      return false;
+    }
+    const raw = match.raw ?? '';
+    if (match.end - match.start > 3 && raw !== '' && raw === raw.toUpperCase() && raw !== raw.toLowerCase()) {
+      return false;
+    }
+    return true;
   }
 
   /**

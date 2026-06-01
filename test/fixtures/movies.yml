@@ -1880,3 +1880,16 @@
   release_group: DON
   container: mkv
   type: movie
+
+? X2.2003.720p.DSNP.WEB-DL.DDP5.1.H.264-EVO.mkv
+: title: X2
+  year: 2003
+  screen_size: 720p
+  streaming_service: Disney+
+  source: Web
+  audio_codec: Dolby Digital Plus
+  audio_channels: '5.1'
+  video_codec: H.264
+  release_group: EVO
+  container: mkv
+  type: movie
