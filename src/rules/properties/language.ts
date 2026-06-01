@@ -357,6 +357,13 @@ class LanguageFinder {
                 // Value lives in the leading word ("German.Sub" -> "german").
                 matchStart = word.start;
                 matchEnd = word.end;
+              } else if (trimmedValue && word && word.nextWord && word.nextWord.value.toLowerCase() === trimmedValue) {
+                // Value lives in the word after the affix ("Subtitulado.Esp",
+                // prefix "subtitulado" -> value "esp" lives in "Esp"). Without
+                // this it narrowed to fallbackWord (the word *before* the affix,
+                // e.g. "HDTV" -> spa).
+                matchStart = word.nextWord.start;
+                matchEnd = word.nextWord.end;
               } else if (trimmedValue && fallbackWord) {
                 // Default: value lives in the trailing word ("Dubbed.DL" -> "dl"),
                 // or a compound the affix applies to ("Sub.Fr-Eng").

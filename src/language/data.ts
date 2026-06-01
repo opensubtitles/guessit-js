@@ -34,7 +34,7 @@ export const LANGUAGES: LanguageData[] = [
   { alpha3: 'fin', alpha2: 'fi', name: 'Finnish', opensubtitles: 'fin' },
   { alpha3: 'hun', alpha2: 'hu', name: 'Hungarian', opensubtitles: 'hun' },
   { alpha3: 'ces', alpha2: 'cs', name: 'Czech', opensubtitles: 'cze' },
-  { alpha3: 'rum', alpha2: 'ro', name: 'Romanian', opensubtitles: 'rum' },
+  { alpha3: 'ron', alpha2: 'ro', name: 'Romanian', opensubtitles: 'rum' },
   { alpha3: 'ukr', alpha2: 'uk', name: 'Ukrainian', opensubtitles: 'ukr' },
   { alpha3: 'heb', alpha2: 'he', name: 'Hebrew', opensubtitles: 'heb' },
   { alpha3: 'cat', alpha2: 'ca', name: 'Catalan', opensubtitles: 'cat' },
