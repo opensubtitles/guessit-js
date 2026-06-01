@@ -5,8 +5,16 @@ Goal is **"JS should be correct"**, not blind parity — Python has real bugs to
 Regenerate the raw diff with `node --import tsx scripts/pydiff.mjs --cat`; format is
 `key: <python> vs <js>`.
 
-**Verdict counts:** FIX = 52 · KEEP (JS better) = 31 · NEUTRAL (debatable) = 33
-(total 116 inputs; some inputs appear in two buckets).
+**Verdict counts (approx):** FIX ≈ 48 · KEEP (JS better) ≈ 36 · NEUTRAL ≈ 33.
+Some inputs appear in two buckets.
+
+**Note on "stray token" leaks:** the right fix for a junk token landing in
+title/alternative_title is usually NOT to refactor the title rule, but to
+**recognize the token** as a real value so it stops being a stray hole — e.g.
+`Half-OU`/`Half-SBS` were leaking into alternative_title; adding them to the
+`other` config (stereoscopic 3D layouts) both captures the info AND removes the
+leak. This can *increase* a pydiff `other`-diff (Python doesn't recognize them)
+while *removing* a defect — a KEEP, not a regression.
 
 Legend:
 - **FIX** — JS is wrong (junk/phantom/duplicate field). Make JS match Python.
@@ -36,7 +44,12 @@ All FIX — a language is listed twice, or a non-language word is read as one.
 - `Bienvenue.Au.Gondwana…` — phantom `country au` (from French "Au")
 
 ### alternative_title that is really a director / edition / region / format code
-- `La petite bande (Michel Deville - 1983)…` — alt "michel deville" (**director**)
+**Distinguishing rule (verified):** a real alternative title is a *title* (often a
+foreign-language one) and carries no other metadata. A parenthetical that is a
+**director name + year** (`(Director, YYYY)`) is NOT an alt title — note the year
+inside the parens. This cleanly separates the FIX cases below from the KEEP cases
+(The Killers / Batoru Rowaiaru / The Prestige / Be Bad) further down.
+- `La petite bande (Michel Deville - 1983)…` — alt "michel deville" (**director**, verified)
 - `Mise à Sac (Alain Cavalier, 1967)…` — alt "alain cavalier" (**director**)
 - `El.Bosque.Animado.[Jose.Luis.Cuerda.1987]…` (×2) — alt "jose luis cuerda" (**director**)
 - `Heathers…ARROW…Plus.Comm…` — alt ["arrow","plus comm"] (**label + commentary**)
@@ -44,8 +57,6 @@ All FIX — a language is listed twice, or a non-language word is read as one.
 - `The.Stranger.1946.US.(Kino.Classics)…` — alt "kino classics" (**label**)
 - `InDefinitely.Maybe…EUR.BluRay…` — alt "eur" (**region code**)
 - `Suicide Squad EXTENDED…(HEVC 10bit BT709)…` — alt "bt" (**color-space fragment**)
-- `TEST…3D.BluRay.Half-OU…` (×2) — alt "half-ou" (**3D format; should be other/format**)
-- `TEST…3D.BluRay.Half-SBS…` (×2) — alt "half" (**3D format**)
 - `Hacksaw Ridge…& ATMOS…` — alt "&" (**junk punctuation**)
 - `MASH.(1970).[Divx.5.02]…` — alt "5" (**codec version fragment**)
 - `Dead Man Down…Custom NLSubs…` — alt "custom" (**release descriptor**)
@@ -108,12 +119,15 @@ they're listed under FIX above.)
 - `60.Minutes.2008…` — JS title "60 Minutes" (**correct show name**); Python drops "60" → "minutes"
 - `TEST…HC.WEBRip…` — JS `other: "Hardcoded Subtitles"` (**HC = hardcoded, correct**); Python omits
 - `Deadpool…UHD…` — JS `other` adds "Ultra HD" from UHD (reasonable); Python omits
-- `[XCT].Le.Prestige.(The.Prestige)…` — alt "the prestige" (**legit English title**)
+- `[XCT].Le.Prestige.(The.Prestige)…` — alt "the prestige" (**legit English title** of the French release)
 - `Battle.Royale.(Batoru.Rowaiaru)…` — alt "batoru rowaiaru" (**legit romaji title**)
-- `A Bout Portant (The Killers)…` — alt "the killers" (**legit English title**)
+- `A Bout Portant (The Killers)…` — alt "the killers" (**legit English title**; "À bout portant" 1964 = "The Killers", verified)
+- `Youth.In.Revolt.(Be.Bad)…` — alt "be bad" (**legit alt title**; "Be Bad!" is the French/intl release title, verified)
 - `PlayboyPlus.com_…` — JS extracts `website: playboyplus.com`; Python keeps it in title
 - `Duckman - 101 (01)…` / `Duckman - 110 (10)…` — JS `absolute_episode` 1/10 (reasonable)
 - `The Big Bang Theory S01E00…Unaired Pilot…` — JS episode_title "Unaired Pilot" (reasonable)
+- `TEST…3D.BluRay.Half-OU…` (×2) — JS `other: "Half OU"` (**stereoscopic 3D layout, captured**); Python drops it. *DONE — added Half-OU/HOU/HTAB to `other` config.*
+- `TEST…3D.BluRay.Half-SBS…` (×2) — JS `other: "Half SBS"`; Python drops it. *DONE — added Half-SBS/HSBS to `other` config.*
 
 ---
 
