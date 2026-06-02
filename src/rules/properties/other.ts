@@ -27,6 +27,7 @@ export function other(config: Record<string, unknown>) {
     ValidateStreamingServiceNeighbor,
     ValidateAtEnd,
     ValidateReal,
+    RemoveTitleCaseAmbiguous,
     ProperCountRule,
     FixCountRule
   );
@@ -404,6 +405,32 @@ class ValidateAtEnd extends Rule {
     }
 
     return toRemove;
+  }
+}
+
+/**
+ * Remove ambiguous word-values (Proper←"real", Converted←"convert",
+ * Camera←"cam") when their raw text is Title-Case (initial capital, rest
+ * lowercase). Scene tags are ALL-CAPS ("REAL", "CAM", "CONVERT") or all-lower;
+ * a Title-Case spelling means it's a title word, e.g. "The Cam", "Something
+ * Real", "The Convert". Runs before TitleFromPosition so the freed word rejoins
+ * the title/episode_title. (Issues #732, #743, #746, #784.)
+ */
+class RemoveTitleCaseAmbiguous extends Rule {
+  static consequence = RemoveMatch;
+  static priority = 64;
+
+  // Exact Title-Case spellings of words that double as common title words. The
+  // canonical tag spellings ("PROPER", "REAL.PROPER", "CAM", "CONVERT") and
+  // lowercase scene spellings are unaffected; only the Title-Case word is removed.
+  when(matches: any) {
+    const TITLE_WORDS = new Set(['Real', 'Cam', 'Convert']);
+    const ret: Match[] = [];
+    for (const m of matches.range(0, matches.inputString?.length ?? 0) as Match[]) {
+      if (m.name !== 'other' && m.name !== 'source') continue;
+      if (TITLE_WORDS.has(m.raw ?? '')) ret.push(m);
+    }
+    return ret.length ? ret : false;
   }
 }
 

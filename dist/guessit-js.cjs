@@ -7358,6 +7358,7 @@ function other(config) {
     ValidateStreamingServiceNeighbor,
     ValidateAtEnd,
     ValidateReal,
+    RemoveTitleCaseAmbiguous,
     ProperCountRule,
     FixCountRule
   );
@@ -7671,6 +7672,23 @@ const _ValidateAtEnd = class _ValidateAtEnd extends Rule {
 _ValidateAtEnd.priority = 32;
 _ValidateAtEnd.consequence = RemoveMatch;
 let ValidateAtEnd = _ValidateAtEnd;
+const _RemoveTitleCaseAmbiguous = class _RemoveTitleCaseAmbiguous extends Rule {
+  // Exact Title-Case spellings of words that double as common title words. The
+  // canonical tag spellings ("PROPER", "REAL.PROPER", "CAM", "CONVERT") and
+  // lowercase scene spellings are unaffected; only the Title-Case word is removed.
+  when(matches) {
+    const TITLE_WORDS = /* @__PURE__ */ new Set(["Real", "Cam", "Convert"]);
+    const ret = [];
+    for (const m of matches.range(0, matches.inputString?.length ?? 0)) {
+      if (m.name !== "other" && m.name !== "source") continue;
+      if (TITLE_WORDS.has(m.raw ?? "")) ret.push(m);
+    }
+    return ret.length ? ret : false;
+  }
+};
+_RemoveTitleCaseAmbiguous.consequence = RemoveMatch;
+_RemoveTitleCaseAmbiguous.priority = 64;
+let RemoveTitleCaseAmbiguous = _RemoveTitleCaseAmbiguous;
 const _ValidateReal = class _ValidateReal extends Rule {
   when(matches) {
     const ret = [];

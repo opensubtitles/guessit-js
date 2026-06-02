@@ -7722,6 +7722,7 @@ var GuessitJS = (() => {
       ValidateStreamingServiceNeighbor,
       ValidateAtEnd,
       ValidateReal,
+      RemoveTitleCaseAmbiguous,
       ProperCountRule,
       FixCountRule
     );
@@ -8049,6 +8050,24 @@ var GuessitJS = (() => {
   _ValidateAtEnd.priority = 32;
   _ValidateAtEnd.consequence = RemoveMatch;
   var ValidateAtEnd = _ValidateAtEnd;
+  var _RemoveTitleCaseAmbiguous = class _RemoveTitleCaseAmbiguous extends Rule {
+    // Exact Title-Case spellings of words that double as common title words. The
+    // canonical tag spellings ("PROPER", "REAL.PROPER", "CAM", "CONVERT") and
+    // lowercase scene spellings are unaffected; only the Title-Case word is removed.
+    when(matches) {
+      const TITLE_WORDS = /* @__PURE__ */ new Set(["Real", "Cam", "Convert"]);
+      const ret = [];
+      for (const m of matches.range(0, matches.inputString?.length ?? 0)) {
+        if (m.name !== "other" && m.name !== "source") continue;
+        if (TITLE_WORDS.has(m.raw ?? "")) ret.push(m);
+      }
+      return ret.length ? ret : false;
+    }
+  };
+  __name(_RemoveTitleCaseAmbiguous, "RemoveTitleCaseAmbiguous");
+  _RemoveTitleCaseAmbiguous.consequence = RemoveMatch;
+  _RemoveTitleCaseAmbiguous.priority = 64;
+  var RemoveTitleCaseAmbiguous = _RemoveTitleCaseAmbiguous;
   var _ValidateReal = class _ValidateReal extends Rule {
     when(matches) {
       const ret = [];
