@@ -1001,12 +1001,49 @@ class RemoveTailAlternativeTitle extends Rule {
   }
 }
 
+/**
+ * guessit-js can produce several `title` matches in one filepart (one per hole),
+ * leaving `title` as a list (["The Arrival","MadVR"], ["Show-A","Episode Title"],
+ * ["Show Name","and","Blah-Group"]). Python returns a single title. When the
+ * primary (first) title is a real title — not a lone stop-word — drop the later
+ * title fragments that sit *behind* a recognised property in the release tail,
+ * exactly as RemoveTailAlternativeTitle does for alt-titles. The first title is
+ * kept. Filepart whose first title is itself a stop-word (e.g. "From [tracker] -
+ * Real.Title") is left alone — there the real title is the *later* one.
+ */
+class RemoveTailTitle extends Rule {
+  static override priority = POST_PROCESS;
+  static override dependency = ['RenameEpisodeTitleWhenMovieType'];
+  override consequence = RemoveMatch;
+
+  override when(matches: Matches, _context: Context): Match[] | false {
+    const titleish = new Set(['year', 'title', 'alternative_title', 'episode_title', 'type']);
+    const out: Match[] = [];
+    for (const filepart of matches.markers.named('path') as Match[]) {
+      const titles = (matches.range(filepart.start, filepart.end,
+        (m: Match) => m.name === 'title') as Match[] | Match | undefined);
+      const titleArr = (Array.isArray(titles) ? titles : titles ? [titles] : [])
+        .slice().sort((a, b) => a.start - b.start);
+      if (titleArr.length < 2) continue;
+      const primary = titleArr[0];
+      const head = String(primary.value ?? '').trim().toLowerCase();
+      if (!head || TITLE_STOP_WORDS.has(head)) continue;
+      for (const t of titleArr.slice(1)) {
+        const between = matches.range(primary.end, t.start,
+          (m: Match) => !m.private && !!m.value && !titleish.has(m.name ?? ''), 0);
+        if (between) out.push(t);
+      }
+    }
+    return out.length ? out : false;
+  }
+}
+
 export function title(config: Record<string, unknown>): Rebulk {
   const rebulk = new Rebulk({
     disabled: (context: Context) => isDisabled(context, 'title'),
   });
 
-  rebulk.rules(CountryAtTitlePosition, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle);
+  rebulk.rules(CountryAtTitlePosition, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle);
 
   // Expected title functional pattern
   const expectedTitle = buildExpectedFunction('expected_title');
