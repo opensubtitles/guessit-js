@@ -489,7 +489,7 @@
         "High Resolution": "HR",
         "Line Dubbed": "LD",
         "Mic Dubbed": "MD",
-        "Micro HD": ["mHD", "HDLight"],
+        "Micro HD": {"string": ["mHD", "HDLight"], "regex": ["micro-?hd", "hd-?lite"]},
         "Low Definition": "LDTV",
         "High Frame Rate": "HFR",
         "Variable Frame Rate": "VFR",

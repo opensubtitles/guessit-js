@@ -7227,7 +7227,17 @@ const _ValidateStreamingService = class _ValidateStreamingService extends Rule {
     const toRemove = [];
     const allServices = matches.named("streaming_service");
     if (process.env.DEBUG_SS) console.log(`[VS.when] allServices count=${allServices.length}`);
+    const inp = matches.inputString || "";
     for (const service of allServices) {
+      const rawLen = (service.raw ?? "").length;
+      if (rawLen <= 3) {
+        const charAfter = inp[service.end];
+        const charBefore = inp[service.start - 1];
+        if (charAfter && /[a-z0-9]/i.test(charAfter) || charBefore && /[a-z0-9]/i.test(charBefore)) {
+          toRemove.push(service);
+          continue;
+        }
+      }
       const suffixPred = (m) => !m.private && m.tags?.includes("streaming_service.suffix");
       const prefixPred = (m) => !m.private && m.tags?.includes("streaming_service.prefix");
       const suffixMatches = matches.range(service.end, service.end + 30, suffixPred);
@@ -9568,10 +9578,16 @@ const advanced_config = {
       "High Resolution": "HR",
       "Line Dubbed": "LD",
       "Mic Dubbed": "MD",
-      "Micro HD": [
-        "mHD",
-        "HDLight"
-      ],
+      "Micro HD": {
+        string: [
+          "mHD",
+          "HDLight"
+        ],
+        regex: [
+          "micro-?hd",
+          "hd-?lite"
+        ]
+      },
       "Low Definition": "LDTV",
       "High Frame Rate": "HFR",
       "Variable Frame Rate": "VFR",
