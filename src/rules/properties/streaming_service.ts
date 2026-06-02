@@ -26,7 +26,21 @@ class ValidateStreamingService extends Rule {
     const toRemove = [];
     const allServices = matches.named('streaming_service');
     if (process.env.DEBUG_SS) console.log(`[VS.when] allServices count=${allServices.length}`);
+    const inp: string = matches.inputString || '';
     for (const service of allServices) {
+      // Reject a SHORT service abbreviation glued to surrounding word chars —
+      // it's really a substring of a longer token (e.g. "CN" inside the release
+      // group "CNHD" → bogus Cartoon Network). Long distinctive names glued to a
+      // recognised suffix (e.g. "NetflixUHD", "iTunesHD") are left alone.
+      const rawLen = (service.raw ?? '').length;
+      if (rawLen <= 3) {
+        const charAfter = inp[service.end];
+        const charBefore = inp[service.start - 1];
+        if ((charAfter && /[a-z0-9]/i.test(charAfter)) || (charBefore && /[a-z0-9]/i.test(charBefore))) {
+          toRemove.push(service);
+          continue;
+        }
+      }
       // Work around rebulk-js next()/previous() bug: they stop at the first position
       // with ANY match and filter by predicate, instead of continuing to find matches
       // that satisfy the predicate. Use range() to find suffix/prefix matches instead.

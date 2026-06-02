@@ -26,7 +26,7 @@ cases). Fixing it once should resolve many of these issues together. Tagged ★ 
 | 638 | https://github.com/guessit-io/guessit/issues/638 | ★ `Us.2019.mkv` → `Us` matched as country `US` not title | todo |
 | 640 | https://github.com/guessit-io/guessit/issues/640 | ★ `grown-ish` + trailing `[ettv]`/`[eztv]` flips title/release_group (same root as 634) | todo |
 | 646 | https://github.com/guessit-io/guessit/issues/646 | `Charlot.Policeman.1917...` → `season:19, episode:17`; pre-1920 year split into S/E | todo |
-| 651 | https://github.com/guessit-io/guessit/issues/651 | `...x264-CNHD` → `streaming_service:"Cartoon Network"` from `CN` in release group | todo |
+| 651 | https://github.com/guessit-io/guessit/issues/651 | `...x264-CNHD` → `streaming_service:"Cartoon Network"` from `CN` in release group | **fixed** (glued short-abbrev guard) |
 | 652 | https://github.com/guessit-io/guessit/issues/652 | ★ `The.Collector.2009...` → `title:"The"`, `edition:"Collector"` | todo |
 | 670 | https://github.com/guessit-io/guessit/issues/670 | `[SSA] Uma Musume...mkv` → `container:["ssa","mkv"]`, no release_group; leading `[SSA]` is group | todo |
 | 732 | https://github.com/guessit-io/guessit/issues/732 | ★ `Show.S01E01.Cam...` → `source:["Camera","Web"]`; "Cam" episode word → Camera source | todo |
@@ -55,7 +55,7 @@ cases). Fixing it once should resolve many of these issues together. Tagged ★ 
 | 599 | https://github.com/guessit-io/guessit/issues/599 | Feature: artist/album for music folders | middle |
 | 618 | https://github.com/guessit-io/guessit/issues/618 | Feature: VR support | middle |
 | 622 | https://github.com/guessit-io/guessit/issues/622 | Feature: extract imdb_id/tmdb/tvdb (`tt\d+`) | middle |
-| 630 | https://github.com/guessit-io/guessit/issues/630 | Feature: MicroHD / HDlite other-values | middle |
+| 630 | https://github.com/guessit-io/guessit/issues/630 | Feature: MicroHD / HDlite other-values | **fixed** (added MicroHD/HDlite) |
 | 637 | https://github.com/guessit-io/guessit/issues/637 | `E.60.2020...` → title "E", ep 60; real show "E:60" but ambiguous | middle |
 | 648 | https://github.com/guessit-io/guessit/issues/648 | Dolby Vision (DV/SL.DV/DL.DV) mis-parsed; new property, ambiguous tokens | middle |
 | 660 | https://github.com/guessit-io/guessit/issues/660 | `HI.SCORE.GIRL...` → `language:hi`; suppress 2-letter lang at title start (debatable) | middle |
