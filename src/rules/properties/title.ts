@@ -861,9 +861,11 @@ class CountryAtTitlePosition extends Rule {
   override when(matches: Matches, _context: Context): Match[] | false {
     const inp = (matches as any).inputString || '';
     const out: Match[] = [];
-    const countries = matches.named('country') as Match[] | Match | undefined;
-    const arr = Array.isArray(countries) ? countries : countries ? [countries] : [];
+    const cand = matches.range(0, inp.length,
+      (m: Match) => !m.private && ['country', 'other', 'edition'].includes(m.name ?? '')) as Match[] | Match | undefined;
+    const arr = Array.isArray(cand) ? cand : cand ? [cand] : [];
     for (const c of arr) {
+      // Title-Case raw only ("Us"/"Extras", not "US"/"PROPER"/lowercase tags).
       if (!/^[A-Z][a-z]+$/.test(c.raw ?? '')) continue;
       const filepart = matches.markers.atMatch(c, (m: Match) => m.name === 'path', 0) as Match | undefined;
       if (!filepart) continue;

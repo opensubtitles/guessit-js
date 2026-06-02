@@ -5439,8 +5439,12 @@ const _CountryAtTitlePosition = class _CountryAtTitlePosition extends Rule {
   when(matches, _context) {
     const inp = matches.inputString || "";
     const out = [];
-    const countries = matches.named("country");
-    const arr = Array.isArray(countries) ? countries : countries ? [countries] : [];
+    const cand = matches.range(
+      0,
+      inp.length,
+      (m) => !m.private && ["country", "other", "edition"].includes(m.name ?? "")
+    );
+    const arr = Array.isArray(cand) ? cand : cand ? [cand] : [];
     for (const c of arr) {
       if (!/^[A-Z][a-z]+$/.test(c.raw ?? "")) continue;
       const filepart = matches.markers.atMatch(c, (m) => m.name === "path", 0);
@@ -9845,6 +9849,27 @@ const advanced_config = {
         regex: [
           "VR180",
           "VR360"
+        ],
+        tags: "has-neighbor"
+      },
+      "Opening Credits": {
+        string: [
+          "NCOP",
+          "OPED"
+        ],
+        regex: [
+          "NC-?OP",
+          "creditless-?opening"
+        ],
+        tags: "has-neighbor"
+      },
+      "Ending Credits": {
+        string: [
+          "NCED"
+        ],
+        regex: [
+          "NC-?ED",
+          "creditless-?ending"
         ],
         tags: "has-neighbor"
       },
