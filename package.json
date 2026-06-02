@@ -51,7 +51,8 @@
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "start": "npx tsx server.ts",
-    "wasm": "bash wasm/build.sh"
+    "wasm": "bash wasm/build.sh",
+    "schema": "tsx scripts/collect-schema-data.mjs && tsx scripts/gen-schema.mjs"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
