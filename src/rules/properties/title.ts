@@ -10,7 +10,7 @@ import { sepsSurround } from '../common/validators.js';
 import { cleanup, reorderTitle } from '../common/formatters.js';
 import { markerSorted } from '../common/comparators.js';
 import { buildExpectedFunction } from '../common/expected.js';
-import { formatters } from 'rebulk-js';
+import { formatters, POST_PROCESS } from 'rebulk-js';
 import { titleSeps, seps } from '../common/index.js';
 
 // Function words that a title cannot meaningfully END on. If cropping a trailing
@@ -956,12 +956,57 @@ class RemoveNumericAlternativeTitle extends Rule {
   }
 }
 
+/**
+ * An `alternative_title` that begins after the year AND has a recognised release
+ * property (resolution, source, codec, edition, country, …) sitting *between* the
+ * year and the alt-title is a stray fragment from the release tail — a label,
+ * region or edition word that fell into a later hole (e.g.
+ * "Heathers.1988.1080p.BluRay.ARROW…" → alt "ARROW" after 1080p/BluRay;
+ * "…1975.Criterion.Collection…" → alt "Collection" after edition Criterion;
+ * "…1946.US.(Kino.Classics)…" → alt "Kino Classics" after country US). Drop it.
+ *
+ * A genuine alt-title is *contiguous* with the year (nothing but separators
+ * between them, e.g. "Show.Name.2015.Nice.Title.1080p" → alt "Nice Title";
+ * "London.2012.Olympics.CTV.Preview.Show.HDTV" → alt "Olympics CTV Preview
+ * Show") — Python keeps those, so we leave them alone.
+ */
+class RemoveTailAlternativeTitle extends Rule {
+  // Tail episode_titles become alternative_title in RenameEpisodeTitleWhenMovieType
+  // (POST_PROCESS); run after it so we see the renamed matches.
+  static override priority = POST_PROCESS;
+  static override dependency = ['RenameEpisodeTitleWhenMovieType'];
+  override consequence = RemoveMatch;
+
+  override when(matches: Matches, _context: Context): Match[] | false {
+    const alts = matches.named('alternative_title') as Match[] | Match | undefined;
+    const altArr = Array.isArray(alts) ? alts : alts ? [alts] : [];
+    if (!altArr.length) return false;
+    const titleish = new Set(['year', 'title', 'alternative_title', 'episode_title', 'type']);
+    const out: Match[] = [];
+    for (const alt of altArr) {
+      const filepart = matches.markers.atMatch(alt, (m) => m.name === 'path', 0) as Match | undefined;
+      if (!filepart) continue;
+      const years = matches.range(filepart.start, filepart.end, (m: Match) => m.name === 'year') as Match[] | Match | undefined;
+      const yearArr = Array.isArray(years) ? years : years ? [years] : [];
+      if (!yearArr.length) continue;
+      const yMax = Math.max(...yearArr.map((y) => y.end));
+      if (alt.start < yMax) continue;
+      // Keep alt-titles that are contiguous with the year; drop only those that
+      // sit behind another recognised property in the release tail.
+      const between = matches.range(yMax, alt.start,
+        (m: Match) => !m.private && !!m.value && !titleish.has(m.name ?? ''), 0);
+      if (between) out.push(alt);
+    }
+    return out.length ? out : false;
+  }
+}
+
 export function title(config: Record<string, unknown>): Rebulk {
   const rebulk = new Rebulk({
     disabled: (context: Context) => isDisabled(context, 'title'),
   });
 
-  rebulk.rules(CountryAtTitlePosition, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle);
+  rebulk.rules(CountryAtTitlePosition, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle);
 
   // Expected title functional pattern
   const expectedTitle = buildExpectedFunction('expected_title');
