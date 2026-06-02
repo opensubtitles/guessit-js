@@ -52,7 +52,8 @@
     "typecheck": "tsc --noEmit",
     "start": "npx tsx server.ts",
     "wasm": "bash wasm/build.sh",
-    "schema": "tsx scripts/collect-schema-data.mjs && tsx scripts/gen-schema.mjs"
+    "schema": "tsx scripts/collect-schema-data.mjs && tsx scripts/gen-schema.mjs",
+    "build:pages": "node scripts/build-pages.mjs"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",

@@ -24,6 +24,7 @@ var GuessitJS = (() => {
   // src/index.ts
   var src_exports = {};
   __export(src_exports, {
+    GUESSIT_SCHEMA: () => GUESSIT_SCHEMA,
     GuessItApi: () => GuessItApi,
     GuessItException: () => GuessItException,
     configure: () => configure,
@@ -2472,6 +2473,50 @@ var GuessitJS = (() => {
   __name(or_, "or_");
 
   // src/rules/common/formatters.ts
+  var DIACRITIC_MAP = (() => {
+    const groups2 = [
+      ["a", "\xE0\xE1\xE2\xE3\xE4\xE5\u0101\u0103\u0105\u01CE"],
+      ["ae", "\xE6"],
+      ["c", "\xE7\u0107\u0109\u010B\u010D"],
+      ["d", "\u010F\u0111"],
+      ["e", "\xE8\xE9\xEA\xEB\u0113\u0115\u0117\u0119\u011B"],
+      ["g", "\u011D\u011F\u0121\u0123"],
+      ["h", "\u0125\u0127"],
+      ["i", "\xEC\xED\xEE\xEF\u0129\u012B\u012D\u012F\u0131"],
+      ["j", "\u0135"],
+      ["k", "\u0137"],
+      ["l", "\u013A\u013C\u013E\u0140\u0142"],
+      ["n", "\xF1\u0144\u0146\u0148\u0149"],
+      ["o", "\xF2\xF3\xF4\xF5\xF6\xF8\u014D\u014F\u0151\u01D2"],
+      ["oe", "\u0153"],
+      ["r", "\u0155\u0157\u0159"],
+      ["s", "\u015B\u015D\u015F\u0161"],
+      ["t", "\u0163\u0165\u0167"],
+      ["u", "\xF9\xFA\xFB\xFC\u0169\u016B\u016D\u016F\u0171\u0173\u01D4"],
+      ["w", "\u0175"],
+      ["y", "\xFD\xFF\u0177"],
+      ["z", "\u017A\u017C\u017E"],
+      ["ss", "\xDF"]
+    ];
+    const map = {};
+    for (const [base, accented] of groups2) {
+      for (const ch of accented) {
+        map[ch] = base;
+        map[ch.toUpperCase()] = base.toUpperCase();
+      }
+    }
+    return map;
+  })();
+  function foldDiacritics(input) {
+    let out = "";
+    for (const ch of input) out += DIACRITIC_MAP[ch] ?? ch;
+    try {
+      out = out.normalize("NFD").replace(/[̀-ͯ]/g, "");
+    } catch {
+    }
+    return out;
+  }
+  __name(foldDiacritics, "foldDiacritics");
   var EXCLUDED_CLEAN_CHARS = /* @__PURE__ */ new Set([",", ":", ";", "-", "/", "\\"]);
   var cleanChars = seps.split("").filter((c) => !EXCLUDED_CLEAN_CHARS.has(c)).join("");
   function potentialBefore(i, inputString) {
@@ -3421,6 +3466,17 @@ var GuessitJS = (() => {
     const videos = config["videos"] || [];
     const torrent = config["torrent"] || [];
     const nzb = config["nzb"] || [];
+    const archives = config["archives"] || [];
+    const images = config["images"] || [];
+    if (archives.length) rebulk.regex("\\." + buildOrPattern(archives, void 0, true) + "$", {
+      exts: archives,
+      tags: ["extension", "archive"]
+    });
+    rebulk.regex("\\.r\\d{2}$", { tags: ["extension", "archive"] });
+    if (images.length) rebulk.regex("\\." + buildOrPattern(images, void 0, true) + "$", {
+      exts: images,
+      tags: ["extension", "image"]
+    });
     if (subtitles.length) rebulk.regex("\\." + buildOrPattern(subtitles, void 0, true) + "$", {
       exts: subtitles,
       tags: ["extension", "subtitle"]
@@ -5281,7 +5337,7 @@ var GuessitJS = (() => {
       let processedHoles = this.holesProcess(holeArray, matches, filepart);
       for (const hole of processedHoles) {
         if (!this.holeFilter(hole)) continue;
-        if (false) {
+        if (process.env.DEBUG_TITLE_TRIM) {
           const inp2 = matches.inputString ?? "";
           console.log(`[trim] hole="${inp2.slice(hole.start, hole.end)}" [${hole.start},${hole.end})`);
         }
@@ -5303,7 +5359,7 @@ var GuessitJS = (() => {
           }
           trimmedHole.end--;
         }
-        if (false) {
+        if (process.env.DEBUG_TITLE_TRIM) {
           const ignoredNames = ignoredArray.map((m) => `${m.name}="${inp.slice(m.start, m.end)}"@[${m.start},${m.end})`).join(", ");
           console.log(`  after pre-strip hole=[${trimmedHole.start},${trimmedHole.end}) ignoredArray=[${ignoredNames}]`);
         }
@@ -5311,7 +5367,7 @@ var GuessitJS = (() => {
           const firstIgnored = ignoredArray[0];
           if (firstIgnored.start === trimmedHole.start) {
             const keep = firstIgnored.name === "country" ? false : this.shouldKeep(trimmedHole, ignoredArray, true);
-            if (false) {
+            if (process.env.DEBUG_TITLE_TRIM) {
               console.log(`  leading trim: shouldKeep=${keep} for "${inp.slice(firstIgnored.start, firstIgnored.end)}"`);
             }
             if (keep) {
@@ -5392,7 +5448,7 @@ var GuessitJS = (() => {
             break;
           }
         }
-        if (false) {
+        if (process.env.DEBUG_TITLE_TRIM) {
           console.log(`  result: hole=[${trimmedHole.start},${trimmedHole.end}) length=${trimmedHole.length} value="${trimmedHole.value}"`);
         }
         if (trimmedHole.length > 0 && !this.shouldRemove(trimmedHole) && trimmedHole.value) {
@@ -5432,7 +5488,7 @@ var GuessitJS = (() => {
         if (index === 0) continue;
         const filepart = fileparts[index];
         const fpMatches = matches.range(filepart.start, filepart.end).filter((m) => !m.private);
-        if (false) {
+        if (process.env.DEBUG_TITLE) {
           const inp = matches.inputString ?? "";
           console.log(`[_serieNameFilepart] index=${index} fp="${inp.slice(filepart.start, filepart.end)}" fpMatches=${fpMatches.map((m) => `${m.name}="${m.value}"@[${m.start},${m.end})`).join(",")}`);
           if (fpMatches[0]) {
@@ -5462,7 +5518,7 @@ var GuessitJS = (() => {
         0
       );
       if (existingTitle) {
-        if (false) {
+        if (process.env.DEBUG_TITLE) {
           const inp = matches.inputString ?? "";
           console.log(`[_serieNameFilepartMatch] fp="${inp.slice(serieNameFilepart.start, serieNameFilepart.end)}" found existing title="${existingTitle.value}"`);
         }
@@ -5478,7 +5534,7 @@ var GuessitJS = (() => {
       });
       const holeArray = Array.isArray(holesResult) ? holesResult : holesResult ? [holesResult] : [];
       const processedHoles = this.holesProcess(holeArray, matches, serieNameFilepart);
-      if (false) {
+      if (process.env.DEBUG_TITLE) {
         const inp = matches.inputString ?? "";
         console.log(`[_serieNameFilepartMatch] fp="${inp.slice(serieNameFilepart.start, serieNameFilepart.end)}" holeArray=${holeArray.length} processedHoles=${processedHoles.length}`);
         processedHoles.forEach((h, i) => console.log(`  hole[${i}]="${inp.slice(h.start, h.end)}" value="${h.value}"`));
@@ -5508,7 +5564,7 @@ var GuessitJS = (() => {
       if (serieNameFilepart) {
         serieNameMatch = this._serieNameFilepartMatch(matches, serieNameFilepart, toAppend, toRemove);
       }
-      if (false) {
+      if (process.env.DEBUG_TITLE) {
         const inp = matches.inputString ?? "";
         console.log(`[when] sortedFileparts: ${sortedFileparts.map((fp) => `"${inp.slice(fp.start, fp.end)}"`).join(", ")}`);
         console.log(`[when] serieNameFilepart: ${serieNameFilepart ? `"${inp.slice(serieNameFilepart.start, serieNameFilepart.end)}"` : "null"}`);
@@ -5525,13 +5581,7 @@ var GuessitJS = (() => {
         const result = this.checkTitlesInFilepart(filepart, matches);
         if (result.toAppend.length > 0 || result.toRemove.length > 0) {
           if (serieNameMatch) {
-            const normTitle = /* @__PURE__ */ __name((s) => {
-              try {
-                s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-              } catch {
-              }
-              return s.replace(/[''`]/g, "").replace(/\.+$/, "").toLowerCase().trim();
-            }, "normTitle");
+            const normTitle = /* @__PURE__ */ __name((s) => foldDiacritics(s).replace(/[''`]/g, "").replace(/\.+$/, "").toLowerCase().trim(), "normTitle");
             for (const titleMatch of result.toAppend) {
               if (normTitle(String(titleMatch.value)) !== normTitle(String(serieNameMatch.value))) {
                 titleMatch.name = "episode_title";
@@ -5553,13 +5603,7 @@ var GuessitJS = (() => {
             continue;
           }
           const newVal = String(newTitle.value ?? "");
-          const norm = /* @__PURE__ */ __name((s) => {
-            try {
-              s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            } catch {
-            }
-            return s.replace(/[''`]/g, "").toLowerCase();
-          }, "norm");
+          const norm = /* @__PURE__ */ __name((s) => foldDiacritics(s).replace(/[''`]/g, "").toLowerCase(), "norm");
           const existingIdx = toAppend.findIndex((m) => {
             const existingVal = String(m.value ?? "");
             return norm(existingVal) === norm(newVal) && existingVal !== newVal;
@@ -5803,11 +5847,118 @@ var GuessitJS = (() => {
   __name(_PropertyAtTitlePositionAsTitle, "PropertyAtTitlePositionAsTitle");
   _PropertyAtTitlePositionAsTitle.priority = -48;
   var PropertyAtTitlePositionAsTitle = _PropertyAtTitlePositionAsTitle;
+  var _RemoveNumericAlternativeTitle = class _RemoveNumericAlternativeTitle extends Rule {
+    constructor() {
+      super(...arguments);
+      this.consequence = RemoveMatch;
+    }
+    when(matches, _context) {
+      const alts = matches.named("alternative_title");
+      const altArr = Array.isArray(alts) ? alts : alts ? [alts] : [];
+      if (!altArr.length) return false;
+      const out = [];
+      for (const alt of altArr) {
+        const raw = String(alt.raw ?? alt.value ?? "");
+        if (!/^[\d\s.~_-]+$/.test(raw) || !/\d/.test(raw)) continue;
+        const filepart = matches.markers.atMatch(alt, (m) => m.name === "path", 0);
+        if (!filepart) continue;
+        const hasEpisode = matches.range(
+          filepart.start,
+          filepart.end,
+          (m) => m.name === "episode" || m.name === "absolute_episode",
+          0
+        );
+        if (hasEpisode) out.push(alt);
+      }
+      return out.length ? out : false;
+    }
+  };
+  __name(_RemoveNumericAlternativeTitle, "RemoveNumericAlternativeTitle");
+  _RemoveNumericAlternativeTitle.priority = -64;
+  var RemoveNumericAlternativeTitle = _RemoveNumericAlternativeTitle;
+  var _RemoveTailAlternativeTitle = class _RemoveTailAlternativeTitle extends Rule {
+    constructor() {
+      super(...arguments);
+      this.consequence = RemoveMatch;
+    }
+    when(matches, _context) {
+      const alts = matches.named("alternative_title");
+      const altArr = Array.isArray(alts) ? alts : alts ? [alts] : [];
+      if (!altArr.length) return false;
+      const titleish = /* @__PURE__ */ new Set(["year", "title", "alternative_title", "episode_title", "type"]);
+      const out = [];
+      for (const alt of altArr) {
+        const filepart = matches.markers.atMatch(alt, (m) => m.name === "path", 0);
+        if (!filepart) continue;
+        const years = matches.range(filepart.start, filepart.end, (m) => m.name === "year");
+        const yearArr = Array.isArray(years) ? years : years ? [years] : [];
+        if (!yearArr.length) continue;
+        const yMax = Math.max(...yearArr.map((y) => y.end));
+        if (alt.start < yMax) continue;
+        const between = matches.range(
+          yMax,
+          alt.start,
+          (m) => !m.private && !!m.value && !titleish.has(m.name ?? ""),
+          0
+        );
+        if (between) out.push(alt);
+      }
+      return out.length ? out : false;
+    }
+  };
+  __name(_RemoveTailAlternativeTitle, "RemoveTailAlternativeTitle");
+  // Tail episode_titles become alternative_title in RenameEpisodeTitleWhenMovieType
+  // (POST_PROCESS); run after it so we see the renamed matches.
+  _RemoveTailAlternativeTitle.priority = POST_PROCESS;
+  _RemoveTailAlternativeTitle.dependency = ["RenameEpisodeTitleWhenMovieType"];
+  var RemoveTailAlternativeTitle = _RemoveTailAlternativeTitle;
+  var _RemoveTailTitle = class _RemoveTailTitle extends Rule {
+    constructor() {
+      super(...arguments);
+      this.consequence = RemoveMatch;
+    }
+    when(matches, _context) {
+      const titleish = /* @__PURE__ */ new Set(["year", "title", "alternative_title", "episode_title", "type"]);
+      const out = [];
+      for (const filepart of matches.markers.named("path")) {
+        const titles = matches.range(
+          filepart.start,
+          filepart.end,
+          (m) => m.name === "title"
+        );
+        const titleArr = (Array.isArray(titles) ? titles : titles ? [titles] : []).slice().sort((a, b) => a.start - b.start);
+        if (titleArr.length < 2) continue;
+        const primary = titleArr[0];
+        const head = String(primary.value ?? "").trim().toLowerCase();
+        if (!head) continue;
+        if (TITLE_STOP_WORDS.has(head)) {
+          if (titleArr.slice(1).some((t) => !TITLE_STOP_WORDS.has(String(t.value ?? "").trim().toLowerCase()))) {
+            out.push(primary);
+          }
+          continue;
+        }
+        for (const t of titleArr.slice(1)) {
+          const between = matches.range(
+            primary.end,
+            t.start,
+            (m) => !m.private && !!m.value && !titleish.has(m.name ?? ""),
+            0
+          );
+          if (between) out.push(t);
+        }
+      }
+      return out.length ? out : false;
+    }
+  };
+  __name(_RemoveTailTitle, "RemoveTailTitle");
+  _RemoveTailTitle.priority = POST_PROCESS;
+  _RemoveTailTitle.dependency = ["RenameEpisodeTitleWhenMovieType"];
+  var RemoveTailTitle = _RemoveTailTitle;
   function title(config) {
     const rebulk = new Rebulk({
       disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "title"), "disabled")
     });
-    rebulk.rules(CountryAtTitlePosition, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle);
+    rebulk.rules(CountryAtTitlePosition, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle);
     const expectedTitle = buildExpectedFunction("expected_title");
     rebulk.functional(expectedTitle, {
       name: "title",
@@ -5845,11 +5996,258 @@ var GuessitJS = (() => {
       Filepart3EpisodeTitle,
       Filepart2EpisodeTitle,
       NumericEpisodeTitleToEpisode,
+      RemoveEpisodeTitleInReleaseGroup,
+      RemoveEpisodeMarkerWordTitle,
+      RemoveEpisodeTitleCoveredByDetailsInGroup,
+      RemoveFansubCreditEpisodeTitle,
+      RemoveSubtitleDescriptorEpisodeTitle,
+      RemoveHashFilepartJunk,
+      RemoveTailEpisodeTitle,
       RenameEpisodeTitleWhenMovieType
     );
     return rebulk;
   }
   __name(episodeTitle, "episodeTitle");
+  var EPISODE_MARKER_WORDS = /* @__PURE__ */ new Set([
+    "ep",
+    "eps",
+    "episode",
+    "episodes",
+    "episodio",
+    "episodios",
+    "cap",
+    "capitulo",
+    "capitulos",
+    "folge",
+    "e"
+  ]);
+  var _RemoveEpisodeMarkerWordTitle = class _RemoveEpisodeMarkerWordTitle extends Rule {
+    constructor() {
+      super(...arguments);
+      this.consequence = RemoveMatch;
+    }
+    when(matches, _context) {
+      const ets = matches.named("episode_title");
+      const etArr = Array.isArray(ets) ? ets : ets ? [ets] : [];
+      if (!etArr.length) return false;
+      const out = [];
+      for (const et of etArr) {
+        if (!EPISODE_MARKER_WORDS.has(String(et.value ?? "").trim().toLowerCase())) continue;
+        const next = matches.range(
+          et.end,
+          matches.inputString?.length ?? et.end + 100,
+          (m) => !m.private && !!m.value,
+          0
+        );
+        if (next && next.name === "episode") out.push(et);
+      }
+      return out.length ? out : false;
+    }
+  };
+  __name(_RemoveEpisodeMarkerWordTitle, "RemoveEpisodeMarkerWordTitle");
+  _RemoveEpisodeMarkerWordTitle.priority = POST_PROCESS;
+  var RemoveEpisodeMarkerWordTitle = _RemoveEpisodeMarkerWordTitle;
+  var _RemoveHashFilepartJunk = class _RemoveHashFilepartJunk extends Rule {
+    constructor() {
+      super(...arguments);
+      this.consequence = RemoveMatch;
+    }
+    static isHash(token) {
+      if (/[\s._\-]/.test(token)) return false;
+      if (/^[0-9a-f]{16,}$/i.test(token)) return true;
+      return token.length >= 24 && /[a-z]/.test(token) && /[A-Z]/.test(token) && /\d/.test(token);
+    }
+    when(matches, _context) {
+      const inp = matches.inputString ?? "";
+      const strip2 = /* @__PURE__ */ new Set(["episode_title", "version", "episode_details", "alternative_title"]);
+      const out = [];
+      for (const fp of matches.markers.named("path")) {
+        let text = inp.slice(fp.start, fp.end);
+        const cont = matches.range(fp.start, fp.end, (m) => m.name === "container", 0);
+        if (cont) text = inp.slice(fp.start, cont.start);
+        if (!_RemoveHashFilepartJunk.isHash(text.replace(/[.\s]+$/, ""))) continue;
+        for (const m of matches.range(fp.start, fp.end, (m2) => strip2.has(m2.name ?? ""))) {
+          out.push(m);
+        }
+      }
+      return out.length ? out : false;
+    }
+  };
+  __name(_RemoveHashFilepartJunk, "RemoveHashFilepartJunk");
+  _RemoveHashFilepartJunk.priority = POST_PROCESS;
+  var RemoveHashFilepartJunk = _RemoveHashFilepartJunk;
+  var _RemoveEpisodeTitleCoveredByDetailsInGroup = class _RemoveEpisodeTitleCoveredByDetailsInGroup extends Rule {
+    constructor() {
+      super(...arguments);
+      this.consequence = RemoveMatch;
+    }
+    when(matches, _context) {
+      const ets = matches.named("episode_title");
+      const etArr = Array.isArray(ets) ? ets : ets ? [ets] : [];
+      const out = [];
+      for (const et of etArr) {
+        if (!matches.markers.atMatch(et, (m) => m.name === "group", 0)) continue;
+        const covered = matches.range(
+          et.start,
+          et.end,
+          (m) => m.name === "episode_details" && m.start <= et.start && m.end >= et.end,
+          0
+        );
+        if (covered) out.push(et);
+      }
+      return out.length ? out : false;
+    }
+  };
+  __name(_RemoveEpisodeTitleCoveredByDetailsInGroup, "RemoveEpisodeTitleCoveredByDetailsInGroup");
+  _RemoveEpisodeTitleCoveredByDetailsInGroup.priority = POST_PROCESS;
+  var RemoveEpisodeTitleCoveredByDetailsInGroup = _RemoveEpisodeTitleCoveredByDetailsInGroup;
+  var _RemoveFansubCreditEpisodeTitle = class _RemoveFansubCreditEpisodeTitle extends Rule {
+    constructor() {
+      super(...arguments);
+      this.consequence = RemoveMatch;
+    }
+    when(matches, _context) {
+      const ets = matches.named("episode_title");
+      const etArr = Array.isArray(ets) ? ets : ets ? [ets] : [];
+      const out = etArr.filter((et) => /\bfansub/i.test(String(et.value ?? "")));
+      return out.length ? out : false;
+    }
+  };
+  __name(_RemoveFansubCreditEpisodeTitle, "RemoveFansubCreditEpisodeTitle");
+  _RemoveFansubCreditEpisodeTitle.priority = POST_PROCESS;
+  var RemoveFansubCreditEpisodeTitle = _RemoveFansubCreditEpisodeTitle;
+  var _RemoveSubtitleDescriptorEpisodeTitle = class _RemoveSubtitleDescriptorEpisodeTitle extends Rule {
+    constructor() {
+      super(...arguments);
+      this.consequence = RemoveMatch;
+    }
+    when(matches, _context) {
+      const inp = matches.inputString ?? "";
+      const ets = matches.named("episode_title");
+      const etArr = Array.isArray(ets) ? ets : ets ? [ets] : [];
+      const out = [];
+      for (const et of etArr) {
+        if (/[\s.]/.test(String(et.value ?? "").trim())) continue;
+        const after = inp.slice(et.end).replace(/^[\s._-]+/, "");
+        if (/^subtitl(e|es)\b|^subs?\b/i.test(after)) out.push(et);
+      }
+      return out.length ? out : false;
+    }
+  };
+  __name(_RemoveSubtitleDescriptorEpisodeTitle, "RemoveSubtitleDescriptorEpisodeTitle");
+  _RemoveSubtitleDescriptorEpisodeTitle.priority = POST_PROCESS;
+  var RemoveSubtitleDescriptorEpisodeTitle = _RemoveSubtitleDescriptorEpisodeTitle;
+  var ET_STOP_WORDS = /* @__PURE__ */ new Set([
+    "the",
+    "a",
+    "an",
+    "and",
+    "or",
+    "of",
+    "to",
+    "in",
+    "on",
+    "at",
+    "for",
+    "from",
+    "by",
+    "with",
+    "le",
+    "la",
+    "les",
+    "de",
+    "du",
+    "des",
+    "el"
+  ]);
+  var _RemoveTailEpisodeTitle = class _RemoveTailEpisodeTitle extends Rule {
+    constructor() {
+      super(...arguments);
+      this.consequence = RemoveMatch;
+    }
+    when(matches, _context) {
+      const out = [];
+      for (const fp of matches.markers.named("path")) {
+        const ets = matches.range(fp.start, fp.end, (m) => m.name === "episode_title");
+        const etArr = (Array.isArray(ets) ? ets : ets ? [ets] : []).slice().sort((a, b) => a.start - b.start);
+        if (etArr.length < 2) continue;
+        const primary = etArr[0];
+        const head = String(primary.value ?? "").trim().toLowerCase();
+        if (!head || ET_STOP_WORDS.has(head)) continue;
+        for (const et of etArr.slice(1)) {
+          const between = matches.range(
+            primary.end,
+            et.start,
+            (m) => !m.private && !!m.value && !_RemoveTailEpisodeTitle.TITLEISH.has(m.name ?? ""),
+            0
+          );
+          if (between) out.push(et);
+        }
+      }
+      return out.length ? out : false;
+    }
+  };
+  __name(_RemoveTailEpisodeTitle, "RemoveTailEpisodeTitle");
+  _RemoveTailEpisodeTitle.priority = POST_PROCESS;
+  _RemoveTailEpisodeTitle.TITLEISH = /* @__PURE__ */ new Set([
+    "year",
+    "title",
+    "alternative_title",
+    "episode_title",
+    "type",
+    "episode",
+    "season"
+  ]);
+  var RemoveTailEpisodeTitle = _RemoveTailEpisodeTitle;
+  var _RemoveEpisodeTitleInReleaseGroup = class _RemoveEpisodeTitleInReleaseGroup extends Rule {
+    constructor() {
+      super(...arguments);
+      this.consequence = RemoveMatch;
+    }
+    when(matches, _context) {
+      const ets = matches.named("episode_title");
+      const etArr = Array.isArray(ets) ? ets : ets ? [ets] : [];
+      if (!etArr.length) return false;
+      const out = [];
+      const inp = matches.inputString ?? "";
+      const hasReleaseIn = /* @__PURE__ */ __name((s, e) => !!matches.range(s, e, (m) => _RemoveEpisodeTitleInReleaseGroup.RELEASE_PROPS.has(m.name ?? ""), 0), "hasReleaseIn");
+      const onlySeps = /* @__PURE__ */ __name((s, e) => e <= s || [...inp.slice(s, e)].every((c) => "[](){} .-_".includes(c)), "onlySeps");
+      for (const et of etArr) {
+        const group = matches.markers.atMatch(et, (m) => m.name === "group", 0);
+        if (!group) continue;
+        let tag = hasReleaseIn(group.start, group.end);
+        if (!tag) {
+          for (const other2 of matches.markers.named("group")) {
+            if (other2.span?.[0] === group.span?.[0]) continue;
+            const adjacent = other2.start >= group.end && onlySeps(group.end, other2.start) || other2.end <= group.start && onlySeps(other2.end, group.start);
+            if (adjacent && hasReleaseIn(other2.start, other2.end)) {
+              tag = true;
+              break;
+            }
+          }
+        }
+        if (tag) out.push(et);
+      }
+      return out.length ? out : false;
+    }
+  };
+  __name(_RemoveEpisodeTitleInReleaseGroup, "RemoveEpisodeTitleInReleaseGroup");
+  _RemoveEpisodeTitleInReleaseGroup.priority = POST_PROCESS;
+  _RemoveEpisodeTitleInReleaseGroup.RELEASE_PROPS = /* @__PURE__ */ new Set([
+    "screen_size",
+    "video_codec",
+    "audio_codec",
+    "audio_channels",
+    "source",
+    "color_depth",
+    "video_profile",
+    "audio_profile",
+    "streaming_service",
+    "video_bit_rate",
+    "audio_bit_rate",
+    "container"
+  ]);
+  var RemoveEpisodeTitleInReleaseGroup = _RemoveEpisodeTitleInReleaseGroup;
   var _NumericEpisodeTitleToEpisode = class _NumericEpisodeTitleToEpisode extends Rule {
     constructor() {
       super(...arguments);
@@ -7390,11 +7788,39 @@ var GuessitJS = (() => {
       RemoveCommonWordsLanguageRule,
       RemoveLanguageRule,
       RemoveUndeterminedLanguagesRule2,
-      DedupLanguageRule
+      DedupLanguageRule,
+      RemoveLanguageInsideTitle
     );
     return rebulk;
   }
   __name(language, "language");
+  var _RemoveLanguageInsideTitle = class _RemoveLanguageInsideTitle extends Rule {
+    constructor() {
+      super(...arguments);
+      this.consequence = RemoveMatch;
+    }
+    when(matches) {
+      const titleNames = /* @__PURE__ */ new Set(["title", "episode_title", "alternative_title"]);
+      const titles = matches.range(
+        0,
+        (matches.inputString ?? "").length,
+        (m) => titleNames.has(m.name ?? "")
+      );
+      if (!titles.length) return false;
+      const out = [];
+      for (const name of ["language", "subtitle_language"]) {
+        for (const lang of matches.named(name)) {
+          const rawLen = String(lang.raw ?? "").trim().length;
+          if (rawLen > 3) continue;
+          if (titles.some((t) => t.start <= lang.start && t.end >= lang.end)) out.push(lang);
+        }
+      }
+      return out.length ? out : false;
+    }
+  };
+  __name(_RemoveLanguageInsideTitle, "RemoveLanguageInsideTitle");
+  _RemoveLanguageInsideTitle.priority = POST_PROCESS;
+  var RemoveLanguageInsideTitle = _RemoveLanguageInsideTitle;
 
   // src/rules/properties/country.ts
   var COUNTRY_MAP = {
@@ -7543,10 +7969,26 @@ var GuessitJS = (() => {
     return rebulk.rules(
       new DashSeparatedReleaseGroup(cleanGroupname),
       new SceneReleaseGroup(cleanGroupname),
-      AnimeReleaseGroup
+      AnimeReleaseGroup,
+      new TrailingTokenAfterEpisodeAsReleaseGroup(cleanGroupname),
+      RemoveSeasonPackReleaseGroup
     );
   }
   __name(releaseGroup, "releaseGroup");
+  var _RemoveSeasonPackReleaseGroup = class _RemoveSeasonPackReleaseGroup extends Rule {
+    constructor() {
+      super(...arguments);
+      this.consequence = RemoveMatch;
+    }
+    when(matches) {
+      const rgs = matches.named("release_group");
+      const out = (Array.isArray(rgs) ? rgs : rgs ? [rgs] : []).filter((m) => /(^|[\s._\-\[(])seasons?[\s._-]*\d/i.test(String(m.value ?? "")));
+      return out.length ? out : false;
+    }
+  };
+  __name(_RemoveSeasonPackReleaseGroup, "RemoveSeasonPackReleaseGroup");
+  _RemoveSeasonPackReleaseGroup.priority = POST_PROCESS;
+  var RemoveSeasonPackReleaseGroup = _RemoveSeasonPackReleaseGroup;
   var _DashSeparatedReleaseGroup = class _DashSeparatedReleaseGroup extends Rule {
     constructor(valueFormatter) {
       super();
@@ -7562,6 +8004,14 @@ var GuessitJS = (() => {
           return false;
         }
         if (matches.range(candidate.start, candidate.end, (m) => m.name === "episode", 0)) {
+          return false;
+        }
+        if (candidate.start === start && matches.range(
+          candidate.end,
+          end,
+          (m) => ["season", "episode", "date"].includes(m.name ?? "") && !m.private,
+          0
+        )) {
           return false;
         }
         const firstHole = matches.holes(
@@ -7845,6 +8295,58 @@ var GuessitJS = (() => {
   _AnimeReleaseGroup.consequence = [RemoveMatch, AppendMatch];
   _AnimeReleaseGroup.properties = { release_group: [null] };
   var AnimeReleaseGroup = _AnimeReleaseGroup;
+  var _TrailingTokenAfterEpisodeAsReleaseGroup = class _TrailingTokenAfterEpisodeAsReleaseGroup extends Rule {
+    constructor(valueFormatter) {
+      super();
+      this.consequence = [RemoveMatch, AppendMatch];
+      this.valueFormatter = valueFormatter;
+    }
+    when(matches) {
+      if (matches.named("release_group").length > 0) return false;
+      const inp = matches.inputString ?? "";
+      const toRemove = [];
+      const toAppend = [];
+      for (const filepart of matches.markers.named("path")) {
+        const last = matches.range(
+          filepart.start,
+          filepart.end,
+          (m) => !m.private && m.name === "episode_title" && m.value,
+          -1
+        );
+        if (!last) continue;
+        const after = matches.range(
+          last.end,
+          filepart.end,
+          (m) => !m.private && m.span[0] !== m.span[1],
+          0
+        );
+        if (after) continue;
+        const raw = String(last.raw ?? last.value);
+        if (/[\s.]/.test(raw.trim())) continue;
+        if (inp[last.start - 1] !== "-") continue;
+        const prev = matches.range(
+          filepart.start,
+          last.start,
+          (m) => !m.private,
+          -1
+        );
+        if (!prev || !["episode", "absolute_episode"].includes(prev.name ?? "")) continue;
+        const rg = new Match(last.start, last.end, {
+          name: "release_group",
+          inputString: inp
+        });
+        rg.formatter = this.valueFormatter;
+        if (rg.value) {
+          toRemove.push(last);
+          toAppend.push(rg);
+        }
+      }
+      return toRemove.length || toAppend.length ? [toRemove, toAppend] : false;
+    }
+  };
+  __name(_TrailingTokenAfterEpisodeAsReleaseGroup, "TrailingTokenAfterEpisodeAsReleaseGroup");
+  _TrailingTokenAfterEpisodeAsReleaseGroup.dependency = ["AnimeReleaseGroup"];
+  var TrailingTokenAfterEpisodeAsReleaseGroup = _TrailingTokenAfterEpisodeAsReleaseGroup;
 
   // src/rules/properties/streaming_service.ts
   function streamingService(config) {
@@ -7943,12 +8445,61 @@ var GuessitJS = (() => {
       ValidateAtEnd,
       ValidateReal,
       RemoveTitleCaseAmbiguous,
+      ImageArtKeywordToOther,
       ProperCountRule,
       FixCountRule
     );
     return rebulk;
   }
   __name(other, "other");
+  var ART_KEYWORDS = {
+    poster: "Poster",
+    fanart: "Fanart",
+    banner: "Banner",
+    thumb: "Thumbnail",
+    thumbnail: "Thumbnail",
+    landscape: "Landscape",
+    cover: "Cover",
+    clearart: "Clear Art",
+    clearlogo: "Clear Logo",
+    logo: "Logo",
+    discart: "Disc Art"
+  };
+  var _ImageArtKeywordToOther = class _ImageArtKeywordToOther extends Rule {
+    constructor() {
+      super(...arguments);
+      this.consequence = [RemoveMatch, AppendMatch];
+    }
+    when(matches) {
+      const toRemove = [];
+      const toAppend = [];
+      for (const fp of matches.markers.named("path")) {
+        const hasImage = matches.range(
+          fp.start,
+          fp.end,
+          (m) => m.name === "container" && m.tags?.includes("image"),
+          0
+        );
+        if (!hasImage) continue;
+        const cands = matches.range(
+          fp.start,
+          fp.end,
+          (m) => ["title", "alternative_title", "episode_title"].includes(m.name ?? "")
+        );
+        for (const c of cands) {
+          const key = String(c.value ?? "").trim().toLowerCase().replace(/[\s._-]+/g, "");
+          const canon = ART_KEYWORDS[key];
+          if (!canon) continue;
+          toRemove.push(c);
+          toAppend.push(new Match(c.start, c.end, { name: "other", value: canon, inputString: matches.inputString }));
+        }
+      }
+      return toRemove.length ? [toRemove, toAppend] : false;
+    }
+  };
+  __name(_ImageArtKeywordToOther, "ImageArtKeywordToOther");
+  _ImageArtKeywordToOther.priority = POST_PROCESS;
+  var ImageArtKeywordToOther = _ImageArtKeywordToOther;
   function completeWords(rebulk, seasonWords, completeArticleWords) {
     const seasonWordsPattern = buildOrPattern(seasonWords);
     const completeArticleWordsPattern = buildOrPattern(completeArticleWords);
@@ -9536,7 +10087,7 @@ var GuessitJS = (() => {
       },
       cd: {
         _cd_of_cd_count: {
-          regex: "cd-?(?P<cd>\\d+)(?:-?of-?(?P<cd_count>\\d+))?",
+          regex: "(?<!\\d)(?<![^\\W\\d_])cd-?(?P<cd>\\d+)(?:-?of-?(?P<cd_count>\\d+))?",
           validator: {
             cd: "lambda match: 0 < match.value < 100",
             cd_count: "lambda match: 0 < match.value < 100"
@@ -9608,6 +10159,29 @@ var GuessitJS = (() => {
         ],
         nzb: [
           "nzb"
+        ],
+        archives: [
+          "rar",
+          "zip",
+          "7z",
+          "tar",
+          "gz",
+          "bz2",
+          "tgz",
+          "ace",
+          "arj",
+          "cbr",
+          "cbz",
+          "cb7"
+        ],
+        images: [
+          "jpg",
+          "jpeg",
+          "png",
+          "gif",
+          "bmp",
+          "tbn",
+          "webp"
         ]
       },
       country: {
@@ -10334,6 +10908,1037 @@ var GuessitJS = (() => {
   }
   __name(deepCopy, "deepCopy");
 
+  // src/schema.ts
+  var GUESSIT_SCHEMA = {
+    "absolute_episode": {
+      "type": [
+        "number"
+      ],
+      "array": true,
+      "scalar": true
+    },
+    "alternative_title": {
+      "type": [
+        "string"
+      ],
+      "array": true,
+      "scalar": true
+    },
+    "another": {
+      "type": [
+        "string"
+      ],
+      "array": false,
+      "scalar": false
+    },
+    "aspect_ratio": {
+      "type": [
+        "number"
+      ],
+      "array": false,
+      "scalar": true
+    },
+    "audio_bit_rate": {
+      "type": [
+        "string"
+      ],
+      "array": false,
+      "scalar": true
+    },
+    "audio_channels": {
+      "type": [
+        "string"
+      ],
+      "array": true,
+      "scalar": true,
+      "enum": [
+        "1.0",
+        "1ch",
+        "2.0",
+        "20",
+        "2ch",
+        "5.1",
+        "5ch",
+        "6ch",
+        "7.1",
+        "7ch",
+        "8ch",
+        "mono",
+        "stereo"
+      ]
+    },
+    "audio_codec": {
+      "type": [
+        "string"
+      ],
+      "array": true,
+      "scalar": true,
+      "enum": [
+        "AAC",
+        "Atmos",
+        "DD+",
+        "DDP",
+        "Dolby",
+        "Dolby Atmos",
+        "Dolby Digital",
+        "Dolby Digital Plus",
+        "Dolby TrueHD",
+        "DolbyDigital",
+        "DTS",
+        "DTS-HD",
+        "DTS-X",
+        "DTS:X",
+        "DTSX",
+        "Flac",
+        "FLAC",
+        "LAME",
+        "LPCM",
+        "MP2",
+        "MP3",
+        "Opus",
+        "PCM",
+        "Vorbis"
+      ]
+    },
+    "audio_profile": {
+      "type": [
+        "string"
+      ],
+      "array": true,
+      "scalar": true,
+      "enum": [
+        "ES",
+        "EX",
+        "Extended Surround",
+        "HE",
+        "High Efficiency",
+        "High Quality",
+        "High Resolution Audio",
+        "HQ",
+        "HR",
+        "HRA",
+        "LC",
+        "Low Complexity",
+        "MA",
+        "Master Audio"
+      ]
+    },
+    "bonus": {
+      "type": [
+        "number"
+      ],
+      "array": false,
+      "scalar": true
+    },
+    "bonus_title": {
+      "type": [
+        "string"
+      ],
+      "array": false,
+      "scalar": true
+    },
+    "cd": {
+      "type": [
+        "number"
+      ],
+      "array": false,
+      "scalar": true
+    },
+    "cd_count": {
+      "type": [
+        "number"
+      ],
+      "array": false,
+      "scalar": true
+    },
+    "color_depth": {
+      "type": [
+        "string"
+      ],
+      "array": false,
+      "scalar": true,
+      "enum": [
+        "10-bit",
+        "12-bit",
+        "8-bit"
+      ]
+    },
+    "container": {
+      "type": [
+        "string"
+      ],
+      "array": true,
+      "scalar": true,
+      "enum": [
+        "3g2",
+        "3gp",
+        "3gp2",
+        "7z",
+        "ace",
+        "arj",
+        "asf",
+        "avi",
+        "bmp",
+        "bz2",
+        "cb7",
+        "cbr",
+        "cbz",
+        "divx",
+        "flv",
+        "gif",
+        "gz",
+        "idx",
+        "iso",
+        "jpeg",
+        "jpg",
+        "m2ts",
+        "m4v",
+        "mk2",
+        "mk3d",
+        "mka",
+        "mkv",
+        "MKV",
+        "mov",
+        "mp4",
+        "mp4a",
+        "mpeg",
+        "mpg",
+        "nfo",
+        "nzb",
+        "ogg",
+        "ogm",
+        "ogv",
+        "png",
+        "qt",
+        "r00",
+        "ra",
+        "ram",
+        "rar",
+        "rm",
+        "srt",
+        "ssa",
+        "tar",
+        "tbn",
+        "tgz",
+        "torrent",
+        "ts",
+        "vob",
+        "wav",
+        "webm",
+        "webp",
+        "wma",
+        "wmv",
+        "zip"
+      ]
+    },
+    "country": {
+      "type": [
+        "Language"
+      ],
+      "array": false,
+      "scalar": true
+    },
+    "crc32": {
+      "type": [
+        "string"
+      ],
+      "array": false,
+      "scalar": true
+    },
+    "date": {
+      "type": [
+        "object"
+      ],
+      "array": false,
+      "scalar": true
+    },
+    "disc": {
+      "type": [
+        "number"
+      ],
+      "array": true,
+      "scalar": true
+    },
+    "edition": {
+      "type": [
+        "string"
+      ],
+      "array": true,
+      "scalar": true,
+      "enum": [
+        "Alternative Cut",
+        "CC",
+        "collector",
+        "Collector",
+        "Criterion",
+        "DC",
+        "ddc",
+        "deluxe",
+        "Deluxe",
+        "Director's Cut",
+        "Director's Definitive Cut",
+        "extended",
+        "Extended",
+        "Fan",
+        "Festival",
+        "imax",
+        "IMAX",
+        "limited",
+        "Limited",
+        "Remastered",
+        "Restored",
+        "se",
+        "Special",
+        "theatrical",
+        "Theatrical",
+        "Ultimate",
+        "Uncensored",
+        "Uncut",
+        "Unrated"
+      ]
+    },
+    "episode": {
+      "type": [
+        "number"
+      ],
+      "array": true,
+      "scalar": true
+    },
+    "episode_count": {
+      "type": [
+        "number"
+      ],
+      "array": false,
+      "scalar": true
+    },
+    "episode_details": {
+      "type": [
+        "string"
+      ],
+      "array": true,
+      "scalar": true
+    },
+    "episode_format": {
+      "type": [
+        "string"
+      ],
+      "array": false,
+      "scalar": true,
+      "enum": [
+        "Minisode"
+      ]
+    },
+    "episode_title": {
+      "type": [
+        "string"
+      ],
+      "array": true,
+      "scalar": true
+    },
+    "film": {
+      "type": [
+        "number"
+      ],
+      "array": false,
+      "scalar": true
+    },
+    "film_title": {
+      "type": [
+        "string"
+      ],
+      "array": false,
+      "scalar": true
+    },
+    "frame_rate": {
+      "type": [
+        "string"
+      ],
+      "array": false,
+      "scalar": true
+    },
+    "language": {
+      "type": [
+        "Language"
+      ],
+      "array": true,
+      "scalar": true
+    },
+    "mimetype": {
+      "type": [
+        "string"
+      ],
+      "array": false,
+      "scalar": true,
+      "enum": [
+        "application/x-bittorrent",
+        "application/x-iso9660-image",
+        "application/x-rar-compressed",
+        "application/zip",
+        "image/gif",
+        "image/jpeg",
+        "image/png",
+        "text/plain",
+        "video/mp2t",
+        "video/mp4",
+        "video/webm",
+        "video/x-matroska",
+        "video/x-msvideo"
+      ]
+    },
+    "other": {
+      "type": [
+        "string"
+      ],
+      "array": true,
+      "scalar": true,
+      "enum": [
+        "2in1",
+        "3D",
+        "asrequested",
+        "Audio Fixed",
+        "Banner",
+        "Bonus",
+        "BT.2020",
+        "Classic",
+        "Clear Art",
+        "Clear Logo",
+        "Colorized",
+        "Complet",
+        "Complete",
+        "CONVERT",
+        "Converted",
+        "Cover",
+        "Dirfix",
+        "Disc Art",
+        "DOCU",
+        "Documentary",
+        "DOKU",
+        "Dolby Vision",
+        "Dual",
+        "Dual Audio",
+        "East Coast Feed",
+        "Ending Credits",
+        "Extras",
+        "Fan Subtitled",
+        "Fanart",
+        "Fansub",
+        "Fast Subtitled",
+        "Fastsub",
+        "FHD",
+        "Fix",
+        "Fixed",
+        "Full HD",
+        "Half OU",
+        "Half SBS",
+        "Hardcoded Subtitles",
+        "HC",
+        "HD",
+        "HDLight",
+        "HDR10",
+        "HFR",
+        "High Frame Rate",
+        "High Quality",
+        "High Resolution",
+        "HQ",
+        "HR",
+        "Hybrid",
+        "Internal",
+        "Landscape",
+        "LD",
+        "LDTV",
+        "LiNE",
+        "Line Audio",
+        "Line Dubbed",
+        "Logo",
+        "Low Definition",
+        "MD",
+        "mHD",
+        "Mic Dubbed",
+        "Micro HD",
+        "Mux",
+        "Nfofix",
+        "NTSC",
+        "Oad",
+        "OAR",
+        "Oav",
+        "Obfuscated",
+        "Ona",
+        "Open Matte",
+        "Opening Credits",
+        "Original Animated Video",
+        "Original Animation DVD",
+        "Original Aspect Ratio",
+        "Original Net Animation",
+        "Original Video",
+        "OV",
+        "Ova",
+        "PAL",
+        "postbot",
+        "Poster",
+        "Preair",
+        "Proof",
+        "Prooffix",
+        "Proper",
+        "PS Vita",
+        "R5",
+        "RC",
+        "Read NFO",
+        "Real",
+        "Reencoded",
+        "Region 5",
+        "Region C",
+        "Remux",
+        "Repost",
+        "Retail",
+        "Rip",
+        "Sample",
+        "Scrambled",
+        "Screener",
+        "SDR",
+        "SECAM",
+        "Standard Dynamic Range",
+        "Straight to Video",
+        "STV",
+        "Sync Fixed",
+        "Thumbnail",
+        "Trailer",
+        "UHD",
+        "Ultra HD",
+        "Upscaled",
+        "Variable Frame Rate",
+        "VFR",
+        "Virtual Reality",
+        "Vita",
+        "VO",
+        "vost",
+        "West Coast Feed",
+        "Widescreen",
+        "ws",
+        "xpost",
+        "XXX"
+      ]
+    },
+    "part": {
+      "type": [
+        "number"
+      ],
+      "array": true,
+      "scalar": true
+    },
+    "proper_count": {
+      "type": [
+        "number"
+      ],
+      "array": false,
+      "scalar": true
+    },
+    "release_group": {
+      "type": [
+        "string"
+      ],
+      "array": false,
+      "scalar": true
+    },
+    "screen_size": {
+      "type": [
+        "string"
+      ],
+      "array": false,
+      "scalar": true,
+      "enum": [
+        "1080i",
+        "1080p",
+        "1440p",
+        "1444x866",
+        "2160p",
+        "360p",
+        "368p",
+        "480p",
+        "4k",
+        "540p",
+        "576p",
+        "720p",
+        "720x432",
+        "960x544"
+      ]
+    },
+    "season": {
+      "type": [
+        "number"
+      ],
+      "array": true,
+      "scalar": true
+    },
+    "season_count": {
+      "type": [
+        "number"
+      ],
+      "array": false,
+      "scalar": true
+    },
+    "size": {
+      "type": [
+        "string"
+      ],
+      "array": false,
+      "scalar": true
+    },
+    "source": {
+      "type": [
+        "string"
+      ],
+      "array": false,
+      "scalar": true,
+      "enum": [
+        "Analog HDTV",
+        "Blu-ray",
+        "Camera",
+        "Digital Master",
+        "Digital TV",
+        "DVD",
+        "HD Camera",
+        "HD Telecine",
+        "HD Telesync",
+        "HD-DVD",
+        "HDTV",
+        "Pay-per-view",
+        "Satellite",
+        "Telecine",
+        "Telesync",
+        "TV",
+        "Ultra HD Blu-ray",
+        "Ultra HDTV",
+        "VHS",
+        "Video on Demand",
+        "Web",
+        "Workprint"
+      ]
+    },
+    "streaming_service": {
+      "type": [
+        "string"
+      ],
+      "array": false,
+      "scalar": true,
+      "enum": [
+        "4OD",
+        "9Now",
+        "9NOW",
+        "A&E",
+        "ABC",
+        "ABC Australia",
+        "Adult Swim",
+        "AE",
+        "AJAZ",
+        "Al Jazeera English",
+        "ALL4",
+        "Amazon",
+        "Amazon Prime",
+        "AMBC",
+        "AMC",
+        "America's Test Kitchen",
+        "AMZN",
+        "AMZN-CBR",
+        "Animal Planet",
+        "AnimeLab",
+        "ANLB",
+        "ANPL",
+        "AOL",
+        "AppleTV",
+        "APTV",
+        "ARD",
+        "AS",
+        "ATK",
+        "ATV+",
+        "ATVP",
+        "AUBC",
+        "BBC iPlayer",
+        "Binge",
+        "BKPL",
+        "Blackpills",
+        "BLU",
+        "BluTV",
+        "BNGE",
+        "BOOM",
+        "Boomerang",
+        "BRAV",
+        "BravoTV",
+        "Canal+",
+        "Cartoon Network",
+        "CBC",
+        "CBS",
+        "CC",
+        "CCGC",
+        "Channel 4",
+        "CHGD",
+        "CHRGD",
+        "Cinemax",
+        "CMAX",
+        "CMT",
+        "CN",
+        "CNBC",
+        "CNLP",
+        "Comedians in Cars Getting Coffee",
+        "Comedy Central",
+        "Country Music Television",
+        "CR",
+        "Crackle",
+        "CRAV",
+        "Crave",
+        "CRKL",
+        "Crunchy Roll",
+        "CSpan",
+        "CSPN",
+        "CTV",
+        "CUR",
+        "CuriosityStream",
+        "CW",
+        "CWS",
+        "CWSeed",
+        "Daisuki",
+        "DC Universe",
+        "DCU",
+        "DDY",
+        "Deadhouse Films",
+        "DF",
+        "DHF",
+        "Digiturk Diledigin Yerde",
+        "DISC",
+        "Discovery",
+        "Discovery Plus",
+        "Disney",
+        "Disney+",
+        "DIY",
+        "DIY Network",
+        "Doc Club",
+        "DOCC",
+        "DPlay",
+        "DPLY",
+        "DramaFever",
+        "DSCP",
+        "DSKI",
+        "DSNP",
+        "DSNY",
+        "E!",
+        "El Trece",
+        "ePix",
+        "EPIX",
+        "ESPN",
+        "ESQ",
+        "Esquire",
+        "ETTV",
+        "ETV",
+        "Facebook Watch",
+        "FAM",
+        "Family",
+        "Family Jr",
+        "Fandor",
+        "FANDOR",
+        "FBWatch",
+        "FJR",
+        "FOOD",
+        "Food Network",
+        "Fox",
+        "FOX",
+        "Fox Premium",
+        "FOXP",
+        "Foxtel",
+        "FP",
+        "FREE",
+        "Freeform",
+        "FXTL",
+        "FYI",
+        "FYI Network",
+        "Gaga",
+        "GagaOOLala",
+        "GC",
+        "GLBL",
+        "GLOB",
+        "Global",
+        "GloboSat Play",
+        "Hallmark",
+        "HBO",
+        "HBO Go",
+        "HBO Max",
+        "HGTV",
+        "HIST",
+        "History",
+        "HLMK",
+        "HMAX",
+        "hoichoi",
+        "HoiChoi",
+        "Hulu",
+        "HULU",
+        "ID",
+        "IFC",
+        "iflix",
+        "IFX",
+        "INA",
+        "Investigation Discovery",
+        "iP",
+        "iQIYI",
+        "iT",
+        "iTunes",
+        "ITV",
+        "KNOW",
+        "Knowledge Network",
+        "LIFE",
+        "Lifetime",
+        "MBC",
+        "MBCVOD",
+        "MNBC",
+        "Motor Trend OnDemand",
+        "MSNBC",
+        "MTOD",
+        "MTV",
+        "MUBI",
+        "NATG",
+        "National Audiovisual Institute",
+        "National Film Board",
+        "National Geographic",
+        "NBA",
+        "NBA TV",
+        "NBC",
+        "Netflix",
+        "NF",
+        "NFB",
+        "NFL",
+        "NFL Now",
+        "NFLN",
+        "NHL GameCenter",
+        "NICK",
+        "NICKAPP",
+        "Nickelodeon",
+        "Norsk Rikskringkasting",
+        "NRK",
+        "ODK",
+        "OnDemandKorea",
+        "Oprah Winfrey Network",
+        "Opto",
+        "OPTO",
+        "OWN",
+        "Paramount+",
+        "ParamountPlus",
+        "PBS",
+        "PBS Kids",
+        "PBSK",
+        "PCOK",
+        "Peacock",
+        "Playstation Network",
+        "PLUZ",
+        "Pluzz",
+        "PMNP",
+        "PMT+",
+        "PMTP",
+        "POGO",
+        "PokerGO",
+        "PSN",
+        "Rakuten TV",
+        "RED",
+        "RKTN",
+        "ROKU",
+        "RTE",
+        "RTE One",
+        "RUUTU",
+        "SBS",
+        "SCI",
+        "Science Channel",
+        "SeeSo",
+        "SESO",
+        "SHMI",
+        "SHO",
+        "Shomi",
+        "Showtime",
+        "SNET",
+        "Sony",
+        "SONY",
+        "SPIK",
+        "Spike",
+        "Spike TV",
+        "SPKE",
+        "Sportsnet",
+        "Sprout",
+        "SPRT",
+        "Stan",
+        "STAN",
+        "Starz",
+        "STZ",
+        "Sveriges Television",
+        "SVT",
+        "SwearNet",
+        "SWER",
+        "Syfy",
+        "SYFY",
+        "TBS",
+        "TFou",
+        "TFOU",
+        "The CW",
+        "The Roku Channel",
+        "TLC",
+        "TUBI",
+        "TubiTV",
+        "TV Land",
+        "TV3",
+        "TV3 Ireland",
+        "TV4",
+        "TV4 Sweeden",
+        "TVING",
+        "TVL",
+        "TVNZ",
+        "UFC",
+        "UFC Fight Pass",
+        "UKTV",
+        "UNIV",
+        "Univision",
+        "USA Network",
+        "USAN",
+        "Velocity",
+        "VH1",
+        "VICE",
+        "Viceland",
+        "Viki",
+        "VIKI",
+        "Vimeo",
+        "VLCT",
+        "VMEO",
+        "VRV",
+        "W Network",
+        "WatchMe",
+        "WME",
+        "WNET",
+        "WWE Network",
+        "WWEN",
+        "XBOX",
+        "Xbox Video",
+        "Yahoo",
+        "YHOO",
+        "YouTube Red",
+        "ZDF"
+      ]
+    },
+    "subtitle_language": {
+      "type": [
+        "Language"
+      ],
+      "array": true,
+      "scalar": true
+    },
+    "title": {
+      "type": [
+        "string"
+      ],
+      "array": false,
+      "scalar": true
+    },
+    "type": {
+      "type": [
+        "string"
+      ],
+      "array": false,
+      "scalar": true,
+      "enum": [
+        "episode",
+        "movie"
+      ]
+    },
+    "uuid": {
+      "type": [
+        "string"
+      ],
+      "array": false,
+      "scalar": true
+    },
+    "version": {
+      "type": [
+        "number"
+      ],
+      "array": false,
+      "scalar": true
+    },
+    "video_api": {
+      "type": [
+        "string"
+      ],
+      "array": false,
+      "scalar": true,
+      "enum": [
+        "DXVA"
+      ]
+    },
+    "video_bit_rate": {
+      "type": [
+        "string"
+      ],
+      "array": false,
+      "scalar": true
+    },
+    "video_codec": {
+      "type": [
+        "string"
+      ],
+      "array": false,
+      "scalar": true,
+      "enum": [
+        "DivX",
+        "DVDivX",
+        "H.263",
+        "H.264",
+        "H.265",
+        "MPEG-2",
+        "RealVideo",
+        "VC-1",
+        "VP7",
+        "VP8",
+        "VP80",
+        "VP9",
+        "Xvid",
+        "XviD"
+      ]
+    },
+    "video_profile": {
+      "type": [
+        "string"
+      ],
+      "array": true,
+      "scalar": true,
+      "enum": [
+        "Advanced Video Codec High Definition",
+        "Baseline",
+        "BP",
+        "EP",
+        "Extended",
+        "HEVC",
+        "High",
+        "High 10",
+        "High 4:2:2",
+        "High 4:4:4 Predictive",
+        "High Efficiency Video Coding",
+        "HiP",
+        "HP",
+        "Main",
+        "MP",
+        "SC",
+        "Scalable Video Coding",
+        "SVC",
+        "XP"
+      ]
+    },
+    "website": {
+      "type": [
+        "string"
+      ],
+      "array": false,
+      "scalar": true
+    },
+    "year": {
+      "type": [
+        "number"
+      ],
+      "array": false,
+      "scalar": true
+    }
+  };
+
   // src/api.ts
   var _GuessItException = class _GuessItException extends Error {
     constructor(string, options, cause) {
@@ -10442,13 +12047,22 @@ options=${JSON.stringify(options)}
           }
         }
       }
-      const ordered = {};
+      let ordered = {};
       for (const k of Object.keys(props).sort()) {
         ordered[k] = [...props[k]].sort((a, b) => String(a).localeCompare(String(b)));
       }
       const rb = this._rebulk;
       if (rb.customizeProperties) {
-        return rb.customizeProperties(ordered);
+        ordered = rb.customizeProperties(ordered);
+      }
+      for (const [name, def] of Object.entries(GUESSIT_SCHEMA)) {
+        const cur = Array.isArray(ordered[name]) ? ordered[name] : [];
+        if (def.enum) {
+          const merged = /* @__PURE__ */ new Set([...cur, ...def.enum]);
+          ordered[name] = [...merged].sort((a, b) => String(a).localeCompare(String(b)));
+        } else if (cur.length === 0) {
+          ordered[name] = [null];
+        }
       }
       return ordered;
     }
