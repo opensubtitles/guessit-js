@@ -387,7 +387,7 @@ guessit(<span class="code-string">'file.mkv'</span>, { <span class="code-key">al
 
 <span style="color:var(--accent)">When to use JS directly:</span>
   &bull; Browser &mdash; use the IIFE bundle, runs at native V8/SpiderMonkey speed
-  &bull; Node.js / Deno / Bun &mdash; <span style="color:var(--green)">3.5x faster than Python</span>, ~2ms/parse
+  &bull; Node.js / Deno / Bun &mdash; <span style="color:var(--green)">~3.5x faster than Python</span>, ~4ms/parse
   &bull; Any environment that already has a JS runtime
 
 <span style="color:var(--orange)">Note:</span> WASM is ~40x slower than native JS in a browser because it runs a JS interpreter (QuickJS) inside WASM inside the browser's own JS engine. Use the JS bundle for browser/Node.js.</pre>
@@ -395,15 +395,15 @@ guessit(<span class="code-string">'file.mkv'</span>, { <span class="code-key">al
 
   <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px;">
     <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; text-align:center;">
-      <div style="font-size:1.8rem; font-weight:800; color:var(--accent);">4.0 MB</div>
+      <div style="font-size:1.8rem; font-weight:800; color:var(--accent);">4.3 MB</div>
       <div style="font-size:0.78rem; color:var(--text-dim);">WASM binary</div>
     </div>
     <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; text-align:center;">
-      <div style="font-size:1.8rem; font-weight:800; color:var(--green);">1.6 MB</div>
+      <div style="font-size:1.8rem; font-weight:800; color:var(--green);">1.8 MB</div>
       <div style="font-size:0.78rem; color:var(--text-dim);">Gzipped</div>
     </div>
     <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; text-align:center;">
-      <div style="font-size:1.8rem; font-weight:800; color:var(--orange);">169 KB</div>
+      <div style="font-size:1.8rem; font-weight:800; color:var(--orange);">204 KB</div>
       <div style="font-size:0.78rem; color:var(--text-dim);">JS code inside</div>
     </div>
   </div>
@@ -434,12 +434,12 @@ npm run wasm   <span class="code-comment"># requires Javy v3+ in tools/</span></
     <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; text-align:center;">
       <div style="font-size:2.2rem; font-weight:800; color:var(--green); letter-spacing:-0.03em;">100%</div>
       <div style="font-size:0.82rem; color:var(--text-dim); margin-top:4px;">Test compatibility</div>
-      <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">1035 / 1035 Python tests pass</div>
+      <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">1036 / 1036 Python tests pass</div>
     </div>
     <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; text-align:center;">
-      <div style="font-size:2.2rem; font-weight:800; color:var(--orange); letter-spacing:-0.03em;">3.4x</div>
+      <div style="font-size:2.2rem; font-weight:800; color:var(--orange); letter-spacing:-0.03em;">3.5x</div>
       <div style="font-size:0.82rem; color:var(--text-dim); margin-top:4px;">Faster than Python</div>
-      <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">6.87ms vs 23.86ms per parse</div>
+      <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">~4.4ms vs ~15.5ms per parse</div>
     </div>
     <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; text-align:center;">
       <div style="font-size:2.2rem; font-weight:800; color:var(--cyan); letter-spacing:-0.03em;">0</div>
@@ -447,7 +447,7 @@ npm run wasm   <span class="code-comment"># requires Javy v3+ in tools/</span></
       <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">~220KB bundled (ESM + CJS)</div>
     </div>
     <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; text-align:center;">
-      <div style="font-size:2.2rem; font-weight:800; color:var(--accent); letter-spacing:-0.03em;">40+</div>
+      <div style="font-size:2.2rem; font-weight:800; color:var(--accent); letter-spacing:-0.03em;">50</div>
       <div style="font-size:0.82rem; color:var(--text-dim); margin-top:4px;">Detected properties</div>
       <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">title, year, codec, lang...</div>
     </div>
@@ -461,10 +461,10 @@ npm run wasm   <span class="code-comment"># requires Javy v3+ in tools/</span></
       <p>1000 parses of 10 diverse filenames on the same machine:</p>
       <pre class="code-block">Runtime               ms/parse    vs Python
 <span class="code-comment">───────────────────────────────────────────────</span>
-Python 3.8 (guessit)  <span class="code-number"> 23.86</span> ms    baseline
-Node.js 22 (JS)       <span class="code-number">  6.87</span> ms    <span class="code-string">3.5x faster</span>
-Browser (IIFE bundle) <span class="code-number"> ~2-3 </span> ms    <span class="code-string">~10x faster</span>
-WASM (QuickJS)        <span class="code-number">~75  </span> ms    <span class="code-comment">for non-JS envs only</span></pre>
+Python 3.8 (guessit)  <span class="code-number">~15.5</span> ms    baseline
+Node.js 22 (JS)       <span class="code-number"> ~4.4</span> ms    <span class="code-string">~3.5x faster</span>
+Browser (IIFE bundle) <span class="code-number"> ~2-3</span> ms    <span class="code-string">~6x faster</span>
+WASM (QuickJS)        <span class="code-number"> ~35 </span> ms    <span class="code-comment">for non-JS envs (interpreted; not for speed)</span></pre>
     </div>
   </div>
 </section>
@@ -503,7 +503,7 @@ The codebase is <span style="color:var(--text)">~8689 lines of TypeScript</span>
 
 <span style="color:var(--green)">1036 / 1036 tests passing</span> (100% compatibility with Python guessit)
 
-All 1035 Python guessit tests passing.
+All 1036 Python guessit tests passing.
     </div>
 
     <div class="install-block">
@@ -513,7 +513,7 @@ All 1035 Python guessit tests passing.
 <span style="color:var(--text)">DTS</span>  dist/*.d.ts          &mdash; Full TypeScript type definitions
 
 Zero runtime dependencies. Self-contained for browser, Node.js, and WASM.
-<span style="color:var(--text)">WASM</span> wasm/guessit.wasm &mdash; 4.0 MB (1.6 MB gzipped) &mdash; via Javy (QuickJS)
+<span style="color:var(--text)">WASM</span> wasm/guessit.wasm &mdash; 4.3 MB (1.8 MB gzipped) &mdash; via Javy (QuickJS)
 Built with Vite. Type-checked with tsc --noEmit.</pre>
     </div>
   </div>
