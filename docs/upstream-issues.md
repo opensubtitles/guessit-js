@@ -41,7 +41,7 @@ cases). Fixing it once should resolve many of these issues together. Tagged ★ 
 | 789 | https://github.com/guessit-io/guessit/issues/789 | ★ `It Ends With Us 2024...` → `title:"It Ends With"`, `country:"US"` (19 comments) | todo |
 | 790 | https://github.com/guessit-io/guessit/issues/790 | `La casa del dragón 2×7` not parsed; Unicode `×` should normalize to `x` (→ S2E7) | **fixed** (added × to episode markers) |
 | 796 | https://github.com/guessit-io/guessit/issues/796 | ★ `Adam-12 S01E02...` → `title:["Adam","12"]` (list, split); should be `"Adam-12"` | **fixed** (title "Adam-12") |
-| 800 | https://github.com/guessit-io/guessit/issues/800 | ★ `The.Four.Seasons.2025.S01E01...` → `title:"The Four"`, `season:[2025,1]`; "Seasons" swallowed | todo |
+| 800 | https://github.com/guessit-io/guessit/issues/800 | ★ `The.Four.Seasons.2025.S01E01...` → `title:"The Four"`, `season:[2025,1]`; "Seasons" swallowed | **fixed** (reject year as season-word number) |
 
 ---
 
