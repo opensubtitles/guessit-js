@@ -24,7 +24,7 @@ const MONTHS: Record<string, number> = {
 };
 
 export function validYear(year: number): boolean {
-  return year >= 1920 && year < 2035;
+  return year >= 1900 && year < 2035;
 }
 
 export function validWeek(week: number): boolean {

@@ -213,6 +213,12 @@ export function episodes(config: EpisodesConfig): Rebulk {
       abbreviations: [altDash],
     });
 
+  // CJK (Japanese) episode/season markers: 第195話 → episode 195, シーズン2 → season 2,
+  // 2期 → season 2. guessit-js enhancement (upstream #671, #763).
+  rebulk.regex('第(?<episode>\\d{1,4})話', { tags: ['SxxExx'] });
+  rebulk.regex('(?:シーズン|シリーズ)(?<season>\\d{1,2})', { tags: ['SxxExx'] });
+  rebulk.regex('(?<season>\\d{1,2})期', {});
+
   // Main SxxExx patterns
   const seasonMarkerPattern = buildOrPattern(config.season_markers, 'seasonMarker');
   const episodeMarkerPattern = buildOrPattern(

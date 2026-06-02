@@ -11,13 +11,13 @@ but not complete · **not fixed / not done** = with the reason inline · `wontfi
 invalid/ambiguous/env-specific.
 
 **Progress (as of this pass):** every open issue below has an explicit disposition.
-**21 fixed** (305-partial, 623, 638, 651, 652, 670, 732, 737, 743, 745, 746, 784,
-789, 790, 796, 800, 773, 301, 618, 622, 630, 708) · **7 already work / acceptable**
-(648, 660, 752, 774, 637, 741, 771) · the rest carry an inline "why not fixed" note.
-The unfixed parsing bugs cluster into: delicate release-group cascades (#634/#640),
-shared-Python bugs needing risky heuristics (#646), the obfuscated-hash case (#742),
-entangled multi-segment title selection (#722), anime/CJK conventions
-(#667/#690/#696/#671/#763), and pure feature requests (#272/#273/#599/#705/#802).
+**24 fixed** (305-partial, 623, 638, 646, 651, 652, 670, 671, 732, 737, 743, 745,
+746, 763, 784, 789, 790, 796, 800, 773, 301, 618, 622, 630, 708) · **7 already
+work / acceptable** (648, 660, 752, 774, 637, 741, 771) · the rest carry an inline
+"why not fixed" note. The unfixed parsing bugs cluster into: delicate release-group
+cascades (#634/#640), the obfuscated-hash case (#742), entangled multi-segment
+title selection (#722), the remaining anime conventions (#667/#690/#696/#747), and
+pure feature requests (#272/#273/#599/#705/#802).
 
 **Cross-ref:** the biggest validated cluster is **title-token collision** — a title
 word/letter consumed as country/language/edition/source/other. This is the *same*
@@ -36,7 +36,7 @@ cases). Fixing it once should resolve many of these issues together. Tagged ★ 
 | 634 | https://github.com/guessit-io/guessit/issues/634 | ★ `grown-ish.s03e01.web.x264-tbs[eztv]` → `release_group:"grown"`, `title:"ish"`; hyphenated title split | not fixed — only breaks WITH a trailing [eztv]/[ettv] group (without it title='grown-ish' ✓). That bracket makes DashSeparatedReleaseGroup grab 'grown'; delicate release-group cascade, high regression risk |
 | 638 | https://github.com/guessit-io/guessit/issues/638 | ★ `Us.2019.mkv` → `Us` matched as country `US` not title | **fixed** (Title-Case country at title pos) |
 | 640 | https://github.com/guessit-io/guessit/issues/640 | ★ `grown-ish` + trailing `[ettv]`/`[eztv]` flips title/release_group (same root as 634) | not fixed — same root as #634 (trailing bracket + dash release-group cascade) |
-| 646 | https://github.com/guessit-io/guessit/issues/646 | `Charlot.Policeman.1917...` → `season:19, episode:17`; pre-1920 year split into S/E | not fixed — shared Python bug (Python also → S19E17). Pre-1920 year vs SxxExx needs a fragile year-range heuristic that diverges from Python |
+| 646 | https://github.com/guessit-io/guessit/issues/646 | `Charlot.Policeman.1917...` → `season:19, episode:17`; pre-1920 year split into S/E | **fixed** (validYear lower bound → 1900) |
 | 651 | https://github.com/guessit-io/guessit/issues/651 | `...x264-CNHD` → `streaming_service:"Cartoon Network"` from `CN` in release group | **fixed** (glued short-abbrev guard) |
 | 652 | https://github.com/guessit-io/guessit/issues/652 | ★ `The.Collector.2009...` → `title:"The"`, `edition:"Collector"` | **fixed** (lone-article title extend) |
 | 670 | https://github.com/guessit-io/guessit/issues/670 | `[SSA] Uma Musume...mkv` → `container:["ssa","mkv"]`, no release_group; leading `[SSA]` is group | **fixed** (leading subtitle-ext bracket → release_group) |
@@ -71,7 +71,7 @@ cases). Fixing it once should resolve many of these issues together. Tagged ★ 
 | 648 | https://github.com/guessit-io/guessit/issues/648 | Dolby Vision (DV/SL.DV/DL.DV) mis-parsed; new property, ambiguous tokens | **works** (DV→Dolby Vision, HDR→HDR10) |
 | 660 | https://github.com/guessit-io/guessit/issues/660 | `HI.SCORE.GIRL...` → `language:hi`; suppress 2-letter lang at title start (debatable) | **works** (title kept, no phantom hi) |
 | 667 | https://github.com/guessit-io/guessit/issues/667 | Anime `S2 - 01` → episode as episode_title "01" | not fixed — anime 'S2 - 01' → episode_title '01' not episode 1; season-prefix+dash heuristic, fragile |
-| 671 | https://github.com/guessit-io/guessit/issues/671 | Japanese episode marker `第195話` (CJK parsing) | not done — feature: Japanese CJK episode marker (第195話); no patterns |
+| 671 | https://github.com/guessit-io/guessit/issues/671 | Japanese episode marker `第195話` (CJK parsing) | **fixed** (CJK 第N話/シーズン/期 markers) |
 | 690 | https://github.com/guessit-io/guessit/issues/690 | `Re ZERO -Starting Life...- Season 2 - 15` → season:15; ambiguous formatting | not fixed — ambiguous anime formatting ('Season 2 - 15'); risky |
 | 693 | https://github.com/guessit-io/guessit/issues/693 | Resolution without 'p' (`720`/`1080`) → S/E; maintainer reluctant | not done — maintainer-reluctant; bare 720/1080 as resolution collides with episode numbers |
 | 696 | https://github.com/guessit-io/guessit/issues/696 | Romaji title + `(English title)` → group mis-detected | not fixed — anime romaji + '(English title)' group mis-detection; fragile |
@@ -81,7 +81,7 @@ cases). Fixing it once should resolve many of these issues together. Tagged ★ 
 | 741 | https://github.com/guessit-io/guessit/issues/741 | `1280x720up` junk after resolution breaks parsing | acceptable — JS gives clean title 'Movie' (junk '1280x720up' dropped, no crash). Reasonable |
 | 747 | https://github.com/guessit-io/guessit/issues/747 | `5. Nanatsu no Taizai...` → movie while `22.` works; inconsistent leading number | not fixed — '5. Title' vs '22. Title' inconsistent leading-number handling; ambiguous |
 | 752 | https://github.com/guessit-io/guessit/issues/752 | `S01E02.3.Kings` → `episode:[2,3]`; leading title digit read as range | **works** (ep 2, et "3 Kings"; better than Python) |
-| 763 | https://github.com/guessit-io/guessit/issues/763 | Japanese season/episode markers (シーズン/第/話) | not done — feature: Japanese season/episode markers (シーズン/第/話) |
+| 763 | https://github.com/guessit-io/guessit/issues/763 | Japanese season/episode markers (シーズン/第/話) | **fixed** (CJK シーズン/第/話/期 markers) |
 | 771 | https://github.com/guessit-io/guessit/issues/771 | `3D` should match only after year (avoids titles containing 3D) | acceptable — leading '3D' stays in the title (not mis-detected); a strict after-year-only rule could regress titles legitimately containing 3D |
 | 772 | https://github.com/guessit-io/guessit/issues/772 | Folder episode range `01~43` overrides file `11`; precedence design | not done — design call: folder episode range vs filename precedence |
 | 774 | https://github.com/guessit-io/guessit/issues/774 | `Blade Runner 2049` (no year) → S20E49; needs year-range heuristic | works — with a release year JS gives title 'Blade Runner 2049' + year. The no-year case (2049→S/E) is shared Python behaviour and needs a fragile year heuristic |
