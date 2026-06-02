@@ -9,7 +9,8 @@
  */
 
 export { guessit, properties, configure, reset, defaultApi, GuessItApi, GuessItException } from './api.js';
-export type { GuessItResult } from './api.js';
+export { GUESSIT_SCHEMA } from './schema.js';
+export type { GuessItResult, GuessitLanguage, PropertySchema } from './schema.js';
 export { parseOptions, loadConfig, mergeOptions } from './options.js';
 export type { GuessItOptions, RawOptions } from './options.js';
 export { rebulkBuilder } from './rules/index.js';

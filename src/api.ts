@@ -4,6 +4,10 @@
 import type { Rebulk } from 'rebulk-js';
 import { rebulkBuilder, type AdvancedConfig } from './rules/index.js';
 import { parseOptions, loadConfig, mergeOptions, type GuessItOptions, type RawOptions } from './options.js';
+import { GUESSIT_SCHEMA } from './schema.js';
+export type { GuessItResult, GuessitLanguage, PropertySchema } from './schema.js';
+export { GUESSIT_SCHEMA } from './schema.js';
+import type { GuessItResult } from './schema.js';
 
 export class GuessItException extends Error {
   string: string;
@@ -24,9 +28,6 @@ export class GuessItException extends Error {
   }
 }
 
-export interface GuessItResult {
-  [key: string]: unknown;
-}
 
 export class GuessItApi {
   private _rebulk: Rebulk | null = null;
@@ -154,14 +155,30 @@ export class GuessItApi {
       }
     }
 
-    const ordered: Record<string, unknown[]> = {};
+    let ordered: Record<string, unknown[]> = {};
     for (const k of Object.keys(props).sort()) {
       ordered[k] = [...props[k]].sort((a, b) => String(a).localeCompare(String(b)));
     }
 
     const rb = this._rebulk as unknown as { customizeProperties?: (p: Record<string, unknown>) => Record<string, unknown> };
     if (rb.customizeProperties) {
-      return rb.customizeProperties(ordered) as Record<string, unknown[]>;
+      ordered = rb.customizeProperties(ordered) as Record<string, unknown[]>;
+    }
+
+    // Final step: complete the (incomplete) pattern-derived map with the
+    // declarative GUESSIT_SCHEMA so every emittable property is advertised with
+    // its possible values — like Python's guessit.api.properties(). Done AFTER
+    // customizeProperties (which otherwise blanks count properties). Value-
+    // constrained properties get their enum; free/computed ones (title, episode,
+    // year, …) get [null], matching Python's convention.
+    for (const [name, def] of Object.entries(GUESSIT_SCHEMA)) {
+      const cur = Array.isArray(ordered[name]) ? ordered[name] : [];
+      if (def.enum) {
+        const merged = new Set([...cur, ...def.enum]);
+        ordered[name] = [...merged].sort((a, b) => String(a).localeCompare(String(b)));
+      } else if (cur.length === 0) {
+        ordered[name] = [null];
+      }
     }
     return ordered;
   }

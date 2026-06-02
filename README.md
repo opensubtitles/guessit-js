@@ -81,6 +81,26 @@ guessit('file.mkv', { excludes: ['release_group'] });
 | **File** | `container`, `mimetype`, `size`, `crc32`, `uuid` |
 | **Metadata** | `language`, `subtitle_language`, `country`, `type` |
 
+### Output schema
+
+The result is fully typed — import `GuessItResult` for autocomplete and type-checking:
+
+```ts
+import { guessit, properties, GUESSIT_SCHEMA, type GuessItResult } from 'guessit-js';
+
+const r: GuessItResult = guessit('The.Dark.Knight.2008.1080p.BluRay.x264-GRP.mkv');
+r.source;  // typed as the closed enum: "Blu-ray" | "Web" | "HDTV" | …
+
+properties();        // { source: ["Blu-ray", "Web", …], type: ["episode","movie"], … } for all 49 properties
+GUESSIT_SCHEMA.source.enum;  // the allowed values, programmatically
+```
+
+- **`properties()`** — returns every emittable property with its possible values (value-constrained props list their full enum; free/computed props list `[null]`), mirroring Python guessit's `properties()`.
+- **`GUESSIT_SCHEMA`** — the machine-readable schema (type, cardinality, enum) for all 49 properties.
+- **[`docs/output-schema.json`](docs/output-schema.json)** — a JSON Schema (draft-07) of the output, for validating results or generating clients in other languages.
+
+Regenerate the schema (after parsing changes) with `npm run schema`. A test (`test/schema.test.ts`) guarantees it never goes stale — every value emitted across the corpus must be in the schema.
+
 ## REST API
 
 ```bash
