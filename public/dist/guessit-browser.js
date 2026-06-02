@@ -8571,9 +8571,34 @@ var GuessitJS = (() => {
       name: "imdb_id",
       formatter: /* @__PURE__ */ __name((value) => value.toLowerCase(), "formatter")
     });
+    rebulk.regex("tmdb(?:id)?[-=]?(?<tmdb_id>\\d{1,9})", {
+      name: "tmdb_id",
+      private_parent: true,
+      children: true,
+      formatter: /* @__PURE__ */ __name((value) => parseInt(value, 10), "formatter")
+    });
+    rebulk.regex("tvdb(?:id)?[-=]?(?<tvdb_id>\\d{1,9})", {
+      name: "tvdb_id",
+      private_parent: true,
+      children: true,
+      formatter: /* @__PURE__ */ __name((value) => parseInt(value, 10), "formatter")
+    });
     return rebulk;
   }
   __name(imdb, "imdb");
+
+  // src/rules/properties/volume.ts
+  function volume(_config) {
+    const rebulk = new Rebulk({ disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "volume"), "disabled") });
+    rebulk.regexDefaults({ flags: "i" });
+    rebulk.regex("vol(?:\\d{1,3}|(?:ume)?[-. ]\\d{1,3})", {
+      name: "volume",
+      validator: sepsSurround,
+      formatter: /* @__PURE__ */ __name((value) => parseInt(value.replace(/\D/g, ""), 10), "formatter")
+    });
+    return rebulk;
+  }
+  __name(volume, "volume");
 
   // src/rules/properties/mimetype.ts
   var MIMETYPE_MAP = {
@@ -9124,6 +9149,7 @@ var GuessitJS = (() => {
     rebulk.rebulk(part(cfg("part")));
     rebulk.rebulk(crc(cfg("crc")));
     rebulk.rebulk(imdb(cfg("imdb")));
+    rebulk.rebulk(volume(cfg("volume")));
     rebulk.rebulk(processors(cfg("processors")));
     rebulk.rebulk(mimetype(cfg("mimetype")));
     rebulk.rebulk(type_(cfg("type")));
@@ -9624,6 +9650,7 @@ var GuessitJS = (() => {
           XXX: "XXX",
           "2in1": "2in1",
           "3D": { string: "3D", tags: "has-neighbor" },
+          "Virtual Reality": { string: ["VR"], regex: ["VR180", "VR360"], tags: "has-neighbor" },
           "Half SBS": { string: ["HSBS"], regex: ["Half-?SBS"], tags: "has-neighbor" },
           "Half OU": { string: ["HOU", "HTAB"], regex: ["Half-?OU", "Half-?TAB"], tags: "has-neighbor" },
           "High Quality": { string: "HQ", tags: "uhdbluray-neighbor" },

@@ -483,6 +483,7 @@
         "XXX": "XXX",
         "2in1": "2in1",
         "3D": {"string": "3D", "tags": "has-neighbor"},
+        "Virtual Reality": {"string": ["VR"], "regex": ["VR180", "VR360"], "tags": "has-neighbor"},
         "Half SBS": {"string": ["HSBS"], "regex": ["Half-?SBS"], "tags": "has-neighbor"},
         "Half OU": {"string": ["HOU", "HTAB"], "regex": ["Half-?OU", "Half-?TAB"], "tags": "has-neighbor"},
         "High Quality": {"string": "HQ", "tags": "uhdbluray-neighbor"},
