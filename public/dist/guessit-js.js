@@ -7178,7 +7178,11 @@ const _AnimeReleaseGroup = class _AnimeReleaseGroup extends Rule {
           (mm) => !mm.tags.includes("weak-language")
         );
         if (innerMatches.length === 0) return true;
-        return innerMatches.every((mm) => mm.name === "other");
+        if (innerMatches.every((mm) => mm.name === "other")) return true;
+        if (m.start === filepart.start && innerMatches.every((mm) => mm.name === "container" && mm.tags?.includes("subtitle"))) {
+          return true;
+        }
+        return false;
       };
       const emptyGroup = matches.markers.range(
         filepart.start,
@@ -7197,7 +7201,7 @@ const _AnimeReleaseGroup = class _AnimeReleaseGroup extends Rule {
           ...matches.range(
             emptyGroup.start,
             emptyGroup.end,
-            (m) => m.tags.includes("weak-language") || m.name === "other"
+            (m) => m.tags.includes("weak-language") || m.name === "other" || m.name === "container" && m.tags?.includes("subtitle")
           )
         );
       }
@@ -8096,6 +8100,16 @@ function crc(_config) {
   });
   return rebulk;
 }
+function imdb(_config) {
+  const rebulk = new Rebulk({ disabled: (context) => isDisabled(context, "imdb_id") });
+  rebulk.regexDefaults({ flags: "i" });
+  rebulk.defaults({ validator: sepsSurround });
+  rebulk.regex("tt\\d{7,8}", {
+    name: "imdb_id",
+    formatter: (value) => value.toLowerCase()
+  });
+  return rebulk;
+}
 const MIMETYPE_MAP = {
   "mkv": "video/x-matroska",
   "mp4": "video/mp4",
@@ -8616,6 +8630,7 @@ function rebulkBuilder(config) {
   rebulk.rebulk(film(cfg("film")));
   rebulk.rebulk(part(cfg("part")));
   rebulk.rebulk(crc(cfg("crc")));
+  rebulk.rebulk(imdb(cfg("imdb")));
   rebulk.rebulk(processors(cfg("processors")));
   rebulk.rebulk(mimetype(cfg("mimetype")));
   rebulk.rebulk(type_(cfg("type")));
