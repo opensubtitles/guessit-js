@@ -23,14 +23,14 @@ cases). Fixing it once should resolve many of these issues together. Tagged ★ 
 | 305 | https://github.com/guessit-io/guessit/issues/305 | `Brodnopis_i_pioro.svg` → title includes `svg`; extension leaks into title, typed movie | todo |
 | 623 | https://github.com/guessit-io/guessit/issues/623 | `FlexGet.US.S2013E14...AAC1.0.x264-NOGRP` → `season:[2013,0]`, misses `audio_codec:AAC`/`audio_channels:1.0` | **fixed** (audio_channels 1.0, no season:0) |
 | 634 | https://github.com/guessit-io/guessit/issues/634 | ★ `grown-ish.s03e01.web.x264-tbs[eztv]` → `release_group:"grown"`, `title:"ish"`; hyphenated title split | todo |
-| 638 | https://github.com/guessit-io/guessit/issues/638 | ★ `Us.2019.mkv` → `Us` matched as country `US` not title | todo |
+| 638 | https://github.com/guessit-io/guessit/issues/638 | ★ `Us.2019.mkv` → `Us` matched as country `US` not title | **fixed** (Title-Case country at title pos) |
 | 640 | https://github.com/guessit-io/guessit/issues/640 | ★ `grown-ish` + trailing `[ettv]`/`[eztv]` flips title/release_group (same root as 634) | todo |
 | 646 | https://github.com/guessit-io/guessit/issues/646 | `Charlot.Policeman.1917...` → `season:19, episode:17`; pre-1920 year split into S/E | todo |
 | 651 | https://github.com/guessit-io/guessit/issues/651 | `...x264-CNHD` → `streaming_service:"Cartoon Network"` from `CN` in release group | **fixed** (glued short-abbrev guard) |
-| 652 | https://github.com/guessit-io/guessit/issues/652 | ★ `The.Collector.2009...` → `title:"The"`, `edition:"Collector"` | todo |
+| 652 | https://github.com/guessit-io/guessit/issues/652 | ★ `The.Collector.2009...` → `title:"The"`, `edition:"Collector"` | **fixed** (lone-article title extend) |
 | 670 | https://github.com/guessit-io/guessit/issues/670 | `[SSA] Uma Musume...mkv` → `container:["ssa","mkv"]`, no release_group; leading `[SSA]` is group | **fixed** (leading subtitle-ext bracket → release_group) |
 | 732 | https://github.com/guessit-io/guessit/issues/732 | ★ `Show.S01E01.Cam...` → `source:["Camera","Web"]`; "Cam" episode word → Camera source | **fixed** (Title-Case Cam→title) |
-| 737 | https://github.com/guessit-io/guessit/issues/737 | ★ `The.English.S01E01...` → `title:"The"`, `language:"English"` | todo |
+| 737 | https://github.com/guessit-io/guessit/issues/737 | ★ `The.English.S01E01...` → `title:"The"`, `language:"English"` | **fixed** (lone-article title extend) |
 | 742 | https://github.com/guessit-io/guessit/issues/742 | `My File 238ddcd5aff.mkv` → `cd:5`; `cd` matches mid-token, needs word boundary | todo |
 | 743 | https://github.com/guessit-io/guessit/issues/743 | ★ `The.Mandalorian.S03E03.Chapter.19.The.Convert...` → `other:"Converted"`, truncated episode_title | **fixed** (Title-Case Convert→title) |
 | 744 | https://github.com/guessit-io/guessit/issues/744 | `Ted.Lasso.S03E03.4-5-1...` → `episode:[3,4,5]`, `episode_title:"1"`; "4-5-1" eaten as range | todo |

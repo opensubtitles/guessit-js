@@ -5316,11 +5316,107 @@ const _PreferTitleWithYear = class _PreferTitleWithYear extends Rule {
 _PreferTitleWithYear.priority = 32;
 _PreferTitleWithYear.dependency = [TitleFromPosition];
 let PreferTitleWithYear = _PreferTitleWithYear;
+const ARTICLES = /* @__PURE__ */ new Set([
+  "the",
+  "a",
+  "an",
+  "le",
+  "la",
+  "les",
+  "l'",
+  "el",
+  "los",
+  "las",
+  "il",
+  "lo",
+  "un",
+  "una",
+  "der",
+  "die",
+  "das",
+  "de",
+  "het",
+  "o",
+  "os"
+]);
+const _ExtendLoneArticleTitle = class _ExtendLoneArticleTitle extends Rule {
+  constructor() {
+    super(...arguments);
+    this.consequence = RemoveMatch;
+  }
+  when(matches, _context) {
+    const inp = matches.inputString || "";
+    const out = [];
+    const titles = matches.named("title");
+    const titleArr = Array.isArray(titles) ? titles : titles ? [titles] : [];
+    for (const title2 of titleArr) {
+      if (!ARTICLES.has(String(title2.value ?? "").trim().toLowerCase())) continue;
+      const filepart = matches.markers.atMatch(title2, (m) => m.name === "path", 0);
+      if (!filepart) continue;
+      const prop = matches.range(
+        title2.end,
+        filepart.end,
+        (m) => !m.private && ["edition", "language", "country", "other", "source"].includes(m.name ?? ""),
+        0
+      );
+      if (!prop) continue;
+      if (![...inp.slice(title2.end, prop.start)].every((c) => seps.includes(c))) continue;
+      const next = matches.range(
+        prop.end,
+        filepart.end,
+        (m) => !m.private && ["year", "season", "episode", "date"].includes(m.name ?? ""),
+        0
+      );
+      if (next && inp.slice(prop.end, next.start).replace(/[sexd]/gi, "").split("").some((c) => !seps.includes(c))) continue;
+      out.push({ title: title2, prop });
+    }
+    return out.length ? out : false;
+  }
+  then(matches, whenResponse, _context) {
+    for (const { title: title2, prop } of whenResponse) {
+      const inp = matches.inputString || "";
+      matches.remove(title2);
+      matches.remove(prop);
+      title2.end = prop.end;
+      title2.value = cleanup(inp.slice(title2.start, title2.end));
+      matches.append(title2);
+    }
+  }
+};
+_ExtendLoneArticleTitle.priority = -32;
+let ExtendLoneArticleTitle = _ExtendLoneArticleTitle;
+const _CountryAtTitlePosition = class _CountryAtTitlePosition extends Rule {
+  constructor() {
+    super(...arguments);
+    this.consequence = RemoveMatch;
+  }
+  when(matches, _context) {
+    const inp = matches.inputString || "";
+    const out = [];
+    const countries = matches.named("country");
+    const arr = Array.isArray(countries) ? countries : countries ? [countries] : [];
+    for (const c of arr) {
+      if (!/^[A-Z][a-z]+$/.test(c.raw ?? "")) continue;
+      const filepart = matches.markers.atMatch(c, (m) => m.name === "path", 0);
+      if (!filepart) continue;
+      if (![...inp.slice(filepart.start, c.start)].every((ch) => seps.includes(ch))) continue;
+      const year = matches.range(c.end, filepart.end, (m) => !m.private && m.name === "year", 0);
+      if (!year) continue;
+      const se = matches.range(c.end, year.start, (m) => !m.private && ["season", "episode", "date"].includes(m.name ?? ""), 0);
+      if (se) continue;
+      if (![...inp.slice(c.end, year.start)].every((ch) => seps.includes(ch))) continue;
+      out.push(c);
+    }
+    return out.length ? out : false;
+  }
+};
+_CountryAtTitlePosition.priority = 64;
+let CountryAtTitlePosition = _CountryAtTitlePosition;
 function title(config) {
   const rebulk = new Rebulk({
     disabled: (context) => isDisabled(context, "title")
   });
-  rebulk.rules(TitleFromPosition, PreferTitleWithYear);
+  rebulk.rules(CountryAtTitlePosition, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle);
   const expectedTitle = buildExpectedFunction("expected_title");
   rebulk.functional(expectedTitle, {
     name: "title",
