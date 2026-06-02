@@ -769,12 +769,101 @@ class PreferTitleWithYear extends Rule {
 /**
  * Create a rebulk pattern for title detection.
  */
+const ARTICLES = new Set([
+  'the', 'a', 'an', 'le', 'la', 'les', "l'", 'el', 'los', 'las', 'il', 'lo',
+  'un', 'una', 'der', 'die', 'das', 'de', 'het', 'o', 'os',
+]);
+
+/**
+ * A title that is a lone article ("The", "La", …) is almost always truncated:
+ * the following word was claimed as an edition/language/country/other (e.g.
+ * "The.Collector" → title "The" + edition Collector; "The.English" → title "The"
+ * + language English). When that property is the LAST title-region token (a
+ * year/season/episode or end follows), absorb it back into the title.
+ * (Issues #652, #737.)
+ */
+class ExtendLoneArticleTitle extends Rule {
+  static override priority = -32;
+  override consequence = RemoveMatch;
+
+  override when(matches: Matches, _context: Context): Array<{ title: Match; prop: Match }> | false {
+    const inp = (matches as any).inputString || '';
+    const out: Array<{ title: Match; prop: Match }> = [];
+    const titles = (matches.named('title') as Match[] | Match | undefined);
+    const titleArr = Array.isArray(titles) ? titles : titles ? [titles] : [];
+    for (const title of titleArr) {
+      if (!ARTICLES.has(String(title.value ?? '').trim().toLowerCase())) continue;
+      const filepart = matches.markers.atMatch(title, (m: Match) => m.name === 'path', 0) as Match | undefined;
+      if (!filepart) continue;
+      const prop = matches.range(title.end, filepart.end,
+        (m: Match) => !m.private && ['edition', 'language', 'country', 'other', 'source'].includes(m.name ?? ''), 0) as Match | undefined;
+      if (!prop) continue;
+      if (![...inp.slice(title.end, prop.start)].every((c: string) => seps.includes(c))) continue;
+      // Only absorb when the property is the last title-region token: a
+      // year/season/episode/date follows with nothing but seps in between
+      // (so "The.French.Connection.1971" — "Connection" after "French" — is left).
+      const next = matches.range(prop.end, filepart.end,
+        (m: Match) => !m.private && ['year', 'season', 'episode', 'date'].includes(m.name ?? ''), 0) as Match | undefined;
+      // The gap may contain season/episode marker letters (the "S" of "S01E01")
+      // plus separators, but no real title text.
+      if (next && inp.slice(prop.end, next.start).replace(/[sexd]/gi, '').split('').some((c: string) => !seps.includes(c))) continue;
+      out.push({ title, prop });
+    }
+    return out.length ? out : false;
+  }
+
+  override then(matches: Matches, whenResponse: unknown, _context: Context): void {
+    for (const { title, prop } of whenResponse as Array<{ title: Match; prop: Match }>) {
+      const inp = (matches as any).inputString || '';
+      matches.remove(title);
+      matches.remove(prop);
+      title.end = prop.end;
+      title.value = cleanup(inp.slice(title.start, title.end));
+      matches.append(title);
+    }
+  }
+}
+
+/**
+ * A Title-Case country code that sits alone at the title position followed by a
+ * year ("Us.2019" → country US, no title) is really the film title. Remove the
+ * country before title detection so the word becomes the title. Guards: raw must
+ * be Title-Case ("Us", not "US"/"us"), it must start the filepart, a YEAR (not a
+ * season/episode — those are real country tags like "US.S01E01") must follow with
+ * only separators between, and nothing else precedes the year. (Issue #638.)
+ */
+class CountryAtTitlePosition extends Rule {
+  static override priority = 64;
+  override consequence = RemoveMatch;
+
+  override when(matches: Matches, _context: Context): Match[] | false {
+    const inp = (matches as any).inputString || '';
+    const out: Match[] = [];
+    const countries = matches.named('country') as Match[] | Match | undefined;
+    const arr = Array.isArray(countries) ? countries : countries ? [countries] : [];
+    for (const c of arr) {
+      if (!/^[A-Z][a-z]+$/.test(c.raw ?? '')) continue;
+      const filepart = matches.markers.atMatch(c, (m: Match) => m.name === 'path', 0) as Match | undefined;
+      if (!filepart) continue;
+      if (![...inp.slice(filepart.start, c.start)].every((ch: string) => seps.includes(ch))) continue;
+      const year = matches.range(c.end, filepart.end, (m: Match) => !m.private && m.name === 'year', 0) as Match | undefined;
+      if (!year) continue;
+      // Reject if a season/episode/date comes before/with the year (a real country tag).
+      const se = matches.range(c.end, year.start, (m: Match) => !m.private && ['season', 'episode', 'date'].includes(m.name ?? ''), 0) as Match | undefined;
+      if (se) continue;
+      if (![...inp.slice(c.end, year.start)].every((ch: string) => seps.includes(ch))) continue;
+      out.push(c);
+    }
+    return out.length ? out : false;
+  }
+}
+
 export function title(config: Record<string, unknown>): Rebulk {
   const rebulk = new Rebulk({
     disabled: (context: Context) => isDisabled(context, 'title'),
   });
 
-  rebulk.rules(TitleFromPosition, PreferTitleWithYear);
+  rebulk.rules(CountryAtTitlePosition, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle);
 
   // Expected title functional pattern
   const expectedTitle = buildExpectedFunction('expected_title');
