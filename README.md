@@ -158,11 +158,14 @@ is corrected. Highlights:
 
 ## Performance
 
+Warm per-parse, measured on one machine (absolute numbers are hardware-dependent —
+the [live demo](https://opensubtitles.github.io/guessit-js) times it in your browser):
+
 | Runtime | ms/parse | Notes |
 |---------|----------|-------|
-| **Node.js 22 (V8)** | ~4–7 ms | **3.5× faster than Python** — recommended for servers/CLI |
 | **Browser (V8)** | ~2–3 ms | fastest; JIT-compiled |
-| **Python 3.8** | 23.86 ms | reference |
+| **Node.js 22 (V8)** | ~4.4 ms | **~3.5× faster than Python** (same machine) — recommended for servers/CLI |
+| **Python 3.8** | ~15.5 ms | reference |
 | **WASM (QuickJS/Javy)** | ~35 ms warm · ~150 ms cold | for portability, **not** speed (see below) |
 
 **About the WASM build.** It exists so you can run guessit in environments without
