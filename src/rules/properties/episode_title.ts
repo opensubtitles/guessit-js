@@ -34,11 +34,41 @@ export function episodeTitle(config: Record<string, unknown>) {
     Filepart2EpisodeTitle,
     NumericEpisodeTitleToEpisode,
     RemoveEpisodeTitleInReleaseGroup,
+    RemoveEpisodeMarkerWordTitle,
     RemoveTailEpisodeTitle,
     RenameEpisodeTitleWhenMovieType
   );
 
   return rebulk;
+}
+
+/**
+ * An `episode_title` that is a bare episode-marker word ("Ep", "Episode", "Cap",
+ * …) sitting immediately before the episode number is the marker that leaked, not
+ * a title — e.g. ".../Ep. 02 - Soul Hunter" → episode_title ["Ep","Soul Hunter"].
+ * Python keeps only the real title; drop the marker word.
+ */
+const EPISODE_MARKER_WORDS = new Set([
+  'ep', 'eps', 'episode', 'episodes', 'episodio', 'episodios', 'cap', 'capitulo',
+  'capitulos', 'folge', 'e',
+]);
+class RemoveEpisodeMarkerWordTitle extends Rule {
+  static override priority = POST_PROCESS;
+  override consequence = RemoveMatch;
+
+  override when(matches: Matches, _context: any): Match[] | false {
+    const ets = matches.named('episode_title') as Match[] | Match | undefined;
+    const etArr = Array.isArray(ets) ? ets : ets ? [ets] : [];
+    if (!etArr.length) return false;
+    const out: Match[] = [];
+    for (const et of etArr) {
+      if (!EPISODE_MARKER_WORDS.has(String(et.value ?? '').trim().toLowerCase())) continue;
+      const next = matches.range(et.end, (matches as any).inputString?.length ?? et.end + 100,
+        (m: Match) => !m.private && !!m.value, 0) as Match | undefined;
+      if (next && next.name === 'episode') out.push(et);
+    }
+    return out.length ? out : false;
+  }
 }
 
 const ET_STOP_WORDS = new Set([
