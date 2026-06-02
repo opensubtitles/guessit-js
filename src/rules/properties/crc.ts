@@ -67,7 +67,7 @@ export function crc(_config: Record<string, unknown>): Rebulk {
 
   rebulk.regex('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', {
     name: 'uuid',
-    validator: null,
+    validator: undefined,
     conflictSolver: (_match: Match, other: Match) =>
       ['episode', 'season', 'crc32'].includes(other.name ?? '') ? other : '__default__',
   });

@@ -24,7 +24,7 @@
   "homepage": "https://opensubtitles.github.io/guessit-js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/opensubtitles/guessit-js"
+    "url": "git+https://github.com/opensubtitles/guessit-js.git"
   },
   "bugs": {
     "url": "https://github.com/opensubtitles/guessit-js/issues"
