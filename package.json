@@ -1,6 +1,6 @@
 {
   "name": "guessit-js",
-  "version": "3.9.0",
+  "version": "4.0.0",
   "description": "Extract metadata (title, year, season, episode, codec, language, etc.) from media filenames — TypeScript port of Python guessit",
   "keywords": [
     "guessit",
@@ -46,6 +46,7 @@
   "scripts": {
     "dev": "vite build --watch",
     "build": "vite build",
+    "prepublishOnly": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

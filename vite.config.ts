@@ -23,6 +23,8 @@ export default defineConfig({
     target: 'es2020',
     sourcemap: true,
     minify: false,
+    emptyOutDir: true,
+    copyPublicDir: false, // don't copy the public/ demo site into the npm dist/
   },
   resolve: {
     alias: {
