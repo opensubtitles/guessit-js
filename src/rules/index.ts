@@ -28,6 +28,7 @@ import { film } from './properties/film.js';
 import { part } from './properties/part.js';
 import { crc } from './properties/crc.js';
 import { imdb } from './properties/imdb.js';
+import { volume } from './properties/volume.js';
 import { mimetype } from './properties/mimetype.js';
 import { type_ } from './properties/type.js';
 import { processors } from './processors.js';
@@ -91,6 +92,7 @@ export function rebulkBuilder(config: AdvancedConfig): Rebulk {
   rebulk.rebulk(part(cfg('part')));
   rebulk.rebulk(crc(cfg('crc')));
   rebulk.rebulk(imdb(cfg('imdb')));
+  rebulk.rebulk(volume(cfg('volume')));
   rebulk.rebulk(processors(cfg('processors')));
   rebulk.rebulk(mimetype(cfg('mimetype')));
   rebulk.rebulk(type_(cfg('type')));

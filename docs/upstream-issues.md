@@ -51,10 +51,10 @@ cases). Fixing it once should resolve many of these issues together. Tagged ★ 
 |---|-----|-------|--------|
 | 272 | https://github.com/guessit-io/guessit/issues/272 | Feature: archive containers/types (rar → episodearchive) | middle |
 | 273 | https://github.com/guessit-io/guessit/issues/273 | Feature: metadata files (nfo/poster/jpg → episodemeta, other:poster) | middle |
-| 301 | https://github.com/guessit-io/guessit/issues/301 | `vol127+128` leaks into release_group; detect `volume` property | middle |
+| 301 | https://github.com/guessit-io/guessit/issues/301 | `vol127+128` leaks into release_group; detect `volume` property | **fixed** (new volume property) |
 | 599 | https://github.com/guessit-io/guessit/issues/599 | Feature: artist/album for music folders | middle |
-| 618 | https://github.com/guessit-io/guessit/issues/618 | Feature: VR support | middle |
-| 622 | https://github.com/guessit-io/guessit/issues/622 | Feature: extract imdb_id/tmdb/tvdb (`tt\d+`) | **fixed** (extract tt… → imdb_id) |
+| 618 | https://github.com/guessit-io/guessit/issues/618 | Feature: VR support | **fixed** (VR other-value) |
+| 622 | https://github.com/guessit-io/guessit/issues/622 | Feature: extract imdb_id/tmdb/tvdb (`tt\d+`) | **fixed** (imdb_id tt…, tmdb_id, tvdb_id) |
 | 630 | https://github.com/guessit-io/guessit/issues/630 | Feature: MicroHD / HDlite other-values | **fixed** (added MicroHD/HDlite) |
 | 637 | https://github.com/guessit-io/guessit/issues/637 | `E.60.2020...` → title "E", ep 60; real show "E:60" but ambiguous | middle |
 | 648 | https://github.com/guessit-io/guessit/issues/648 | Dolby Vision (DV/SL.DV/DL.DV) mis-parsed; new property, ambiguous tokens | **works** (DV→Dolby Vision, HDR→HDR10) |

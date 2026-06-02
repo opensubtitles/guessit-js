@@ -20,5 +20,16 @@ export function imdb(_config: Record<string, unknown>): Rebulk {
     formatter: (value: string) => value.toLowerCase(),
   } as any);
 
+  // TMDb / TVDb ids in Plex/Jellyfin-style naming: {tmdb-12345}, [tvdbid-12345],
+  // tmdb=12345, etc. Capture the numeric id.
+  rebulk.regex('tmdb(?:id)?[-=]?(?<tmdb_id>\\d{1,9})', {
+    name: 'tmdb_id', private_parent: true, children: true,
+    formatter: (value: string) => parseInt(value, 10),
+  } as any);
+  rebulk.regex('tvdb(?:id)?[-=]?(?<tvdb_id>\\d{1,9})', {
+    name: 'tvdb_id', private_parent: true, children: true,
+    formatter: (value: string) => parseInt(value, 10),
+  } as any);
+
   return rebulk;
 }

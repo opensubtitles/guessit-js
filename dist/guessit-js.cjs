@@ -8159,6 +8159,28 @@ function imdb(_config) {
     name: "imdb_id",
     formatter: (value) => value.toLowerCase()
   });
+  rebulk.regex("tmdb(?:id)?[-=]?(?<tmdb_id>\\d{1,9})", {
+    name: "tmdb_id",
+    private_parent: true,
+    children: true,
+    formatter: (value) => parseInt(value, 10)
+  });
+  rebulk.regex("tvdb(?:id)?[-=]?(?<tvdb_id>\\d{1,9})", {
+    name: "tvdb_id",
+    private_parent: true,
+    children: true,
+    formatter: (value) => parseInt(value, 10)
+  });
+  return rebulk;
+}
+function volume(_config) {
+  const rebulk = new Rebulk({ disabled: (context) => isDisabled(context, "volume") });
+  rebulk.regexDefaults({ flags: "i" });
+  rebulk.regex("vol(?:\\d{1,3}|(?:ume)?[-. ]\\d{1,3})", {
+    name: "volume",
+    validator: sepsSurround,
+    formatter: (value) => parseInt(value.replace(/\D/g, ""), 10)
+  });
   return rebulk;
 }
 const MIMETYPE_MAP = {
@@ -8682,6 +8704,7 @@ function rebulkBuilder(config) {
   rebulk.rebulk(part(cfg("part")));
   rebulk.rebulk(crc(cfg("crc")));
   rebulk.rebulk(imdb(cfg("imdb")));
+  rebulk.rebulk(volume(cfg("volume")));
   rebulk.rebulk(processors(cfg("processors")));
   rebulk.rebulk(mimetype(cfg("mimetype")));
   rebulk.rebulk(type_(cfg("type")));
@@ -9613,6 +9636,16 @@ const advanced_config = {
       "2in1": "2in1",
       "3D": {
         string: "3D",
+        tags: "has-neighbor"
+      },
+      "Virtual Reality": {
+        string: [
+          "VR"
+        ],
+        regex: [
+          "VR180",
+          "VR360"
+        ],
         tags: "has-neighbor"
       },
       "Half SBS": {
