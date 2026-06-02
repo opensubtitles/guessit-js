@@ -10,13 +10,16 @@ already correct or reasonable (often better than Python) · **partial** = improv
 but not complete · **not fixed / not done** = with the reason inline · `wontfix` =
 invalid/ambiguous/env-specific.
 
-**Progress (as of this pass):** every open issue below has an explicit disposition.
-**27 fixed** (305-partial, 623, 638, 646, 651, 652, 667, 670, 671, 705, 722, 732,
+**Progress (as of 2026-06-02):** every open issue below has an explicit disposition.
+**29 fixed** (623, 634, 638, 640, 646, 651, 652, 667, 670, 671, 705, 722, 732,
 737, 743, 745, 746, 763, 784, 789, 790, 796, 800, 773, 301, 618, 622, 630, 708) · **7 already
 work / acceptable** (648, 660, 752, 774, 637, 741, 771) · the rest carry an inline
-"why not fixed" note. The unfixed parsing bugs cluster into: delicate release-group
-cascades (#634/#640), the obfuscated-hash case (#742), the remaining anime
-conventions (#690/#696/#747), and pure feature requests (#272/#273/#599/#802).
+"why not fixed" note. The remaining real parsing bugs are now just: the
+obfuscated `cd`-mid-token case (#742, only when the hash is glued into the title
+filepart — separate hash *dirs* are handled), the ambiguous anime conventions
+(#690/#696/#747), and pure feature requests (#272/#273/#599/#802). The delicate
+release-group cascade (#634/#640) is FIXED. The whole title-token-collision
+cluster that overlapped the Python↔JS parity gap is resolved (parity FIX 0).
 
 **Cross-ref (UPDATED 2026-06-02):** the biggest validated cluster was **title-token
 collision** — a title word/letter consumed as country/language/edition/source/other,
@@ -38,9 +41,9 @@ remain open and are individually marginal/risky.
 |---|-----|--------------------------------------|--------|
 | 305 | https://github.com/guessit-io/guessit/issues/305 | `Brodnopis_i_pioro.svg` → title includes `svg`; extension leaks into title, typed movie | not fixed — shared Python bug (Python also keeps 'svg' in title; .svg isn't a video container). Added .svg→image/svg+xml mimetype; the title-leak fix would diverge from Python |
 | 623 | https://github.com/guessit-io/guessit/issues/623 | `FlexGet.US.S2013E14...AAC1.0.x264-NOGRP` → `season:[2013,0]`, misses `audio_codec:AAC`/`audio_channels:1.0` | **fixed** (audio_channels 1.0, no season:0) |
-| 634 | https://github.com/guessit-io/guessit/issues/634 | ★ `grown-ish.s03e01.web.x264-tbs[eztv]` → `release_group:"grown"`, `title:"ish"`; hyphenated title split | not fixed — only breaks WITH a trailing [eztv]/[ettv] group (without it title='grown-ish' ✓). That bracket makes DashSeparatedReleaseGroup grab 'grown'; delicate release-group cascade, high regression risk |
+| 634 | https://github.com/guessit-io/guessit/issues/634 | ★ `grown-ish.s03e01.web.x264-tbs[eztv]` → `release_group:"grown"`, `title:"ish"`; hyphenated title split | **fixed** — title now `grown-ish` (Python STILL mis-parses this). DashSeparatedReleaseGroup `!atEnd` no longer grabs a candidate at the filepart start when a season/episode/date follows. (rg is `tbs[eztv]` — the `[eztv]` bracket isn't split off, minor/cosmetic) |
 | 638 | https://github.com/guessit-io/guessit/issues/638 | ★ `Us.2019.mkv` → `Us` matched as country `US` not title | **fixed** (Title-Case country at title pos) |
-| 640 | https://github.com/guessit-io/guessit/issues/640 | ★ `grown-ish` + trailing `[ettv]`/`[eztv]` flips title/release_group (same root as 634) | not fixed — same root as #634 (trailing bracket + dash release-group cascade) |
+| 640 | https://github.com/guessit-io/guessit/issues/640 | ★ `grown-ish` + trailing `[ettv]`/`[eztv]` flips title/release_group (same root as 634) | **fixed** — same fix as #634; title now `grown-ish` |
 | 646 | https://github.com/guessit-io/guessit/issues/646 | `Charlot.Policeman.1917...` → `season:19, episode:17`; pre-1920 year split into S/E | **fixed** (validYear lower bound → 1900) |
 | 651 | https://github.com/guessit-io/guessit/issues/651 | `...x264-CNHD` → `streaming_service:"Cartoon Network"` from `CN` in release group | **fixed** (glued short-abbrev guard) |
 | 652 | https://github.com/guessit-io/guessit/issues/652 | ★ `The.Collector.2009...` → `title:"The"`, `edition:"Collector"` | **fixed** (lone-article title extend) |
@@ -140,10 +143,12 @@ remain open and are individually marginal/risky.
   contiguous with the title/year. Rules live in title.ts / episode_title.ts /
   language.ts / release_group.ts. See the `python-parity` memory for the full list.
   Parity is now FIX 0; validate against `scripts/pydiff.mjs` after any change.
+- **Hyphenated-title split (#634, #640) — FIXED 2026-06-02.** A `-` inside a title
+  was made a release-group boundary when a trailing `[eztv]`/`[ettv]` group was
+  present (`grown-ish…[eztv]` → title "ish"). Fixed by rejecting a
+  DashSeparatedReleaseGroup `!atEnd` candidate at the filepart start when a
+  season/episode/date follows. JS now beats Python (which still mis-parses).
 - **Still open (separate sub-bugs, NOT in the parity corpus):**
-  - **Hyphenated-title split** (#634, #640): a `-` inside a title becomes a
-    release-group boundary *only* when a trailing `[eztv]`/`[ettv]` group is
-    present (`grown-ish…[eztv]` → title "ish", rg "grown"). Delicate cascade.
   - **Obfuscated `cd`-mid-token** (#742): `My File 238ddcd5aff.mkv` → `cd:5`.
     Same-filepart hash; `RemoveHashFilepartJunk` only handles a hash that is its
     OWN path segment (the `-Obfuscated/<hex>.mkv` parity cases), not a hash glued
