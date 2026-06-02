@@ -58,18 +58,18 @@ cases). Fixing it once should resolve many of these issues together. Tagged ★ 
 | 630 | https://github.com/guessit-io/guessit/issues/630 | Feature: MicroHD / HDlite other-values | **fixed** (added MicroHD/HDlite) |
 | 637 | https://github.com/guessit-io/guessit/issues/637 | `E.60.2020...` → title "E", ep 60; real show "E:60" but ambiguous | middle |
 | 648 | https://github.com/guessit-io/guessit/issues/648 | Dolby Vision (DV/SL.DV/DL.DV) mis-parsed; new property, ambiguous tokens | **works** (DV→Dolby Vision, HDR→HDR10) |
-| 660 | https://github.com/guessit-io/guessit/issues/660 | `HI.SCORE.GIRL...` → `language:hi`; suppress 2-letter lang at title start (debatable) | middle |
+| 660 | https://github.com/guessit-io/guessit/issues/660 | `HI.SCORE.GIRL...` → `language:hi`; suppress 2-letter lang at title start (debatable) | **works** (title kept, no phantom hi) |
 | 667 | https://github.com/guessit-io/guessit/issues/667 | Anime `S2 - 01` → episode as episode_title "01" | middle |
 | 671 | https://github.com/guessit-io/guessit/issues/671 | Japanese episode marker `第195話` (CJK parsing) | middle |
 | 690 | https://github.com/guessit-io/guessit/issues/690 | `Re ZERO -Starting Life...- Season 2 - 15` → season:15; ambiguous formatting | middle |
 | 693 | https://github.com/guessit-io/guessit/issues/693 | Resolution without 'p' (`720`/`1080`) → S/E; maintainer reluctant | middle |
 | 696 | https://github.com/guessit-io/guessit/issues/696 | Romaji title + `(English title)` → group mis-detected | middle |
 | 705 | https://github.com/guessit-io/guessit/issues/705 | Feature: opening/ending sequence detection (extra_type) | middle |
-| 708 | https://github.com/guessit-io/guessit/issues/708 | `...(July 30 2021) [540p mp4 subs]` → release_group "July 30 2021"; should be date | middle |
+| 708 | https://github.com/guessit-io/guessit/issues/708 | `...(July 30 2021) [540p mp4 subs]` → release_group "July 30 2021"; should be date | **fixed** (month-name date parsing) |
 | 722 | https://github.com/guessit-io/guessit/issues/722 | `Extras (2005) - S01E01...` → `other:"Extras"`, no title; show named "Extras" | middle |
 | 741 | https://github.com/guessit-io/guessit/issues/741 | `1280x720up` junk after resolution breaks parsing | middle |
 | 747 | https://github.com/guessit-io/guessit/issues/747 | `5. Nanatsu no Taizai...` → movie while `22.` works; inconsistent leading number | middle |
-| 752 | https://github.com/guessit-io/guessit/issues/752 | `S01E02.3.Kings` → `episode:[2,3]`; leading title digit read as range | middle |
+| 752 | https://github.com/guessit-io/guessit/issues/752 | `S01E02.3.Kings` → `episode:[2,3]`; leading title digit read as range | **works** (ep 2, et "3 Kings"; better than Python) |
 | 763 | https://github.com/guessit-io/guessit/issues/763 | Japanese season/episode markers (シーズン/第/話) | middle |
 | 771 | https://github.com/guessit-io/guessit/issues/771 | `3D` should match only after year (avoids titles containing 3D) | middle |
 | 772 | https://github.com/guessit-io/guessit/issues/772 | Folder episode range `01~43` overrides file `11`; precedence design | middle |

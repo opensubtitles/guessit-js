@@ -4411,8 +4411,36 @@ const DATE_REGEXPS = [
   new RegExp(`(?:^|[^\\d])((\\d{1,2})${DSEP}(\\d{1,2})${DSEP}(\\d{2}))(?:$|[^\\d])`, "i"),
   new RegExp(`(?:^|[^\\d])((\\d{4})${DSEP_BIS}(\\d{1,2})${DSEP}(\\d{1,2}))(?:$|[^\\d])`, "i"),
   new RegExp(`(?:^|[^\\d])((\\d{1,2})${DSEP}(\\d{1,2})${DSEP_BIS}(\\d{4}))(?:$|[^\\d])`, "i"),
-  new RegExp(`(?:^|[^\\d])((\\d{1,2}(?:st|nd|rd|th)?${DSEP}(?:[a-z]{3,10})${DSEP}\\d{4}))(?:$|[^\\d])`, "i")
+  new RegExp(`(?:^|[^\\d])((\\d{1,2}(?:st|nd|rd|th)?${DSEP}(?:[a-z]{3,10})${DSEP}\\d{4}))(?:$|[^\\d])`, "i"),
+  // Month-name first: "July 30 2021", "Jul.30.2021"
+  new RegExp(`(?:^|[^a-z\\d])(([a-z]{3,10})${DSEP}\\d{1,2}(?:st|nd|rd|th)?${DSEP}\\d{4})(?:$|[^\\d])`, "i")
 ];
+const MONTHS = {
+  jan: 1,
+  january: 1,
+  feb: 2,
+  february: 2,
+  mar: 3,
+  march: 3,
+  apr: 4,
+  april: 4,
+  may: 5,
+  jun: 6,
+  june: 6,
+  jul: 7,
+  july: 7,
+  aug: 8,
+  august: 8,
+  sep: 9,
+  sept: 9,
+  september: 9,
+  oct: 10,
+  october: 10,
+  nov: 11,
+  november: 11,
+  dec: 12,
+  december: 12
+};
 function validYear(year) {
   return year >= 1920 && year < 2035;
 }
@@ -4439,6 +4467,27 @@ function tryParseDate(match, groups2, yearFirst, dayFirst) {
   for (const yf of yearFirstOpts) {
     for (const df of dayFirstOpts) {
       let year, month, day;
+      const monthNameIdx = parts.findIndex((x) => MONTHS[x.toLowerCase()] !== void 0);
+      if (parts.length === 3 && monthNameIdx >= 0) {
+        month = MONTHS[parts[monthNameIdx].toLowerCase()];
+        const rest = parts.filter((_, i) => i !== monthNameIdx).map((x) => parseInt(x.replace(/(st|nd|rd|th)$/i, ""), 10));
+        const yearPos = rest.findIndex((n) => n >= 1e3);
+        if (yearPos >= 0) {
+          year = rest[yearPos];
+          day = rest[1 - yearPos];
+        } else {
+          year = rest[1];
+          day = rest[0];
+        }
+        if (month >= 1 && month <= 12 && day >= 1 && day <= 31 && validYear(year)) {
+          const ts = Date.UTC(year, month - 1, day);
+          const d = new Date(ts);
+          if (d.getUTCFullYear() === year && d.getUTCMonth() === month - 1 && d.getUTCDate() === day) {
+            return d;
+          }
+        }
+        continue;
+      }
       if (parts.length === 1) {
         const s = parts[0];
         if (s.length === 8) {
