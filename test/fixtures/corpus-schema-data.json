@@ -16,7 +16,8 @@
    313,
    314,
    315
-  ]
+  ],
+  "codeValues": []
  },
  "alternative_title": {
   "types": [
@@ -59,6 +60,17 @@
    "The Prestige",
    "Vanishing Line",
    "Version Longue"
+  ],
+  "codeValues": []
+ },
+ "another": {
+  "types": [],
+  "array": false,
+  "scalar": false,
+  "values": [],
+  "codeValues": [
+   "Reencoded",
+   "Rip"
   ]
  },
  "aspect_ratio": {
@@ -71,7 +83,8 @@
    1.667,
    1.765,
    1.778
-  ]
+  ],
+  "codeValues": []
  },
  "audio_bit_rate": {
   "types": [
@@ -83,7 +96,8 @@
    "320Kbps",
    "384Kbps",
    "448Kbps"
-  ]
+  ],
+  "codeValues": []
  },
  "audio_channels": {
   "types": [
@@ -92,6 +106,12 @@
   "array": true,
   "scalar": true,
   "values": [
+   "1.0",
+   "2.0",
+   "5.1",
+   "7.1"
+  ],
+  "codeValues": [
    "1.0",
    "2.0",
    "5.1",
@@ -105,6 +125,23 @@
   "array": true,
   "scalar": true,
   "values": [
+   "AAC",
+   "Dolby Atmos",
+   "Dolby Digital",
+   "Dolby Digital Plus",
+   "Dolby TrueHD",
+   "DTS",
+   "DTS-HD",
+   "DTS:X",
+   "FLAC",
+   "LPCM",
+   "MP2",
+   "MP3",
+   "Opus",
+   "PCM",
+   "Vorbis"
+  ],
+  "codeValues": [
    "AAC",
    "Dolby Atmos",
    "Dolby Digital",
@@ -136,6 +173,15 @@
    "High Resolution Audio",
    "Low Complexity",
    "Master Audio"
+  ],
+  "codeValues": [
+   "EX",
+   "Extended Surround",
+   "High Efficiency",
+   "High Quality",
+   "High Resolution Audio",
+   "Low Complexity",
+   "Master Audio"
   ]
  },
  "bonus": {
@@ -148,7 +194,8 @@
    1,
    2,
    9
-  ]
+  ],
+  "codeValues": []
  },
  "bonus_title": {
   "types": [
@@ -163,7 +210,8 @@
    "Making Of",
    "Stunts",
    "We Stand Alone Together"
-  ]
+  ],
+  "codeValues": []
  },
  "cd": {
   "types": [
@@ -174,7 +222,8 @@
   "values": [
    1,
    2
-  ]
+  ],
+  "codeValues": []
  },
  "cd_count": {
   "types": [
@@ -184,7 +233,8 @@
   "scalar": true,
   "values": [
    2
-  ]
+  ],
+  "codeValues": []
  },
  "color_depth": {
   "types": [
@@ -193,6 +243,11 @@
   "array": false,
   "scalar": true,
   "values": [
+   "10-bit",
+   "12-bit",
+   "8-bit"
+  ],
+  "codeValues": [
    "10-bit",
    "12-bit",
    "8-bit"
@@ -220,7 +275,8 @@
    "ts",
    "webm",
    "wmv"
-  ]
+  ],
+  "codeValues": []
  },
  "country": {
   "types": [
@@ -232,7 +288,8 @@
    "AU",
    "GB",
    "US"
-  ]
+  ],
+  "codeValues": []
  },
  "crc32": {
   "types": [
@@ -265,7 +322,8 @@
    "EDA6E7F1",
    "F5CCE87C",
    "F9967949"
-  ]
+  ],
+  "codeValues": []
  },
  "date": {
   "types": [
@@ -273,7 +331,8 @@
   ],
   "array": false,
   "scalar": true,
-  "values": []
+  "values": [],
+  "codeValues": []
  },
  "disc": {
   "types": [
@@ -286,7 +345,8 @@
    2,
    3,
    5
-  ]
+  ],
+  "codeValues": []
  },
  "edition": {
   "types": [
@@ -299,6 +359,27 @@
    "Collector",
    "Criterion",
    "Director's Cut",
+   "Extended",
+   "Fan",
+   "Festival",
+   "IMAX",
+   "Limited",
+   "Remastered",
+   "Restored",
+   "Special",
+   "Theatrical",
+   "Ultimate",
+   "Uncensored",
+   "Uncut",
+   "Unrated"
+  ],
+  "codeValues": [
+   "Alternative Cut",
+   "Collector",
+   "Criterion",
+   "Deluxe",
+   "Director's Cut",
+   "Director's Definitive Cut",
    "Extended",
    "Fan",
    "Festival",
@@ -402,7 +483,8 @@
    9,
    96,
    99
-  ]
+  ],
+  "codeValues": []
  },
  "episode_count": {
   "types": [
@@ -415,7 +497,8 @@
    4,
    6,
    9
-  ]
+  ],
+  "codeValues": []
  },
  "episode_details": {
   "types": [
@@ -424,6 +507,12 @@
   "array": true,
   "scalar": true,
   "values": [
+   "Final",
+   "Pilot",
+   "Special",
+   "Unaired"
+  ],
+  "codeValues": [
    "Final",
    "Pilot",
    "Special",
@@ -437,6 +526,9 @@
   "array": false,
   "scalar": true,
   "values": [
+   "Minisode"
+  ],
+  "codeValues": [
    "Minisode"
   ]
  },
@@ -650,7 +742,8 @@
    "Vaginatown",
    "Van He-llsing",
    "Waste Makes Haste"
-  ]
+  ],
+  "codeValues": []
  },
  "film": {
   "types": [
@@ -661,7 +754,8 @@
   "values": [
    17,
    21
-  ]
+  ],
+  "codeValues": []
  },
  "film_title": {
   "types": [
@@ -671,7 +765,8 @@
   "scalar": true,
   "values": [
    "James Bond"
-  ]
+  ],
+  "codeValues": []
  },
  "frame_rate": {
   "types": [
@@ -684,7 +779,8 @@
    "24fps",
    "25fps",
    "48fps"
-  ]
+  ],
+  "codeValues": []
  },
  "language": {
   "types": [
@@ -695,7 +791,8 @@
   "scalar": true,
   "values": [
    "und"
-  ]
+  ],
+  "codeValues": []
  },
  "mimetype": {
   "types": [
@@ -712,7 +809,8 @@
    "video/webm",
    "video/x-matroska",
    "video/x-msvideo"
-  ]
+  ],
+  "codeValues": []
  },
  "other": {
   "types": [
@@ -782,6 +880,79 @@
    "West Coast Feed",
    "Widescreen",
    "XXX"
+  ],
+  "codeValues": [
+   "2in1",
+   "3D",
+   "Audio Fixed",
+   "Bonus",
+   "BT.2020",
+   "Classic",
+   "Colorized",
+   "Complete",
+   "Converted",
+   "Documentary",
+   "Dolby Vision",
+   "Dual Audio",
+   "East Coast Feed",
+   "Ending Credits",
+   "Extras",
+   "Fan Subtitled",
+   "Fast Subtitled",
+   "Fix",
+   "Full HD",
+   "Half OU",
+   "Half SBS",
+   "Hardcoded Subtitles",
+   "HD",
+   "HDR10",
+   "High Frame Rate",
+   "High Quality",
+   "High Resolution",
+   "Hybrid",
+   "Internal",
+   "Line Audio",
+   "Line Dubbed",
+   "Low Definition",
+   "Mic Dubbed",
+   "Micro HD",
+   "Mux",
+   "NTSC",
+   "Obfuscated",
+   "Open Matte",
+   "Opening Credits",
+   "Original Animated Video",
+   "Original Animation DVD",
+   "Original Aspect Ratio",
+   "Original Net Animation",
+   "Original Video",
+   "PAL",
+   "Preair",
+   "Proof",
+   "Proper",
+   "PS Vita",
+   "Read NFO",
+   "Reencoded",
+   "Region 5",
+   "Region C",
+   "Remux",
+   "Repost",
+   "Retail",
+   "Rip",
+   "Sample",
+   "Screener",
+   "SECAM",
+   "Standard Dynamic Range",
+   "Straight to Video",
+   "Sync Fixed",
+   "Trailer",
+   "Ultra HD",
+   "Upscaled",
+   "Variable Frame Rate",
+   "Virtual Reality",
+   "West Coast Feed",
+   "Widescreen",
+   "XXX"
   ]
  },
  "part": {
@@ -796,7 +967,8 @@
    3,
    4,
    6
-  ]
+  ],
+  "codeValues": []
  },
  "proper_count": {
   "types": [
@@ -808,7 +980,8 @@
    1,
    2,
    3
-  ]
+  ],
+  "codeValues": []
  },
  "release_group": {
   "types": [
@@ -1199,7 +1372,8 @@
    "Zero-Raws",
    "Zeus",
    "ZMachine"
-  ]
+  ],
+  "codeValues": []
  },
  "screen_size": {
   "types": [
@@ -1221,6 +1395,9 @@
    "720p",
    "720x432",
    "960x544"
+  ],
+  "codeValues": [
+   "2160p"
   ]
  },
  "season": {
@@ -1259,7 +1436,8 @@
    7,
    8,
    9
-  ]
+  ],
+  "codeValues": []
  },
  "season_count": {
   "types": [
@@ -1269,7 +1447,8 @@
   "scalar": true,
   "values": [
    5
-  ]
+  ],
+  "codeValues": []
  },
  "size": {
   "types": [
@@ -1284,7 +1463,8 @@
    "4.8GB",
    "5.3GB",
    "999MB"
-  ]
+  ],
+  "codeValues": []
  },
  "source": {
   "types": [
@@ -1310,6 +1490,30 @@
    "Ultra HDTV",
    "VHS",
    "Web"
+  ],
+  "codeValues": [
+   "Analog HDTV",
+   "Blu-ray",
+   "Camera",
+   "Digital Master",
+   "Digital TV",
+   "DVD",
+   "HD Camera",
+   "HD Telecine",
+   "HD Telesync",
+   "HD-DVD",
+   "HDTV",
+   "Pay-per-view",
+   "Satellite",
+   "Telecine",
+   "Telesync",
+   "TV",
+   "Ultra HD Blu-ray",
+   "Ultra HDTV",
+   "VHS",
+   "Video on Demand",
+   "Web",
+   "Workprint"
   ]
  },
  "streaming_service": {
@@ -1460,6 +1664,164 @@
    "WWE Network",
    "Yahoo",
    "YouTube Red"
+  ],
+  "codeValues": [
+   "9Now",
+   "A&E",
+   "ABC",
+   "ABC Australia",
+   "Adult Swim",
+   "Al Jazeera English",
+   "Amazon Prime",
+   "AMC",
+   "America's Test Kitchen",
+   "Animal Planet",
+   "AnimeLab",
+   "AOL",
+   "AppleTV",
+   "ARD",
+   "BBC iPlayer",
+   "Binge",
+   "Blackpills",
+   "BluTV",
+   "Boomerang",
+   "BravoTV",
+   "Canal+",
+   "Cartoon Network",
+   "CBC",
+   "CBS",
+   "Channel 4",
+   "CHRGD",
+   "Cinemax",
+   "CNBC",
+   "Comedians in Cars Getting Coffee",
+   "Comedy Central",
+   "Country Music Television",
+   "Crackle",
+   "Crave",
+   "Crunchy Roll",
+   "CSpan",
+   "CTV",
+   "CuriosityStream",
+   "CWSeed",
+   "Daisuki",
+   "DC Universe",
+   "Deadhouse Films",
+   "Digiturk Diledigin Yerde",
+   "Discovery",
+   "Discovery Plus",
+   "Disney",
+   "Disney+",
+   "DIY Network",
+   "Doc Club",
+   "DPlay",
+   "DramaFever",
+   "E!",
+   "El Trece",
+   "ePix",
+   "ESPN",
+   "Esquire",
+   "Facebook Watch",
+   "Family",
+   "Family Jr",
+   "Fandor",
+   "Food Network",
+   "Fox",
+   "Fox Premium",
+   "Foxtel",
+   "Freeform",
+   "FYI Network",
+   "GagaOOLala",
+   "Global",
+   "GloboSat Play",
+   "Hallmark",
+   "HBO Go",
+   "HBO Max",
+   "HGTV",
+   "History",
+   "hoichoi",
+   "Hulu",
+   "IFC",
+   "iflix",
+   "Investigation Discovery",
+   "iQIYI",
+   "iTunes",
+   "ITV",
+   "Knowledge Network",
+   "Lifetime",
+   "MBC",
+   "Motor Trend OnDemand",
+   "MSNBC",
+   "MTV",
+   "MUBI",
+   "National Audiovisual Institute",
+   "National Film Board",
+   "National Geographic",
+   "NBA TV",
+   "NBC",
+   "Netflix",
+   "NFL",
+   "NFL Now",
+   "NHL GameCenter",
+   "Nickelodeon",
+   "Norsk Rikskringkasting",
+   "OnDemandKorea",
+   "Oprah Winfrey Network",
+   "Opto",
+   "Paramount+",
+   "PBS",
+   "PBS Kids",
+   "Peacock",
+   "Playstation Network",
+   "Pluzz",
+   "PokerGO",
+   "Rakuten TV",
+   "RTE One",
+   "RUUTU",
+   "SBS",
+   "Science Channel",
+   "SeeSo",
+   "Shomi",
+   "Showtime",
+   "Sony",
+   "Spike",
+   "Spike TV",
+   "Sportsnet",
+   "Sprout",
+   "Stan",
+   "Starz",
+   "Sveriges Television",
+   "SwearNet",
+   "Syfy",
+   "TBS",
+   "TFou",
+   "The CW",
+   "The Roku Channel",
+   "TLC",
+   "TubiTV",
+   "TV Land",
+   "TV3 Ireland",
+   "TV4 Sweeden",
+   "TVING",
+   "TVNZ",
+   "UFC",
+   "UFC Fight Pass",
+   "UKTV",
+   "Univision",
+   "USA Network",
+   "Velocity",
+   "VH1",
+   "Viceland",
+   "Viki",
+   "Vimeo",
+   "VRV",
+   "W Network",
+   "WatchMe",
+   "WWE Network",
+   "Xbox Video",
+   "Yahoo",
+   "YouTube Red",
+   "ZDF"
   ]
  },
  "subtitle_language": {
@@ -1471,7 +1833,8 @@
   "scalar": true,
   "values": [
    "und"
-  ]
+  ],
+  "codeValues": []
  },
  "title": {
   "types": [
@@ -2090,7 +2453,8 @@
    "Zankyou no Terror",
    "Zoo",
    "Zootopia"
-  ]
+  ],
+  "codeValues": []
  },
  "type": {
   "types": [
@@ -2101,7 +2465,8 @@
   "values": [
    "episode",
    "movie"
-  ]
+  ],
+  "codeValues": []
  },
  "uuid": {
   "types": [
@@ -2118,7 +2483,8 @@
    "c48db7d2aeb040e8a920a9fd6effcbf4",
    "eb518eaf33f641a1a8c6e0973a67aec2",
    "XD607ebb-BRc59935-5155473f-1c5f49"
-  ]
+  ],
+  "codeValues": []
  },
  "version": {
   "types": [
@@ -2131,7 +2497,8 @@
    2,
    3,
    4
-  ]
+  ],
+  "codeValues": []
  },
  "video_api": {
   "types": [
@@ -2140,6 +2507,9 @@
   "array": false,
   "scalar": true,
   "values": [
+   "DXVA"
+  ],
+  "codeValues": [
    "DXVA"
   ]
  },
@@ -2154,7 +2524,8 @@
    "19.1Mbps",
    "20Mbps",
    "32Mbps"
-  ]
+  ],
+  "codeValues": []
  },
  "video_codec": {
   "types": [
@@ -2173,6 +2544,19 @@
    "VP8",
    "VP9",
    "Xvid"
+  ],
+  "codeValues": [
+   "DivX",
+   "H.263",
+   "H.264",
+   "H.265",
+   "MPEG-2",
+   "RealVideo",
+   "VC-1",
+   "VP7",
+   "VP8",
+   "VP9",
+   "Xvid"
   ]
  },
  "video_profile": {
@@ -2185,6 +2569,18 @@
    "Advanced Video Codec High Definition",
    "High",
    "High 10",
+   "High Efficiency Video Coding",
+   "Main",
+   "Scalable Video Coding"
+  ],
+  "codeValues": [
+   "Advanced Video Codec High Definition",
+   "Baseline",
+   "Extended",
+   "High",
+   "High 10",
+   "High 4:2:2",
+   "High 4:4:4 Predictive",
    "High Efficiency Video Coding",
    "Main",
    "Scalable Video Coding"
@@ -2209,7 +2605,8 @@
    "www.manga-ddl-free.com",
    "www.site.com",
    "WWW.TORRENTING.COM"
-  ]
+  ],
+  "codeValues": []
  },
  "year": {
   "types": [
@@ -2270,6 +2667,7 @@
    2019,
    2020,
    2021
-  ]
+  ],
+  "codeValues": []
  }
 }
