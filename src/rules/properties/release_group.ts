@@ -441,7 +441,15 @@ class AnimeReleaseGroup extends Rule {
         ) as Match[]);
         if (innerMatches.length === 0) return true;
         // Also consider "empty" if only 'other' matches are inside
-        return innerMatches.every((mm: Match) => mm.name === 'other');
+        if (innerMatches.every((mm: Match) => mm.name === 'other')) return true;
+        // A LEADING bracket whose only content is a subtitle-format container
+        // name (e.g. "[SSA]", "[ASS]") is an anime release group, not a
+        // container — the name happens to collide with a subtitle extension.
+        if (m.start === filepart.start &&
+            innerMatches.every((mm: Match) => mm.name === 'container' && mm.tags?.includes('subtitle'))) {
+          return true;
+        }
+        return false;
       };
 
       const emptyGroup = matches.markers.range(
@@ -463,12 +471,14 @@ class AnimeReleaseGroup extends Rule {
           tags: ['anime'],
         });
         toAppend.push(group);
-        // Remove weak-language and other matches that were inside the group
+        // Remove weak-language, other, and subtitle-container matches that were
+        // inside the group (the bracket content is the release group name).
         toRemove.push(
           ...matches.range(
             emptyGroup.start,
             emptyGroup.end,
-            (m: Match) => m.tags.includes('weak-language') || m.name === 'other'
+            (m: Match) => m.tags.includes('weak-language') || m.name === 'other' ||
+              (m.name === 'container' && m.tags?.includes('subtitle'))
           )
         );
       }

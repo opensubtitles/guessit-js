@@ -7537,7 +7537,11 @@ var GuessitJS = (() => {
             (mm) => !mm.tags.includes("weak-language")
           );
           if (innerMatches.length === 0) return true;
-          return innerMatches.every((mm) => mm.name === "other");
+          if (innerMatches.every((mm) => mm.name === "other")) return true;
+          if (m.start === filepart.start && innerMatches.every((mm) => mm.name === "container" && mm.tags?.includes("subtitle"))) {
+            return true;
+          }
+          return false;
         }, "isGroupEmpty");
         const emptyGroup = matches.markers.range(
           filepart.start,
@@ -7556,7 +7560,7 @@ var GuessitJS = (() => {
             ...matches.range(
               emptyGroup.start,
               emptyGroup.end,
-              (m) => m.tags.includes("weak-language") || m.name === "other"
+              (m) => m.tags.includes("weak-language") || m.name === "other" || m.name === "container" && m.tags?.includes("subtitle")
             )
           );
         }
@@ -8509,6 +8513,19 @@ var GuessitJS = (() => {
   }
   __name(crc, "crc");
 
+  // src/rules/properties/imdb.ts
+  function imdb(_config) {
+    const rebulk = new Rebulk({ disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "imdb_id"), "disabled") });
+    rebulk.regexDefaults({ flags: "i" });
+    rebulk.defaults({ validator: sepsSurround });
+    rebulk.regex("tt\\d{7,8}", {
+      name: "imdb_id",
+      formatter: /* @__PURE__ */ __name((value) => value.toLowerCase(), "formatter")
+    });
+    return rebulk;
+  }
+  __name(imdb, "imdb");
+
   // src/rules/properties/mimetype.ts
   var MIMETYPE_MAP = {
     "mkv": "video/x-matroska",
@@ -9057,6 +9074,7 @@ var GuessitJS = (() => {
     rebulk.rebulk(film(cfg("film")));
     rebulk.rebulk(part(cfg("part")));
     rebulk.rebulk(crc(cfg("crc")));
+    rebulk.rebulk(imdb(cfg("imdb")));
     rebulk.rebulk(processors(cfg("processors")));
     rebulk.rebulk(mimetype(cfg("mimetype")));
     rebulk.rebulk(type_(cfg("type")));
