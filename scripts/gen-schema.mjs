@@ -38,10 +38,12 @@ for (const name of Object.keys(corpus).sort()) {
   const c = corpus[name];
   const base = c.types.filter((t) => t !== 'null');
   const isLang = LANGUAGE_PROPS.has(name);
-  // enum = union of Python-declared (non-null) values + corpus-emitted values
+  // enum = union of (1) Python-declared values, (2) corpus-emitted values, and
+  // (3) values the CODE can emit (pattern.values) — so the enum is complete even
+  // for values no corpus example triggers (e.g. source "Workprint"/"Telecine").
   const pyVals = (pyProps[name] || []).filter((v) => v !== null);
   const enumVals = VALUE_CONSTRAINED.has(name)
-    ? [...new Set([...pyVals, ...c.values])].sort((a, b) => String(a).localeCompare(String(b)))
+    ? [...new Set([...pyVals, ...c.values, ...(c.codeValues || [])])].sort((a, b) => String(a).localeCompare(String(b)))
     : [];
   props[name] = {
     base: isLang ? ['Language'] : (base.length ? base : ['string']),

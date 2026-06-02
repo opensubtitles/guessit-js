@@ -25,6 +25,14 @@ describe('output schema', () => {
     expect(properties().source).toContain('Web');
   });
 
+  it('enums are code-complete — include values no corpus example triggers', () => {
+    // These source values are defined in src/rules/properties/source.ts but are
+    // absent from the 1009-input corpus; the enum must still list them.
+    for (const v of ['Workprint', 'Telecine', 'Telesync', 'Pay-per-view', 'Video on Demand']) {
+      expect(GUESSIT_SCHEMA.source.enum, `source enum missing ${v}`).toContain(v);
+    }
+  });
+
   it('every property emitted across the corpus is in the schema', () => {
     const unknownKeys = new Set<string>();
     for (const f of inputs) {

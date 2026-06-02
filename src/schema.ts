@@ -38,6 +38,13 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
     "array": true,
     "scalar": true
   },
+  "another": {
+    "type": [
+      "string"
+    ],
+    "array": false,
+    "scalar": false
+  },
   "aspect_ratio": {
     "type": [
       "number"
@@ -261,7 +268,9 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "DC",
       "ddc",
       "deluxe",
+      "Deluxe",
       "Director's Cut",
+      "Director's Definitive Cut",
       "extended",
       "Extended",
       "Fan",
@@ -375,6 +384,7 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "2in1",
       "3D",
       "asrequested",
+      "Audio Fixed",
       "Bonus",
       "BT.2020",
       "Classic",
@@ -391,6 +401,7 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "Dual",
       "Dual Audio",
       "East Coast Feed",
+      "Ending Credits",
       "Extras",
       "Fan Subtitled",
       "Fansub",
@@ -434,6 +445,8 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "Obfuscated",
       "Ona",
       "Open Matte",
+      "Opening Credits",
+      "Original Animated Video",
       "Original Animation DVD",
       "Original Aspect Ratio",
       "Original Net Animation",
@@ -453,6 +466,7 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "Real",
       "Reencoded",
       "Region 5",
+      "Region C",
       "Remux",
       "Repost",
       "Retail",
@@ -465,12 +479,14 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "Standard Dynamic Range",
       "Straight to Video",
       "STV",
+      "Sync Fixed",
       "Trailer",
       "UHD",
       "Ultra HD",
       "Upscaled",
       "Variable Frame Rate",
       "VFR",
+      "Virtual Reality",
       "Vita",
       "VO",
       "vost",
@@ -564,12 +580,17 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "HD Telesync",
       "HD-DVD",
       "HDTV",
+      "Pay-per-view",
       "Satellite",
+      "Telecine",
+      "Telesync",
       "TV",
       "Ultra HD Blu-ray",
       "Ultra HDTV",
       "VHS",
-      "Web"
+      "Video on Demand",
+      "Web",
+      "Workprint"
     ]
   },
   "streaming_service": {
@@ -602,6 +623,7 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "ANLB",
       "ANPL",
       "AOL",
+      "AppleTV",
       "APTV",
       "ARD",
       "AS",
@@ -628,6 +650,7 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "CCGC",
       "Channel 4",
       "CHGD",
+      "CHRGD",
       "Cinemax",
       "CMAX",
       "CMT",
@@ -655,6 +678,7 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "DC Universe",
       "DCU",
       "DDY",
+      "Deadhouse Films",
       "DF",
       "DHF",
       "Digiturk Diledigin Yerde",
@@ -665,6 +689,7 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "Disney+",
       "DIY",
       "DIY Network",
+      "Doc Club",
       "DOCC",
       "DPlay",
       "DPLY",
@@ -713,6 +738,7 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "Hallmark",
       "HBO",
       "HBO Go",
+      "HBO Max",
       "HGTV",
       "HIST",
       "History",
@@ -800,6 +826,8 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "SESO",
       "SHMI",
       "SHO",
+      "Shomi",
+      "Showtime",
       "SNET",
       "Sony",
       "SONY",
@@ -810,11 +838,13 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "Sportsnet",
       "Sprout",
       "SPRT",
+      "Stan",
       "STAN",
       "Starz",
       "STZ",
       "Sveriges Television",
       "SVT",
+      "SwearNet",
       "SWER",
       "Syfy",
       "SYFY",
@@ -838,6 +868,7 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "UFC Fight Pass",
       "UKTV",
       "UNIV",
+      "Univision",
       "USA Network",
       "USAN",
       "Velocity",
@@ -857,6 +888,7 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "WWE Network",
       "WWEN",
       "XBOX",
+      "Xbox Video",
       "Yahoo",
       "YHOO",
       "YouTube Red",
@@ -932,6 +964,7 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "H.264",
       "H.265",
       "MPEG-2",
+      "RealVideo",
       "VC-1",
       "VP7",
       "VP8",
@@ -949,11 +982,15 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
     "scalar": true,
     "enum": [
       "Advanced Video Codec High Definition",
+      "Baseline",
       "BP",
       "EP",
+      "Extended",
       "HEVC",
       "High",
       "High 10",
+      "High 4:2:2",
+      "High 4:4:4 Predictive",
       "High Efficiency Video Coding",
       "HiP",
       "HP",
@@ -985,6 +1022,7 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
 export interface GuessItResult {
   absolute_episode?: number | (number)[];
   alternative_title?: string | (string)[];
+  another?: string;
   aspect_ratio?: number;
   audio_bit_rate?: string;
   audio_channels?: "1.0" | "1ch" | "2.0" | "20" | "2ch" | "5.1" | "5ch" | "6ch" | "7.1" | "7ch" | "8ch" | "mono" | "stereo" | ("1.0" | "1ch" | "2.0" | "20" | "2ch" | "5.1" | "5ch" | "6ch" | "7.1" | "7ch" | "8ch" | "mono" | "stereo")[];
@@ -1000,7 +1038,7 @@ export interface GuessItResult {
   crc32?: string;
   date?: string | Date;
   disc?: number | (number)[];
-  edition?: "Alternative Cut" | "CC" | "collector" | "Collector" | "Criterion" | "DC" | "ddc" | "deluxe" | "Director's Cut" | "extended" | "Extended" | "Fan" | "Festival" | "imax" | "IMAX" | "limited" | "Limited" | "Remastered" | "Restored" | "se" | "Special" | "theatrical" | "Theatrical" | "Ultimate" | "Uncensored" | "Uncut" | "Unrated" | ("Alternative Cut" | "CC" | "collector" | "Collector" | "Criterion" | "DC" | "ddc" | "deluxe" | "Director's Cut" | "extended" | "Extended" | "Fan" | "Festival" | "imax" | "IMAX" | "limited" | "Limited" | "Remastered" | "Restored" | "se" | "Special" | "theatrical" | "Theatrical" | "Ultimate" | "Uncensored" | "Uncut" | "Unrated")[];
+  edition?: "Alternative Cut" | "CC" | "collector" | "Collector" | "Criterion" | "DC" | "ddc" | "deluxe" | "Deluxe" | "Director's Cut" | "Director's Definitive Cut" | "extended" | "Extended" | "Fan" | "Festival" | "imax" | "IMAX" | "limited" | "Limited" | "Remastered" | "Restored" | "se" | "Special" | "theatrical" | "Theatrical" | "Ultimate" | "Uncensored" | "Uncut" | "Unrated" | ("Alternative Cut" | "CC" | "collector" | "Collector" | "Criterion" | "DC" | "ddc" | "deluxe" | "Deluxe" | "Director's Cut" | "Director's Definitive Cut" | "extended" | "Extended" | "Fan" | "Festival" | "imax" | "IMAX" | "limited" | "Limited" | "Remastered" | "Restored" | "se" | "Special" | "theatrical" | "Theatrical" | "Ultimate" | "Uncensored" | "Uncut" | "Unrated")[];
   episode?: number | (number)[];
   episode_count?: number;
   episode_details?: string | (string)[];
@@ -1011,7 +1049,7 @@ export interface GuessItResult {
   frame_rate?: string;
   language?: string | GuessitLanguage | (string | GuessitLanguage)[];
   mimetype?: "application/x-bittorrent" | "application/x-iso9660-image" | "text/plain" | "video/mp2t" | "video/mp4" | "video/webm" | "video/x-matroska" | "video/x-msvideo";
-  other?: "2in1" | "3D" | "asrequested" | "Bonus" | "BT.2020" | "Classic" | "Colorized" | "Complet" | "Complete" | "CONVERT" | "Converted" | "Dirfix" | "DOCU" | "Documentary" | "DOKU" | "Dolby Vision" | "Dual" | "Dual Audio" | "East Coast Feed" | "Extras" | "Fan Subtitled" | "Fansub" | "Fast Subtitled" | "Fastsub" | "FHD" | "Fix" | "Fixed" | "Full HD" | "Half OU" | "Half SBS" | "Hardcoded Subtitles" | "HC" | "HD" | "HDLight" | "HDR10" | "HFR" | "High Frame Rate" | "High Quality" | "High Resolution" | "HQ" | "HR" | "Hybrid" | "Internal" | "LD" | "LDTV" | "LiNE" | "Line Audio" | "Line Dubbed" | "Low Definition" | "MD" | "mHD" | "Mic Dubbed" | "Micro HD" | "Mux" | "Nfofix" | "NTSC" | "Oad" | "OAR" | "Oav" | "Obfuscated" | "Ona" | "Open Matte" | "Original Animation DVD" | "Original Aspect Ratio" | "Original Net Animation" | "Original Video" | "OV" | "Ova" | "PAL" | "postbot" | "Preair" | "Proof" | "Prooffix" | "Proper" | "PS Vita" | "R5" | "RC" | "Read NFO" | "Real" | "Reencoded" | "Region 5" | "Remux" | "Repost" | "Retail" | "Rip" | "Sample" | "Scrambled" | "Screener" | "SDR" | "SECAM" | "Standard Dynamic Range" | "Straight to Video" | "STV" | "Trailer" | "UHD" | "Ultra HD" | "Upscaled" | "Variable Frame Rate" | "VFR" | "Vita" | "VO" | "vost" | "West Coast Feed" | "Widescreen" | "ws" | "xpost" | "XXX" | ("2in1" | "3D" | "asrequested" | "Bonus" | "BT.2020" | "Classic" | "Colorized" | "Complet" | "Complete" | "CONVERT" | "Converted" | "Dirfix" | "DOCU" | "Documentary" | "DOKU" | "Dolby Vision" | "Dual" | "Dual Audio" | "East Coast Feed" | "Extras" | "Fan Subtitled" | "Fansub" | "Fast Subtitled" | "Fastsub" | "FHD" | "Fix" | "Fixed" | "Full HD" | "Half OU" | "Half SBS" | "Hardcoded Subtitles" | "HC" | "HD" | "HDLight" | "HDR10" | "HFR" | "High Frame Rate" | "High Quality" | "High Resolution" | "HQ" | "HR" | "Hybrid" | "Internal" | "LD" | "LDTV" | "LiNE" | "Line Audio" | "Line Dubbed" | "Low Definition" | "MD" | "mHD" | "Mic Dubbed" | "Micro HD" | "Mux" | "Nfofix" | "NTSC" | "Oad" | "OAR" | "Oav" | "Obfuscated" | "Ona" | "Open Matte" | "Original Animation DVD" | "Original Aspect Ratio" | "Original Net Animation" | "Original Video" | "OV" | "Ova" | "PAL" | "postbot" | "Preair" | "Proof" | "Prooffix" | "Proper" | "PS Vita" | "R5" | "RC" | "Read NFO" | "Real" | "Reencoded" | "Region 5" | "Remux" | "Repost" | "Retail" | "Rip" | "Sample" | "Scrambled" | "Screener" | "SDR" | "SECAM" | "Standard Dynamic Range" | "Straight to Video" | "STV" | "Trailer" | "UHD" | "Ultra HD" | "Upscaled" | "Variable Frame Rate" | "VFR" | "Vita" | "VO" | "vost" | "West Coast Feed" | "Widescreen" | "ws" | "xpost" | "XXX")[];
+  other?: "2in1" | "3D" | "asrequested" | "Audio Fixed" | "Bonus" | "BT.2020" | "Classic" | "Colorized" | "Complet" | "Complete" | "CONVERT" | "Converted" | "Dirfix" | "DOCU" | "Documentary" | "DOKU" | "Dolby Vision" | "Dual" | "Dual Audio" | "East Coast Feed" | "Ending Credits" | "Extras" | "Fan Subtitled" | "Fansub" | "Fast Subtitled" | "Fastsub" | "FHD" | "Fix" | "Fixed" | "Full HD" | "Half OU" | "Half SBS" | "Hardcoded Subtitles" | "HC" | "HD" | "HDLight" | "HDR10" | "HFR" | "High Frame Rate" | "High Quality" | "High Resolution" | "HQ" | "HR" | "Hybrid" | "Internal" | "LD" | "LDTV" | "LiNE" | "Line Audio" | "Line Dubbed" | "Low Definition" | "MD" | "mHD" | "Mic Dubbed" | "Micro HD" | "Mux" | "Nfofix" | "NTSC" | "Oad" | "OAR" | "Oav" | "Obfuscated" | "Ona" | "Open Matte" | "Opening Credits" | "Original Animated Video" | "Original Animation DVD" | "Original Aspect Ratio" | "Original Net Animation" | "Original Video" | "OV" | "Ova" | "PAL" | "postbot" | "Preair" | "Proof" | "Prooffix" | "Proper" | "PS Vita" | "R5" | "RC" | "Read NFO" | "Real" | "Reencoded" | "Region 5" | "Region C" | "Remux" | "Repost" | "Retail" | "Rip" | "Sample" | "Scrambled" | "Screener" | "SDR" | "SECAM" | "Standard Dynamic Range" | "Straight to Video" | "STV" | "Sync Fixed" | "Trailer" | "UHD" | "Ultra HD" | "Upscaled" | "Variable Frame Rate" | "VFR" | "Virtual Reality" | "Vita" | "VO" | "vost" | "West Coast Feed" | "Widescreen" | "ws" | "xpost" | "XXX" | ("2in1" | "3D" | "asrequested" | "Audio Fixed" | "Bonus" | "BT.2020" | "Classic" | "Colorized" | "Complet" | "Complete" | "CONVERT" | "Converted" | "Dirfix" | "DOCU" | "Documentary" | "DOKU" | "Dolby Vision" | "Dual" | "Dual Audio" | "East Coast Feed" | "Ending Credits" | "Extras" | "Fan Subtitled" | "Fansub" | "Fast Subtitled" | "Fastsub" | "FHD" | "Fix" | "Fixed" | "Full HD" | "Half OU" | "Half SBS" | "Hardcoded Subtitles" | "HC" | "HD" | "HDLight" | "HDR10" | "HFR" | "High Frame Rate" | "High Quality" | "High Resolution" | "HQ" | "HR" | "Hybrid" | "Internal" | "LD" | "LDTV" | "LiNE" | "Line Audio" | "Line Dubbed" | "Low Definition" | "MD" | "mHD" | "Mic Dubbed" | "Micro HD" | "Mux" | "Nfofix" | "NTSC" | "Oad" | "OAR" | "Oav" | "Obfuscated" | "Ona" | "Open Matte" | "Opening Credits" | "Original Animated Video" | "Original Animation DVD" | "Original Aspect Ratio" | "Original Net Animation" | "Original Video" | "OV" | "Ova" | "PAL" | "postbot" | "Preair" | "Proof" | "Prooffix" | "Proper" | "PS Vita" | "R5" | "RC" | "Read NFO" | "Real" | "Reencoded" | "Region 5" | "Region C" | "Remux" | "Repost" | "Retail" | "Rip" | "Sample" | "Scrambled" | "Screener" | "SDR" | "SECAM" | "Standard Dynamic Range" | "Straight to Video" | "STV" | "Sync Fixed" | "Trailer" | "UHD" | "Ultra HD" | "Upscaled" | "Variable Frame Rate" | "VFR" | "Virtual Reality" | "Vita" | "VO" | "vost" | "West Coast Feed" | "Widescreen" | "ws" | "xpost" | "XXX")[];
   part?: number | (number)[];
   proper_count?: number;
   release_group?: string;
@@ -1019,8 +1057,8 @@ export interface GuessItResult {
   season?: number | (number)[];
   season_count?: number;
   size?: string;
-  source?: "Analog HDTV" | "Blu-ray" | "Camera" | "Digital Master" | "Digital TV" | "DVD" | "HD Camera" | "HD Telecine" | "HD Telesync" | "HD-DVD" | "HDTV" | "Satellite" | "TV" | "Ultra HD Blu-ray" | "Ultra HDTV" | "VHS" | "Web";
-  streaming_service?: "4OD" | "9Now" | "9NOW" | "A&E" | "ABC" | "ABC Australia" | "Adult Swim" | "AE" | "AJAZ" | "Al Jazeera English" | "ALL4" | "Amazon" | "Amazon Prime" | "AMBC" | "AMC" | "America's Test Kitchen" | "AMZN" | "AMZN-CBR" | "Animal Planet" | "AnimeLab" | "ANLB" | "ANPL" | "AOL" | "APTV" | "ARD" | "AS" | "ATK" | "ATV+" | "ATVP" | "AUBC" | "BBC iPlayer" | "Binge" | "BKPL" | "Blackpills" | "BLU" | "BluTV" | "BNGE" | "BOOM" | "Boomerang" | "BRAV" | "BravoTV" | "Canal+" | "Cartoon Network" | "CBC" | "CBS" | "CC" | "CCGC" | "Channel 4" | "CHGD" | "Cinemax" | "CMAX" | "CMT" | "CN" | "CNBC" | "CNLP" | "Comedians in Cars Getting Coffee" | "Comedy Central" | "Country Music Television" | "CR" | "Crackle" | "CRAV" | "Crave" | "CRKL" | "Crunchy Roll" | "CSpan" | "CSPN" | "CTV" | "CUR" | "CuriosityStream" | "CW" | "CWS" | "CWSeed" | "Daisuki" | "DC Universe" | "DCU" | "DDY" | "DF" | "DHF" | "Digiturk Diledigin Yerde" | "DISC" | "Discovery" | "Discovery Plus" | "Disney" | "Disney+" | "DIY" | "DIY Network" | "DOCC" | "DPlay" | "DPLY" | "DramaFever" | "DSCP" | "DSKI" | "DSNP" | "DSNY" | "E!" | "El Trece" | "ePix" | "EPIX" | "ESPN" | "ESQ" | "Esquire" | "ETTV" | "ETV" | "Facebook Watch" | "FAM" | "Family" | "Family Jr" | "Fandor" | "FANDOR" | "FBWatch" | "FJR" | "FOOD" | "Food Network" | "Fox" | "FOX" | "Fox Premium" | "FOXP" | "Foxtel" | "FP" | "FREE" | "Freeform" | "FXTL" | "FYI" | "FYI Network" | "Gaga" | "GagaOOLala" | "GC" | "GLBL" | "GLOB" | "Global" | "GloboSat Play" | "Hallmark" | "HBO" | "HBO Go" | "HGTV" | "HIST" | "History" | "HLMK" | "HMAX" | "hoichoi" | "HoiChoi" | "Hulu" | "HULU" | "ID" | "IFC" | "iflix" | "IFX" | "INA" | "Investigation Discovery" | "iP" | "iQIYI" | "iT" | "iTunes" | "ITV" | "KNOW" | "Knowledge Network" | "LIFE" | "Lifetime" | "MBC" | "MBCVOD" | "MNBC" | "Motor Trend OnDemand" | "MSNBC" | "MTOD" | "MTV" | "MUBI" | "NATG" | "National Audiovisual Institute" | "National Film Board" | "National Geographic" | "NBA" | "NBA TV" | "NBC" | "Netflix" | "NF" | "NFB" | "NFL" | "NFL Now" | "NFLN" | "NHL GameCenter" | "NICK" | "NICKAPP" | "Nickelodeon" | "Norsk Rikskringkasting" | "NRK" | "ODK" | "OnDemandKorea" | "Oprah Winfrey Network" | "Opto" | "OPTO" | "OWN" | "Paramount+" | "ParamountPlus" | "PBS" | "PBS Kids" | "PBSK" | "PCOK" | "Peacock" | "Playstation Network" | "PLUZ" | "Pluzz" | "PMNP" | "PMT+" | "PMTP" | "POGO" | "PokerGO" | "PSN" | "Rakuten TV" | "RED" | "RKTN" | "ROKU" | "RTE" | "RTE One" | "RUUTU" | "SBS" | "SCI" | "Science Channel" | "SeeSo" | "SESO" | "SHMI" | "SHO" | "SNET" | "Sony" | "SONY" | "SPIK" | "Spike" | "Spike TV" | "SPKE" | "Sportsnet" | "Sprout" | "SPRT" | "STAN" | "Starz" | "STZ" | "Sveriges Television" | "SVT" | "SWER" | "Syfy" | "SYFY" | "TBS" | "TFou" | "TFOU" | "The CW" | "The Roku Channel" | "TLC" | "TUBI" | "TubiTV" | "TV Land" | "TV3" | "TV3 Ireland" | "TV4" | "TV4 Sweeden" | "TVING" | "TVL" | "TVNZ" | "UFC" | "UFC Fight Pass" | "UKTV" | "UNIV" | "USA Network" | "USAN" | "Velocity" | "VH1" | "VICE" | "Viceland" | "Viki" | "VIKI" | "Vimeo" | "VLCT" | "VMEO" | "VRV" | "W Network" | "WatchMe" | "WME" | "WNET" | "WWE Network" | "WWEN" | "XBOX" | "Yahoo" | "YHOO" | "YouTube Red" | "ZDF";
+  source?: "Analog HDTV" | "Blu-ray" | "Camera" | "Digital Master" | "Digital TV" | "DVD" | "HD Camera" | "HD Telecine" | "HD Telesync" | "HD-DVD" | "HDTV" | "Pay-per-view" | "Satellite" | "Telecine" | "Telesync" | "TV" | "Ultra HD Blu-ray" | "Ultra HDTV" | "VHS" | "Video on Demand" | "Web" | "Workprint";
+  streaming_service?: "4OD" | "9Now" | "9NOW" | "A&E" | "ABC" | "ABC Australia" | "Adult Swim" | "AE" | "AJAZ" | "Al Jazeera English" | "ALL4" | "Amazon" | "Amazon Prime" | "AMBC" | "AMC" | "America's Test Kitchen" | "AMZN" | "AMZN-CBR" | "Animal Planet" | "AnimeLab" | "ANLB" | "ANPL" | "AOL" | "AppleTV" | "APTV" | "ARD" | "AS" | "ATK" | "ATV+" | "ATVP" | "AUBC" | "BBC iPlayer" | "Binge" | "BKPL" | "Blackpills" | "BLU" | "BluTV" | "BNGE" | "BOOM" | "Boomerang" | "BRAV" | "BravoTV" | "Canal+" | "Cartoon Network" | "CBC" | "CBS" | "CC" | "CCGC" | "Channel 4" | "CHGD" | "CHRGD" | "Cinemax" | "CMAX" | "CMT" | "CN" | "CNBC" | "CNLP" | "Comedians in Cars Getting Coffee" | "Comedy Central" | "Country Music Television" | "CR" | "Crackle" | "CRAV" | "Crave" | "CRKL" | "Crunchy Roll" | "CSpan" | "CSPN" | "CTV" | "CUR" | "CuriosityStream" | "CW" | "CWS" | "CWSeed" | "Daisuki" | "DC Universe" | "DCU" | "DDY" | "Deadhouse Films" | "DF" | "DHF" | "Digiturk Diledigin Yerde" | "DISC" | "Discovery" | "Discovery Plus" | "Disney" | "Disney+" | "DIY" | "DIY Network" | "Doc Club" | "DOCC" | "DPlay" | "DPLY" | "DramaFever" | "DSCP" | "DSKI" | "DSNP" | "DSNY" | "E!" | "El Trece" | "ePix" | "EPIX" | "ESPN" | "ESQ" | "Esquire" | "ETTV" | "ETV" | "Facebook Watch" | "FAM" | "Family" | "Family Jr" | "Fandor" | "FANDOR" | "FBWatch" | "FJR" | "FOOD" | "Food Network" | "Fox" | "FOX" | "Fox Premium" | "FOXP" | "Foxtel" | "FP" | "FREE" | "Freeform" | "FXTL" | "FYI" | "FYI Network" | "Gaga" | "GagaOOLala" | "GC" | "GLBL" | "GLOB" | "Global" | "GloboSat Play" | "Hallmark" | "HBO" | "HBO Go" | "HBO Max" | "HGTV" | "HIST" | "History" | "HLMK" | "HMAX" | "hoichoi" | "HoiChoi" | "Hulu" | "HULU" | "ID" | "IFC" | "iflix" | "IFX" | "INA" | "Investigation Discovery" | "iP" | "iQIYI" | "iT" | "iTunes" | "ITV" | "KNOW" | "Knowledge Network" | "LIFE" | "Lifetime" | "MBC" | "MBCVOD" | "MNBC" | "Motor Trend OnDemand" | "MSNBC" | "MTOD" | "MTV" | "MUBI" | "NATG" | "National Audiovisual Institute" | "National Film Board" | "National Geographic" | "NBA" | "NBA TV" | "NBC" | "Netflix" | "NF" | "NFB" | "NFL" | "NFL Now" | "NFLN" | "NHL GameCenter" | "NICK" | "NICKAPP" | "Nickelodeon" | "Norsk Rikskringkasting" | "NRK" | "ODK" | "OnDemandKorea" | "Oprah Winfrey Network" | "Opto" | "OPTO" | "OWN" | "Paramount+" | "ParamountPlus" | "PBS" | "PBS Kids" | "PBSK" | "PCOK" | "Peacock" | "Playstation Network" | "PLUZ" | "Pluzz" | "PMNP" | "PMT+" | "PMTP" | "POGO" | "PokerGO" | "PSN" | "Rakuten TV" | "RED" | "RKTN" | "ROKU" | "RTE" | "RTE One" | "RUUTU" | "SBS" | "SCI" | "Science Channel" | "SeeSo" | "SESO" | "SHMI" | "SHO" | "Shomi" | "Showtime" | "SNET" | "Sony" | "SONY" | "SPIK" | "Spike" | "Spike TV" | "SPKE" | "Sportsnet" | "Sprout" | "SPRT" | "Stan" | "STAN" | "Starz" | "STZ" | "Sveriges Television" | "SVT" | "SwearNet" | "SWER" | "Syfy" | "SYFY" | "TBS" | "TFou" | "TFOU" | "The CW" | "The Roku Channel" | "TLC" | "TUBI" | "TubiTV" | "TV Land" | "TV3" | "TV3 Ireland" | "TV4" | "TV4 Sweeden" | "TVING" | "TVL" | "TVNZ" | "UFC" | "UFC Fight Pass" | "UKTV" | "UNIV" | "Univision" | "USA Network" | "USAN" | "Velocity" | "VH1" | "VICE" | "Viceland" | "Viki" | "VIKI" | "Vimeo" | "VLCT" | "VMEO" | "VRV" | "W Network" | "WatchMe" | "WME" | "WNET" | "WWE Network" | "WWEN" | "XBOX" | "Xbox Video" | "Yahoo" | "YHOO" | "YouTube Red" | "ZDF";
   subtitle_language?: string | GuessitLanguage | (string | GuessitLanguage)[];
   title?: string;
   type?: "episode" | "movie";
@@ -1028,8 +1066,8 @@ export interface GuessItResult {
   version?: number;
   video_api?: "DXVA";
   video_bit_rate?: string;
-  video_codec?: "DivX" | "DVDivX" | "H.263" | "H.264" | "H.265" | "MPEG-2" | "VC-1" | "VP7" | "VP8" | "VP80" | "VP9" | "Xvid" | "XviD";
-  video_profile?: "Advanced Video Codec High Definition" | "BP" | "EP" | "HEVC" | "High" | "High 10" | "High Efficiency Video Coding" | "HiP" | "HP" | "Main" | "MP" | "SC" | "Scalable Video Coding" | "SVC" | "XP" | ("Advanced Video Codec High Definition" | "BP" | "EP" | "HEVC" | "High" | "High 10" | "High Efficiency Video Coding" | "HiP" | "HP" | "Main" | "MP" | "SC" | "Scalable Video Coding" | "SVC" | "XP")[];
+  video_codec?: "DivX" | "DVDivX" | "H.263" | "H.264" | "H.265" | "MPEG-2" | "RealVideo" | "VC-1" | "VP7" | "VP8" | "VP80" | "VP9" | "Xvid" | "XviD";
+  video_profile?: "Advanced Video Codec High Definition" | "Baseline" | "BP" | "EP" | "Extended" | "HEVC" | "High" | "High 10" | "High 4:2:2" | "High 4:4:4 Predictive" | "High Efficiency Video Coding" | "HiP" | "HP" | "Main" | "MP" | "SC" | "Scalable Video Coding" | "SVC" | "XP" | ("Advanced Video Codec High Definition" | "Baseline" | "BP" | "EP" | "Extended" | "HEVC" | "High" | "High 10" | "High 4:2:2" | "High 4:4:4 Predictive" | "High Efficiency Video Coding" | "HiP" | "HP" | "Main" | "MP" | "SC" | "Scalable Video Coding" | "SVC" | "XP")[];
   website?: string;
   year?: number;
   /** Any future / custom property. */
