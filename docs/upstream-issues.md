@@ -11,15 +11,14 @@ but not complete · **not fixed / not done** = with the reason inline · `wontfi
 invalid/ambiguous/env-specific.
 
 **Progress (as of 2026-06-02):** every open issue below has an explicit disposition.
-**29 fixed** (623, 634, 638, 640, 646, 651, 652, 667, 670, 671, 705, 722, 732,
-737, 743, 745, 746, 763, 784, 789, 790, 796, 800, 773, 301, 618, 622, 630, 708) · **7 already
+**30 fixed** (623, 634, 638, 640, 646, 651, 652, 667, 670, 671, 705, 722, 732,
+737, 742, 743, 745, 746, 763, 784, 789, 790, 796, 800, 773, 301, 618, 622, 630, 708) · **7 already
 work / acceptable** (648, 660, 752, 774, 637, 741, 771) · the rest carry an inline
-"why not fixed" note. The remaining real parsing bugs are now just: the
-obfuscated `cd`-mid-token case (#742, only when the hash is glued into the title
-filepart — separate hash *dirs* are handled), the ambiguous anime conventions
-(#690/#696/#747), and pure feature requests (#272/#273/#599/#802). The delicate
-release-group cascade (#634/#640) is FIXED. The whole title-token-collision
-cluster that overlapped the Python↔JS parity gap is resolved (parity FIX 0).
+"why not fixed" note. No known parsing *bugs* remain — only ambiguous anime
+conventions (#690/#696/#747) and pure feature requests (#272/#273/#599/#802). The
+delicate release-group cascade (#634/#640) and the `cd`-mid-token hash case (#742)
+are both FIXED. The whole title-token-collision cluster that overlapped the
+Python↔JS parity gap is resolved (parity FIX 0).
 
 **Cross-ref (UPDATED 2026-06-02):** the biggest validated cluster was **title-token
 collision** — a title word/letter consumed as country/language/edition/source/other,
@@ -50,7 +49,7 @@ remain open and are individually marginal/risky.
 | 670 | https://github.com/guessit-io/guessit/issues/670 | `[SSA] Uma Musume...mkv` → `container:["ssa","mkv"]`, no release_group; leading `[SSA]` is group | **fixed** (leading subtitle-ext bracket → release_group) |
 | 732 | https://github.com/guessit-io/guessit/issues/732 | ★ `Show.S01E01.Cam...` → `source:["Camera","Web"]`; "Cam" episode word → Camera source | **fixed** (Title-Case Cam→title) |
 | 737 | https://github.com/guessit-io/guessit/issues/737 | ★ `The.English.S01E01...` → `title:"The"`, `language:"English"` | **fixed** (lone-article title extend) |
-| 742 | https://github.com/guessit-io/guessit/issues/742 | `My File 238ddcd5aff.mkv` → `cd:5`; `cd` matches mid-token, needs word boundary | not fixed — obfuscated hash ('238ddcd5aff'); no clean correct output (JS→garbage ep, Python→garbage cd:5). Not worth heuristics on hash junk |
+| 742 | https://github.com/guessit-io/guessit/issues/742 | `My File 238ddcd5aff.mkv` → `cd:5`; `cd` matches mid-token, needs word boundary | **fixed** — added a leading word boundary to the `cd` regex so it only matches a standalone `CD<n>` token, not `cd` glued inside a word/hash (`238ddcd5aff`/`abcd5` → no `cd`; `CD1`/`CD.1`/`(CD3)`/`_CD1`/`-CD1`/`cd1of2` still work). Python still mis-parses this. (boundary written as `(?<!\d)(?<![^\W\d_])` — no literal `-`, which the `dash` abbreviation would otherwise corrupt) |
 | 743 | https://github.com/guessit-io/guessit/issues/743 | ★ `The.Mandalorian.S03E03.Chapter.19.The.Convert...` → `other:"Converted"`, truncated episode_title | **fixed** (Title-Case Convert→title) |
 | 744 | https://github.com/guessit-io/guessit/issues/744 | `Ted.Lasso.S03E03.4-5-1...` → `episode:[3,4,5]`, `episode_title:"1"`; "4-5-1" eaten as range | partial — JS gives episode 3 + episode_title '4' (better than Python's episode [3,4,5]); the formation '4-5-1' still isn't kept whole; needs title-context |
 | 745 | https://github.com/guessit-io/guessit/issues/745 | ★ `[ASW] Oshi no Ko - 01...` → `title:"Oshi no"`, `language:"Korean"`; "Ko" → Korean | **fixed** (stop-word trailing-crop guard) |
@@ -148,10 +147,10 @@ remain open and are individually marginal/risky.
   present (`grown-ish…[eztv]` → title "ish"). Fixed by rejecting a
   DashSeparatedReleaseGroup `!atEnd` candidate at the filepart start when a
   season/episode/date follows. JS now beats Python (which still mis-parses).
-- **Still open (separate sub-bugs, NOT in the parity corpus):**
-  - **Obfuscated `cd`-mid-token** (#742): `My File 238ddcd5aff.mkv` → `cd:5`.
-    Same-filepart hash; `RemoveHashFilepartJunk` only handles a hash that is its
-    OWN path segment (the `-Obfuscated/<hex>.mkv` parity cases), not a hash glued
-    into the title filepart. Needs a `cd` word-boundary fix (risky).
+- **Obfuscated `cd`-mid-token (#742) — FIXED 2026-06-02.** `cd` regex now has a
+  leading word boundary `(?<!\d)(?<![^\W\d_])` (no literal `-`, so the `dash`
+  abbreviation can't corrupt it), so `cd<n>` only matches as a standalone token.
+  JS now beats Python (which still emits `cd:5` for `238ddcd5aff`).
+- **Still open (no clean fix — ambiguous, not bugs):**
   - **Ambiguous anime formatting** (#690/#696/#747): "Season 2 - 15", romaji +
     "(English title)", inconsistent leading numbers.
