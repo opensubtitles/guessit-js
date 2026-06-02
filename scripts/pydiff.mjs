@@ -45,11 +45,12 @@ const VERDICTS = [
   ['Dead Man Down', 'fix', 'alt → label/edition/region/junk', 'release descriptor "custom" → drop'],
   ['Hacksaw Ridge', 'fix', 'alt → label/edition/region/junk', 'punctuation "&" → drop'],
   ['MASH.(1970)', 'fix', 'alt → label/edition/region/junk', 'codec-version "5" → drop'],
-  // ---- FIX: alternative_title / episode_title that is an episode/absolute number ----
-  ['Show!.Name.2.-.10', 'fix', 'alt/ep_title → episode number', 'alt "10" duplicates episode 10 → drop'],
-  ['Show.Name.-.07.(2016)', 'fix', 'alt/ep_title → episode number', 'alt "07" → drop'],
-  ['Show.Name.-.476-479', 'fix', 'alt/ep_title → episode number', 'alt "476-479" → absolute_episode'],
-  ['Show.Name.s10e15(233)', 'fix', 'alt/ep_title → episode number', 'episode_title "233" → absolute_episode'],
+  // ---- KEEP: numeric alternative_title fixed (RemoveNumericAlternativeTitle); ----
+  //      remaining diff is Python's year→season bug (JS correctly emits `year`) ----
+  ['Show!.Name.2.-.10', 'keep', 'JS better — Python year→season bug', 'numeric alt dropped; py reads 2016 as season'],
+  ['Show.Name.-.07.(2016)', 'keep', 'JS better — Python year→season bug', 'numeric alt dropped; py reads 2016 as season'],
+  ['Show.Name.-.476-479', 'keep', 'JS better — Python year→season bug', 'numeric alt dropped; py reads 2007 as season'],
+  ['Show.Name.s10e15(233)', 'neutral', 'undecided', 'js episode_title "233" (the absolute number) vs py drops it'],
   // ---- FIX: episode_title that is a tag / broadcaster / credit ----
   ['Bleach.s16e03-04.313-314-GROUP', 'fix', 'ep_title → tag/broadcaster/credit', '"group" → release_group'],
   ['Show.Name.16x03-05.313-315-GROUP', 'fix', 'ep_title → tag/broadcaster/credit', '"group" → release_group'],

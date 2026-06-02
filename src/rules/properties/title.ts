@@ -925,12 +925,43 @@ class PropertyAtTitlePositionAsTitle extends Rule {
   }
 }
 
+/**
+ * An `alternative_title` whose raw text is purely numeric (digits plus range
+ * separators / spaces) next to a detected episode is never a real alt-title —
+ * it is the episode number that leaked across a `-` separator (e.g.
+ * "Show.Name.-.07.(2016)" → episode 7 + alt "07"; "...-.476-479..." → alt
+ * "476-479"). Drop it so only the genuine title survives. (Python keeps just the
+ * episode here.) Note: numeric *episode_title*s are NOT dropped — "24",
+ * "18-5-4", "0.8.4." are genuine episode titles that Python also keeps.
+ */
+class RemoveNumericAlternativeTitle extends Rule {
+  static override priority = -64;
+  override consequence = RemoveMatch;
+
+  override when(matches: Matches, _context: Context): Match[] | false {
+    const alts = matches.named('alternative_title') as Match[] | Match | undefined;
+    const altArr = Array.isArray(alts) ? alts : alts ? [alts] : [];
+    if (!altArr.length) return false;
+    const out: Match[] = [];
+    for (const alt of altArr) {
+      const raw = String(alt.rawValue ?? alt.raw ?? alt.value ?? '');
+      if (!/^[\d\s.~_-]+$/.test(raw) || !/\d/.test(raw)) continue;
+      const filepart = matches.markers.atMatch(alt, (m) => m.name === 'path', 0) as Match | undefined;
+      if (!filepart) continue;
+      const hasEpisode = matches.range(filepart.start, filepart.end,
+        (m: Match) => m.name === 'episode' || m.name === 'absolute_episode', 0);
+      if (hasEpisode) out.push(alt);
+    }
+    return out.length ? out : false;
+  }
+}
+
 export function title(config: Record<string, unknown>): Rebulk {
   const rebulk = new Rebulk({
     disabled: (context: Context) => isDisabled(context, 'title'),
   });
 
-  rebulk.rules(CountryAtTitlePosition, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle);
+  rebulk.rules(CountryAtTitlePosition, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle);
 
   // Expected title functional pattern
   const expectedTitle = buildExpectedFunction('expected_title');
