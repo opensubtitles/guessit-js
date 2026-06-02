@@ -11,13 +11,12 @@ but not complete · **not fixed / not done** = with the reason inline · `wontfi
 invalid/ambiguous/env-specific.
 
 **Progress (as of this pass):** every open issue below has an explicit disposition.
-**24 fixed** (305-partial, 623, 638, 646, 651, 652, 670, 671, 732, 737, 743, 745,
-746, 763, 784, 789, 790, 796, 800, 773, 301, 618, 622, 630, 708) · **7 already
+**26 fixed** (305-partial, 623, 638, 646, 651, 652, 670, 671, 705, 722, 732, 737,
+743, 745, 746, 763, 784, 789, 790, 796, 800, 773, 301, 618, 622, 630, 708) · **7 already
 work / acceptable** (648, 660, 752, 774, 637, 741, 771) · the rest carry an inline
 "why not fixed" note. The unfixed parsing bugs cluster into: delicate release-group
-cascades (#634/#640), the obfuscated-hash case (#742), entangled multi-segment
-title selection (#722), the remaining anime conventions (#667/#690/#696/#747), and
-pure feature requests (#272/#273/#599/#705/#802).
+cascades (#634/#640), the obfuscated-hash case (#742), the remaining anime
+conventions (#667/#690/#696/#747), and pure feature requests (#272/#273/#599/#802).
 
 **Cross-ref:** the biggest validated cluster is **title-token collision** — a title
 word/letter consumed as country/language/edition/source/other. This is the *same*
@@ -75,9 +74,9 @@ cases). Fixing it once should resolve many of these issues together. Tagged ★ 
 | 690 | https://github.com/guessit-io/guessit/issues/690 | `Re ZERO -Starting Life...- Season 2 - 15` → season:15; ambiguous formatting | not fixed — ambiguous anime formatting ('Season 2 - 15'); risky |
 | 693 | https://github.com/guessit-io/guessit/issues/693 | Resolution without 'p' (`720`/`1080`) → S/E; maintainer reluctant | not done — maintainer-reluctant; bare 720/1080 as resolution collides with episode numbers |
 | 696 | https://github.com/guessit-io/guessit/issues/696 | Romaji title + `(English title)` → group mis-detected | not fixed — anime romaji + '(English title)' group mis-detection; fragile |
-| 705 | https://github.com/guessit-io/guessit/issues/705 | Feature: opening/ending sequence detection (extra_type) | not done — sizable new feature (opening/ending extra_type) |
+| 705 | https://github.com/guessit-io/guessit/issues/705 | Feature: opening/ending sequence detection (extra_type) | **fixed** (NCOP→Opening Credits, NCED→Ending Credits) |
 | 708 | https://github.com/guessit-io/guessit/issues/708 | `...(July 30 2021) [540p mp4 subs]` → release_group "July 30 2021"; should be date | **fixed** (month-name date parsing) |
-| 722 | https://github.com/guessit-io/guessit/issues/722 | `Extras (2005) - S01E01...` → `other:"Extras"`, no title; show named "Extras" | not fixed — show name 'Extras' (before year) not chosen as title; 'Ben Stiller' (a later segment) wins. Multi-segment title selection, entangled |
+| 722 | https://github.com/guessit-io/guessit/issues/722 | `Extras (2005) - S01E01...` → `other:"Extras"`, no title; show named "Extras" | **fixed** (Title-Case property at title pos → title) |
 | 741 | https://github.com/guessit-io/guessit/issues/741 | `1280x720up` junk after resolution breaks parsing | acceptable — JS gives clean title 'Movie' (junk '1280x720up' dropped, no crash). Reasonable |
 | 747 | https://github.com/guessit-io/guessit/issues/747 | `5. Nanatsu no Taizai...` → movie while `22.` works; inconsistent leading number | not fixed — '5. Title' vs '22. Title' inconsistent leading-number handling; ambiguous |
 | 752 | https://github.com/guessit-io/guessit/issues/752 | `S01E02.3.Kings` → `episode:[2,3]`; leading title digit read as range | **works** (ep 2, et "3 Kings"; better than Python) |
