@@ -1,5 +1,5 @@
 import { Rebulk } from 'rebulk-js';
-import { Rule, AppendMatch, RemoveMatch } from 'rebulk-js';
+import { Rule, AppendMatch, RemoveMatch, POST_PROCESS } from 'rebulk-js';
 import { Match } from 'rebulk-js';
 import { seps , sepsPattern } from '../common/index.js';
 import { buildExpectedFunction } from '../common/expected.js';
@@ -76,8 +76,28 @@ export function releaseGroup(config: Record<string, unknown>) {
     new DashSeparatedReleaseGroup(cleanGroupname),
     new SceneReleaseGroup(cleanGroupname),
     AnimeReleaseGroup,
-    new TrailingTokenAfterEpisodeAsReleaseGroup(cleanGroupname)
+    new TrailingTokenAfterEpisodeAsReleaseGroup(cleanGroupname),
+    RemoveSeasonPackReleaseGroup
   );
+}
+
+/**
+ * A bracket like "[Season.2.Full]" in a directory part has no parseable content
+ * (the written-out "Season 2" isn't matched as a season), so the empty-group
+ * release-group rule claims the whole bracket as release_group "[Season.2.Full]".
+ * A release group named after a season pack is never real — drop a release_group
+ * whose text is a "Season N" expression. (Python emits no release_group here.)
+ */
+class RemoveSeasonPackReleaseGroup extends Rule {
+  static override priority = POST_PROCESS;
+  override consequence = RemoveMatch;
+
+  override when(matches: any): Match[] | false {
+    const rgs = matches.named('release_group') as Match[];
+    const out = (Array.isArray(rgs) ? rgs : rgs ? [rgs] : []).filter((m: Match) =>
+      /(^|[\s._\-\[(])seasons?[\s._-]*\d/i.test(String(m.value ?? '')));
+    return out.length ? out : false;
+  }
 }
 
 class DashSeparatedReleaseGroup extends Rule {
