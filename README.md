@@ -158,11 +158,27 @@ is corrected. Highlights:
 
 ## Performance
 
-| Runtime | ms/parse | vs Python |
-|---------|----------|-----------|
-| **Python 3.8** | 23.86 ms | baseline |
-| **Node.js 22** | 6.87 ms | **3.5x faster** |
-| **Browser** | ~2-3 ms | **~10x faster** |
+| Runtime | ms/parse | Notes |
+|---------|----------|-------|
+| **Node.js 22 (V8)** | ~4–7 ms | **3.5× faster than Python** — recommended for servers/CLI |
+| **Browser (V8)** | ~2–3 ms | fastest; JIT-compiled |
+| **Python 3.8** | 23.86 ms | reference |
+| **WASM (QuickJS/Javy)** | ~35 ms warm · ~150 ms cold | for portability, **not** speed (see below) |
+
+**About the WASM build.** It exists so you can run guessit in environments without
+a JS engine (Rust, Go, C/C++, edge/WASI runtimes). Javy compiles the bundle to
+**QuickJS**, which is an *interpreter* (no JIT), so per-parse compute (~35 ms) is
+slower than V8 and even than Python — that's inherent to the engine, not the code.
+If you want speed, use the Node/browser build (V8). If you need WASM, the levers
+that actually help:
+
+- **Amortize startup** — instantiate the module once and parse many filenames;
+  most of the ~150 ms single-shot cost is wasmtime + module init, not parsing.
+- **AOT-compile the module** (`wasmtime compile guessit.wasm -o guessit.cwasm`)
+  to skip per-run JIT of the wasm itself (~30 ms off cold start).
+- The ~35 ms warm floor is QuickJS interpretation; beating it would require a
+  JIT-capable WASI JS engine (none production-ready) or a native port — out of
+  scope. WASM correctness is **bit-identical** to the JS build.
 
 ## License
 
