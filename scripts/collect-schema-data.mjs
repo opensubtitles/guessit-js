@@ -8,7 +8,20 @@ import { createRequire } from 'module';
 import { writeFileSync } from 'fs';
 const require = createRequire(import.meta.url);
 const ref = require('../test/fixtures/python-reference.json');
-const inputs = Object.keys(ref.results);
+// Synthetic inputs that exercise code paths the golden corpus doesn't cover, so
+// their emitted values (container extensions, artwork `other` kinds) land in the
+// schema enums. Keep in sync with container config + ImageArtKeywordToOther.
+const SYNTHETIC = [
+  'Movie.2020.1080p.x264-GRP.rar', 'Movie.2020-GRP.zip', 'Movie.2020-GRP.7z',
+  'Movie.2020-GRP.tar', 'Movie.2020-GRP.gz', 'Movie.2020-GRP.bz2', 'Movie.2020-GRP.tgz',
+  'Movie.2020-GRP.ace', 'Movie.2020-GRP.arj', 'Movie.2020-GRP.cbr', 'Movie.2020-GRP.cbz',
+  'Movie.2020-GRP.cb7', 'Movie.2020.1080p.x264.r00',
+  'Movie.2020-GRP.jpg', 'Movie.2020-GRP.jpeg', 'Movie.2020-GRP.png', 'Movie.2020-GRP.gif',
+  'Movie.2020-GRP.bmp', 'Movie.2020-GRP.tbn', 'Movie.2020-GRP.webp',
+  'poster.jpg', 'fanart.jpg', 'banner.jpg', 'thumb.jpg', 'thumbnail.jpg',
+  'landscape.jpg', 'cover.jpg', 'clearart.png', 'clearlogo.png', 'logo.png', 'discart.png',
+];
+const inputs = [...Object.keys(ref.results), ...SYNTHETIC];
 const info = {};
 
 // ---- code-defined values: walk every pattern's value mappings ----

@@ -23,7 +23,19 @@ export function container(config: Record<string, unknown>) {
   const videos = (config['videos'] as string[]) || [];
   const torrent = (config['torrent'] as string[]) || [];
   const nzb = (config['nzb'] as string[]) || [];
+  const archives = (config['archives'] as string[]) || [];
+  const images = (config['images'] as string[]) || [];
 
+  if (archives.length) rebulk.regex('\\.' + buildOrPattern(archives, undefined, true) + '$', {
+    exts: archives,
+    tags: ['extension', 'archive'],
+  });
+  // Split RAR volumes: ".r00", ".r01", … and ".partNN.rar" (the .rar is caught above).
+  rebulk.regex('\\.r\\d{2}$', { tags: ['extension', 'archive'] });
+  if (images.length) rebulk.regex('\\.' + buildOrPattern(images, undefined, true) + '$', {
+    exts: images,
+    tags: ['extension', 'image'],
+  });
   if (subtitles.length) rebulk.regex('\\.' + buildOrPattern(subtitles, undefined, true) + '$', {
     exts: subtitles,
     tags: ['extension', 'subtitle'],

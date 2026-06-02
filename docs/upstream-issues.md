@@ -11,11 +11,12 @@ but not complete · **not fixed / not done** = with the reason inline · `wontfi
 invalid/ambiguous/env-specific.
 
 **Progress (as of 2026-06-02):** every open issue below has an explicit disposition.
-**30 fixed** (623, 634, 638, 640, 646, 651, 652, 667, 670, 671, 705, 722, 732,
+**32 fixed** (272, 273, 623, 634, 638, 640, 646, 651, 652, 667, 670, 671, 705, 722, 732,
 737, 742, 743, 745, 746, 763, 784, 789, 790, 796, 800, 773, 301, 618, 622, 630, 708) · **7 already
 work / acceptable** (648, 660, 752, 774, 637, 741, 771) · the rest carry an inline
 "why not fixed" note. No known parsing *bugs* remain — only ambiguous anime
-conventions (#690/#696/#747) and pure feature requests (#272/#273/#599/#802). The
+conventions (#690/#696/#747) and the underspecified composite-quality request
+(#802) / music domain (#599). The
 delicate release-group cascade (#634/#640) and the `cd`-mid-token hash case (#742)
 are both FIXED. The whole title-token-collision cluster that overlapped the
 Python↔JS parity gap is resolved (parity FIX 0).
@@ -67,8 +68,8 @@ remain open and are individually marginal/risky.
 
 | # | URL | Claim | Status |
 |---|-----|-------|--------|
-| 272 | https://github.com/guessit-io/guessit/issues/272 | Feature: archive containers/types (rar → episodearchive) | not done — feature (rar→episodearchive type); design addition deferred |
-| 273 | https://github.com/guessit-io/guessit/issues/273 | Feature: metadata files (nfo/poster/jpg → episodemeta, other:poster) | not done — feature (nfo/poster/jpg types); deferred |
+| 272 | https://github.com/guessit-io/guessit/issues/272 | Feature: archive containers/types (rar → episodearchive) | **fixed** (container) — archive extensions (rar/zip/7z/tar/gz/bz2/ace/cbr/cbz/… + split `.rNN` volumes) now recognised as `container`, so they stop leaking into release_group/episode_title (`-GRP.rar`→`GRP`+`container:rar`; `.r00`/`.7z` no longer release_group/episode_title). NOT changing `type` to `episodearchive` — Python keeps `type:movie/episode` for these (fixtures depend on it), so a new type value would diverge & break fixtures |
+| 273 | https://github.com/guessit-io/guessit/issues/273 | Feature: metadata files (nfo/poster/jpg → episodemeta, other:poster) | **fixed** (container + other) — image extensions (jpg/jpeg/png/gif/bmp/tbn/webp) recognised as `container` (no more `GRP.jpg` leak); artwork files classified via `other` (poster→`Poster`, fanart→`Fanart`, banner/thumb/landscape/cover/clearart/logo/discart), scoped to image fileparts so a real video title containing such a word is never clobbered. `type` left as movie/episode (same reason as #272) |
 | 301 | https://github.com/guessit-io/guessit/issues/301 | `vol127+128` leaks into release_group; detect `volume` property | **fixed** (new volume property) |
 | 599 | https://github.com/guessit-io/guessit/issues/599 | Feature: artist/album for music folders | not done — music artist/album; out of core video scope |
 | 618 | https://github.com/guessit-io/guessit/issues/618 | Feature: VR support | **fixed** (VR other-value) |
