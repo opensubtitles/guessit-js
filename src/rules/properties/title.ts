@@ -13,6 +13,14 @@ import { buildExpectedFunction } from '../common/expected.js';
 import { formatters } from 'rebulk-js';
 import { titleSeps, seps } from '../common/index.js';
 
+// Function words that a title cannot meaningfully END on. If cropping a trailing
+// language/country would leave the title dangling on one of these, the token is
+// actually part of the title (e.g. "It Ends With Us", "Oshi no Ko").
+const TITLE_STOP_WORDS = new Set([
+  'the', 'a', 'an', 'and', 'or', 'of', 'to', 'in', 'on', 'at', 'for', 'from',
+  'by', 'with', 'into', 'onto', 'no', 'le', 'la', 'les', 'de', 'du', 'des', 'el',
+]);
+
 /** Helper: truthy check for match result (handles empty arrays correctly) */
 function hasmatch(result: Match[] | Match | undefined): boolean {
   if (result === null || result === undefined) return false;
@@ -368,6 +376,20 @@ abstract class TitleBaseRule extends Rule {
       while (ignoredArray.length > 0) {
         const lastIgnored = ignoredArray[ignoredArray.length - 1];
         if (lastIgnored.end === trimmedHole.end) {
+          // Don't crop a trailing language/country if it would leave the title
+          // ending on a stop-word (preposition/article/particle) — the token is
+          // part of the title: "It Ends With Us" (else "It Ends With"), "Oshi no
+          // Ko" (else "Oshi no"). Keep the text, drop the language/country match.
+          if (lastIgnored.name === 'language' || lastIgnored.name === 'country') {
+            const beforeWords = inp.slice(trimmedHole.start, lastIgnored.start)
+              .toLowerCase().split(/[^a-z0-9]+/i).filter(Boolean);
+            const lastWord = beforeWords[beforeWords.length - 1];
+            if (lastWord && TITLE_STOP_WORDS.has(lastWord)) {
+              toRemove.push(lastIgnored);
+              ignoredArray.pop();
+              break;
+            }
+          }
           // Don't trim episode_details "Special" when followed directly by a year
           // (e.g. "A.Common.Title.Special.2014" → "Special" is part of the title)
           if (lastIgnored.name === 'episode_details' && lastIgnored.value === 'Special') {

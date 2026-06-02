@@ -11,14 +11,13 @@ but not complete · **not fixed / not done** = with the reason inline · `wontfi
 invalid/ambiguous/env-specific.
 
 **Progress (as of this pass):** every open issue below has an explicit disposition.
-**19 fixed** (305-partial, 623, 638, 651, 652, 670, 732, 737, 743, 746, 784, 790,
-796, 800, 773, 301, 618, 622, 630, 708) · **7 already work / acceptable** (648, 660,
-752, 774, 637, 741, 771) · the rest carry an inline "why not fixed" note. The
-unfixed parsing bugs cluster into: delicate release-group cascades (#634/#640),
-ambiguous 2-letter Title-Case codes in the fragile title-crop (#745/#789),
-shared-Python bugs needing risky heuristics (#646), entangled multi-segment title
-selection (#722), anime/CJK conventions (#667/#690/#696/#671/#763), and pure
-feature requests (#272/#273/#599/#705/#802).
+**21 fixed** (305-partial, 623, 638, 651, 652, 670, 732, 737, 743, 745, 746, 784,
+789, 790, 796, 800, 773, 301, 618, 622, 630, 708) · **7 already work / acceptable**
+(648, 660, 752, 774, 637, 741, 771) · the rest carry an inline "why not fixed" note.
+The unfixed parsing bugs cluster into: delicate release-group cascades (#634/#640),
+shared-Python bugs needing risky heuristics (#646), the obfuscated-hash case (#742),
+entangled multi-segment title selection (#722), anime/CJK conventions
+(#667/#690/#696/#671/#763), and pure feature requests (#272/#273/#599/#705/#802).
 
 **Cross-ref:** the biggest validated cluster is **title-token collision** — a title
 word/letter consumed as country/language/edition/source/other. This is the *same*
@@ -46,11 +45,11 @@ cases). Fixing it once should resolve many of these issues together. Tagged ★ 
 | 742 | https://github.com/guessit-io/guessit/issues/742 | `My File 238ddcd5aff.mkv` → `cd:5`; `cd` matches mid-token, needs word boundary | not fixed — obfuscated hash ('238ddcd5aff'); no clean correct output (JS→garbage ep, Python→garbage cd:5). Not worth heuristics on hash junk |
 | 743 | https://github.com/guessit-io/guessit/issues/743 | ★ `The.Mandalorian.S03E03.Chapter.19.The.Convert...` → `other:"Converted"`, truncated episode_title | **fixed** (Title-Case Convert→title) |
 | 744 | https://github.com/guessit-io/guessit/issues/744 | `Ted.Lasso.S03E03.4-5-1...` → `episode:[3,4,5]`, `episode_title:"1"`; "4-5-1" eaten as range | partial — JS gives episode 3 + episode_title '4' (better than Python's episode [3,4,5]); the formation '4-5-1' still isn't kept whole; needs title-context |
-| 745 | https://github.com/guessit-io/guessit/issues/745 | ★ `[ASW] Oshi no Ko - 01...` → `title:"Oshi no"`, `language:"Korean"`; "Ko" → Korean | not fixed — trailing 2-letter Title-Case 'Ko' is ambiguous (Korean code vs title word) and lives in the most fragile title-crop logic; same hard class as #789 |
+| 745 | https://github.com/guessit-io/guessit/issues/745 | ★ `[ASW] Oshi no Ko - 01...` → `title:"Oshi no"`, `language:"Korean"`; "Ko" → Korean | **fixed** (stop-word trailing-crop guard) |
 | 746 | https://github.com/guessit-io/guessit/issues/746 | ★ `Schmigadoon.S02E04.Something.Real...` → `other:"Proper"`, episode_title truncated | **fixed** (Title-Case Real→title) |
 | 757 | https://github.com/guessit-io/guessit/issues/757 | `[SubsPlus+] Helck...` → group mis-detected; `+` in leading-bracket group name breaks detection | not fixed — JS already gets release_group 'SubsPlus' (better than Python's wrong group); only the trailing '+' is lost because '+' is a global separator char. Low value, risky to change sep handling |
 | 784 | https://github.com/guessit-io/guessit/issues/784 | ★ `The.Convert (2024)...` → `title:"The"`, `other:"Converted"` (movie variant of 743) | **fixed** (Title-Case Convert→title) |
-| 789 | https://github.com/guessit-io/guessit/issues/789 | ★ `It Ends With Us 2024...` → `title:"It Ends With"`, `country:"US"` (19 comments) | not fixed — trailing 2-letter Title-Case 'Us' is ambiguous (US country vs title word, cf. 'It'/'Ko'); the trailing-crop is the most fragile code. Hard class |
+| 789 | https://github.com/guessit-io/guessit/issues/789 | ★ `It Ends With Us 2024...` → `title:"It Ends With"`, `country:"US"` (19 comments) | **fixed** (stop-word trailing-crop guard) |
 | 790 | https://github.com/guessit-io/guessit/issues/790 | `La casa del dragón 2×7` not parsed; Unicode `×` should normalize to `x` (→ S2E7) | **fixed** (added × to episode markers) |
 | 796 | https://github.com/guessit-io/guessit/issues/796 | ★ `Adam-12 S01E02...` → `title:["Adam","12"]` (list, split); should be `"Adam-12"` | **fixed** (title "Adam-12") |
 | 800 | https://github.com/guessit-io/guessit/issues/800 | ★ `The.Four.Seasons.2025.S01E01...` → `title:"The Four"`, `season:[2025,1]`; "Seasons" swallowed | **fixed** (reject year as season-word number) |

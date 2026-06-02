@@ -4756,6 +4756,32 @@ function buildExpectedFunction(optionName) {
     return results;
   };
 }
+const TITLE_STOP_WORDS = /* @__PURE__ */ new Set([
+  "the",
+  "a",
+  "an",
+  "and",
+  "or",
+  "of",
+  "to",
+  "in",
+  "on",
+  "at",
+  "for",
+  "from",
+  "by",
+  "with",
+  "into",
+  "onto",
+  "no",
+  "le",
+  "la",
+  "les",
+  "de",
+  "du",
+  "des",
+  "el"
+]);
 function hasmatch$1(result) {
   if (result === null || result === void 0) return false;
   if (Array.isArray(result)) return result.length > 0;
@@ -5021,6 +5047,15 @@ const _TitleBaseRule = class _TitleBaseRule extends Rule {
       while (ignoredArray.length > 0) {
         const lastIgnored = ignoredArray[ignoredArray.length - 1];
         if (lastIgnored.end === trimmedHole.end) {
+          if (lastIgnored.name === "language" || lastIgnored.name === "country") {
+            const beforeWords = inp.slice(trimmedHole.start, lastIgnored.start).toLowerCase().split(/[^a-z0-9]+/i).filter(Boolean);
+            const lastWord = beforeWords[beforeWords.length - 1];
+            if (lastWord && TITLE_STOP_WORDS.has(lastWord)) {
+              toRemove.push(lastIgnored);
+              ignoredArray.pop();
+              break;
+            }
+          }
           if (lastIgnored.name === "episode_details" && lastIgnored.value === "Special") {
             const nextMatch = matches.range(
               lastIgnored.end,
