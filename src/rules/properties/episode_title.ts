@@ -34,10 +34,51 @@ export function episodeTitle(config: Record<string, unknown>) {
     Filepart2EpisodeTitle,
     NumericEpisodeTitleToEpisode,
     RemoveEpisodeTitleInReleaseGroup,
+    RemoveTailEpisodeTitle,
     RenameEpisodeTitleWhenMovieType
   );
 
   return rebulk;
+}
+
+const ET_STOP_WORDS = new Set([
+  'the', 'a', 'an', 'and', 'or', 'of', 'to', 'in', 'on', 'at', 'for', 'from',
+  'by', 'with', 'le', 'la', 'les', 'de', 'du', 'des', 'el',
+]);
+
+/**
+ * guessit-js can leave `episode_title` as a list when a stray fragment from the
+ * release tail forms a second episode_title — e.g.
+ * "NHL…Condensed.Game.720p.Away.Feed.GC…" → ["Leafs vs Red Wings Condensed
+ * Game","Away Feed"]; "Tales S01E08 All I Need…Mary J Blige 720p BET…" → [...,
+ * "BET"]. Python keeps a single episode_title. Keep the primary (first) one and
+ * drop later fragments that sit *behind* a recognised property in the tail.
+ */
+class RemoveTailEpisodeTitle extends Rule {
+  static override priority = POST_PROCESS;
+  override consequence = RemoveMatch;
+
+  private static readonly TITLEISH = new Set([
+    'year', 'title', 'alternative_title', 'episode_title', 'type', 'episode', 'season',
+  ]);
+
+  override when(matches: Matches, _context: any): Match[] | false {
+    const out: Match[] = [];
+    for (const fp of matches.markers.named('path') as Match[]) {
+      const ets = matches.range(fp.start, fp.end, (m: Match) => m.name === 'episode_title') as Match[] | Match | undefined;
+      const etArr = (Array.isArray(ets) ? ets : ets ? [ets] : []).slice().sort((a, b) => a.start - b.start);
+      if (etArr.length < 2) continue;
+      const primary = etArr[0];
+      const head = String(primary.value ?? '').trim().toLowerCase();
+      if (!head || ET_STOP_WORDS.has(head)) continue;
+      for (const et of etArr.slice(1)) {
+        const between = matches.range(primary.end, et.start,
+          (m: Match) => !m.private && !!m.value && !RemoveTailEpisodeTitle.TITLEISH.has(m.name ?? ''), 0);
+        if (between) out.push(et);
+      }
+    }
+    return out.length ? out : false;
+  }
 }
 
 /**
