@@ -78,7 +78,7 @@ guessit('file.mkv', { excludes: ['release_group'] });
 | **Audio** | `audio_codec`, `audio_profile`, `audio_channels`, `audio_bit_rate` |
 | **Source** | `source`, `streaming_service` |
 | **Release** | `release_group`, `edition`, `other`, `proper_count` |
-| **File** | `container`, `mimetype`, `size`, `crc32`, `uuid` |
+| **File** | `container` (video / subtitle / archive / image / nfo / torrent / nzb), `mimetype`, `size`, `crc32`, `uuid` |
 | **Metadata** | `language`, `subtitle_language`, `country`, `type` |
 
 ### Output schema

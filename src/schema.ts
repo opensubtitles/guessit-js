@@ -187,12 +187,24 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "3g2",
       "3gp",
       "3gp2",
+      "7z",
+      "ace",
+      "arj",
       "asf",
       "avi",
+      "bmp",
+      "bz2",
+      "cb7",
+      "cbr",
+      "cbz",
       "divx",
       "flv",
+      "gif",
+      "gz",
       "idx",
       "iso",
+      "jpeg",
+      "jpg",
       "m2ts",
       "m4v",
       "mk2",
@@ -210,19 +222,27 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "ogg",
       "ogm",
       "ogv",
+      "png",
       "qt",
+      "r00",
       "ra",
       "ram",
+      "rar",
       "rm",
       "srt",
       "ssa",
+      "tar",
+      "tbn",
+      "tgz",
       "torrent",
       "ts",
       "vob",
       "wav",
       "webm",
+      "webp",
       "wma",
-      "wmv"
+      "wmv",
+      "zip"
     ]
   },
   "country": {
@@ -366,6 +386,11 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
     "enum": [
       "application/x-bittorrent",
       "application/x-iso9660-image",
+      "application/x-rar-compressed",
+      "application/zip",
+      "image/gif",
+      "image/jpeg",
+      "image/png",
       "text/plain",
       "video/mp2t",
       "video/mp4",
@@ -385,15 +410,20 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "3D",
       "asrequested",
       "Audio Fixed",
+      "Banner",
       "Bonus",
       "BT.2020",
       "Classic",
+      "Clear Art",
+      "Clear Logo",
       "Colorized",
       "Complet",
       "Complete",
       "CONVERT",
       "Converted",
+      "Cover",
       "Dirfix",
+      "Disc Art",
       "DOCU",
       "Documentary",
       "DOKU",
@@ -404,6 +434,7 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "Ending Credits",
       "Extras",
       "Fan Subtitled",
+      "Fanart",
       "Fansub",
       "Fast Subtitled",
       "Fastsub",
@@ -426,11 +457,13 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "HR",
       "Hybrid",
       "Internal",
+      "Landscape",
       "LD",
       "LDTV",
       "LiNE",
       "Line Audio",
       "Line Dubbed",
+      "Logo",
       "Low Definition",
       "MD",
       "mHD",
@@ -455,6 +488,7 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "Ova",
       "PAL",
       "postbot",
+      "Poster",
       "Preair",
       "Proof",
       "Prooffix",
@@ -480,6 +514,7 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "Straight to Video",
       "STV",
       "Sync Fixed",
+      "Thumbnail",
       "Trailer",
       "UHD",
       "Ultra HD",
@@ -1033,7 +1068,7 @@ export interface GuessItResult {
   cd?: number;
   cd_count?: number;
   color_depth?: "10-bit" | "12-bit" | "8-bit";
-  container?: "3g2" | "3gp" | "3gp2" | "asf" | "avi" | "divx" | "flv" | "idx" | "iso" | "m2ts" | "m4v" | "mk2" | "mk3d" | "mka" | "mkv" | "MKV" | "mov" | "mp4" | "mp4a" | "mpeg" | "mpg" | "nfo" | "nzb" | "ogg" | "ogm" | "ogv" | "qt" | "ra" | "ram" | "rm" | "srt" | "ssa" | "torrent" | "ts" | "vob" | "wav" | "webm" | "wma" | "wmv" | ("3g2" | "3gp" | "3gp2" | "asf" | "avi" | "divx" | "flv" | "idx" | "iso" | "m2ts" | "m4v" | "mk2" | "mk3d" | "mka" | "mkv" | "MKV" | "mov" | "mp4" | "mp4a" | "mpeg" | "mpg" | "nfo" | "nzb" | "ogg" | "ogm" | "ogv" | "qt" | "ra" | "ram" | "rm" | "srt" | "ssa" | "torrent" | "ts" | "vob" | "wav" | "webm" | "wma" | "wmv")[];
+  container?: "3g2" | "3gp" | "3gp2" | "7z" | "ace" | "arj" | "asf" | "avi" | "bmp" | "bz2" | "cb7" | "cbr" | "cbz" | "divx" | "flv" | "gif" | "gz" | "idx" | "iso" | "jpeg" | "jpg" | "m2ts" | "m4v" | "mk2" | "mk3d" | "mka" | "mkv" | "MKV" | "mov" | "mp4" | "mp4a" | "mpeg" | "mpg" | "nfo" | "nzb" | "ogg" | "ogm" | "ogv" | "png" | "qt" | "r00" | "ra" | "ram" | "rar" | "rm" | "srt" | "ssa" | "tar" | "tbn" | "tgz" | "torrent" | "ts" | "vob" | "wav" | "webm" | "webp" | "wma" | "wmv" | "zip" | ("3g2" | "3gp" | "3gp2" | "7z" | "ace" | "arj" | "asf" | "avi" | "bmp" | "bz2" | "cb7" | "cbr" | "cbz" | "divx" | "flv" | "gif" | "gz" | "idx" | "iso" | "jpeg" | "jpg" | "m2ts" | "m4v" | "mk2" | "mk3d" | "mka" | "mkv" | "MKV" | "mov" | "mp4" | "mp4a" | "mpeg" | "mpg" | "nfo" | "nzb" | "ogg" | "ogm" | "ogv" | "png" | "qt" | "r00" | "ra" | "ram" | "rar" | "rm" | "srt" | "ssa" | "tar" | "tbn" | "tgz" | "torrent" | "ts" | "vob" | "wav" | "webm" | "webp" | "wma" | "wmv" | "zip")[];
   country?: string | GuessitLanguage;
   crc32?: string;
   date?: string | Date;
@@ -1048,8 +1083,8 @@ export interface GuessItResult {
   film_title?: string;
   frame_rate?: string;
   language?: string | GuessitLanguage | (string | GuessitLanguage)[];
-  mimetype?: "application/x-bittorrent" | "application/x-iso9660-image" | "text/plain" | "video/mp2t" | "video/mp4" | "video/webm" | "video/x-matroska" | "video/x-msvideo";
-  other?: "2in1" | "3D" | "asrequested" | "Audio Fixed" | "Bonus" | "BT.2020" | "Classic" | "Colorized" | "Complet" | "Complete" | "CONVERT" | "Converted" | "Dirfix" | "DOCU" | "Documentary" | "DOKU" | "Dolby Vision" | "Dual" | "Dual Audio" | "East Coast Feed" | "Ending Credits" | "Extras" | "Fan Subtitled" | "Fansub" | "Fast Subtitled" | "Fastsub" | "FHD" | "Fix" | "Fixed" | "Full HD" | "Half OU" | "Half SBS" | "Hardcoded Subtitles" | "HC" | "HD" | "HDLight" | "HDR10" | "HFR" | "High Frame Rate" | "High Quality" | "High Resolution" | "HQ" | "HR" | "Hybrid" | "Internal" | "LD" | "LDTV" | "LiNE" | "Line Audio" | "Line Dubbed" | "Low Definition" | "MD" | "mHD" | "Mic Dubbed" | "Micro HD" | "Mux" | "Nfofix" | "NTSC" | "Oad" | "OAR" | "Oav" | "Obfuscated" | "Ona" | "Open Matte" | "Opening Credits" | "Original Animated Video" | "Original Animation DVD" | "Original Aspect Ratio" | "Original Net Animation" | "Original Video" | "OV" | "Ova" | "PAL" | "postbot" | "Preair" | "Proof" | "Prooffix" | "Proper" | "PS Vita" | "R5" | "RC" | "Read NFO" | "Real" | "Reencoded" | "Region 5" | "Region C" | "Remux" | "Repost" | "Retail" | "Rip" | "Sample" | "Scrambled" | "Screener" | "SDR" | "SECAM" | "Standard Dynamic Range" | "Straight to Video" | "STV" | "Sync Fixed" | "Trailer" | "UHD" | "Ultra HD" | "Upscaled" | "Variable Frame Rate" | "VFR" | "Virtual Reality" | "Vita" | "VO" | "vost" | "West Coast Feed" | "Widescreen" | "ws" | "xpost" | "XXX" | ("2in1" | "3D" | "asrequested" | "Audio Fixed" | "Bonus" | "BT.2020" | "Classic" | "Colorized" | "Complet" | "Complete" | "CONVERT" | "Converted" | "Dirfix" | "DOCU" | "Documentary" | "DOKU" | "Dolby Vision" | "Dual" | "Dual Audio" | "East Coast Feed" | "Ending Credits" | "Extras" | "Fan Subtitled" | "Fansub" | "Fast Subtitled" | "Fastsub" | "FHD" | "Fix" | "Fixed" | "Full HD" | "Half OU" | "Half SBS" | "Hardcoded Subtitles" | "HC" | "HD" | "HDLight" | "HDR10" | "HFR" | "High Frame Rate" | "High Quality" | "High Resolution" | "HQ" | "HR" | "Hybrid" | "Internal" | "LD" | "LDTV" | "LiNE" | "Line Audio" | "Line Dubbed" | "Low Definition" | "MD" | "mHD" | "Mic Dubbed" | "Micro HD" | "Mux" | "Nfofix" | "NTSC" | "Oad" | "OAR" | "Oav" | "Obfuscated" | "Ona" | "Open Matte" | "Opening Credits" | "Original Animated Video" | "Original Animation DVD" | "Original Aspect Ratio" | "Original Net Animation" | "Original Video" | "OV" | "Ova" | "PAL" | "postbot" | "Preair" | "Proof" | "Prooffix" | "Proper" | "PS Vita" | "R5" | "RC" | "Read NFO" | "Real" | "Reencoded" | "Region 5" | "Region C" | "Remux" | "Repost" | "Retail" | "Rip" | "Sample" | "Scrambled" | "Screener" | "SDR" | "SECAM" | "Standard Dynamic Range" | "Straight to Video" | "STV" | "Sync Fixed" | "Trailer" | "UHD" | "Ultra HD" | "Upscaled" | "Variable Frame Rate" | "VFR" | "Virtual Reality" | "Vita" | "VO" | "vost" | "West Coast Feed" | "Widescreen" | "ws" | "xpost" | "XXX")[];
+  mimetype?: "application/x-bittorrent" | "application/x-iso9660-image" | "application/x-rar-compressed" | "application/zip" | "image/gif" | "image/jpeg" | "image/png" | "text/plain" | "video/mp2t" | "video/mp4" | "video/webm" | "video/x-matroska" | "video/x-msvideo";
+  other?: "2in1" | "3D" | "asrequested" | "Audio Fixed" | "Banner" | "Bonus" | "BT.2020" | "Classic" | "Clear Art" | "Clear Logo" | "Colorized" | "Complet" | "Complete" | "CONVERT" | "Converted" | "Cover" | "Dirfix" | "Disc Art" | "DOCU" | "Documentary" | "DOKU" | "Dolby Vision" | "Dual" | "Dual Audio" | "East Coast Feed" | "Ending Credits" | "Extras" | "Fan Subtitled" | "Fanart" | "Fansub" | "Fast Subtitled" | "Fastsub" | "FHD" | "Fix" | "Fixed" | "Full HD" | "Half OU" | "Half SBS" | "Hardcoded Subtitles" | "HC" | "HD" | "HDLight" | "HDR10" | "HFR" | "High Frame Rate" | "High Quality" | "High Resolution" | "HQ" | "HR" | "Hybrid" | "Internal" | "Landscape" | "LD" | "LDTV" | "LiNE" | "Line Audio" | "Line Dubbed" | "Logo" | "Low Definition" | "MD" | "mHD" | "Mic Dubbed" | "Micro HD" | "Mux" | "Nfofix" | "NTSC" | "Oad" | "OAR" | "Oav" | "Obfuscated" | "Ona" | "Open Matte" | "Opening Credits" | "Original Animated Video" | "Original Animation DVD" | "Original Aspect Ratio" | "Original Net Animation" | "Original Video" | "OV" | "Ova" | "PAL" | "postbot" | "Poster" | "Preair" | "Proof" | "Prooffix" | "Proper" | "PS Vita" | "R5" | "RC" | "Read NFO" | "Real" | "Reencoded" | "Region 5" | "Region C" | "Remux" | "Repost" | "Retail" | "Rip" | "Sample" | "Scrambled" | "Screener" | "SDR" | "SECAM" | "Standard Dynamic Range" | "Straight to Video" | "STV" | "Sync Fixed" | "Thumbnail" | "Trailer" | "UHD" | "Ultra HD" | "Upscaled" | "Variable Frame Rate" | "VFR" | "Virtual Reality" | "Vita" | "VO" | "vost" | "West Coast Feed" | "Widescreen" | "ws" | "xpost" | "XXX" | ("2in1" | "3D" | "asrequested" | "Audio Fixed" | "Banner" | "Bonus" | "BT.2020" | "Classic" | "Clear Art" | "Clear Logo" | "Colorized" | "Complet" | "Complete" | "CONVERT" | "Converted" | "Cover" | "Dirfix" | "Disc Art" | "DOCU" | "Documentary" | "DOKU" | "Dolby Vision" | "Dual" | "Dual Audio" | "East Coast Feed" | "Ending Credits" | "Extras" | "Fan Subtitled" | "Fanart" | "Fansub" | "Fast Subtitled" | "Fastsub" | "FHD" | "Fix" | "Fixed" | "Full HD" | "Half OU" | "Half SBS" | "Hardcoded Subtitles" | "HC" | "HD" | "HDLight" | "HDR10" | "HFR" | "High Frame Rate" | "High Quality" | "High Resolution" | "HQ" | "HR" | "Hybrid" | "Internal" | "Landscape" | "LD" | "LDTV" | "LiNE" | "Line Audio" | "Line Dubbed" | "Logo" | "Low Definition" | "MD" | "mHD" | "Mic Dubbed" | "Micro HD" | "Mux" | "Nfofix" | "NTSC" | "Oad" | "OAR" | "Oav" | "Obfuscated" | "Ona" | "Open Matte" | "Opening Credits" | "Original Animated Video" | "Original Animation DVD" | "Original Aspect Ratio" | "Original Net Animation" | "Original Video" | "OV" | "Ova" | "PAL" | "postbot" | "Poster" | "Preair" | "Proof" | "Prooffix" | "Proper" | "PS Vita" | "R5" | "RC" | "Read NFO" | "Real" | "Reencoded" | "Region 5" | "Region C" | "Remux" | "Repost" | "Retail" | "Rip" | "Sample" | "Scrambled" | "Screener" | "SDR" | "SECAM" | "Standard Dynamic Range" | "Straight to Video" | "STV" | "Sync Fixed" | "Thumbnail" | "Trailer" | "UHD" | "Ultra HD" | "Upscaled" | "Variable Frame Rate" | "VFR" | "Virtual Reality" | "Vita" | "VO" | "vost" | "West Coast Feed" | "Widescreen" | "ws" | "xpost" | "XXX")[];
   part?: number | (number)[];
   proper_count?: number;
   release_group?: string;

@@ -28,11 +28,49 @@ export function other(config: Record<string, unknown>) {
     ValidateAtEnd,
     ValidateReal,
     RemoveTitleCaseAmbiguous,
+    ImageArtKeywordToOther,
     ProperCountRule,
     FixCountRule
   );
 
   return rebulk;
+}
+
+/**
+ * In an image file (a filepart with an image container — .jpg/.png/…), a
+ * title/alternative_title/episode_title that is exactly an artwork keyword is the
+ * artwork kind, not a title — e.g. "poster.jpg" → other "Poster";
+ * "Movie.2020-fanart.jpg" → other "Fanart". Scoped to image fileparts so it can
+ * never clobber a real video title that happens to contain such a word. (#273)
+ */
+const ART_KEYWORDS: Record<string, string> = {
+  poster: 'Poster', fanart: 'Fanart', banner: 'Banner', thumb: 'Thumbnail',
+  thumbnail: 'Thumbnail', landscape: 'Landscape', cover: 'Cover',
+  clearart: 'Clear Art', clearlogo: 'Clear Logo', logo: 'Logo', discart: 'Disc Art',
+};
+class ImageArtKeywordToOther extends Rule {
+  static priority = POST_PROCESS;
+  consequence = [RemoveMatch, AppendMatch];
+
+  when(matches: any): [Match[], Match[]] | false {
+    const toRemove: Match[] = [];
+    const toAppend: Match[] = [];
+    for (const fp of matches.markers.named('path') as Match[]) {
+      const hasImage = matches.range(fp.start, fp.end,
+        (m: Match) => m.name === 'container' && m.tags?.includes('image'), 0);
+      if (!hasImage) continue;
+      const cands = matches.range(fp.start, fp.end,
+        (m: Match) => ['title', 'alternative_title', 'episode_title'].includes(m.name ?? '')) as Match[];
+      for (const c of cands) {
+        const key = String(c.value ?? '').trim().toLowerCase().replace(/[\s._-]+/g, '');
+        const canon = ART_KEYWORDS[key];
+        if (!canon) continue;
+        toRemove.push(c);
+        toAppend.push(new Match(c.start, c.end, { name: 'other', value: canon, inputString: matches.inputString }));
+      }
+    }
+    return toRemove.length ? [toRemove, toAppend] : false;
+  }
 }
 
 export function completeWords(
