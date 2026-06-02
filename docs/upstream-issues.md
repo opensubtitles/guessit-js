@@ -18,11 +18,17 @@ work / acceptable** (648, 660, 752, 774, 637, 741, 771) · the rest carry an inl
 cascades (#634/#640), the obfuscated-hash case (#742), the remaining anime
 conventions (#690/#696/#747), and pure feature requests (#272/#273/#599/#802).
 
-**Cross-ref:** the biggest validated cluster is **title-token collision** — a title
-word/letter consumed as country/language/edition/source/other. This is the *same*
-root cause as the Python↔JS parity gap tracked by `scripts/pydiff.mjs`
-(`spurious-episode_title` + `spurious-alternative_title` + `dup-language`, ~158
-cases). Fixing it once should resolve many of these issues together. Tagged ★ below.
+**Cross-ref (UPDATED 2026-06-02):** the biggest validated cluster was **title-token
+collision** — a title word/letter consumed as country/language/edition/source/other,
+the same root cause as the Python↔JS parity gap tracked by `scripts/pydiff.mjs`.
+**That gap is now closed: parity is FIX 0** (`docs/python-parity.md`) — every genuine
+JS-worse-than-Python case (spurious episode_title/alternative_title fragments,
+title-absorbs-junk lists, dup-language, GROUP→episode_title, phantom languages,
+obfuscated-hash junk) is fixed. The ★ issues below that are still "not fixed" are a
+*different, narrower* set (hyphen-title release-group cascade #634/#640, the
+`cd`-mid-token hash case #742, ambiguous anime formatting #690/#696/#747) — they were
+NOT part of the parity-fixture corpus, so the parity work did not touch them. They
+remain open and are individually marginal/risky.
 
 ---
 
@@ -125,12 +131,22 @@ cases). Fixing it once should resolve many of these issues together. Tagged ★ 
 
 ## Notes for fixing
 
-- **One root cause, many issues:** ★ items are title-token collisions. The fix is
-  in how language/country/edition/other matches interact with title-hole
-  computation — title candidates should exclude tokens already claimed by a
-  strong property, and a *bare* country/language word adjacent to a real title
-  should not steal it. Validate against `scripts/pydiff.mjs` after each change.
-- **Hyphenated-title split** (#634, #640, #796) is its own sub-bug: a `-` inside a
-  title is treated as a release-group boundary.
-- **"Convert"→Converted** (#743, #784) and **"Real"→Proper** (#746): word-values
-  match without requiring full-token isolation / position context.
+- **DONE (2026-06-02) — the title-token / multi-hole cluster.** What was feared to
+  need a `check_titles_in_filepart` rework was instead solved with ~13 surgical
+  `POST_PROCESS` (priority −2048) cleanup rules that DELETE junk *after* the
+  multi-hole machinery runs (don't constrain hole-finding — that regresses
+  fixtures). Reusable pattern: keep the PRIMARY title/episode_title, drop later
+  fragments behind a recognised property in the release tail; keep things
+  contiguous with the title/year. Rules live in title.ts / episode_title.ts /
+  language.ts / release_group.ts. See the `python-parity` memory for the full list.
+  Parity is now FIX 0; validate against `scripts/pydiff.mjs` after any change.
+- **Still open (separate sub-bugs, NOT in the parity corpus):**
+  - **Hyphenated-title split** (#634, #640): a `-` inside a title becomes a
+    release-group boundary *only* when a trailing `[eztv]`/`[ettv]` group is
+    present (`grown-ish…[eztv]` → title "ish", rg "grown"). Delicate cascade.
+  - **Obfuscated `cd`-mid-token** (#742): `My File 238ddcd5aff.mkv` → `cd:5`.
+    Same-filepart hash; `RemoveHashFilepartJunk` only handles a hash that is its
+    OWN path segment (the `-Obfuscated/<hex>.mkv` parity cases), not a hash glued
+    into the title filepart. Needs a `cd` word-boundary fix (risky).
+  - **Ambiguous anime formatting** (#690/#696/#747): "Season 2 - 15", romaji +
+    "(English title)", inconsistent leading numbers.
