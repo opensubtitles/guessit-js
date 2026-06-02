@@ -95,7 +95,7 @@ cases). Fixing it once should resolve many of these issues together. Tagged ★ 
 | 725 | https://github.com/guessit-io/guessit/issues/725 | Bazarr crash old version; downstream/version | wontfix |
 | 751 | https://github.com/guessit-io/guessit/issues/751 | title vs film_title; usage question | wontfix |
 | 768 | https://github.com/guessit-io/guessit/issues/768 | read embedded media tags; out of scope (names only) | wontfix |
-| 773 | https://github.com/guessit-io/guessit/issues/773 | `xXx`→other:XXX; fundamentally ambiguous, dup of 246 | wontfix |
+| 773 | https://github.com/guessit-io/guessit/issues/773 | `xXx`→other:XXX; fundamentally ambiguous, dup of 246 | **fixed** (other at title pos → title) |
 | 779 | https://github.com/guessit-io/guessit/issues/779 | garbled Chinese = JSON ensure_ascii in user's script; not a bug | wontfix |
 | 782 | https://github.com/guessit-io/guessit/issues/782 | "Discovery" episode word → streaming service; no well-defined rule | wontfix |
 | 783 | https://github.com/guessit-io/guessit/issues/783 | UnicodeDecodeError reading options.json; ASCII-locale env | wontfix |
