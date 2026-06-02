@@ -32,10 +32,43 @@ export function episodeTitle(config: Record<string, unknown>) {
     TrimLanguageFromEpisodeTitle,
     Filepart3EpisodeTitle,
     Filepart2EpisodeTitle,
+    NumericEpisodeTitleToEpisode,
     RenameEpisodeTitleWhenMovieType
   );
 
   return rebulk;
+}
+
+/**
+ * A purely-numeric episode_title in a filepart that has a season but NO episode
+ * is really the episode number — the anime "S2 - 01" convention, where "01"
+ * after the dash is the episode, not an episode_title. (Issue #667.)
+ */
+class NumericEpisodeTitleToEpisode extends Rule {
+  static override priority = POST_PROCESS;
+  override consequence = RemoveMatch;
+
+  override when(matches: Matches, _context: any): Match[] | false {
+    const out: Match[] = [];
+    for (const fp of matches.markers.named('path') as Match[]) {
+      if (matches.range(fp.start, fp.end, (m: Match) => m.name === 'episode' && !m.private, 0)) continue;
+      if (!matches.range(fp.start, fp.end, (m: Match) => m.name === 'season' && !m.private, 0)) continue;
+      const ets = matches.range(fp.start, fp.end, (m: Match) => m.name === 'episode_title') as Match[] | Match | undefined;
+      for (const et of (Array.isArray(ets) ? ets : ets ? [ets] : [])) {
+        if (/^\d{1,3}$/.test(String(et.value ?? '').trim())) out.push(et);
+      }
+    }
+    return out.length ? out : false;
+  }
+
+  override then(matches: Matches, whenResponse: unknown, _context: any): void {
+    for (const et of whenResponse as Match[]) {
+      matches.remove(et);
+      et.name = 'episode';
+      et.value = parseInt(String(et.value).trim(), 10);
+      matches.append(et);
+    }
+  }
 }
 
 class RemoveConflictsWithEpisodeTitle extends Rule {
