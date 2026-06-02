@@ -35,6 +35,7 @@ export function episodeTitle(config: Record<string, unknown>) {
     NumericEpisodeTitleToEpisode,
     RemoveEpisodeTitleInReleaseGroup,
     RemoveEpisodeMarkerWordTitle,
+    RemoveFansubCreditEpisodeTitle,
     RemoveSubtitleDescriptorEpisodeTitle,
     RemoveHashFilepartJunk,
     RemoveTailEpisodeTitle,
@@ -105,6 +106,23 @@ class RemoveHashFilepartJunk extends Rule {
         out.push(m);
       }
     }
+    return out.length ? out : false;
+  }
+}
+
+/**
+ * An `episode_title` containing the word "fansub" is a fan-subbing group credit,
+ * not a title — e.g. "Show Name 445 VOSTFR par Fansub-Resistance …" →
+ * episode_title "par Fansub-Resistance" ("by Fansub-Resistance"). Drop it.
+ */
+class RemoveFansubCreditEpisodeTitle extends Rule {
+  static override priority = POST_PROCESS;
+  override consequence = RemoveMatch;
+
+  override when(matches: Matches, _context: any): Match[] | false {
+    const ets = matches.named('episode_title') as Match[] | Match | undefined;
+    const etArr = Array.isArray(ets) ? ets : ets ? [ets] : [];
+    const out = etArr.filter((et) => /\bfansub/i.test(String(et.value ?? '')));
     return out.length ? out : false;
   }
 }
