@@ -35,6 +35,7 @@ export function episodeTitle(config: Record<string, unknown>) {
     NumericEpisodeTitleToEpisode,
     RemoveEpisodeTitleInReleaseGroup,
     RemoveEpisodeMarkerWordTitle,
+    RemoveEpisodeTitleCoveredByDetailsInGroup,
     RemoveFansubCreditEpisodeTitle,
     RemoveSubtitleDescriptorEpisodeTitle,
     RemoveHashFilepartJunk,
@@ -105,6 +106,32 @@ class RemoveHashFilepartJunk extends Rule {
       for (const m of matches.range(fp.start, fp.end, (m: Match) => strip.has(m.name ?? '')) as Match[]) {
         out.push(m);
       }
+    }
+    return out.length ? out : false;
+  }
+}
+
+/**
+ * An `episode_title` fully covered by an `episode_details` *inside a bracket
+ * group* is a duplicate of that detail, not a title — e.g. "[Cap.112_114.Final]"
+ * yields both episode_details "Final" and episode_title "Final". Python keeps only
+ * the detail. The bracket-group guard is what separates this from bare
+ * "S01E01.Pilot" / "…2014.Special" where the detail word IS the episode title and
+ * Python keeps the episode_title (those are never inside a metadata bracket).
+ */
+class RemoveEpisodeTitleCoveredByDetailsInGroup extends Rule {
+  static override priority = POST_PROCESS;
+  override consequence = RemoveMatch;
+
+  override when(matches: Matches, _context: any): Match[] | false {
+    const ets = matches.named('episode_title') as Match[] | Match | undefined;
+    const etArr = Array.isArray(ets) ? ets : ets ? [ets] : [];
+    const out: Match[] = [];
+    for (const et of etArr) {
+      if (!matches.markers.atMatch(et, (m: Match) => m.name === 'group', 0)) continue;
+      const covered = matches.range(et.start, et.end,
+        (m: Match) => m.name === 'episode_details' && m.start <= et.start && m.end >= et.end, 0);
+      if (covered) out.push(et);
     }
     return out.length ? out : false;
   }
