@@ -1027,7 +1027,15 @@ class RemoveTailTitle extends Rule {
       if (titleArr.length < 2) continue;
       const primary = titleArr[0];
       const head = String(primary.value ?? '').trim().toLowerCase();
-      if (!head || TITLE_STOP_WORDS.has(head)) continue;
+      if (!head) continue;
+      if (TITLE_STOP_WORDS.has(head)) {
+        // Stop-word-first ("From [tracker] - Real.Title"): the real title is the
+        // later one — drop the leading stop-word title instead.
+        if (titleArr.slice(1).some((t) => !TITLE_STOP_WORDS.has(String(t.value ?? '').trim().toLowerCase()))) {
+          out.push(primary);
+        }
+        continue;
+      }
       for (const t of titleArr.slice(1)) {
         const between = matches.range(primary.end, t.start,
           (m: Match) => !m.private && !!m.value && !titleish.has(m.name ?? ''), 0);
