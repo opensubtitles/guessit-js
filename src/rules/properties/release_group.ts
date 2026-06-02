@@ -75,7 +75,8 @@ export function releaseGroup(config: Record<string, unknown>) {
   return rebulk.rules(
     new DashSeparatedReleaseGroup(cleanGroupname),
     new SceneReleaseGroup(cleanGroupname),
-    AnimeReleaseGroup
+    AnimeReleaseGroup,
+    new TrailingTokenAfterEpisodeAsReleaseGroup(cleanGroupname)
   );
 }
 
@@ -488,5 +489,61 @@ class AnimeReleaseGroup extends Rule {
       return [toRemove, toAppend];
     }
     return false;
+  }
+}
+
+/**
+ * A single dash-separated token at the very end of a filepart, immediately
+ * following the episode / absolute-episode numbers, is a release group — not an
+ * episode title (e.g. "Bleach.s16e03-04.313-314-GROUP" → release_group "GROUP").
+ * When the dash-separated walk in DashSeparatedReleaseGroup is disrupted by a
+ * weak-episode range, the trailing token gets mislabelled as episode_title;
+ * reclaim it here. Only fires when no release_group was found. (Python emits
+ * release_group.)
+ */
+class TrailingTokenAfterEpisodeAsReleaseGroup extends Rule {
+  static dependency = ['AnimeReleaseGroup'];
+  consequence = [RemoveMatch, AppendMatch];
+  valueFormatter: (s: string) => string;
+
+  constructor(valueFormatter: (s: string) => string) {
+    super();
+    this.valueFormatter = valueFormatter;
+  }
+
+  when(matches: any) {
+    if ((matches.named('release_group') as Match[]).length > 0) return false;
+    const inp: string = matches.inputString ?? '';
+    const toRemove: Match[] = [];
+    const toAppend: Match[] = [];
+
+    for (const filepart of matches.markers.named('path')) {
+      // Trailing episode_title, ignoring a zero-width type/container marker.
+      const last = matches.range(filepart.start, filepart.end,
+        (m: Match) => !m.private && m.name === 'episode_title' && m.value, -1) as Match | undefined;
+      if (!last) continue;
+      // Must be the last real content of the filepart.
+      const after = matches.range(last.end, filepart.end,
+        (m: Match) => !m.private && m.span[0] !== m.span[1], 0);
+      if (after) continue;
+      // Single token, dash-separated from what precedes it.
+      const raw = String(last.raw ?? last.value);
+      if (/[\s.]/.test(raw.trim())) continue;
+      if (inp[last.start - 1] !== '-') continue;
+      const prev = matches.range(filepart.start, last.start,
+        (m: Match) => !m.private, -1) as Match | undefined;
+      if (!prev || !['episode', 'absolute_episode'].includes(prev.name ?? '')) continue;
+
+      const rg = new Match(last.start, last.end, {
+        name: 'release_group',
+        inputString: inp,
+      });
+      rg.formatter = this.valueFormatter;
+      if (rg.value) {
+        toRemove.push(last);
+        toAppend.push(rg);
+      }
+    }
+    return toRemove.length || toAppend.length ? [toRemove, toAppend] : false;
   }
 }
