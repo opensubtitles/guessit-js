@@ -35,6 +35,7 @@ export function episodeTitle(config: Record<string, unknown>) {
     NumericEpisodeTitleToEpisode,
     RemoveEpisodeTitleInReleaseGroup,
     RemoveEpisodeMarkerWordTitle,
+    RemoveSubtitleDescriptorEpisodeTitle,
     RemoveHashFilepartJunk,
     RemoveTailEpisodeTitle,
     RenameEpisodeTitleWhenMovieType
@@ -103,6 +104,30 @@ class RemoveHashFilepartJunk extends Rule {
       for (const m of matches.range(fp.start, fp.end, (m: Match) => strip.has(m.name ?? '')) as Match[]) {
         out.push(m);
       }
+    }
+    return out.length ? out : false;
+  }
+}
+
+/**
+ * A single-word `episode_title` immediately followed by a subtitle keyword
+ * ("Subtitles"/"Subs") is a subtitle-type descriptor, not a title — e.g.
+ * "…Eng.Soft.Subtitles.720p…" → episode_title "Soft" ("soft subtitles"). Python
+ * forms no episode_title there; drop it.
+ */
+class RemoveSubtitleDescriptorEpisodeTitle extends Rule {
+  static override priority = POST_PROCESS;
+  override consequence = RemoveMatch;
+
+  override when(matches: Matches, _context: any): Match[] | false {
+    const inp: string = (matches as any).inputString ?? '';
+    const ets = matches.named('episode_title') as Match[] | Match | undefined;
+    const etArr = Array.isArray(ets) ? ets : ets ? [ets] : [];
+    const out: Match[] = [];
+    for (const et of etArr) {
+      if (/[\s.]/.test(String(et.value ?? '').trim())) continue; // single word only
+      const after = inp.slice(et.end).replace(/^[\s._-]+/, '');
+      if (/^subtitl(e|es)\b|^subs?\b/i.test(after)) out.push(et);
     }
     return out.length ? out : false;
   }
