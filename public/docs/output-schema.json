@@ -1,0 +1,1336 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/opensubtitles/guessit-js/output-schema.json",
+  "title": "guessit-js output",
+  "description": "Metadata extracted from a release name. Every property is optional; presence depends on the input. Generated from scripts/gen-schema.mjs.",
+  "type": "object",
+  "definitions": {
+    "Language": {
+      "type": [
+        "object",
+        "string"
+      ],
+      "description": "A language or country. Rendered as a string code or an object with alpha3/alpha2/name/country.",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "alpha3": {
+          "type": "string"
+        },
+        "alpha2": {
+          "type": "string"
+        },
+        "country": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "script": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  },
+  "properties": {
+    "absolute_episode": {
+      "oneOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      ]
+    },
+    "alternative_title": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "another": {
+      "type": "string"
+    },
+    "aspect_ratio": {
+      "type": "number"
+    },
+    "audio_bit_rate": {
+      "type": "string"
+    },
+    "audio_channels": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "1.0",
+            "1ch",
+            "2.0",
+            "20",
+            "2ch",
+            "5.1",
+            "5ch",
+            "6ch",
+            "7.1",
+            "7ch",
+            "8ch",
+            "mono",
+            "stereo"
+          ]
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "1.0",
+              "1ch",
+              "2.0",
+              "20",
+              "2ch",
+              "5.1",
+              "5ch",
+              "6ch",
+              "7.1",
+              "7ch",
+              "8ch",
+              "mono",
+              "stereo"
+            ]
+          }
+        }
+      ]
+    },
+    "audio_codec": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "AAC",
+            "Atmos",
+            "DD+",
+            "DDP",
+            "Dolby",
+            "Dolby Atmos",
+            "Dolby Digital",
+            "Dolby Digital Plus",
+            "Dolby TrueHD",
+            "DolbyDigital",
+            "DTS",
+            "DTS-HD",
+            "DTS-X",
+            "DTS:X",
+            "DTSX",
+            "Flac",
+            "FLAC",
+            "LAME",
+            "LPCM",
+            "MP2",
+            "MP3",
+            "Opus",
+            "PCM",
+            "Vorbis"
+          ]
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "AAC",
+              "Atmos",
+              "DD+",
+              "DDP",
+              "Dolby",
+              "Dolby Atmos",
+              "Dolby Digital",
+              "Dolby Digital Plus",
+              "Dolby TrueHD",
+              "DolbyDigital",
+              "DTS",
+              "DTS-HD",
+              "DTS-X",
+              "DTS:X",
+              "DTSX",
+              "Flac",
+              "FLAC",
+              "LAME",
+              "LPCM",
+              "MP2",
+              "MP3",
+              "Opus",
+              "PCM",
+              "Vorbis"
+            ]
+          }
+        }
+      ]
+    },
+    "audio_profile": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "ES",
+            "EX",
+            "Extended Surround",
+            "HE",
+            "High Efficiency",
+            "High Quality",
+            "High Resolution Audio",
+            "HQ",
+            "HR",
+            "HRA",
+            "LC",
+            "Low Complexity",
+            "MA",
+            "Master Audio"
+          ]
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "ES",
+              "EX",
+              "Extended Surround",
+              "HE",
+              "High Efficiency",
+              "High Quality",
+              "High Resolution Audio",
+              "HQ",
+              "HR",
+              "HRA",
+              "LC",
+              "Low Complexity",
+              "MA",
+              "Master Audio"
+            ]
+          }
+        }
+      ]
+    },
+    "bonus": {
+      "type": "number"
+    },
+    "bonus_title": {
+      "type": "string"
+    },
+    "cd": {
+      "type": "number"
+    },
+    "cd_count": {
+      "type": "number"
+    },
+    "color_depth": {
+      "type": "string",
+      "enum": [
+        "10-bit",
+        "12-bit",
+        "8-bit"
+      ]
+    },
+    "container": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "3g2",
+            "3gp",
+            "3gp2",
+            "7z",
+            "ace",
+            "arj",
+            "asf",
+            "avi",
+            "bmp",
+            "bz2",
+            "cb7",
+            "cbr",
+            "cbz",
+            "divx",
+            "flv",
+            "gif",
+            "gz",
+            "idx",
+            "iso",
+            "jpeg",
+            "jpg",
+            "m2ts",
+            "m4v",
+            "mk2",
+            "mk3d",
+            "mka",
+            "mkv",
+            "MKV",
+            "mov",
+            "mp4",
+            "mp4a",
+            "mpeg",
+            "mpg",
+            "nfo",
+            "nzb",
+            "ogg",
+            "ogm",
+            "ogv",
+            "png",
+            "qt",
+            "r00",
+            "ra",
+            "ram",
+            "rar",
+            "rm",
+            "srt",
+            "ssa",
+            "tar",
+            "tbn",
+            "tgz",
+            "torrent",
+            "ts",
+            "vob",
+            "wav",
+            "webm",
+            "webp",
+            "wma",
+            "wmv",
+            "zip"
+          ]
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "3g2",
+              "3gp",
+              "3gp2",
+              "7z",
+              "ace",
+              "arj",
+              "asf",
+              "avi",
+              "bmp",
+              "bz2",
+              "cb7",
+              "cbr",
+              "cbz",
+              "divx",
+              "flv",
+              "gif",
+              "gz",
+              "idx",
+              "iso",
+              "jpeg",
+              "jpg",
+              "m2ts",
+              "m4v",
+              "mk2",
+              "mk3d",
+              "mka",
+              "mkv",
+              "MKV",
+              "mov",
+              "mp4",
+              "mp4a",
+              "mpeg",
+              "mpg",
+              "nfo",
+              "nzb",
+              "ogg",
+              "ogm",
+              "ogv",
+              "png",
+              "qt",
+              "r00",
+              "ra",
+              "ram",
+              "rar",
+              "rm",
+              "srt",
+              "ssa",
+              "tar",
+              "tbn",
+              "tgz",
+              "torrent",
+              "ts",
+              "vob",
+              "wav",
+              "webm",
+              "webp",
+              "wma",
+              "wmv",
+              "zip"
+            ]
+          }
+        }
+      ]
+    },
+    "country": {
+      "$ref": "#/definitions/Language"
+    },
+    "crc32": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "disc": {
+      "oneOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      ]
+    },
+    "edition": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "Alternative Cut",
+            "CC",
+            "collector",
+            "Collector",
+            "Criterion",
+            "DC",
+            "ddc",
+            "deluxe",
+            "Deluxe",
+            "Director's Cut",
+            "Director's Definitive Cut",
+            "extended",
+            "Extended",
+            "Fan",
+            "Festival",
+            "imax",
+            "IMAX",
+            "limited",
+            "Limited",
+            "Remastered",
+            "Restored",
+            "se",
+            "Special",
+            "theatrical",
+            "Theatrical",
+            "Ultimate",
+            "Uncensored",
+            "Uncut",
+            "Unrated"
+          ]
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "Alternative Cut",
+              "CC",
+              "collector",
+              "Collector",
+              "Criterion",
+              "DC",
+              "ddc",
+              "deluxe",
+              "Deluxe",
+              "Director's Cut",
+              "Director's Definitive Cut",
+              "extended",
+              "Extended",
+              "Fan",
+              "Festival",
+              "imax",
+              "IMAX",
+              "limited",
+              "Limited",
+              "Remastered",
+              "Restored",
+              "se",
+              "Special",
+              "theatrical",
+              "Theatrical",
+              "Ultimate",
+              "Uncensored",
+              "Uncut",
+              "Unrated"
+            ]
+          }
+        }
+      ]
+    },
+    "episode": {
+      "oneOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      ]
+    },
+    "episode_count": {
+      "type": "number"
+    },
+    "episode_details": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "episode_format": {
+      "type": "string",
+      "enum": [
+        "Minisode"
+      ]
+    },
+    "episode_title": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "film": {
+      "type": "number"
+    },
+    "film_title": {
+      "type": "string"
+    },
+    "frame_rate": {
+      "type": "string"
+    },
+    "language": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/Language"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Language"
+          }
+        }
+      ]
+    },
+    "mimetype": {
+      "type": "string",
+      "enum": [
+        "application/x-bittorrent",
+        "application/x-iso9660-image",
+        "application/x-rar-compressed",
+        "application/zip",
+        "image/gif",
+        "image/jpeg",
+        "image/png",
+        "text/plain",
+        "video/mp2t",
+        "video/mp4",
+        "video/webm",
+        "video/x-matroska",
+        "video/x-msvideo"
+      ]
+    },
+    "other": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "2in1",
+            "3D",
+            "asrequested",
+            "Audio Fixed",
+            "Banner",
+            "Bonus",
+            "BT.2020",
+            "Classic",
+            "Clear Art",
+            "Clear Logo",
+            "Colorized",
+            "Complet",
+            "Complete",
+            "CONVERT",
+            "Converted",
+            "Cover",
+            "Dirfix",
+            "Disc Art",
+            "DOCU",
+            "Documentary",
+            "DOKU",
+            "Dolby Vision",
+            "Dual",
+            "Dual Audio",
+            "East Coast Feed",
+            "Ending Credits",
+            "Extras",
+            "Fan Subtitled",
+            "Fanart",
+            "Fansub",
+            "Fast Subtitled",
+            "Fastsub",
+            "FHD",
+            "Fix",
+            "Fixed",
+            "Full HD",
+            "Half OU",
+            "Half SBS",
+            "Hardcoded Subtitles",
+            "HC",
+            "HD",
+            "HDLight",
+            "HDR10",
+            "HFR",
+            "High Frame Rate",
+            "High Quality",
+            "High Resolution",
+            "HQ",
+            "HR",
+            "Hybrid",
+            "Internal",
+            "Landscape",
+            "LD",
+            "LDTV",
+            "LiNE",
+            "Line Audio",
+            "Line Dubbed",
+            "Logo",
+            "Low Definition",
+            "MD",
+            "mHD",
+            "Mic Dubbed",
+            "Micro HD",
+            "Mux",
+            "Nfofix",
+            "NTSC",
+            "Oad",
+            "OAR",
+            "Oav",
+            "Obfuscated",
+            "Ona",
+            "Open Matte",
+            "Opening Credits",
+            "Original Animated Video",
+            "Original Animation DVD",
+            "Original Aspect Ratio",
+            "Original Net Animation",
+            "Original Video",
+            "OV",
+            "Ova",
+            "PAL",
+            "postbot",
+            "Poster",
+            "Preair",
+            "Proof",
+            "Prooffix",
+            "Proper",
+            "PS Vita",
+            "R5",
+            "RC",
+            "Read NFO",
+            "Real",
+            "Reencoded",
+            "Region 5",
+            "Region C",
+            "Remux",
+            "Repost",
+            "Retail",
+            "Rip",
+            "Sample",
+            "Scrambled",
+            "Screener",
+            "SDR",
+            "SECAM",
+            "Standard Dynamic Range",
+            "Straight to Video",
+            "STV",
+            "Sync Fixed",
+            "Thumbnail",
+            "Trailer",
+            "UHD",
+            "Ultra HD",
+            "Upscaled",
+            "Variable Frame Rate",
+            "VFR",
+            "Virtual Reality",
+            "Vita",
+            "VO",
+            "vost",
+            "West Coast Feed",
+            "Widescreen",
+            "ws",
+            "xpost",
+            "XXX"
+          ]
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "2in1",
+              "3D",
+              "asrequested",
+              "Audio Fixed",
+              "Banner",
+              "Bonus",
+              "BT.2020",
+              "Classic",
+              "Clear Art",
+              "Clear Logo",
+              "Colorized",
+              "Complet",
+              "Complete",
+              "CONVERT",
+              "Converted",
+              "Cover",
+              "Dirfix",
+              "Disc Art",
+              "DOCU",
+              "Documentary",
+              "DOKU",
+              "Dolby Vision",
+              "Dual",
+              "Dual Audio",
+              "East Coast Feed",
+              "Ending Credits",
+              "Extras",
+              "Fan Subtitled",
+              "Fanart",
+              "Fansub",
+              "Fast Subtitled",
+              "Fastsub",
+              "FHD",
+              "Fix",
+              "Fixed",
+              "Full HD",
+              "Half OU",
+              "Half SBS",
+              "Hardcoded Subtitles",
+              "HC",
+              "HD",
+              "HDLight",
+              "HDR10",
+              "HFR",
+              "High Frame Rate",
+              "High Quality",
+              "High Resolution",
+              "HQ",
+              "HR",
+              "Hybrid",
+              "Internal",
+              "Landscape",
+              "LD",
+              "LDTV",
+              "LiNE",
+              "Line Audio",
+              "Line Dubbed",
+              "Logo",
+              "Low Definition",
+              "MD",
+              "mHD",
+              "Mic Dubbed",
+              "Micro HD",
+              "Mux",
+              "Nfofix",
+              "NTSC",
+              "Oad",
+              "OAR",
+              "Oav",
+              "Obfuscated",
+              "Ona",
+              "Open Matte",
+              "Opening Credits",
+              "Original Animated Video",
+              "Original Animation DVD",
+              "Original Aspect Ratio",
+              "Original Net Animation",
+              "Original Video",
+              "OV",
+              "Ova",
+              "PAL",
+              "postbot",
+              "Poster",
+              "Preair",
+              "Proof",
+              "Prooffix",
+              "Proper",
+              "PS Vita",
+              "R5",
+              "RC",
+              "Read NFO",
+              "Real",
+              "Reencoded",
+              "Region 5",
+              "Region C",
+              "Remux",
+              "Repost",
+              "Retail",
+              "Rip",
+              "Sample",
+              "Scrambled",
+              "Screener",
+              "SDR",
+              "SECAM",
+              "Standard Dynamic Range",
+              "Straight to Video",
+              "STV",
+              "Sync Fixed",
+              "Thumbnail",
+              "Trailer",
+              "UHD",
+              "Ultra HD",
+              "Upscaled",
+              "Variable Frame Rate",
+              "VFR",
+              "Virtual Reality",
+              "Vita",
+              "VO",
+              "vost",
+              "West Coast Feed",
+              "Widescreen",
+              "ws",
+              "xpost",
+              "XXX"
+            ]
+          }
+        }
+      ]
+    },
+    "part": {
+      "oneOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      ]
+    },
+    "proper_count": {
+      "type": "number"
+    },
+    "release_group": {
+      "type": "string"
+    },
+    "screen_size": {
+      "type": "string",
+      "enum": [
+        "1080i",
+        "1080p",
+        "1440p",
+        "1444x866",
+        "2160p",
+        "360p",
+        "368p",
+        "480p",
+        "4k",
+        "540p",
+        "576p",
+        "720p",
+        "720x432",
+        "960x544"
+      ]
+    },
+    "season": {
+      "oneOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      ]
+    },
+    "season_count": {
+      "type": "number"
+    },
+    "size": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "Analog HDTV",
+        "Blu-ray",
+        "Camera",
+        "Digital Master",
+        "Digital TV",
+        "DVD",
+        "HD Camera",
+        "HD Telecine",
+        "HD Telesync",
+        "HD-DVD",
+        "HDTV",
+        "Pay-per-view",
+        "Satellite",
+        "Telecine",
+        "Telesync",
+        "TV",
+        "Ultra HD Blu-ray",
+        "Ultra HDTV",
+        "VHS",
+        "Video on Demand",
+        "Web",
+        "Workprint"
+      ]
+    },
+    "streaming_service": {
+      "type": "string",
+      "enum": [
+        "4OD",
+        "9Now",
+        "9NOW",
+        "A&E",
+        "ABC",
+        "ABC Australia",
+        "Adult Swim",
+        "AE",
+        "AJAZ",
+        "Al Jazeera English",
+        "ALL4",
+        "Amazon",
+        "Amazon Prime",
+        "AMBC",
+        "AMC",
+        "America's Test Kitchen",
+        "AMZN",
+        "AMZN-CBR",
+        "Animal Planet",
+        "AnimeLab",
+        "ANLB",
+        "ANPL",
+        "AOL",
+        "AppleTV",
+        "APTV",
+        "ARD",
+        "AS",
+        "ATK",
+        "ATV+",
+        "ATVP",
+        "AUBC",
+        "BBC iPlayer",
+        "Binge",
+        "BKPL",
+        "Blackpills",
+        "BLU",
+        "BluTV",
+        "BNGE",
+        "BOOM",
+        "Boomerang",
+        "BRAV",
+        "BravoTV",
+        "Canal+",
+        "Cartoon Network",
+        "CBC",
+        "CBS",
+        "CC",
+        "CCGC",
+        "Channel 4",
+        "CHGD",
+        "CHRGD",
+        "Cinemax",
+        "CMAX",
+        "CMT",
+        "CN",
+        "CNBC",
+        "CNLP",
+        "Comedians in Cars Getting Coffee",
+        "Comedy Central",
+        "Country Music Television",
+        "CR",
+        "Crackle",
+        "CRAV",
+        "Crave",
+        "CRKL",
+        "Crunchy Roll",
+        "CSpan",
+        "CSPN",
+        "CTV",
+        "CUR",
+        "CuriosityStream",
+        "CW",
+        "CWS",
+        "CWSeed",
+        "Daisuki",
+        "DC Universe",
+        "DCU",
+        "DDY",
+        "Deadhouse Films",
+        "DF",
+        "DHF",
+        "Digiturk Diledigin Yerde",
+        "DISC",
+        "Discovery",
+        "Discovery Plus",
+        "Disney",
+        "Disney+",
+        "DIY",
+        "DIY Network",
+        "Doc Club",
+        "DOCC",
+        "DPlay",
+        "DPLY",
+        "DramaFever",
+        "DSCP",
+        "DSKI",
+        "DSNP",
+        "DSNY",
+        "E!",
+        "El Trece",
+        "ePix",
+        "EPIX",
+        "ESPN",
+        "ESQ",
+        "Esquire",
+        "ETTV",
+        "ETV",
+        "Facebook Watch",
+        "FAM",
+        "Family",
+        "Family Jr",
+        "Fandor",
+        "FANDOR",
+        "FBWatch",
+        "FJR",
+        "FOOD",
+        "Food Network",
+        "Fox",
+        "FOX",
+        "Fox Premium",
+        "FOXP",
+        "Foxtel",
+        "FP",
+        "FREE",
+        "Freeform",
+        "FXTL",
+        "FYI",
+        "FYI Network",
+        "Gaga",
+        "GagaOOLala",
+        "GC",
+        "GLBL",
+        "GLOB",
+        "Global",
+        "GloboSat Play",
+        "Hallmark",
+        "HBO",
+        "HBO Go",
+        "HBO Max",
+        "HGTV",
+        "HIST",
+        "History",
+        "HLMK",
+        "HMAX",
+        "hoichoi",
+        "HoiChoi",
+        "Hulu",
+        "HULU",
+        "ID",
+        "IFC",
+        "iflix",
+        "IFX",
+        "INA",
+        "Investigation Discovery",
+        "iP",
+        "iQIYI",
+        "iT",
+        "iTunes",
+        "ITV",
+        "KNOW",
+        "Knowledge Network",
+        "LIFE",
+        "Lifetime",
+        "MBC",
+        "MBCVOD",
+        "MNBC",
+        "Motor Trend OnDemand",
+        "MSNBC",
+        "MTOD",
+        "MTV",
+        "MUBI",
+        "NATG",
+        "National Audiovisual Institute",
+        "National Film Board",
+        "National Geographic",
+        "NBA",
+        "NBA TV",
+        "NBC",
+        "Netflix",
+        "NF",
+        "NFB",
+        "NFL",
+        "NFL Now",
+        "NFLN",
+        "NHL GameCenter",
+        "NICK",
+        "NICKAPP",
+        "Nickelodeon",
+        "Norsk Rikskringkasting",
+        "NRK",
+        "ODK",
+        "OnDemandKorea",
+        "Oprah Winfrey Network",
+        "Opto",
+        "OPTO",
+        "OWN",
+        "Paramount+",
+        "ParamountPlus",
+        "PBS",
+        "PBS Kids",
+        "PBSK",
+        "PCOK",
+        "Peacock",
+        "Playstation Network",
+        "PLUZ",
+        "Pluzz",
+        "PMNP",
+        "PMT+",
+        "PMTP",
+        "POGO",
+        "PokerGO",
+        "PSN",
+        "Rakuten TV",
+        "RED",
+        "RKTN",
+        "ROKU",
+        "RTE",
+        "RTE One",
+        "RUUTU",
+        "SBS",
+        "SCI",
+        "Science Channel",
+        "SeeSo",
+        "SESO",
+        "SHMI",
+        "SHO",
+        "Shomi",
+        "Showtime",
+        "SNET",
+        "Sony",
+        "SONY",
+        "SPIK",
+        "Spike",
+        "Spike TV",
+        "SPKE",
+        "Sportsnet",
+        "Sprout",
+        "SPRT",
+        "Stan",
+        "STAN",
+        "Starz",
+        "STZ",
+        "Sveriges Television",
+        "SVT",
+        "SwearNet",
+        "SWER",
+        "Syfy",
+        "SYFY",
+        "TBS",
+        "TFou",
+        "TFOU",
+        "The CW",
+        "The Roku Channel",
+        "TLC",
+        "TUBI",
+        "TubiTV",
+        "TV Land",
+        "TV3",
+        "TV3 Ireland",
+        "TV4",
+        "TV4 Sweeden",
+        "TVING",
+        "TVL",
+        "TVNZ",
+        "UFC",
+        "UFC Fight Pass",
+        "UKTV",
+        "UNIV",
+        "Univision",
+        "USA Network",
+        "USAN",
+        "Velocity",
+        "VH1",
+        "VICE",
+        "Viceland",
+        "Viki",
+        "VIKI",
+        "Vimeo",
+        "VLCT",
+        "VMEO",
+        "VRV",
+        "W Network",
+        "WatchMe",
+        "WME",
+        "WNET",
+        "WWE Network",
+        "WWEN",
+        "XBOX",
+        "Xbox Video",
+        "Yahoo",
+        "YHOO",
+        "YouTube Red",
+        "ZDF"
+      ]
+    },
+    "subtitle_language": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/Language"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Language"
+          }
+        }
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "episode",
+        "movie"
+      ]
+    },
+    "uuid": {
+      "type": "string"
+    },
+    "version": {
+      "type": "number"
+    },
+    "video_api": {
+      "type": "string",
+      "enum": [
+        "DXVA"
+      ]
+    },
+    "video_bit_rate": {
+      "type": "string"
+    },
+    "video_codec": {
+      "type": "string",
+      "enum": [
+        "DivX",
+        "DVDivX",
+        "H.263",
+        "H.264",
+        "H.265",
+        "MPEG-2",
+        "RealVideo",
+        "VC-1",
+        "VP7",
+        "VP8",
+        "VP80",
+        "VP9",
+        "Xvid",
+        "XviD"
+      ]
+    },
+    "video_profile": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "Advanced Video Codec High Definition",
+            "Baseline",
+            "BP",
+            "EP",
+            "Extended",
+            "HEVC",
+            "High",
+            "High 10",
+            "High 4:2:2",
+            "High 4:4:4 Predictive",
+            "High Efficiency Video Coding",
+            "HiP",
+            "HP",
+            "Main",
+            "MP",
+            "SC",
+            "Scalable Video Coding",
+            "SVC",
+            "XP"
+          ]
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "Advanced Video Codec High Definition",
+              "Baseline",
+              "BP",
+              "EP",
+              "Extended",
+              "HEVC",
+              "High",
+              "High 10",
+              "High 4:2:2",
+              "High 4:4:4 Predictive",
+              "High Efficiency Video Coding",
+              "HiP",
+              "HP",
+              "Main",
+              "MP",
+              "SC",
+              "Scalable Video Coding",
+              "SVC",
+              "XP"
+            ]
+          }
+        }
+      ]
+    },
+    "website": {
+      "type": "string"
+    },
+    "year": {
+      "type": "number"
+    }
+  },
+  "additionalProperties": true
+}
