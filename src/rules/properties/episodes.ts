@@ -158,6 +158,21 @@ function validateRoman(match: any): boolean {
 }
 
 /**
+ * Season validator for the "Season N" WORD pattern: reject a 4-digit year as the
+ * season number, so "The Four Seasons 2025" is not parsed as "Season 2025"
+ * (leaving "Seasons" to stay in the title). Does not affect SxxExx (a different
+ * chain), so "S2013E14" → season 2013 is unaffected.
+ */
+function seasonWordNotYear(match: any): boolean {
+  const raw = String(match.raw ?? '');
+  if (/^\d{4}$/.test(raw)) {
+    const n = parseInt(raw, 10);
+    if (n >= 1900 && n <= 2100) return false;
+  }
+  return validateRoman(match);
+}
+
+/**
  * Build the episodes rebulk
  */
 export function episodes(config: EpisodesConfig): Rebulk {
@@ -311,7 +326,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
     formatter: { season: parseNumber, season_count: parseNumber },
     validator: {
       __parent__: and_(sepsSurround, orderingValidator),
-      season: validateRoman,
+      season: seasonWordNotYear,
       season_count: validateRoman,
     },
     chainBreaker: (matches: any) => episodesSeasonChainBreaker(matches, config),
@@ -320,7 +335,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
   })
     .defaults({
       formatter: { season: parseNumber, season_count: parseNumber },
-      validator: { season: validateRoman, season_count: validateRoman },
+      validator: { season: seasonWordNotYear, season_count: validateRoman },
       conflictSolver: seasonEpisodeConflictSolver,
     })
     .regex(seasonWordPattern + `@?(?P<season>${numeralWithWords})`)
