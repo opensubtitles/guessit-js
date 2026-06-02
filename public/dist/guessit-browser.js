@@ -5720,11 +5720,52 @@ var GuessitJS = (() => {
   __name(_CountryAtTitlePosition, "CountryAtTitlePosition");
   _CountryAtTitlePosition.priority = 64;
   var CountryAtTitlePosition = _CountryAtTitlePosition;
+  var _PropertyAtTitlePositionAsTitle = class _PropertyAtTitlePositionAsTitle extends Rule {
+    constructor() {
+      super(...arguments);
+      this.consequence = RemoveMatch;
+    }
+    when(matches, _context) {
+      const inp = matches.inputString || "";
+      const out = [];
+      for (const filepart of matches.markers.named("path")) {
+        if (matches.range(filepart.start, filepart.end, (m) => m.name === "title", 0)) continue;
+        const anchor = matches.range(
+          filepart.start,
+          filepart.end,
+          (m) => !m.private && ["year", "season", "episode", "date"].includes(m.name ?? ""),
+          0
+        );
+        if (!anchor) continue;
+        const lead = matches.range(filepart.start, filepart.end, (m) => !m.private && !!m.value, 0);
+        if (!lead || !["other", "country", "edition"].includes(lead.name ?? "")) continue;
+        if (lead.start >= anchor.start) continue;
+        if (![...inp.slice(filepart.start, lead.start)].every((c) => seps.includes(c))) continue;
+        out.push(lead);
+      }
+      return out.length ? out : false;
+    }
+    then(matches, whenResponse, _context) {
+      const inp = matches.inputString || "";
+      for (const lead of whenResponse) {
+        matches.remove(lead);
+        const t = new Match(lead.start, lead.end, {
+          name: "title",
+          value: cleanup(inp.slice(lead.start, lead.end)),
+          inputString: inp
+        });
+        matches.append(t);
+      }
+    }
+  };
+  __name(_PropertyAtTitlePositionAsTitle, "PropertyAtTitlePositionAsTitle");
+  _PropertyAtTitlePositionAsTitle.priority = -48;
+  var PropertyAtTitlePositionAsTitle = _PropertyAtTitlePositionAsTitle;
   function title(config) {
     const rebulk = new Rebulk({
       disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "title"), "disabled")
     });
-    rebulk.rules(CountryAtTitlePosition, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle);
+    rebulk.rules(CountryAtTitlePosition, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle);
     const expectedTitle = buildExpectedFunction("expected_title");
     rebulk.functional(expectedTitle, {
       name: "title",

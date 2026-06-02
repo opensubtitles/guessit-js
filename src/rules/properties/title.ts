@@ -858,12 +858,55 @@ class CountryAtTitlePosition extends Rule {
   }
 }
 
+/**
+ * When a filepart ends up with NO title but a recognised property
+ * (other/country/edition) sits at the very start where the title belongs, that
+ * token is really the title — e.g. "xXx.2002" → other XXX but no title;
+ * "Extras.(2005).S01E01" → other Extras but no title. Convert the leading
+ * property to the title. Only fires when there is genuinely no title and the
+ * filepart looks like media (has a year/season/episode/date). (Issues #773, #722.)
+ */
+class PropertyAtTitlePositionAsTitle extends Rule {
+  static override priority = -48;
+  override consequence = RemoveMatch;
+
+  override when(matches: Matches, _context: Context): Match[] | false {
+    const inp = (matches as any).inputString || '';
+    const out: Match[] = [];
+    for (const filepart of matches.markers.named('path') as Match[]) {
+      if (matches.range(filepart.start, filepart.end, (m: Match) => m.name === 'title', 0)) continue;
+      const anchor = matches.range(filepart.start, filepart.end,
+        (m: Match) => !m.private && ['year', 'season', 'episode', 'date'].includes(m.name ?? ''), 0) as Match | undefined;
+      if (!anchor) continue;
+      const lead = matches.range(filepart.start, filepart.end, (m: Match) => !m.private && !!m.value, 0) as Match | undefined;
+      if (!lead || !['other', 'country', 'edition'].includes(lead.name ?? '')) continue;
+      if (lead.start >= anchor.start) continue; // must be in the title position (before the anchor)
+      if (![...inp.slice(filepart.start, lead.start)].every((c: string) => seps.includes(c))) continue;
+      out.push(lead);
+    }
+    return out.length ? out : false;
+  }
+
+  override then(matches: Matches, whenResponse: unknown, _context: Context): void {
+    const inp = (matches as any).inputString || '';
+    for (const lead of whenResponse as Match[]) {
+      matches.remove(lead);
+      const t = new Match(lead.start, lead.end, {
+        name: 'title',
+        value: cleanup(inp.slice(lead.start, lead.end)),
+        inputString: inp,
+      });
+      matches.append(t);
+    }
+  }
+}
+
 export function title(config: Record<string, unknown>): Rebulk {
   const rebulk = new Rebulk({
     disabled: (context: Context) => isDisabled(context, 'title'),
   });
 
-  rebulk.rules(CountryAtTitlePosition, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle);
+  rebulk.rules(CountryAtTitlePosition, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle);
 
   // Expected title functional pattern
   const expectedTitle = buildExpectedFunction('expected_title');
