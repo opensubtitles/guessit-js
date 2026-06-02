@@ -2529,6 +2529,9 @@ function episodes(config) {
     conflictSolver: seasonEpisodeConflictSolver,
     abbreviations: [altDash]
   });
+  rebulk.regex("第(?<episode>\\d{1,4})話", { tags: ["SxxExx"] });
+  rebulk.regex("(?:シーズン|シリーズ)(?<season>\\d{1,2})", { tags: ["SxxExx"] });
+  rebulk.regex("(?<season>\\d{1,2})期", {});
   const seasonMarkerPattern = buildOrPattern(config.season_markers, "seasonMarker");
   const episodeMarkerPattern = buildOrPattern(
     [...config.episode_markers, ...config.disc_markers],
@@ -4452,7 +4455,7 @@ const MONTHS = {
   december: 12
 };
 function validYear(year) {
-  return year >= 1920 && year < 2035;
+  return year >= 1900 && year < 2035;
 }
 function validWeek(week) {
   return week >= 1 && week < 53;

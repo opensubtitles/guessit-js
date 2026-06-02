@@ -2712,6 +2712,9 @@ var GuessitJS = (() => {
       conflictSolver: seasonEpisodeConflictSolver,
       abbreviations: [altDash]
     });
+    rebulk.regex("\u7B2C(?<episode>\\d{1,4})\u8A71", { tags: ["SxxExx"] });
+    rebulk.regex("(?:\u30B7\u30FC\u30BA\u30F3|\u30B7\u30EA\u30FC\u30BA)(?<season>\\d{1,2})", { tags: ["SxxExx"] });
+    rebulk.regex("(?<season>\\d{1,2})\u671F", {});
     const seasonMarkerPattern = buildOrPattern(config.season_markers, "seasonMarker");
     const episodeMarkerPattern = buildOrPattern(
       [...config.episode_markers, ...config.disc_markers],
@@ -4721,7 +4724,7 @@ var GuessitJS = (() => {
     december: 12
   };
   function validYear(year) {
-    return year >= 1920 && year < 2035;
+    return year >= 1900 && year < 2035;
   }
   __name(validYear, "validYear");
   function validWeek(week) {
