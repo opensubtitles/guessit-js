@@ -944,7 +944,7 @@ class RemoveNumericAlternativeTitle extends Rule {
     if (!altArr.length) return false;
     const out: Match[] = [];
     for (const alt of altArr) {
-      const raw = String(alt.rawValue ?? alt.raw ?? alt.value ?? '');
+      const raw = String(alt.raw ?? alt.value ?? '');
       if (!/^[\d\s.~_-]+$/.test(raw) || !/\d/.test(raw)) continue;
       const filepart = matches.markers.atMatch(alt, (m) => m.name === 'path', 0) as Match | undefined;
       if (!filepart) continue;
