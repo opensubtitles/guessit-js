@@ -35,6 +35,7 @@ export function episodeTitle(config: Record<string, unknown>) {
     NumericEpisodeTitleToEpisode,
     RemoveEpisodeTitleInReleaseGroup,
     RemoveEpisodeMarkerWordTitle,
+    RemoveHashFilepartJunk,
     RemoveTailEpisodeTitle,
     RenameEpisodeTitleWhenMovieType
   );
@@ -66,6 +67,42 @@ class RemoveEpisodeMarkerWordTitle extends Rule {
       const next = matches.range(et.end, (matches as any).inputString?.length ?? et.end + 100,
         (m: Match) => !m.private && !!m.value, 0) as Match | undefined;
       if (next && next.name === 'episode') out.push(et);
+    }
+    return out.length ? out : false;
+  }
+}
+
+/**
+ * An "-Obfuscated" / scene rename leaves the file in a directory whose last part
+ * is a bare hash — "…-MeGusta-Obfuscated/afaae96ae7a140e0981ced2a79221751.mkv",
+ * "…-TVSmash/mxNMuJWeO7PUWCMEwqKSsS6D8Vs9S6V3PHD.mkv". guessit-js mines the hash
+ * for junk (hex chunks → episode_title; "V3" → version). Python extracts nothing
+ * from it (the real data lives in the parent part). When a filepart's content is
+ * a single high-entropy hash token, strip episode_title / version / episode_details
+ * / alternative_title matches found inside it.
+ */
+class RemoveHashFilepartJunk extends Rule {
+  static override priority = POST_PROCESS;
+  override consequence = RemoveMatch;
+
+  private static isHash(token: string): boolean {
+    if (/[\s._\-]/.test(token)) return false;          // a hash is one unbroken token
+    if (/^[0-9a-f]{16,}$/i.test(token)) return true;   // pure hex (CRC/md5-like)
+    return token.length >= 24 && /[a-z]/.test(token) && /[A-Z]/.test(token) && /\d/.test(token);
+  }
+
+  override when(matches: Matches, _context: any): Match[] | false {
+    const inp: string = (matches as any).inputString ?? '';
+    const strip = new Set(['episode_title', 'version', 'episode_details', 'alternative_title']);
+    const out: Match[] = [];
+    for (const fp of matches.markers.named('path') as Match[]) {
+      let text = inp.slice(fp.start, fp.end);
+      const cont = matches.range(fp.start, fp.end, (m: Match) => m.name === 'container', 0) as Match | undefined;
+      if (cont) text = inp.slice(fp.start, cont.start);
+      if (!RemoveHashFilepartJunk.isHash(text.replace(/[.\s]+$/, ''))) continue;
+      for (const m of matches.range(fp.start, fp.end, (m: Match) => strip.has(m.name ?? '')) as Match[]) {
+        out.push(m);
+      }
     }
     return out.length ? out : false;
   }
