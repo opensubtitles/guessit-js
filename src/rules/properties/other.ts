@@ -161,7 +161,7 @@ class FixCountRule extends Rule {
       .filter((m: Match) => {
         // Only standalone Fix/Fixed should generate proper_count.
         // Compound fixes like Dirfix, Nfofix, Prooffix should not.
-        const raw = rawCleanup(m.raw).toLowerCase();
+        const raw = rawCleanup(m.raw ?? '').toLowerCase();
         return raw === 'fix' || raw === 'fixed';
       });
     if (!fixes || fixes.length === 0) return;
