@@ -1,7 +1,7 @@
 /**
  * Language and subtitle_language properties — port of guessit/rules/properties/language.py
  */
-import { Rebulk, Rule, RemoveMatch, RenameMatch } from 'rebulk-js';
+import { Rebulk, Rule, RemoveMatch, RenameMatch, POST_PROCESS } from 'rebulk-js';
 import { Language, UNDETERMINED, MULTIPLE, NON_SPECIFIC_LANGUAGES, isNonSpecific } from '../../language/index.js';
 import { buildOrPattern } from '../../reutils.js';
 import { sepsSurround } from '../common/validators.js';
@@ -879,7 +879,38 @@ export function language(config: LanguageConfig, commonWords: Set<string>): Rebu
     RemoveLanguageRule,
     RemoveUndeterminedLanguagesRule,
     DedupLanguageRule,
+    RemoveLanguageInsideTitle,
   );
 
   return rebulk;
+}
+
+/**
+ * A short language *abbreviation* (≤3 chars, e.g. "En", "It") whose span falls
+ * entirely inside a finalised title / episode_title is part of that title's text,
+ * not real metadata — e.g. "…- En Close, Yet En Far.…French.…" matches "En" →
+ * English twice inside the episode_title "En Close, Yet En Far". Python keeps only
+ * the trailing French. Full language *names* buried in a title (e.g. "Masala …
+ * Telugu Movie", "…Spanish…") are left alone — those are genuine languages that
+ * Python misses and we keep.
+ */
+class RemoveLanguageInsideTitle extends Rule {
+  static override priority = POST_PROCESS;
+  override consequence = RemoveMatch;
+
+  override when(matches: any): Match[] | false {
+    const titleNames = new Set(['title', 'episode_title', 'alternative_title']);
+    const titles = matches.range(0, (matches.inputString ?? '').length,
+      (m: Match) => titleNames.has(m.name ?? '')) as Match[];
+    if (!titles.length) return false;
+    const out: Match[] = [];
+    for (const name of ['language', 'subtitle_language']) {
+      for (const lang of (matches.named(name) as Match[])) {
+        const rawLen = String(lang.raw ?? '').trim().length;
+        if (rawLen > 3) continue;
+        if (titles.some((t) => t.start <= lang.start && t.end >= lang.end)) out.push(lang);
+      }
+    }
+    return out.length ? out : false;
+  }
 }
