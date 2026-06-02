@@ -3,45 +3,24 @@
  */
 import { seps } from './index.js';
 import { formatters as composeFormatters } from 'rebulk-js';
+import { DIACRITIC_FOLD } from './diacritics.js';
 
 /**
- * Map of accented Latin characters → their ASCII base, covering Latin-1
- * Supplement and Latin Extended-A (the scripts that appear in media filenames).
- * Used to compare titles regardless of diacritics WITHOUT relying on the JS
- * engine's `String.prototype.normalize('NFD')` — QuickJS (the runtime Javy
- * compiles to WASM) ships no Unicode decomposition tables, so `.normalize` is a
- * no-op there and would otherwise make WASM diverge from the JS build on accented
- * titles (e.g. "Hôtel", "Rêves"). This table is self-contained, so JS ≡ WASM.
- */
-const DIACRITIC_MAP: Record<string, string> = (() => {
-  const groups: Array<[string, string]> = [
-    ['a', 'àáâãäåāăąǎ'], ['ae', 'æ'], ['c', 'çćĉċč'], ['d', 'ďđ'],
-    ['e', 'èéêëēĕėęě'], ['g', 'ĝğġģ'], ['h', 'ĥħ'], ['i', 'ìíîïĩīĭįı'],
-    ['j', 'ĵ'], ['k', 'ķ'], ['l', 'ĺļľŀł'], ['n', 'ñńņňŉ'],
-    ['o', 'òóôõöøōŏőǒ'], ['oe', 'œ'], ['r', 'ŕŗř'], ['s', 'śŝşš'],
-    ['t', 'ţťŧ'], ['u', 'ùúûüũūŭůűųǔ'], ['w', 'ŵ'], ['y', 'ýÿŷ'],
-    ['z', 'źżž'], ['ss', 'ß'],
-  ];
-  const map: Record<string, string> = {};
-  for (const [base, accented] of groups) {
-    for (const ch of accented) {
-      map[ch] = base;
-      map[ch.toUpperCase()] = base.toUpperCase();
-    }
-  }
-  return map;
-})();
-
-/**
- * Strip diacritics from a string using a portable lookup table (no dependency on
- * the JS engine's Unicode normalization — works identically in Node and QuickJS).
- * Falls back to `normalize('NFD')` for any character outside the table.
+ * Strip diacritics from a string, reproducing V8's
+ *   s.normalize('NFD').replace(/[̀-ͯ]/g, '')
+ * for every accented letter in every script (Latin, Greek, Cyrillic, Vietnamese,
+ * …) WITHOUT calling `String.prototype.normalize` — QuickJS (the runtime Javy
+ * compiles to WASM) doesn't implement `normalize` at all, so relying on it would
+ * make the WASM build diverge from the JS build on any accented title (e.g.
+ * "Hôtel", "Rêves", "Ολυμπιάδα"). The folding table in `./diacritics.ts` is
+ * generated from V8's NFD (scripts/gen-diacritics.mjs), so both engines fold
+ * identically. The trailing regex also removes any already-decomposed standalone
+ * combining marks (U+0300–U+036F), which works in both engines.
  */
 export function foldDiacritics(input: string): string {
   let out = '';
-  for (const ch of input) out += DIACRITIC_MAP[ch] ?? ch;
-  try { out = out.normalize('NFD').replace(/[̀-ͯ]/g, ''); } catch { /* QuickJS: table already handled it */ }
-  return out;
+  for (const ch of input) out += DIACRITIC_FOLD[ch] ?? ch;
+  return out.replace(/[̀-ͯ]/g, '');
 }
 
 // Characters excluded from cleanup stripping (we keep them inside)

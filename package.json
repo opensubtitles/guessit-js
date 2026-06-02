@@ -53,6 +53,7 @@
     "start": "npx tsx server.ts",
     "wasm": "bash wasm/build.sh",
     "schema": "tsx scripts/collect-schema-data.mjs && tsx scripts/gen-schema.mjs",
+    "diacritics": "node scripts/gen-diacritics.mjs",
     "build:pages": "node scripts/build-pages.mjs"
   },
   "devDependencies": {
