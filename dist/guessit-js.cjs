@@ -8105,6 +8105,7 @@ const MIMETYPE_MAP = {
   "jpeg": "image/jpeg",
   "png": "image/png",
   "gif": "image/gif",
+  "svg": "image/svg+xml",
   "zip": "application/zip",
   "rar": "application/x-rar-compressed",
   "pdf": "application/pdf",
@@ -9181,7 +9182,8 @@ const advanced_config = {
       "s"
     ],
     season_ep_markers: [
-      "x"
+      "x",
+      "×"
     ],
     disc_markers: [
       "d"
@@ -9191,7 +9193,8 @@ const advanced_config = {
       "ex",
       "ep",
       "e",
-      "x"
+      "x",
+      "×"
     ],
     range_separators: [
       "-",
