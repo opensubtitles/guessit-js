@@ -1,19 +1,13 @@
 # Python ↔ JS parity — one-page status
 
 How **guessit-js** differs from reference **Python guessit 3.8.0**, every case shown
-in full `[filename]` + `key: <python> vs <js>` format so you can judge each yourself.
-Grouped by verdict: ① TO FIX (we're wrong) · ② NEUTRAL (undecided) · ③ WON'T FIX
-(we're already more correct). `»` lines are the proposed action / reason.
-
-- Golden snapshot of Python output: `test/fixtures/python-reference.json` (1009 inputs)
-- **This whole section is auto-generated** — regenerate with:
-  `node --import tsx scripts/pydiff.mjs --verdicts`
-  (verdicts live as data in `scripts/pydiff.mjs`; edit there, not here)
-- Diff format: `key: <python value> vs <js value>`; `undefined` = absent on that side.
+in full `[filename]` + `key: <python> vs <js>` format. Grouped by verdict: ① TO FIX
+(we're wrong) · ② NEUTRAL (undecided) · ③ WON'T FIX (we're already more correct).
+Auto-generated — regenerate with `node --import tsx scripts/pydiff.mjs --verdicts`.
     ----
-    Total diverging: 76  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
-    Real (excl. 11 env-specific mimetype): 65
-    Verdicts: FIX 37 · NEUTRAL 11 · KEEP 28
+    Total diverging: 80  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
+    Real (excl. 11 env-specific mimetype): 69
+    Verdicts: FIX 37 · NEUTRAL 11 · KEEP 32
 
 ```
 
@@ -198,9 +192,17 @@ Grouped by verdict: ① TO FIX (we're wrong) · ② NEUTRAL (undecided) · ③ W
     » py "5" vs js "5 special"
 
 
-############## ③ WON'T FIX — guessit-js is already more correct (28) ##############
+############## ③ WON'T FIX — guessit-js is already more correct (32) ##############
 
 ===== JS better — Python misses it =====
+[/Show Name S2/[Group].Show.Name.S2.-.19.[1080p]]
+    episode_title: "19" vs undefined
+    episode: undefined vs 19
+    » anime "S2 - 19" → episode 19 (Python leaves episode_title "19")
+[/Show.Name.S2/[Group].Show.Name.S2.-.19.[1080p]]
+    episode_title: "19" vs undefined
+    episode: undefined vs 19
+    » anime "S2 - 19" → episode 19 (Python leaves episode_title "19")
 [60.Minutes.2008.12.14.HDTV.XviD-YT]
     title: "minutes" vs "60 minutes"
     » title "60 Minutes" (py drops the "60")
@@ -210,6 +212,11 @@ Grouped by verdict: ① TO FIX (we're wrong) · ② NEUTRAL (undecided) · ③ W
 [Masala (2013) Telugu Movie HD DVDScr XviD - Exclusive.avi]
     language: undefined vs "tel"
     » Telugu detected (py misses)
+[Outrageous.Acts.of.Science.S05E02.Is.This.for.Real.720p.HDTV.x264-DHD]
+    episode_title: "is this for" vs "is this for real"
+    other: "proper" vs undefined
+    proper_count: 2 vs undefined
+    » episode_title "Is This for Real" kept; Python truncates at a phantom Proper(real)
 [PlayboyPlus.com_16.01.23.Eleni.Corfiate.Playboy.Romania.XXX.iMAGESET-OHRLY]
     title: "playboyplus com" vs undefined
     website: undefined vs "playboyplus.com"
@@ -243,6 +250,10 @@ Grouped by verdict: ① TO FIX (we're wrong) · ② NEUTRAL (undecided) · ③ W
 [The Big Bang Theory S01E00 PROPER Unaired Pilot TVRip XviD-GIGGITY]
     episode_title: undefined vs "unaired pilot"
     » episode_title "Unaired Pilot"
+[[Group].Show.Name.S2.-.19.[1080p]]
+    episode_title: "19" vs undefined
+    episode: undefined vs 19
+    » anime "S2 - 19" → episode 19 (Python leaves episode_title "19")
 
 ===== legit alternative title (verified) =====
 [A Bout Portant (The Killers).PAL.Multi.DVD-R-KZ]
@@ -299,6 +310,7 @@ Grouped by verdict: ① TO FIX (we're wrong) · ② NEUTRAL (undecided) · ③ W
   11  mimetype
   10  title
    8  other:episode_title
+   4  other:episode,episode_title
    4  other:other
    2  language
    2  other:absolute_episode
@@ -308,10 +320,10 @@ Grouped by verdict: ① TO FIX (we're wrong) · ② NEUTRAL (undecided) · ③ W
    1  dup-language
    1  other:country,episode_title
    1  other:alternative_title
-   1  other:episode,episode_title
+   1  other:episode_title,other,proper_count
    1  other:version
 ----
-Total diverging: 76  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
-Real (excl. 11 env-specific mimetype): 65
-Verdicts: FIX 37 · NEUTRAL 11 · KEEP 28
+Total diverging: 80  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
+Real (excl. 11 env-specific mimetype): 69
+Verdicts: FIX 37 · NEUTRAL 11 · KEEP 32
 ```
