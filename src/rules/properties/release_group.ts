@@ -131,6 +131,17 @@ class DashSeparatedReleaseGroup extends Rule {
         return false;
       }
 
+      // A candidate at the very start of the filepart, with a season/episode/date
+      // appearing AFTER it, is in the title position — it's the first half of a
+      // hyphenated title ("grown-ish.s03e01...-tbs[eztv]" → "grown" is NOT a
+      // release group, "grown-ish" is the title). Scene release groups never lead
+      // the filepart before the episode markers. (#634/#640.)
+      if (candidate.start === start &&
+          matches.range(candidate.end, end,
+            (m: Match) => ['season', 'episode', 'date'].includes(m.name ?? '') && !m.private, 0)) {
+        return false;
+      }
+
       // Fix: pass predicate correctly in opts object
       const firstHole = matches.holes(
         candidate.end,
