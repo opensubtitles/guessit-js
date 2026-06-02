@@ -5536,10 +5536,39 @@ function episodeTitle(config) {
     TrimLanguageFromEpisodeTitle,
     Filepart3EpisodeTitle,
     Filepart2EpisodeTitle,
+    NumericEpisodeTitleToEpisode,
     RenameEpisodeTitleWhenMovieType
   );
   return rebulk;
 }
+const _NumericEpisodeTitleToEpisode = class _NumericEpisodeTitleToEpisode extends Rule {
+  constructor() {
+    super(...arguments);
+    this.consequence = RemoveMatch;
+  }
+  when(matches, _context) {
+    const out = [];
+    for (const fp of matches.markers.named("path")) {
+      if (matches.range(fp.start, fp.end, (m) => m.name === "episode" && !m.private, 0)) continue;
+      if (!matches.range(fp.start, fp.end, (m) => m.name === "season" && !m.private, 0)) continue;
+      const ets = matches.range(fp.start, fp.end, (m) => m.name === "episode_title");
+      for (const et of Array.isArray(ets) ? ets : ets ? [ets] : []) {
+        if (/^\d{1,3}$/.test(String(et.value ?? "").trim())) out.push(et);
+      }
+    }
+    return out.length ? out : false;
+  }
+  then(matches, whenResponse, _context) {
+    for (const et of whenResponse) {
+      matches.remove(et);
+      et.name = "episode";
+      et.value = parseInt(String(et.value).trim(), 10);
+      matches.append(et);
+    }
+  }
+};
+_NumericEpisodeTitleToEpisode.priority = POST_PROCESS;
+let NumericEpisodeTitleToEpisode = _NumericEpisodeTitleToEpisode;
 const _RemoveConflictsWithEpisodeTitle = class _RemoveConflictsWithEpisodeTitle extends Rule {
   constructor() {
     super(...arguments);

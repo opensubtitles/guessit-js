@@ -11,12 +11,12 @@ but not complete · **not fixed / not done** = with the reason inline · `wontfi
 invalid/ambiguous/env-specific.
 
 **Progress (as of this pass):** every open issue below has an explicit disposition.
-**26 fixed** (305-partial, 623, 638, 646, 651, 652, 670, 671, 705, 722, 732, 737,
-743, 745, 746, 763, 784, 789, 790, 796, 800, 773, 301, 618, 622, 630, 708) · **7 already
+**27 fixed** (305-partial, 623, 638, 646, 651, 652, 667, 670, 671, 705, 722, 732,
+737, 743, 745, 746, 763, 784, 789, 790, 796, 800, 773, 301, 618, 622, 630, 708) · **7 already
 work / acceptable** (648, 660, 752, 774, 637, 741, 771) · the rest carry an inline
 "why not fixed" note. The unfixed parsing bugs cluster into: delicate release-group
 cascades (#634/#640), the obfuscated-hash case (#742), the remaining anime
-conventions (#667/#690/#696/#747), and pure feature requests (#272/#273/#599/#802).
+conventions (#690/#696/#747), and pure feature requests (#272/#273/#599/#802).
 
 **Cross-ref:** the biggest validated cluster is **title-token collision** — a title
 word/letter consumed as country/language/edition/source/other. This is the *same*
@@ -69,7 +69,7 @@ cases). Fixing it once should resolve many of these issues together. Tagged ★ 
 | 637 | https://github.com/guessit-io/guessit/issues/637 | `E.60.2020...` → title "E", ep 60; real show "E:60" but ambiguous | acceptable — JS gives title 'E 60' (≈ 'E:60'); '60' is not mis-read as episode. Reasonable as-is |
 | 648 | https://github.com/guessit-io/guessit/issues/648 | Dolby Vision (DV/SL.DV/DL.DV) mis-parsed; new property, ambiguous tokens | **works** (DV→Dolby Vision, HDR→HDR10) |
 | 660 | https://github.com/guessit-io/guessit/issues/660 | `HI.SCORE.GIRL...` → `language:hi`; suppress 2-letter lang at title start (debatable) | **works** (title kept, no phantom hi) |
-| 667 | https://github.com/guessit-io/guessit/issues/667 | Anime `S2 - 01` → episode as episode_title "01" | not fixed — anime 'S2 - 01' → episode_title '01' not episode 1; season-prefix+dash heuristic, fragile |
+| 667 | https://github.com/guessit-io/guessit/issues/667 | Anime `S2 - 01` → episode as episode_title "01" | **fixed** (numeric episode_title w/ season but no episode → episode) |
 | 671 | https://github.com/guessit-io/guessit/issues/671 | Japanese episode marker `第195話` (CJK parsing) | **fixed** (CJK 第N話/シーズン/期 markers) |
 | 690 | https://github.com/guessit-io/guessit/issues/690 | `Re ZERO -Starting Life...- Season 2 - 15` → season:15; ambiguous formatting | not fixed — ambiguous anime formatting ('Season 2 - 15'); risky |
 | 693 | https://github.com/guessit-io/guessit/issues/693 | Resolution without 'p' (`720`/`1080`) → S/E; maintainer reluctant | not done — maintainer-reluctant; bare 720/1080 as resolution collides with episode numbers |
