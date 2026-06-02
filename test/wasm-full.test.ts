@@ -126,10 +126,9 @@ test(`WASM vs JS: all ${allCases.length} fixtures`, async () => {
     for (const f of failures) console.log(f);
   }
 
-  // The WASM should match JS for the vast majority.
-  // Known diffs (QuickJS/Javy lacks JS-engine accent normalization, so diacritics
-  // in titles/alt-titles can differ from the JS build):
-  //   - "La Science des Rêves"  -> title "rêves" vs "reves"
-  //   - "Bunker Palace Hôtel"   -> title "hôtel" lost, picks "enki bilal" instead
-  expect(fail + error, `${fail} diffs + ${error} errors`).toBeLessThan(3);
+  // WASM must match the JS build EXACTLY. The former accent diffs ("La Science
+  // des Rêves", "Bunker Palace Hôtel") are gone: title comparison now uses a
+  // self-contained diacritic-folding table (foldDiacritics) instead of the JS
+  // engine's normalize('NFD'), which QuickJS/Javy doesn't implement.
+  expect(fail + error, `${fail} diffs + ${error} errors`).toBe(0);
 }, 600000); // 10 minute timeout

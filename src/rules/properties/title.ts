@@ -7,7 +7,7 @@ import { Match, type Matches } from 'rebulk-js';
 import type { Context } from 'rebulk-js';
 import { isDisabled } from '../common/pattern.js';
 import { sepsSurround } from '../common/validators.js';
-import { cleanup, reorderTitle } from '../common/formatters.js';
+import { cleanup, reorderTitle, foldDiacritics } from '../common/formatters.js';
 import { markerSorted } from '../common/comparators.js';
 import { buildExpectedFunction } from '../common/expected.js';
 import { formatters, POST_PROCESS } from 'rebulk-js';
@@ -624,10 +624,8 @@ abstract class TitleBaseRule extends Rule {
         // If we found the series name, rename titles with different values to episode_title
         if (serieNameMatch) {
           // Normalize for comparison: strip apostrophes, trailing dots, and accents
-          const normTitle = (s: string) => {
-            try { s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch {}
-            return s.replace(/[''`]/g, '').replace(/\.+$/, '').toLowerCase().trim();
-          };
+          const normTitle = (s: string) =>
+            foldDiacritics(s).replace(/[''`]/g, '').replace(/\.+$/, '').toLowerCase().trim();
           for (const titleMatch of result.toAppend) {
             if (normTitle(String(titleMatch.value)) !== normTitle(String(serieNameMatch.value))) {
               titleMatch.name = 'episode_title';
@@ -655,10 +653,7 @@ abstract class TitleBaseRule extends Rule {
         const newVal = String(newTitle.value ?? '');
         // Check if an existing title in toAppend is an equivalent of the new one
         // (stripping accents, apostrophes, and other punctuation for comparison)
-        const norm = (s: string) => {
-          try { s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch {}
-          return s.replace(/[''`]/g, '').toLowerCase();
-        };
+        const norm = (s: string) => foldDiacritics(s).replace(/[''`]/g, '').toLowerCase();
         const existingIdx = toAppend.findIndex((m) => {
           const existingVal = String(m.value ?? '');
           return norm(existingVal) === norm(newVal) && existingVal !== newVal;
