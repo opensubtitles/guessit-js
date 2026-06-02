@@ -132,12 +132,26 @@ class RemoveEpisodeTitleInReleaseGroup extends Rule {
     const etArr = Array.isArray(ets) ? ets : ets ? [ets] : [];
     if (!etArr.length) return false;
     const out: Match[] = [];
+    const inp: string = (matches as any).inputString ?? '';
+    const hasReleaseIn = (s: number, e: number) =>
+      !!matches.range(s, e, (m: Match) => RemoveEpisodeTitleInReleaseGroup.RELEASE_PROPS.has(m.name ?? ''), 0);
+    const onlySeps = (s: number, e: number) => e <= s || [...inp.slice(s, e)].every((c) => '[](){} .-_'.includes(c));
     for (const et of etArr) {
       const group = matches.markers.atMatch(et, (m: Match) => m.name === 'group', 0) as Match | undefined;
       if (!group) continue;
-      const hasRelease = matches.range(group.start, group.end,
-        (m: Match) => RemoveEpisodeTitleInReleaseGroup.RELEASE_PROPS.has(m.name ?? ''), 0);
-      if (hasRelease) out.push(et);
+      // Release props inside the episode_title's own bracket, OR in an
+      // immediately-adjacent bracket (a run of metadata brackets like
+      // "[LQ][h264][720p]") — in either case the token is a tag, not a title.
+      let tag = hasReleaseIn(group.start, group.end);
+      if (!tag) {
+        for (const other of matches.markers.named('group') as Match[]) {
+          if (other.span?.[0] === group.span?.[0]) continue;
+          const adjacent = (other.start >= group.end && onlySeps(group.end, other.start)) ||
+            (other.end <= group.start && onlySeps(other.end, group.start));
+          if (adjacent && hasReleaseIn(other.start, other.end)) { tag = true; break; }
+        }
+      }
+      if (tag) out.push(et);
     }
     return out.length ? out : false;
   }
