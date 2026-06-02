@@ -29,15 +29,15 @@ cases). Fixing it once should resolve many of these issues together. Tagged ★ 
 | 651 | https://github.com/guessit-io/guessit/issues/651 | `...x264-CNHD` → `streaming_service:"Cartoon Network"` from `CN` in release group | **fixed** (glued short-abbrev guard) |
 | 652 | https://github.com/guessit-io/guessit/issues/652 | ★ `The.Collector.2009...` → `title:"The"`, `edition:"Collector"` | todo |
 | 670 | https://github.com/guessit-io/guessit/issues/670 | `[SSA] Uma Musume...mkv` → `container:["ssa","mkv"]`, no release_group; leading `[SSA]` is group | **fixed** (leading subtitle-ext bracket → release_group) |
-| 732 | https://github.com/guessit-io/guessit/issues/732 | ★ `Show.S01E01.Cam...` → `source:["Camera","Web"]`; "Cam" episode word → Camera source | todo |
+| 732 | https://github.com/guessit-io/guessit/issues/732 | ★ `Show.S01E01.Cam...` → `source:["Camera","Web"]`; "Cam" episode word → Camera source | **fixed** (Title-Case Cam→title) |
 | 737 | https://github.com/guessit-io/guessit/issues/737 | ★ `The.English.S01E01...` → `title:"The"`, `language:"English"` | todo |
 | 742 | https://github.com/guessit-io/guessit/issues/742 | `My File 238ddcd5aff.mkv` → `cd:5`; `cd` matches mid-token, needs word boundary | todo |
-| 743 | https://github.com/guessit-io/guessit/issues/743 | ★ `The.Mandalorian.S03E03.Chapter.19.The.Convert...` → `other:"Converted"`, truncated episode_title | todo |
+| 743 | https://github.com/guessit-io/guessit/issues/743 | ★ `The.Mandalorian.S03E03.Chapter.19.The.Convert...` → `other:"Converted"`, truncated episode_title | **fixed** (Title-Case Convert→title) |
 | 744 | https://github.com/guessit-io/guessit/issues/744 | `Ted.Lasso.S03E03.4-5-1...` → `episode:[3,4,5]`, `episode_title:"1"`; "4-5-1" eaten as range | todo |
 | 745 | https://github.com/guessit-io/guessit/issues/745 | ★ `[ASW] Oshi no Ko - 01...` → `title:"Oshi no"`, `language:"Korean"`; "Ko" → Korean | todo |
-| 746 | https://github.com/guessit-io/guessit/issues/746 | ★ `Schmigadoon.S02E04.Something.Real...` → `other:"Proper"`, episode_title truncated | todo |
+| 746 | https://github.com/guessit-io/guessit/issues/746 | ★ `Schmigadoon.S02E04.Something.Real...` → `other:"Proper"`, episode_title truncated | **fixed** (Title-Case Real→title) |
 | 757 | https://github.com/guessit-io/guessit/issues/757 | `[SubsPlus+] Helck...` → group mis-detected; `+` in leading-bracket group name breaks detection | todo |
-| 784 | https://github.com/guessit-io/guessit/issues/784 | ★ `The.Convert (2024)...` → `title:"The"`, `other:"Converted"` (movie variant of 743) | todo |
+| 784 | https://github.com/guessit-io/guessit/issues/784 | ★ `The.Convert (2024)...` → `title:"The"`, `other:"Converted"` (movie variant of 743) | **fixed** (Title-Case Convert→title) |
 | 789 | https://github.com/guessit-io/guessit/issues/789 | ★ `It Ends With Us 2024...` → `title:"It Ends With"`, `country:"US"` (19 comments) | todo |
 | 790 | https://github.com/guessit-io/guessit/issues/790 | `La casa del dragón 2×7` not parsed; Unicode `×` should normalize to `x` (→ S2E7) | **fixed** (added × to episode markers) |
 | 796 | https://github.com/guessit-io/guessit/issues/796 | ★ `Adam-12 S01E02...` → `title:["Adam","12"]` (list, split); should be `"Adam-12"` | **fixed** (title "Adam-12") |

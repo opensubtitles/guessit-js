@@ -105,6 +105,7 @@ const VERDICTS = [
   ['Le.Prestige.(The.Prestige)', 'keep', 'legit alternative title (verified)', 'English original of "Le Prestige"'],
   ['Batoru.Rowaiaru', 'keep', 'legit alternative title (verified)', 'Japanese romaji of "Battle Royale"'],
   ['Youth.In.Revolt.(Be.Bad)', 'keep', 'legit alternative title (verified)', '"Be Bad!" French/intl release title'],
+  ['Outrageous.Acts.of.Science', 'keep', 'JS better — Python misses it', 'episode_title "Is This for Real" kept; Python truncates at a phantom Proper(real)'],
 
   // ---- NEUTRAL: undecided / both imperfect ----
   ['11.22.63', 'neutral', 'undecided', 'date-show "11.22.63"; both parse imperfectly'],
