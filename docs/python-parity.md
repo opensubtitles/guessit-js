@@ -5,147 +5,17 @@ in full `[filename]` + `key: <python> vs <js>` format. Grouped by verdict: ① T
 (we're wrong) · ② NEUTRAL (undecided) · ③ WON'T FIX (we're already more correct).
 Auto-generated — regenerate with `node --import tsx scripts/pydiff.mjs --verdicts`.
     ----
-    Total diverging: 80  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
-    Real (excl. 11 env-specific mimetype): 69
-    Verdicts: FIX 37 · NEUTRAL 11 · KEEP 32
+    Total diverging: 47  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
+    Real (excl. 11 env-specific mimetype): 36
+    Verdicts: FIX 0 · NEUTRAL 12 · KEEP 35
 
 ```
 
 
-############## ① TO FIX — guessit-js is wrong (37) ##############
-
-===== ep_title → list w/ stray fragment =====
-[/mnt/NAS/NoSubsTVShows/Babylon 5/Season 01/Ep. 02 - Soul Hunter]
-    episode_title: "soul hunter" vs ["ep","soul hunter"]
-    » drop leading "ep"
-[NHL.2015.10.09.Leafs.vs.Red.Wings.Condensed.Game.720p.Away.Feed.GC.WEBRip.AAC2.0.H.264-BTW]
-    episode_title: "leafs vs red wings condensed game" vs ["away feed","leafs vs red wings condensed game"]
-    » drop "away feed"
-[NHL.2016.01.26.Maple.Leafs.vs.Panthers.720p.Home.Feed.GC.WEBRip.AAC2.0.H.264-BTW]
-    episode_title: "maple leafs vs panthers" vs ["home feed","maple leafs vs panthers"]
-    » drop "home feed"
-[Show.Name.1x01.eps1.0.hellofriend.(HDiTunes.Ac3.Esp).(2015).By.Malaguita.avi]
-    episode_title: "eps1 0 hellofriend" vs ["by malaguita","eps1 0 hellofriend"]
-    » drop credit "by malaguita"
-[Show.Name.S04E21.Aint.Nothing.Like.the.Real.Thing.German.Custom.Subbed.720p.HDTV.x264.iNTERNAL-BaCKToRG]
-    episode_title: "aint nothing like the real thing" vs ["aint nothing like the real thing","custom"]
-    » drop "custom"
-[Tales S01E08 All I Need Method Man Featuring Mary J Blige 720p BET WEBRip AAC2 0 x264-RTN-xpost]
-    episode_title: "all i need method man featuring mary j blige" vs ["all i need method man featuring mary j blige","bet"]
-    » drop broadcaster "bet"
-
-===== alt → label/edition/region/junk =====
-[/share/Download/movie/Dead Man Down (2013) BRRiP XViD DD5_1 Custom NLSubs =-_lt Q_o_Q gt-=_/XD607ebb-BRc59935-5155473f-1c5f49/XD607ebb-BRc59935-5155473f-1c5f49.avi]
-    alternative_title: undefined vs "custom"
-    » release descriptor "custom" → drop
-[Hacksaw Ridge 2016 Multi 2160p UHD BluRay Hevc10 HDR10 DTSHD & ATMOS 7.1 -DDR.mkv]
-    alternative_title: undefined vs "&"
-    » punctuation "&" → drop
-[Heathers.1988.1080p.BluRay.ARROW.4K.RESTORED.Plus.Comm.DTS.x264-MaG]
-    alternative_title: undefined vs ["arrow","plus comm"]
-    » label "arrow" + "plus comm" → drop
-[InDefinitely.Maybe.2008.1080p.EUR.BluRay.VC-1.DTS-HD.MA.5.1-FGT]
-    alternative_title: undefined vs "eur"
-    » region "eur" → drop
-[Movies/M.A.S.H. (1970)/MASH.(1970).[Divx.5.02][Dual-Subtitulos][DVDRip].ogm]
-    alternative_title: undefined vs "5"
-    » codec-version "5" → drop
-[Movies/Picnic.at.Hanging.Rock.1975.Criterion.Collection.1080p.BluRay.x264.DTS-WiKi]
-    alternative_title: undefined vs "collection"
-    » edition "collection" → drop
-[Suicide Squad EXTENDED (2016) 2160p 4K UltraHD Blu-Ray x265 (HEVC 10bit BT709) Dolby Atmos 7.1 -DDR]
-    alternative_title: undefined vs "bt"
-    » colour-space "bt" (BT709) → drop
-[The.Stranger.1946.US.(Kino.Classics).Bluray.1080p.LPCM.DD-2.0.x264-Grym@BTNET]
-    alternative_title: undefined vs "kino classics"
-    » label → drop
-
-===== ep_title → tag/broadcaster/credit =====
-[Bleach.s16e03-04.313-314-GROUP]
-    release_group: "group" vs undefined
-    episode_title: undefined vs "group"
-    » "group" → release_group
-[Blue.Bloods.S08E09.1080p.HEVC.x265-MeGusta-Obfuscated/afaae96ae7a140e0981ced2a79221751.mkv]
-    episode_title: undefined vs ["0e","ae7a","ced2a"]
-    » obfuscation hash → drop
-[Show Name 445 VOSTFR par Fansub-Resistance (1280*720) - version MQ]
-    episode_title: undefined vs "par fansub-resistance"
-    » fansub credit → drop
-[Show Name S01e10[Mux - 1080p - H264 - Ita Eng Ac3 - Sub Ita Eng]DLMux By GiuseppeTnT Littlelinx]
-    episode_title: undefined vs "mux"
-    » "mux" container tag → drop
-[Show Name S02e19 [Mux - H264 - Ita Aac] DLMux by UBi]
-    episode_title: undefined vs "mux"
-    » "mux" container tag → drop
-[Show.Name.(2013).Season.3.-.Eng.Soft.Subtitles.720p.WEBRip.x264.[MKV,AC3,5.1].Ehhhh]
-    episode_title: undefined vs "soft"
-    » "soft" → drop
-[Show.Name.-.Tem.1.720p.HDTV.x264[Cap.112_114.Final]SPANISH.AUDIO-NEWPCT]
-    episode_title: undefined vs "final"
-    » "final" → drop
-[Show.Name.16x03-05.313-315-GROUP]
-    release_group: "group" vs undefined
-    episode_title: undefined vs "group"
-    » "group" → release_group
-[[Ayako-Shikkaku] Oniichan no Koto Nanka Zenzen Suki Janain Dakara ne - 10 [LQ][h264][720p] [8853B21C]]
-    episode_title: undefined vs "lq"
-    » "lq" quality tag → drop
-[[ShinBunBu-Subs] Bleach - 02-03 (CX 1280x720 x264 AAC)]
-    episode_title: undefined vs "cx"
-    » "cx" broadcaster → drop
-
-===== phantom language =====
-[Fear the Walking Dead - 01x02 - En Close, Yet En Far.REPACK-KILLERS.French.C.updated.Addic7ed.com.mkv]
-    language: "fra" vs ["eng","fra"]
-    » drop phantom eng (from "En")
-
-===== title absorbs junk =====
-[French Maid Services - Lola At Your Service - Marc Dorcel WEB-DL SPLIT SCENES MP4-RARBG]
-    title: "french maid services" vs ["french maid services","split scenes"]
-    » drop "split scenes" + phantom language fra
-[French Maid Services - Lola At Your Service WEB-DL SPLIT SCENES MP4-RARBG]
-    title: "french maid services" vs ["french maid services","split scenes"]
-    » drop "split scenes" + phantom language fra
-[From [ WWW.TORRENTING.COM ] - White.Rabbit.Project.S01E08.1080p.NF.WEBRip.DD5.1.x264-ViSUM/White.Rabbit.Project.S01E08.1080p.NF.WEBRip.DD5.1.x264-ViSUM.mkv]
-    title: "white rabbit project" vs ["from","white rabbit project"]
-    » drop "from"
-[Show-A (US) - Episode Title S02E09 hdtv]
-    title: "show-a" vs ["episode title","show-a"]
-    » "episode title" → episode_title
-[Show.Name.Part.1.and.Part.2.Blah-Group]
-    title: "show name" vs ["and","blah-group","show name"]
-    » drop "and","blah-group"
-[The.Arrival.4K.HDR.HEVC.10bit.BT2020.DTS.HD-MA-MadVR.HDR10.Dolby.Vision-VISIONPLUSHDR1000]
-    title: "the arrival" vs ["madvr","the arrival"]
-    » drop "madvr"
-
-===== alt/ep_title → episode number =====
-[Show!.Name.2.-.10.(2016).[HorribleSubs][WEBRip]..[HD.720p]]
-    season: 2016 vs undefined
-    alternative_title: undefined vs "10"
-    » alt "10" duplicates episode 10 → drop
-[Show.Name.-.07.(2016).[RH].[English.Dubbed][WEBRip]..[HD.1080p]]
-    season: 2016 vs undefined
-    alternative_title: undefined vs "07"
-    » alt "07" → drop
-[Show.Name.-.476-479.(2007).[HorribleSubs][WEBRip]..[HD.720p]]
-    season: 2007 vs undefined
-    alternative_title: undefined vs "476-479"
-    » alt "476-479" → absolute_episode
-[Show.Name.s10e15(233).480p.BDRip-AVC.Ukr.hurtom]
-    episode_title: undefined vs "233"
-    » episode_title "233" → absolute_episode
-
-===== episode_details / rg / version / country phantom =====
-[We.Bare.Bears.S01E14.Brother.Up.1080p.WEB-DL.AAC2.0.H.264-TVSmash/mxNMuJWeO7PUWCMEwqKSsS6D8Vs9S6V3PHD.mkv]
-    version: undefined vs 3
-    » drop version 3 (from hash)
-[[TorrentCouch.com].Westworld.S02.Complete.720p.WEB-DL.x264.[MP4].[5.3GB].[Season.2.Full]/[TorrentCouch.com].Westworld.S02E03.720p.WEB-DL.x264.mp4]
-    release_group: undefined vs "[season.2.full]"
-    » drop junk release_group "[season.2.full]"
+############## ① TO FIX — guessit-js is wrong (0) ##############
 
 
-############## ② NEUTRAL — undecided (11) ##############
+############## ② NEUTRAL — undecided (12) ##############
 
 ===== undecided =====
 [/11.22.63/Season 1/11.22.63.106.hdtv-abc]
@@ -180,6 +50,9 @@ Auto-generated — regenerate with `node --import tsx scripts/pydiff.mjs --verdi
 [Movies/Bunker Palace Hôtel (Enki Bilal) (1989)/Enki Bilal - Bunker Palace Hotel (Fr Vhs Rip).avi]
     alternative_title: "bunker palace hotel" vs "enki bilal"
     » accent case (also the 1 JS↔WASM diff)
+[Show.Name.s10e15(233).480p.BDRip-AVC.Ukr.hurtom]
+    episode_title: undefined vs "233"
+    » js episode_title "233" (the absolute number) vs py drops it
 [Something.Other.Season.1&3-1to12ep.avi]
     episode_title: "1to12ep" vs ["1to","ep"]
     episode: undefined vs 12
@@ -188,11 +61,11 @@ Auto-generated — regenerate with `node --import tsx scripts/pydiff.mjs --verdi
     release_group: "7.8.5" vs undefined
     » py release_group "7.8.5" vs js none
 [[GroupName].Show.Name.-.02.5.(Special).[BD.1080p]]
-    episode_title: "5" vs "5 special"
+    episode_title: "5" vs undefined
     » py "5" vs js "5 special"
 
 
-############## ③ WON'T FIX — guessit-js is already more correct (32) ##############
+############## ③ WON'T FIX — guessit-js is already more correct (35) ##############
 
 ===== JS better — Python misses it =====
 [/Show Name S2/[Group].Show.Name.S2.-.19.[1080p]]
@@ -304,26 +177,36 @@ Auto-generated — regenerate with `node --import tsx scripts/pydiff.mjs --verdi
     mimetype: "application/vnd.snesdev-page-table" vs undefined
     » Python value is env-specific/bogus; JS undefined or correct
 
+===== JS better — Python year→season bug =====
+[Show!.Name.2.-.10.(2016).[HorribleSubs][WEBRip]..[HD.720p]]
+    season: 2016 vs undefined
+    » numeric alt dropped; py reads 2016 as season
+[Show.Name.-.07.(2016).[RH].[English.Dubbed][WEBRip]..[HD.1080p]]
+    season: 2016 vs undefined
+    » numeric alt dropped; py reads 2016 as season
+[Show.Name.-.476-479.(2007).[HorribleSubs][WEBRip]..[HD.720p]]
+    season: 2007 vs undefined
+    » numeric alt dropped; py reads 2007 as season
+
 ----- category counts -----
-  15  spurious-alternative_title
-  14  spurious-episode_title
   11  mimetype
-  10  title
-   8  other:episode_title
    4  other:episode,episode_title
+   4  title
+   4  spurious-alternative_title
+   4  spurious-episode_title
    4  other:other
+   3  season
+   2  other:episode_title
    2  language
    2  other:absolute_episode
    2  other:other,streaming_service
-   2  release_group
    1  episode-range
-   1  dup-language
    1  other:country,episode_title
    1  other:alternative_title
    1  other:episode_title,other,proper_count
-   1  other:version
+   1  release_group
 ----
-Total diverging: 80  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
-Real (excl. 11 env-specific mimetype): 69
-Verdicts: FIX 37 · NEUTRAL 11 · KEEP 32
+Total diverging: 47  (known-OK skipped: 1)  of 1009 (vs Python 3.8.0)
+Real (excl. 11 env-specific mimetype): 36
+Verdicts: FIX 0 · NEUTRAL 12 · KEEP 35
 ```
