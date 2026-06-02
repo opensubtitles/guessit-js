@@ -33,10 +33,43 @@ export function episodeTitle(config: Record<string, unknown>) {
     Filepart3EpisodeTitle,
     Filepart2EpisodeTitle,
     NumericEpisodeTitleToEpisode,
+    RemoveEpisodeTitleInReleaseGroup,
     RenameEpisodeTitleWhenMovieType
   );
 
   return rebulk;
+}
+
+/**
+ * An `episode_title` that sits inside a bracket group which also holds release
+ * metadata (resolution, codec, audio, source, …) is a stray tag, not a title —
+ * e.g. "Show Name S01e10[Mux - 1080p - H264 - Ita Eng Ac3 …]" → episode_title
+ * "Mux". Python forms no episode_title inside such release-info groups; drop it.
+ */
+class RemoveEpisodeTitleInReleaseGroup extends Rule {
+  static override priority = POST_PROCESS;
+  override consequence = RemoveMatch;
+
+  private static readonly RELEASE_PROPS = new Set([
+    'screen_size', 'video_codec', 'audio_codec', 'audio_channels', 'source',
+    'color_depth', 'video_profile', 'audio_profile', 'streaming_service',
+    'video_bit_rate', 'audio_bit_rate', 'container',
+  ]);
+
+  override when(matches: Matches, _context: any): Match[] | false {
+    const ets = matches.named('episode_title') as Match[] | Match | undefined;
+    const etArr = Array.isArray(ets) ? ets : ets ? [ets] : [];
+    if (!etArr.length) return false;
+    const out: Match[] = [];
+    for (const et of etArr) {
+      const group = matches.markers.atMatch(et, (m: Match) => m.name === 'group', 0) as Match | undefined;
+      if (!group) continue;
+      const hasRelease = matches.range(group.start, group.end,
+        (m: Match) => RemoveEpisodeTitleInReleaseGroup.RELEASE_PROPS.has(m.name ?? ''), 0);
+      if (hasRelease) out.push(et);
+    }
+    return out.length ? out : false;
+  }
 }
 
 /**
