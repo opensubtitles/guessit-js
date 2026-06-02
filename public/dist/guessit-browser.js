@@ -8517,6 +8517,7 @@ var GuessitJS = (() => {
     "jpeg": "image/jpeg",
     "png": "image/png",
     "gif": "image/gif",
+    "svg": "image/svg+xml",
     "zip": "application/zip",
     "rar": "application/x-rar-compressed",
     "pdf": "application/pdf",
@@ -9330,7 +9331,8 @@ var GuessitJS = (() => {
           "s"
         ],
         season_ep_markers: [
-          "x"
+          "x",
+          "\xD7"
         ],
         disc_markers: [
           "d"
@@ -9340,7 +9342,8 @@ var GuessitJS = (() => {
           "ex",
           "ep",
           "e",
-          "x"
+          "x",
+          "\xD7"
         ],
         range_separators: [
           "-",

@@ -24,6 +24,7 @@ const MIMETYPE_MAP: Record<string, string> = {
   'jpeg': 'image/jpeg',
   'png': 'image/png',
   'gif': 'image/gif',
+  'svg': 'image/svg+xml',
   'zip': 'application/zip',
   'rar': 'application/x-rar-compressed',
   'pdf': 'application/pdf',

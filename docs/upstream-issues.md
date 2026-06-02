@@ -21,7 +21,7 @@ cases). Fixing it once should resolve many of these issues together. Tagged ★ 
 | # | URL | Claim (example → expected vs actual) | Status |
 |---|-----|--------------------------------------|--------|
 | 305 | https://github.com/guessit-io/guessit/issues/305 | `Brodnopis_i_pioro.svg` → title includes `svg`; extension leaks into title, typed movie | todo |
-| 623 | https://github.com/guessit-io/guessit/issues/623 | `FlexGet.US.S2013E14...AAC1.0.x264-NOGRP` → `season:[2013,0]`, misses `audio_codec:AAC`/`audio_channels:1.0` | todo |
+| 623 | https://github.com/guessit-io/guessit/issues/623 | `FlexGet.US.S2013E14...AAC1.0.x264-NOGRP` → `season:[2013,0]`, misses `audio_codec:AAC`/`audio_channels:1.0` | **fixed** (audio_channels 1.0, no season:0) |
 | 634 | https://github.com/guessit-io/guessit/issues/634 | ★ `grown-ish.s03e01.web.x264-tbs[eztv]` → `release_group:"grown"`, `title:"ish"`; hyphenated title split | todo |
 | 638 | https://github.com/guessit-io/guessit/issues/638 | ★ `Us.2019.mkv` → `Us` matched as country `US` not title | todo |
 | 640 | https://github.com/guessit-io/guessit/issues/640 | ★ `grown-ish` + trailing `[ettv]`/`[eztv]` flips title/release_group (same root as 634) | todo |
@@ -39,8 +39,8 @@ cases). Fixing it once should resolve many of these issues together. Tagged ★ 
 | 757 | https://github.com/guessit-io/guessit/issues/757 | `[SubsPlus+] Helck...` → group mis-detected; `+` in leading-bracket group name breaks detection | todo |
 | 784 | https://github.com/guessit-io/guessit/issues/784 | ★ `The.Convert (2024)...` → `title:"The"`, `other:"Converted"` (movie variant of 743) | todo |
 | 789 | https://github.com/guessit-io/guessit/issues/789 | ★ `It Ends With Us 2024...` → `title:"It Ends With"`, `country:"US"` (19 comments) | todo |
-| 790 | https://github.com/guessit-io/guessit/issues/790 | `La casa del dragón 2×7` not parsed; Unicode `×` should normalize to `x` (→ S2E7) | todo |
-| 796 | https://github.com/guessit-io/guessit/issues/796 | ★ `Adam-12 S01E02...` → `title:["Adam","12"]` (list, split); should be `"Adam-12"` | todo |
+| 790 | https://github.com/guessit-io/guessit/issues/790 | `La casa del dragón 2×7` not parsed; Unicode `×` should normalize to `x` (→ S2E7) | **fixed** (added × to episode markers) |
+| 796 | https://github.com/guessit-io/guessit/issues/796 | ★ `Adam-12 S01E02...` → `title:["Adam","12"]` (list, split); should be `"Adam-12"` | **fixed** (title "Adam-12") |
 | 800 | https://github.com/guessit-io/guessit/issues/800 | ★ `The.Four.Seasons.2025.S01E01...` → `title:"The Four"`, `season:[2025,1]`; "Seasons" swallowed | todo |
 
 ---
