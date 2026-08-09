@@ -1022,52 +1022,14 @@
         },
         "Virtual Reality": {
           "string": [
-            "VR"
+            "VR",
+            "EAC360"
           ],
           "regex": [
             "VR180",
-            "VR360"
-          ],
-          "tags": "has-neighbor"
-        },
-        "Opening Credits": {
-          "string": [
-            "NCOP",
-            "OPED"
-          ],
-          "regex": [
-            "NC-?OP",
-            "creditless-?opening"
-          ],
-          "tags": "has-neighbor"
-        },
-        "Ending Credits": {
-          "string": [
-            "NCED"
-          ],
-          "regex": [
-            "NC-?ED",
-            "creditless-?ending"
-          ],
-          "tags": "has-neighbor"
-        },
-        "Half SBS": {
-          "string": [
-            "HSBS"
-          ],
-          "regex": [
-            "Half-?SBS"
-          ],
-          "tags": "has-neighbor"
-        },
-        "Half OU": {
-          "string": [
-            "HOU",
-            "HTAB"
-          ],
-          "regex": [
-            "Half-?OU",
-            "Half-?TAB"
+            "VR360",
+            "VR-180",
+            "VR-360"
           ],
           "tags": "has-neighbor"
         },
@@ -1314,6 +1276,48 @@
           "complete_article_words": [
             "The"
           ]
+        },
+        "Side By Side": {
+          "string": [
+            "SBS",
+            "LR"
+          ],
+          "tags": [
+            "has-neighbor",
+            "stereo-vr-context"
+          ]
+        },
+        "Over Under": {
+          "string": [
+            "TB",
+            "OU"
+          ],
+          "tags": [
+            "has-neighbor",
+            "stereo-vr-context"
+          ]
+        },
+        "Half Side By Side": {
+          "string": [
+            "HSBS"
+          ],
+          "regex": [
+            "h-?sbs",
+            "half-?sbs"
+          ],
+          "tags": "has-neighbor"
+        },
+        "Half Over Under": {
+          "string": [
+            "HOU",
+            "HTAB"
+          ],
+          "regex": [
+            "h-?ou",
+            "half-?ou",
+            "half-?tab"
+          ],
+          "tags": "has-neighbor"
         }
       }
     },

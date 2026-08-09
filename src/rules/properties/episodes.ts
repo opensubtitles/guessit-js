@@ -28,6 +28,25 @@ interface EpisodesConfig {
   all_words: string[];
 }
 
+const CJK_DIGITS: Record<string, number> = {
+  '零': 0, '一': 1, '二': 2, '两': 2, '三': 3, '四': 4,
+  '五': 5, '六': 6, '七': 7, '八': 8, '九': 9,
+};
+
+// ASCII digits or Han numerals up to 99 (十一 → 11, 二十三 → 23, single digit otherwise).
+const CJK_NUMBER = '(?:\\d{1,4}|[一二两三四五六七八九]?十[一二两三四五六七八九]?|[零一二两三四五六七八九])';
+
+function parseCjkNumber(value: string): number {
+  if (/^\d+$/.test(value)) return parseInt(value, 10);
+  if (value.includes('十')) {
+    const [tens, ones] = value.split('十');
+    const tensValue = tens ? CJK_DIGITS[tens] : 1;
+    const onesValue = ones ? CJK_DIGITS[ones] : 0;
+    return tensValue * 10 + onesValue;
+  }
+  return CJK_DIGITS[value];
+}
+
 /**
  * Split a season/episode word config into (all values, number-first values).
  * Each entry is a plain string (word-first only) or {value, numfirst}.
@@ -233,11 +252,13 @@ export function episodes(config: EpisodesConfig): Rebulk {
       abbreviations: [altDash],
     });
 
-  // CJK (Japanese) episode/season markers: 第195話 → episode 195, シーズン2 → season 2,
-  // 2期 → season 2. guessit-js enhancement (upstream #671, #763).
-  rebulk.regex('第(?<episode>\\d{1,4})話', { tags: ['SxxExx'] });
-  rebulk.regex('(?:シーズン|シリーズ)(?<season>\\d{1,2})', { tags: ['SxxExx'] });
-  rebulk.regex('(?<season>\\d{1,2})期', {});
+  // CJK episode/season markers (Japanese: upstream #671, #763; Chinese: #779):
+  // 第195話 → episode 195, 第3集 → episode 3, 第二季 → season 2, シーズン2 → season 2, 2期 → season 2.
+  // Numbers may be ASCII digits or Han numerals up to 99 (二 → 2, 十一 → 11, 二十三 → 23).
+  rebulk.regex(`第(?<episode>${CJK_NUMBER})[話话集]`, { tags: ['SxxExx'], formatter: { episode: parseCjkNumber } });
+  rebulk.regex(`第(?<season>${CJK_NUMBER})季`, { tags: ['SxxExx'], formatter: { season: parseCjkNumber } });
+  rebulk.regex('(?:シーズン|シリーズ)(?<season>\\d{1,2})(?!\\d)', { tags: ['SxxExx'] });
+  rebulk.regex('(?<!\\d)(?<season>\\d{1,2})期', {});
 
   // Main SxxExx patterns
   const seasonMarkerPattern = buildOrPattern(config.season_markers, 'seasonMarker');

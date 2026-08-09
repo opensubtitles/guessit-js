@@ -16,7 +16,12 @@ export function other(config: Record<string, unknown>) {
 
   loadConfigPatterns(rebulk, config['other'] as Record<string, unknown>);
 
+  openingEndingCredits(rebulk);
+
   rebulk.rules(
+    AppendCreditless,
+    AppendOpedEndingCredits,
+    ValidateStereoVRContext,
     RenameAnotherToOther,
     ValidateHasNeighbor,
     ValidateHasNeighborAfter,
@@ -70,6 +75,136 @@ class ImageArtKeywordToOther extends Rule {
       }
     }
     return toRemove.length ? [toRemove, toAppend] : false;
+  }
+}
+
+// Ordinal of an opening/ending sequence, e.g. "2" in "OP02" or "4a" in "OP4a".
+// Kept as a string because of variant-letter forms. The leading version "v" is
+// excluded so "ED2v2" yields number "2", version 2. `[^\W\d_]` (a letter) avoids
+// a literal '-' which the dash abbreviation would corrupt. (upstream 4.x)
+const CREDITS_NUMBER = `(?P<credits_number>\\d+(?:(?![vV]\\d)[^\\W\\d_])?)?`;
+const CREDITS_VERSION = `(?:-?[vV](?P<version>\\d+))?`;
+const CREDITS_SUFFIX = CREDITS_NUMBER + CREDITS_VERSION;
+
+function formatCreditsNumber(value: string): string {
+  const m = /^(\d+)(\w?)$/.exec(value);
+  if (!m) return value;
+  return String(parseInt(m[1], 10)) + m[2].toLowerCase();
+}
+
+/**
+ * Match anime opening/ending credit sequences (OP/ED, NCOP/NCED, creditless…).
+ * Emits other: "Opening Credits"/"Ending Credits" plus credits_number ("4a") and
+ * version. Bare OP/ED tokens are uppercase-only so the name "Ed" is never captured.
+ */
+function openingEndingCredits(rebulk: Rebulk) {
+  const add = (pattern: string, value: string, ignoreCase: boolean) => {
+    rebulk.regex(
+      `(?P<other>` + pattern + `)` + CREDITS_SUFFIX,
+      {
+        flags: ignoreCase ? 'i' : '',
+        name: 'other',
+        children: true,
+        privateParent: true,
+        validateAll: true,
+        validator: { __parent__: sepsSurround },
+        formatter: {
+          other: () => value,
+          credits_number: formatCreditsNumber,
+          version: (v: string) => parseInt(v, 10),
+        },
+        disabled: (context: any) => isDisabled(context, 'other'),
+      } as any,
+    );
+  };
+  // NC*/creditless forms are unambiguous — case-insensitive.
+  add(`NC-?OP|creditless-?op(?:ening)?`, 'Opening Credits', true);
+  add(`NC-?ED|creditless-?(?:ed|ending)`, 'Ending Credits', true);
+  // Bare uppercase tokens. OPED is the combined opening+ending sequence.
+  add(`OPED|OP`, 'Opening Credits', false);
+  add(`ED`, 'Ending Credits', false);
+}
+
+/**
+ * Surface a `Creditless` other value for creditless opening/ending tokens
+ * (the NC-/creditless- forms). OPED is opening+ending, not creditless. (upstream 4.x)
+ */
+class AppendCreditless extends Rule {
+  static override priority = POST_PROCESS;
+  override priority = POST_PROCESS;
+  override consequence = AppendMatch;
+  static properties = { other: ['Creditless'] };
+
+  when(matches: any, _context: any): any {
+    const toAppend: any[] = [];
+    for (const match of matches.named('other', (m: Match) =>
+      m.value === 'Opening Credits' || m.value === 'Ending Credits') ?? []) {
+      const raw = (match.raw ?? '').toLowerCase().replace(/[\s._-]+/g, '');
+      if (raw.startsWith('nc') || raw.includes('creditless')) {
+        toAppend.push(new Match(match.start, match.end, {
+          name: 'other', value: 'Creditless', inputString: matches.inputString,
+        }));
+      }
+    }
+    return toAppend.length ? toAppend : false;
+  }
+}
+
+/**
+ * OPED is the combined opening AND ending sequence — add the missing
+ * `Ending Credits` value over the same span. (upstream 4.x)
+ */
+class AppendOpedEndingCredits extends Rule {
+  static override priority = POST_PROCESS;
+  override priority = POST_PROCESS;
+  override consequence = AppendMatch;
+  static properties = { other: ['Ending Credits'] };
+
+  when(matches: any, _context: any): any {
+    const toAppend: any[] = [];
+    for (const match of matches.named('other', (m: Match) => m.value === 'Opening Credits') ?? []) {
+      if ((match.raw ?? '').toLowerCase().replace(/[\s._-]+/g, '') === 'oped') {
+        toAppend.push(new Match(match.start, match.end, {
+          name: 'other', value: 'Ending Credits', inputString: matches.inputString,
+        }));
+      }
+    }
+    return toAppend.length ? toAppend : false;
+  }
+}
+
+const STEREO_VR_CONTEXT_TAG = 'stereo-vr-context';
+const VR_CONTEXT_VALUES = new Set(['Virtual Reality', '3D']);
+
+/**
+ * A stereoscopic abbreviation (SBS/LR/TB/OU) is ambiguous on its own (SBS is
+ * also a broadcaster). Keep it only when its filepart carries a VR/3D signal —
+ * and then let it win its span over a colliding streaming_service. (upstream 4.x)
+ */
+class ValidateStereoVRContext extends Rule {
+  static override priority = 64;
+  override priority = 64;
+  override consequence = RemoveMatch;
+
+  when(matches: any, _context: any): any {
+    const toRemove: any[] = [];
+    const fileparts = matches.markers.named('path') as Match[];
+    for (const filepart of Array.isArray(fileparts) ? fileparts : fileparts ? [fileparts] : []) {
+      const gated = matches.range(filepart.start, filepart.end,
+        (m: Match) => m.name === 'other' && m.tags.includes(STEREO_VR_CONTEXT_TAG)) as Match[];
+      if (!gated?.length) continue;
+      const hasVrContext = (matches.range(filepart.start, filepart.end,
+        (m: Match) => m.name === 'other' && VR_CONTEXT_VALUES.has(String(m.value))) as Match[])?.length > 0;
+      if (hasVrContext) {
+        for (const stereo of gated) {
+          toRemove.push(...(matches.range(stereo.start, stereo.end,
+            (m: Match) => m.name === 'streaming_service') as Match[] ?? []));
+        }
+      } else {
+        toRemove.push(...gated);
+      }
+    }
+    return toRemove.length ? toRemove : false;
   }
 }
 
