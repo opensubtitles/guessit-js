@@ -1,9 +1,6 @@
 # Upstream 4.4 fixtures guessit-js does not pass yet — tracked, excluded from the suite.
 # Move entries back into the upstream-new-*.yml files as they start passing.
 
-? __default__
-: type: episode
-
 # ── from upstream-new-enable_disable_properties.yml ──
 ? Star Wars - The Mandalorian and Grogu (2026) 720p x265.mkv
 : options: --exclude alternative_title
@@ -14,6 +11,8 @@
 # ── from upstream-new-episodes.yml ──
 ? Adam-12 1968 Season 1 Complete x264 [i_c]/Adam-12 S01E02 Log 141 The Color TV Bandit.mkv
 : title: Adam-12
+  options: -t episode
+  type: episode
   year: 1968
   season: 1
   episode: 2
@@ -25,6 +24,8 @@
 # (the hyphenated-title guard must only fire for a single dash-joined word)
 ? FoV-Show.Name.S01E01.720p.HDTV.x264.mkv
 : release_group: FoV
+  options: -t episode
+  type: episode
   title: Show Name
   season: 1
   episode: 1
@@ -34,6 +35,8 @@
 # lone article swallows the following language word (upstream #737)
 ? Chapter.19.The.Convert.720p.mkv
 : title: Chapter
+  options: -t episode
+  type: episode
   episode: 19
   episode_title: The Convert
   screen_size: 720p
@@ -44,6 +47,8 @@
 # title (a broadening that did this was withdrawn from PR #838). Assert the property survives.
 ? How the Universe Works (2010) Season 1 S01/How the Universe Works (2010) - S44E03 - Monster Black Hole.mkv
 : title: How the Universe Works
+  options: -t episode
+  type: episode
   year: 2010
   season: 44
   episode: 3
@@ -54,6 +59,7 @@
 # over a sample clip in a subdirectory — the filename must not override it
 ? video/zettai karen children/01 - Absolutely Lovely! Their Name Is The Children.mkv
 : title: zettai karen children
+  options: -t episode
   episode: 1
   episode_title: Absolutely Lovely! Their Name Is The Children
   container: mkv
@@ -63,6 +69,7 @@
 # obfuscated dash-separated release group ("...x264.1-URANiME-Obfuscated"). Result matches auto.
 ? Kemono.Michi.Rise.Up.E03.1080p.WEB.x264.1-URANiME-Obfuscated
 : options: -t episode
+  type: episode
   title: Kemono Michi Rise Up
   episode: 3
   release_group: 1-URANiME
@@ -75,6 +82,7 @@
 # not the episode_title; absorbing it into the date frees the real title sitting after the date.
 ? A.Place.in.the.Sun.S2025E01.Thu.2.Jan.2025.Mar.Menor.Spain.1080p.ALL4.WEB-DL.AAC2.0.H.264-TBN
 : title: A Place in the Sun
+  options: -t episode
   season: 2025
   episode: 1
   date: 2025-01-02
@@ -94,9 +102,13 @@
 # ordinals), Italian "Stagione"/"Episodio", plus the compact "T02E22"/"T01XE08" forms.
 ? Проклytie 5-й сезон 09-я серия
 : season: 5
+  options: -t episode
+  type: episode
   episode: 9
 ? Serial 5-го сезон 9 серия
 : season: 5
+  options: -t episode
+  type: episode
   episode: 9
 
 # #874: a title ending in a number right before a number-first keyword must not
@@ -104,13 +116,19 @@
 # trailing number ("Studio 60 Сезон 5" -> season 5, "60" stays in the title).
 ? Studio 60 Сезон 5 1080p
 : season: 5
+  options: -t episode
+  type: episode
 ? Apollo 18 Temporada 2
 : season: 2
+  options: -t episode
+  type: episode
 
 # #890: a leading original-language (non-Latin) title glued before the romanized title is
 # split — the Latin part is the title, the original run becomes alternative_title.
 ? 超能警探.Memorist.S01E01.2160p.WEB-DL.H265.AAC-FLTTH.mkv
 : title: Memorist
+  options: -t episode
+  type: episode
   alternative_title: 超能警探
   season: 1
   episode: 1

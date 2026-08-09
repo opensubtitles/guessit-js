@@ -313,6 +313,21 @@ abstract class TitleBaseRule extends Rule {
           ? [ignoredInHole]
           : [];
 
+      // A hole made up entirely of languages/countries is not a real title
+      // ("Ita Eng" between codecs, upstream #751): keep the languages rather than
+      // fabricating a title out of them and deleting them.
+      if (ignoredArray.length > 0 &&
+          ignoredArray.every((m) => m.name === 'language' || m.name === 'country')) {
+        const inpFull: string = (matches as any).inputString ?? '';
+        let rest = inpFull.slice(hole.start, hole.end);
+        for (const m of ignoredArray) {
+          const rel = m.start - hole.start;
+          rest = rest.slice(0, rel) + ' '.repeat(m.end - m.start) + rest.slice(m.end - hole.start);
+        }
+        const hasTitleText = [...rest].some((c) => !seps.includes(c) && c !== ' ');
+        if (!hasTitleText) continue;
+      }
+
       let trimmedHole = hole;
       // Pre-strip leading/trailing seps from the hole boundaries so that language-match
       // positions (which don't include surrounding seps) align with the trimmed boundaries.
