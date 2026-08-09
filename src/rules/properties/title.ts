@@ -11,7 +11,7 @@ import { cleanup, reorderTitle, foldDiacritics } from '../common/formatters.js';
 import { markerSorted } from '../common/comparators.js';
 import { buildExpectedFunction } from '../common/expected.js';
 import { formatters, POST_PROCESS } from 'rebulk-js';
-import { titleSeps, seps } from '../common/index.js';
+import { titleSeps, seps, sepsPattern } from '../common/index.js';
 
 // Function words that a title cannot meaningfully END on. If cropping a trailing
 // language/country would leave the title dangling on one of these, the token is
@@ -945,6 +945,60 @@ class TitleWordAtTitlePosition extends Rule {
   }
 }
 
+
+// Non-Latin script ranges: Greek, Cyrillic, Hebrew, Arabic, Thai, CJK punctuation,
+// kana, CJK ideographs, Hangul, fullwidth forms. (upstream #890)
+const NON_LATIN_SCRIPT_RE = /[\u0370-\u03FF\u0400-\u04FF\u0590-\u05FF\u0600-\u06FF\u0E00-\u0E7F\u3000-\u303F\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uAC00-\uD7AF\uFF00-\uFFEF]/;
+
+/**
+ * A title glued as "<original-language title> <romanized title>" — a leading
+ * non-Latin script run in front of a Latin run — yields the Latin part as the
+ * title and the original run as alternative_title (#890):
+ * "超能警探 Memorist" → title "Memorist", alternative_title "超能警探".
+ * Only a LEADING non-Latin run is split; an all-non-Latin title stays whole.
+ */
+class SplitOriginalScriptTitle extends Rule {
+  static override priority = POST_PROCESS;
+  override priority = POST_PROCESS;
+  override consequence = [RemoveMatch, AppendMatch];
+
+  override when(matches: Matches, context: Context): any {
+    if (isDisabled(context, 'alternative_title')) return false;
+    const input: string = (matches as any).inputString ?? '';
+    const toRemove: Match[] = [];
+    const toAppend: Match[] = [];
+    for (const titleMatch of matches.named('title') as Match[]) {
+      if (titleMatch.tags?.includes('expected')) continue;
+      const raw = input.slice(titleMatch.start, titleMatch.end);
+      // The Latin part must start a word so a stray Latin homoglyph inside a
+      // Cyrillic word is not a split point.
+      const latin = new RegExp('(?:^|[' + sepsPattern + '])([A-Za-z])').exec(raw);
+      if (!latin) continue;
+      const latinOffset = latin.index + latin[0].indexOf(latin[1]);
+      const prefix = raw.slice(0, latinOffset);
+      if (!NON_LATIN_SCRIPT_RE.test(prefix)) continue;
+      let prefixTrim = prefix;
+      while (prefixTrim.length && seps.includes(prefixTrim[prefixTrim.length - 1])) prefixTrim = prefixTrim.slice(0, -1);
+      const prefixEnd = titleMatch.start + prefixTrim.length;
+      const latinStart = titleMatch.start + latinOffset;
+      if (prefixEnd <= titleMatch.start) continue;
+      toRemove.push(titleMatch);
+      toAppend.push(new Match(titleMatch.start, prefixEnd, {
+        name: 'alternative_title',
+        value: cleanup(input.slice(titleMatch.start, prefixEnd)),
+        inputString: input,
+      }));
+      toAppend.push(new Match(latinStart, titleMatch.end, {
+        name: 'title',
+        tags: ['title'],
+        value: cleanup(input.slice(latinStart, titleMatch.end)),
+        inputString: input,
+      }));
+    }
+    return (toRemove.length || toAppend.length) ? [toRemove, toAppend] : false;
+  }
+}
+
 class PropertyAtTitlePositionAsTitle extends Rule {
   static override priority = -48;
   override consequence = RemoveMatch;
@@ -1109,7 +1163,7 @@ export function title(config: Record<string, unknown>): Rebulk {
     disabled: (context: Context) => isDisabled(context, 'title'),
   });
 
-  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle);
+  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, SplitOriginalScriptTitle, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle);
 
   // Expected title functional pattern
   const expectedTitle = buildExpectedFunction('expected_title');

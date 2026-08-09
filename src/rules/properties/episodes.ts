@@ -273,11 +273,43 @@ export function episodes(config: EpisodesConfig): Rebulk {
   const discreteSeparators = config.discrete_separators;
   const weakDiscreteSeparators = seps
     .split('')
-    .filter(s => !config.range_separators.includes(s));
+    .filter(s => !config.range_separators.includes(s) && s !== '/' && s !== '\\');
+  // Python merges weak separators in too: "S03E21.22" chains over the '.' (FASTSUB case).
   const allSeparators = [
     ...config.range_separators,
     ...discreteSeparators,
+    ...weakDiscreteSeparators,
   ];
+
+  // Values chained across a WEAK separator must be consecutive ("S03E21.22" ok,
+  // "S01E10.24" is the show "24"); a strong discrete separator ("&") lifts the
+  // requirement. Mirrors Python's ordering_validator is_consecutive.
+  const moduleOrderingValidator = orderingValidator;
+  const localOrderingValidator = (match: any): boolean => {
+    if (!moduleOrderingValidator(match)) return false;
+    const isConsecutive = (prop: string): boolean => {
+      let previous: any = null;
+      let valid = true;
+      const children = match.children;
+      const named = (children?.named?.(prop) ?? []) as any[];
+      for (const current of Array.isArray(named) ? named : [named]) {
+        if (previous) {
+          const separator = children.previous?.(current, (m: any) => m.name === prop + 'Separator', 0);
+          if (separator) {
+            const sraw = String(separator.raw ?? '');
+            if (!config.range_separators.includes(sraw) && weakDiscreteSeparators.includes(sraw)) {
+              const gap = Number(current.value) - Number(previous.value);
+              if (!(gap > 0 && gap <= config.max_range_gap + 1)) valid = false;
+            }
+            if (discreteSeparators.includes(sraw)) { valid = true; break; }
+          }
+        }
+        previous = current;
+      }
+      return valid;
+    };
+    return isConsecutive('episode') && isConsecutive('season');
+  };
 
   // Word numerals for season word patterns (e.g. "Saison sept")
   const wordNumerals = [
@@ -331,7 +363,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
     tags: ['SxxExx'],
     validateAll: true,
     validator: {
-      __parent__: and_(sepsSurround, orderingValidator),
+      __parent__: and_(sepsSurround, localOrderingValidator),
     },
     chainBreaker: (matches: any) => episodesSeasonChainBreaker(matches, config),
     disabled: isSeasonEpisodeDisabled,
