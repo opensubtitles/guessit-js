@@ -999,6 +999,105 @@ class SplitOriginalScriptTitle extends Rule {
   }
 }
 
+/**
+ * A short junk word before a leading anime bracket ("EvoBot.[Watakushi]_Akuma…",
+ * upstream #877 B2) steals the title position. When a single-word title opens the
+ * filepart, an anime release-group bracket follows it, and ANOTHER title sits
+ * after the bracket, the pre-bracket word is junk — keep the post-bracket title.
+ */
+class PreBracketJunkTitle extends Rule {
+  static override priority = POST_PROCESS;
+  override priority = POST_PROCESS;
+  override consequence = RemoveMatch;
+
+  override when(matches: Matches, context: Context): any {
+    if (isDisabled(context, 'title')) return false;
+    const input: string = (matches as any).inputString ?? '';
+    const toRemove: Match[] = [];
+    for (const filepart of matches.markers.named('path') as Match[]) {
+      const titles = ((matches.range(filepart.start, filepart.end, (m: Match) => m.name === 'title') as Match[]) ?? [])
+        .sort((a, b) => a.start - b.start);
+      if (titles.length < 2) continue;
+      const first = titles[0];
+      if (first.start !== filepart.start) continue;
+      if (/[\s._-]/.test(String(first.value ?? '').trim())) continue; // single word only
+      const group = matches.markers.range(first.end, filepart.end, (m: Match) => m.name === 'group', 0) as Match | undefined;
+      if (!group || group.start >= titles[1].start) continue;
+      if (![...input.slice(first.end, group.start)].every((c) => seps.includes(c))) continue;
+      const rg = matches.range(group.start, group.end,
+        (m: Match) => m.name === 'release_group' && !!m.tags?.includes('anime'), 0);
+      if (!rg) continue;
+      toRemove.push(first);
+    }
+    return toRemove.length ? toRemove : false;
+  }
+}
+
+/**
+ * Fully-bracketed fansub names have no unbracketed run to use as a title
+ * ("[FuktLogik][Sayonara_Zetsubou_Sensei][01][DVDRip]", upstream #877 B2): the
+ * first bracket whose content is plain words (not a claimed release group, not a
+ * matched property, not a number) becomes the title. When no such bracket exists
+ * and the leading bracket was claimed as the release group with nothing wordy
+ * left outside ("[Keroro].148."), the group name itself is the title.
+ */
+class BracketedTitleFallback extends Rule {
+  static override priority = POST_PROCESS;
+  override priority = POST_PROCESS;
+  override consequence = [RemoveMatch, AppendMatch];
+
+  override when(matches: Matches, context: Context): any {
+    if (isDisabled(context, 'title')) return false;
+    const input: string = (matches as any).inputString ?? '';
+    const toRemove: Match[] = [];
+    const toAppend: Match[] = [];
+    for (const filepart of matches.markers.named('path') as Match[]) {
+      const hasTitle = matches.range(filepart.start, filepart.end, (m: Match) => m.name === 'title', 0);
+      if (hasTitle) continue;
+      const groups = (matches.markers.range(filepart.start, filepart.end, (m: Match) => m.name === 'group') as Match[]) ?? [];
+      if (!groups.length) continue;
+      const rg = matches.range(filepart.start, filepart.end, (m: Match) => m.name === 'release_group', 0) as Match | undefined;
+      let candidate: Match | undefined;
+      for (const g of groups) {
+        if (rg && g.start <= rg.start && g.end >= rg.end) continue;
+        const core = input.slice(g.start + 1, g.end - 1);
+        if (!/[a-zA-Z]{2,}/.test(core)) continue;
+        const inner = (matches.range(g.start, g.end, (m: Match) => !m.private) as Match[]) ?? [];
+        if (inner.length) continue;
+        candidate = g;
+        break;
+      }
+      if (candidate) {
+        toAppend.push(new Match(candidate.start + 1, candidate.end - 1, {
+          name: 'title',
+          value: cleanup(input.slice(candidate.start + 1, candidate.end - 1)),
+          inputString: input,
+        }));
+        continue;
+      }
+      // No wordy bracket left: a lone claimed group with only numbers/properties
+      // outside means the "group" is really the title.
+      if (rg && rg.tags?.includes('anime')) {
+        const outside = input.slice(filepart.start, filepart.end)
+          .replace(input.slice(rg.start - 1 >= filepart.start ? rg.start - 1 : rg.start, Math.min(rg.end + 1, filepart.end)), '');
+        const outsideMatches = (matches.range(filepart.start, filepart.end,
+          (m: Match) => !m.private && m.name !== 'release_group' && m.start >= filepart.start) as Match[]) ?? [];
+        const wordyOutside = /[a-zA-Z]{2,}/.test(outside.replace(/\b(mkv|avi|mp4)\b/gi, '')) &&
+          outsideMatches.some((m) => ['title', 'episode_title', 'alternative_title'].includes(m.name ?? ''));
+        if (!wordyOutside) {
+          toRemove.push(rg);
+          toAppend.push(new Match(rg.start, rg.end, {
+            name: 'title',
+            value: cleanup(input.slice(rg.start, rg.end)),
+            inputString: input,
+          }));
+        }
+      }
+    }
+    return (toRemove.length || toAppend.length) ? [toRemove, toAppend] : false;
+  }
+}
+
 class PropertyAtTitlePositionAsTitle extends Rule {
   static override priority = -48;
   override consequence = RemoveMatch;
@@ -1163,7 +1262,7 @@ export function title(config: Record<string, unknown>): Rebulk {
     disabled: (context: Context) => isDisabled(context, 'title'),
   });
 
-  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, SplitOriginalScriptTitle, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle);
+  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, SplitOriginalScriptTitle, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle, BracketedTitleFallback, PreBracketJunkTitle);
 
   // Expected title functional pattern
   const expectedTitle = buildExpectedFunction('expected_title');

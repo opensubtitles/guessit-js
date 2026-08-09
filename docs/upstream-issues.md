@@ -182,8 +182,8 @@ New upstream issues triaged:
 | # | Claim | Status |
 |---|-------|--------|
 | 929 | `--type episode` picks episode 12 from "Adam-12" over S01E02 | **fixed** (v4.2.0) — filepart-precedence rules revived (two latent port bugs); correct in all modes |
-| 875 | Spurious season/episode from title digits / parens / "Season N - EE" ranges | partial — weak-chain token boundaries + consecutive-values validator (v4.2.0) fix the hash/title-digit family; anime absolute-number cases remain (upstream also still open) |
-| 877 | Anime/fansub epic: episode+type (B1), bracketed titles (B2) | partial — ED/OP special markers already work in JS (B1c/B1d pass); the rest (bare fansub numbers, fully-bracketed titles) tracked in upstream-pending.yml |
+| 875 | Spurious season/episode from title digits / parens / "Season N - EE" ranges | **fixed** (v4.3.0) — all 11 reproducible cases pass (anchored-weak scoring, Season-dash-episode, 0x-hex guard); Python 4.4 still fails them |
+| 877 | Anime/fansub epic: episode+type (B1), bracketed titles (B2) | **fixed** (v4.3.0) — 11 of 12 cases pass (bare fansub numbers, SP/EX markers, trailing anime numbers, fully-bracketed titles, junk prefixes); ED2→episode deliberately skipped: upstream 4.4's own behavior keeps it a credit sequence (credits_number) |
 
 **v4.2.0 update:** the quarantined list is cleared — anime brackets (#696/#757),
 filepart precedence (#797/#929/#772), URANiME audio-channels fix, FASTSUB weak

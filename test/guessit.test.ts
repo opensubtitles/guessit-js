@@ -255,6 +255,7 @@ const FIXTURE_FILES = [
   'upstream-new-various.yml',
   'upstream-new-enable_disable_properties.yml',
   'upstream-pending.yml',
+  'upstream-open-issues.yml',
 ];
 
 // ─── Tests ───────────────────────────────────────────────────────────────────

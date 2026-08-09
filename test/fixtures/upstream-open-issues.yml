@@ -1,0 +1,110 @@
+# Upstream guessit OPEN issues #875 (spurious season/episode numbers) and #877
+# (anime/fansub episode + title extraction) — fixed in guessit-js while Python
+# still fails them. ED2/OP2 stay credit sequences (credits_number), matching
+# upstream 4.4's shipped behavior rather than the #877 wishlist.
+
+? __default__
+: type: episode
+
+# ── #875 pattern 1: a digit inside the title is not an episode ──
+? Mob Psycho 100 - 09 [1080p].mkv
+: title: Mob Psycho 100
+  episode: 9
+  screen_size: 1080p
+
+? Space Battleship Yamato 2199 (2012) episode 18
+: episode: 18
+  year: 2012
+
+? "[Golumpa] Star Blazers 2202 - 22 (Uchuu Senkan Yamato 2202) [FuniDub 1080p x264 AAC].mkv"
+: episode: 22
+  release_group: Golumpa
+
+? "[SubsPlease] Fairy Tail - 100 Years Quest - 05 (1080p) [1107F3A9].mkv"
+: episode: 5
+  release_group: SubsPlease
+
+# ── #875 pattern 2: absolute episode in parentheses is not double-counted ──
+? "[Hatsuyuki-Kaitou]_Fairy_Tail_2_-_52_(227)_[1280x720][10bit][612B87F5].mkv"
+: episode: 52
+
+? "[Hatsuyuki] Dragon Ball Kai (2014) - 002 (100) [1280x720][DD66AFB7].mkv"
+: episode: 2
+
+? "[Deep] Tegami Bachi (REVERSE) - Letter Bee - 29 (04) [E56A4C7B].mkv"
+: episode: 4
+
+# ── #875 pattern 3: "Season N - EE" is season + episode, not a season range ──
+? "[SCY] Attack on Titan Season 3 - 11 (BD 1080p Hi10 FLAC) [5D7A2C4E].mkv"
+: season: 3
+  episode: 11
+
+? "[Erai-raws] Granblue Fantasy The Animation Season 2 - 08 [1080p].mkv"
+: season: 2
+  episode: 8
+
+? "[HR] Boku no Hero Academia 87 (S4-24) [1080p].mkv"
+: season: 4
+  episode: 24
+
+# guard: S-prefixed and glued ranges still expand
+? Show.S01-S05.Complete.720p.mkv
+: season: [1, 2, 3, 4, 5]
+
+# ── #875 pattern 4: a 0x-hex bracket id is not SxxExx ──
+? "[0x539] Somali and the Forest Spirit - S01E01 (WEB 1080p x264 AAC).mkv"
+: season: 1
+  episode: 1
+
+# ── #877 B1: fansub episode numbers ──
+? "[DB]_Bleach_264_[012073FE].avi"
+: title: Bleach
+  episode: 264
+  crc32: 012073FE
+  release_group: DB
+
+? "[UTW]_Accel_World_-_EX01_[BD][h264-720p_AAC][3E56EE18].mkv"
+: title: Accel World
+  episode: 1
+
+? "[FFF] Seirei Tsukai no Blade Dance - SP01 [BD][720p-AAC][F1FB50A9].mkv"
+: title: Seirei Tsukai no Blade Dance
+  episode: 1
+
+? Eve no Jikan 2 [88F4F7F0].mkv
+: title: Eve no Jikan
+  episode: 2
+
+? "[N LogN Fansubs] Angel Beats (9).mkv"
+: title: Angel Beats
+  episode: 9
+
+# guard: no anime signal → a trailing number stays in the title
+? Deadpool 2 2018 1080p.mkv
+: title: Deadpool 2
+  type: movie
+  year: 2018
+
+# ── #877 B2: title extraction ──
+? "[FuktLogik][Sayonara_Zetsubou_Sensei][01][DVDRip][x264_ogg].avi"
+: title: Sayonara Zetsubou Sensei
+  episode: 1
+  release_group: FuktLogik
+
+? "[Keroro].148.[Xvid.mp3].[FE68D5F1].avi"
+: title: Keroro
+  episode: 148
+
+? "Attack on Titan - Episode 3 - A Dim Light Amid Despair Humanity's Comeback Part 2.mkv"
+: title: Attack on Titan
+  episode: 3
+
+? EvoBot.[Watakushi]_Akuma_no_Riddle_-_01v2_[720p][D0335AF6].mkv
+: title: Akuma no Riddle
+  episode: 1
+  version: 2
+  release_group: Watakushi
+
+? Hayate no Gotoku 2nd Season 24 (Blu-Ray 1080p) [Chihiro]
+: title: Hayate no Gotoku
+  season: 2

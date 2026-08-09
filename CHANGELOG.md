@@ -2,6 +2,35 @@
 
 All notable changes to guessit-js are documented here.
 
+## [4.3.0]
+
+Fixes upstream guessit's two remaining open parsing issues — **#875** (spurious
+season/episode numbers) and most of **#877** (anime/fansub parsing) — which
+Python 4.4.0 still fails. 22 of the 23 reproducible cases from those issues now
+parse correctly (suite: 1289 green); the one exception (ED2 → episode) is
+deliberate, matching upstream's own shipped credit-sequence behavior.
+
+### #875 — spurious season/episode numbers
+- title digits are not episodes: "Mob Psycho 100 - 09" → episode 9 (anchored-weak
+  scoring: zero-padded/dash-delimited numbers beat title digits and parenthesized
+  absolutes: "52 (227)" → 52, "29 (04)" → 4, "002 (100)" → 2)
+- "Season 3 - 11" → season 3 + episode 11 (space-padded dash; glued "Season 1-3",
+  plural "Seasons", and Complete-marked packs keep range semantics); bracketed
+  "(S4-24)" → season 4 + episode 24 while "S01-S05" still expands
+- "[0x539]" hex bracket ids never parse as NxNN
+
+### #877 — anime / fansub parsing
+- bare fansub episodes: "[DB]_Bleach_264_[hex]" → title Bleach, episode 264
+  (phantom "h_264" codecs glued to a word lose; weak-family conflicts keep both
+  readings until WeakConflictSolver picks the anime one)
+- special markers: SP01/EX01/OVA → episode; "2nd Season 24" → season 2
+- trailing numbers with an anime signal (CRC32 or bracket group) are episodes:
+  "Eve no Jikan 2 [hex]" → episode 2, "Angel Beats (9)" → episode 9 — while
+  "Deadpool 2" stays a movie title
+- fully-bracketed names get titles: "[FuktLogik][Sayonara_Zetsubou_Sensei][01]"
+  → title from the second bracket; "[Keroro].148." → the lone bracket is the
+  title; junk words before the group bracket are dropped ("EvoBot.[Watakushi]_…")
+
 ## [4.2.0]
 
 Full parity with Python guessit 4.4.0's test corpus — the 25 fixtures quarantined

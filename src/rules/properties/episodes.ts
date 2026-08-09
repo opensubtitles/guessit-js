@@ -443,6 +443,20 @@ export function episodes(config: EpisodesConfig): Rebulk {
     { tags: ['SxxExx'], disabled: isSeasonEpisodeDisabled },
   );
 
+  // Anime special-episode markers: SP01/EX01/OVA2 → episode (upstream #877 B1).
+  // ED/OP stay credit sequences (see other.ts) — only the special/extra forms
+  // carry a real episode number.
+  rebulk.regex(
+    `(?<![^\\W_])(?:SP|EX|OVA|OAV)-?(?<episode>\\d{1,3})(?![^\\W_])`,
+    { tags: ['SxxExx', 'special-episode'], disabled: (context: any) => isDisabled(context, 'episode') },
+  );
+
+  // English ordinal season: "2nd Season 24" → season 2 (upstream #877 B2f).
+  rebulk.regex(
+    `(?<season>\\d{1,2})(?:st|nd|rd|th)@?(?:season)(?![^\\W_])`,
+    { tags: ['SxxExx', 'numfirst'], disabled: isSeasonEpisodeDisabled },
+  );
+
   // Season-only: S01, S01S02S03
   const seasonOnlySepPattern = buildOrPattern(
     [...config.season_markers, ...discreteSeparators, ...config.range_separators],
@@ -740,6 +754,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
 
   // Add rules for validation and cleanup
   rebulk.rules(
+    AnimeTrailingEpisodeRule,
     PreferAnchoredWeakEpisodeRule,
     SeasonWordDashedEpisodeRule,
     RemoveNumfirstMarkerCollision,
@@ -757,6 +772,65 @@ export function episodes(config: EpisodesConfig): Rebulk {
   );
 
   return rebulk;
+}
+
+/**
+ * Anime episode from a trailing bare number (upstream #877 B1): with an anime
+ * signal in the filepart — a CRC32 checksum or a leading bracket release group —
+ * a trailing number is the episode, whether bare ("Eve no Jikan 2 [88F4F7F0]")
+ * or parenthesized ("[N LogN Fansubs] Angel Beats (9)"). The episode match then
+ * types the release as an episode. Without such a signal nothing happens, so
+ * movie sequels ("Deadpool 2") are untouched.
+ */
+class AnimeTrailingEpisodeRule extends Rule {
+  static override priority = -64;
+  override priority = -64;
+  override consequence = [RemoveMatch, AppendMatch];
+
+  when(matches: any, _context: any): any {
+    const input: string = matches.inputString ?? '';
+    const toRemove: any[] = [];
+    const toAppend: any[] = [];
+    const episodes = (matches.named('episode') as any[]) ?? [];
+    if (episodes.length) return false;
+    for (const filepart of (matches.markers.named('path') as any[]) ?? []) {
+      const crc = matches.range(filepart.start, filepart.end, (m: any) => m.name === 'crc32', 0);
+      const animeRg = matches.range(filepart.start, filepart.end,
+        (m: any) => m.name === 'release_group' && m.tags?.includes('anime'), 0);
+      if (!crc && !animeRg) continue;
+      // Parenthesized bare number: "(9)"
+      let done = false;
+      for (const group of (matches.markers.range(filepart.start, filepart.end, (m: any) => m.name === 'group') as any[]) ?? []) {
+        const core = input.slice(group.start + 1, group.end - 1).trim();
+        if (!/^\d{1,3}$/.test(core)) continue;
+        const inner = (matches.range(group.start, group.end, (m: any) => !m.private) as any[]) ?? [];
+        // a numeric bracket often gets misread as alternative_title / weak junk — reclaim it
+        if (inner.some((m: any) => !['alternative_title', 'episode_title'].includes(m.name ?? '') && !m.tags?.includes('weak-episode'))) continue;
+        toRemove.push(...inner);
+        toAppend.push(new Match(group.start + 1, group.end - 1, {
+          name: 'episode', value: parseInt(core, 10), inputString: input, tags: ['anime'],
+        }));
+        done = true;
+        break;
+      }
+      if (done) continue;
+      // Trailing bare number at the end of the title: "Eve no Jikan 2"
+      const title = matches.range(filepart.start, filepart.end, (m: any) => m.name === 'title', 0);
+      if (!title) continue;
+      const m = /^(.*[^\W\d_])[\s._-]+(\d{1,3})$/.exec(input.slice(title.start, title.end));
+      if (!m) continue;
+      const numStart = title.start + m[1].length + (m[0].length - m[1].length - m[2].length);
+      toRemove.push(title);
+      const newTitle = new Match(title.start, title.start + m[1].length, {
+        name: 'title', value: cleanup(m[1]), inputString: input,
+      });
+      toAppend.push(newTitle);
+      toAppend.push(new Match(numStart, title.end, {
+        name: 'episode', value: parseInt(m[2], 10), inputString: input, tags: ['anime'],
+      }));
+    }
+    return (toRemove.length || toAppend.length) ? [toRemove, toAppend] : false;
+  }
 }
 
 /**
@@ -853,15 +927,23 @@ class SeasonWordDashedEpisodeRule extends Rule {
       if (seen.has(init)) continue;
       seen.add(init);
       const children = [...(init.children ?? [])];
-      const marker = children.find((c: any) => c.name === 'seasonMarker' && /^[a-zà-ÿа-я]{3,}$/i.test(String(c.raw ?? '')));
+      const marker = children.find((c: any) => c.name === 'seasonMarker');
       if (!marker) continue;
-      if (/s$/i.test(String(marker.raw ?? ''))) continue; // "Seasons" — plural means a real range
+      const markerRaw = String(marker.raw ?? '');
+      const isWordMarker = /^[a-zà-ÿа-я]{3,}$/i.test(markerRaw);
+      // A compact "S4-24" confined to a bracket group is season 4 + episode 24
+      // (upstream #875): brackets quote metadata, and a season RANGE would use
+      // the S-prefix on both sides ("S01-S05").
+      const inBracket = !!matches.markers.atMatch(season, (m: any) => m.name === 'group', 0);
+      if (!isWordMarker && !(markerRaw.toLowerCase() === 's' && inBracket)) continue;
+      if (isWordMarker && /s$/i.test(markerRaw)) continue; // "Seasons" — plural means a real range
       const nums = children.filter((c: any) => c.name === 'season');
       if (nums.length !== 2) continue;
       const sep = children.find((c: any) => c.name === 'seasonSeparator');
       if (!sep || String(sep.raw ?? '').trim() !== '-') continue;
-      // only the space-padded dash ("Season 3 - 11"); a glued "Season 1-3" is a range
-      if (input[sep.start - 1] !== ' ' || input[sep.end] !== ' ') continue;
+      // word markers need the space-padded dash ("Season 3 - 11"); a glued
+      // "Season 1-3" is a range. Bracketed "S4-24" is glued by convention.
+      if (isWordMarker && (input[sep.start - 1] !== ' ' || input[sep.end] !== ' ')) continue;
       const filepart = matches.markers.atMatch(season, (m: any) => m.name === 'path', 0);
       if (filepart) {
         const complete = matches.range(filepart.start, filepart.end,
@@ -923,7 +1005,11 @@ class RemoveNumfirstMarkerCollision extends Rule {
       const claimed = all.some((m: any) =>
         !m.private && (m.name === 'screen_size' || m.name === 'year') &&
         m.start < wordFirst.end && wordFirst.start < m.end);
-      if (claimed) removeWithParent(wordFirst);
+      // A glued ordinal ("2nd Season") binds the number to the marker — that
+      // number-first reading wins and the trailing number stays an absolute
+      // episode ("Hayate no Gotoku 2nd Season 24" → season 2).
+      const gluedOrdinal = /^(?:st|nd|rd|th|ª|º|°)/i.test(String(matches.inputString ?? '').slice(nf.end, nf.end + 2));
+      if (claimed || gluedOrdinal) removeWithParent(wordFirst);
       else removeWithParent(nf);
     }
     return toRemove.length ? toRemove : false;
