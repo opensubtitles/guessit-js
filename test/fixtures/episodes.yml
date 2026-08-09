@@ -4770,3 +4770,71 @@
   video_codec: H.264
   release_group: NOGRP
   type: episode
+
+# Media-server library layouts with hyphenated show names (issue #2, upstream #796)
+? The X-Files/Season 9/The.X-Files.S09E19.mkv
+: title: The X-Files
+  season: 9
+  episode: 19
+  container: mkv
+  type: episode
+
+? The A-Team/Season 1/The.A-Team.S01E01.mkv
+: title: The A-Team
+  season: 1
+  episode: 1
+  container: mkv
+  type: episode
+
+? Spider-Man/Season 1/Spider-Man.S01E01.mkv
+: title: Spider-Man
+  season: 1
+  episode: 1
+  container: mkv
+  type: episode
+
+? 9-1-1/Season 1/9-1-1.S01E02.mkv
+: title: 9-1-1
+  season: 1
+  episode: 2
+  container: mkv
+  type: episode
+
+? TV/The X-Files/Season 1/The.X-Files.S01E02.mkv
+: title: The X-Files
+  season: 1
+  episode: 2
+  container: mkv
+  type: episode
+
+? The A-Team/S01/The.A-Team.S01E02.mkv
+: title: The A-Team
+  season: 1
+  episode: 2
+  container: mkv
+  type: episode
+
+? The X-Files/Season 1/The.X-Files.S01E02.1080p.WEB-DL.x264-GRP.mkv
+: title: The X-Files
+  season: 1
+  episode: 2
+  screen_size: 1080p
+  source: Web
+  video_codec: H.264
+  release_group: GRP
+  container: mkv
+  type: episode
+
+? The X-Files/The.X-Files.S09E19.mkv
+: title: The X-Files
+  season: 9
+  episode: 19
+  container: mkv
+  type: episode
+
+? The Expanse/Season 1/The.Expanse.S01E02.mkv
+: title: The Expanse
+  season: 1
+  episode: 2
+  container: mkv
+  type: episode

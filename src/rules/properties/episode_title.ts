@@ -745,6 +745,45 @@ class TrimLanguageFromEpisodeTitle extends Rule {
   }
 }
 
+/**
+ * Title hole in a parent filepart, keeping a dash-joined name (e.g. "Adam-12",
+ * "The X-Files") whole. matches.holes() splits holes on titleSeps (dash included),
+ * so without this such names truncate to their first hole ("The X"). Merge the
+ * consecutive leading holes joined by a single "-" with non-separator characters
+ * on both sides. Mirrors Python's _parent_title_hole (upstream guessit #796).
+ */
+function parentTitleHole(matches: Matches, start: number, end: number): Match | undefined {
+  const holesResult = matches.holes(start, end, {
+    ignore: or_(
+      (m: Match) => !!(m.tags?.includes('weak-episode')),
+      (m: Match) => m.name === 'language' || m.name === 'country' || m.name === 'episode_details',
+    ),
+    formatter: cleanup,
+    seps: titleSeps,
+    predicate: (m: Match) => !!(m.value),
+  }) as Match[] | Match | undefined;
+  const holes = Array.isArray(holesResult) ? holesResult : holesResult ? [holesResult] : [];
+  if (holes.length === 0) return undefined;
+
+  const hole = holes[0];
+  const inputString = hole.inputString ?? '';
+  for (const nextHole of holes.slice(1)) {
+    const separator = inputString.slice(hole.end, nextHole.start);
+    const holeRaw = hole.raw;
+    const nextRaw = nextHole.raw;
+    if (
+      separator === '-' &&
+      holeRaw && !seps.includes(holeRaw[holeRaw.length - 1]) &&
+      nextRaw && !seps.includes(nextRaw[0])
+    ) {
+      hole.end = nextHole.end;
+    } else {
+      break;
+    }
+  }
+  return hole;
+}
+
 class Filepart3EpisodeTitle extends Rule {
   // consequence produces a hole; we rename it to 'title' via matchName
   override consequence = new AppendMatch('title');
@@ -770,16 +809,7 @@ class Filepart3EpisodeTitle extends Rule {
         (m: Match) => m.name === 'season', 0) as Match | undefined;
 
       if (season) {
-        const hole = matches.holes(subdirectory.start, subdirectory.end, {
-          ignore: or_(
-            (m: Match) => !!(m.tags?.includes('weak-episode')),
-            (m: Match) => m.name === 'language' || m.name === 'country' || m.name === 'episode_details',
-          ),
-          formatter: cleanup,
-          seps: titleSeps,
-          predicate: (m: Match) => !!(m.value),
-          index: 0,
-        }) as Match | undefined;
+        const hole = parentTitleHole(matches, subdirectory.start, subdirectory.end);
         if (hole) {
           return hole;
         }
@@ -814,16 +844,7 @@ class Filepart2EpisodeTitle extends Rule {
         (matches.range(filename.start, filename.end, (m: Match) => m.name === 'season', 0) as Match | undefined);
 
       if (season) {
-        const hole = matches.holes(directory.start, directory.end, {
-          ignore: or_(
-            (m: Match) => !!(m.tags?.includes('weak-episode')),
-            (m: Match) => m.name === 'language' || m.name === 'country' || m.name === 'episode_details',
-          ),
-          formatter: cleanup,
-          seps: titleSeps,
-          predicate: (m: Match) => !!(m.value),
-          index: 0,
-        }) as Match | undefined;
+        const hole = parentTitleHole(matches, directory.start, directory.end);
         if (hole) {
           // Crop the hole at group marker boundaries so that content inside
           // parentheses (e.g., "(US)") that was ignored (country) doesn't

@@ -2,6 +2,21 @@
 
 All notable changes to guessit-js are documented here.
 
+## [4.0.2]
+
+Bug-fix release (fixes #2).
+
+- **Hyphenated show names no longer truncate in media-server paths**
+  (`The X-Files/Season 9/The.X-Files.S09E19.mkv` → title `The X-Files`, was `The X`;
+  worst case `9-1-1/Season 1/…` → `9`). Root cause: `Filepart2EpisodeTitle` /
+  `Filepart3EpisodeTitle` took only the first title hole of the show directory, and
+  holes split on the dash. Ported Python guessit's `_parent_title_hole` merge
+  (upstream guessit#796): consecutive holes joined by a single non-spaced `-` are
+  kept whole. Affected every hyphenated show with a `Show/Season N/file`,
+  `Show/S01/file`, or nested `TV/Show/Season N/file` layout.
+- Added 9 media-server-layout fixtures (the corpus previously had a single
+  `Show/Season N/file` entry and none with hyphenated directory names).
+
 ## [4.0.1]
 
 Licensing + release-infrastructure release (fixes #1). No parsing changes.
