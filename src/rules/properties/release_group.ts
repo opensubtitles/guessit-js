@@ -383,6 +383,27 @@ class SceneReleaseGroup extends Rule {
       );
 
       if (lastHole) {
+        // Anime episode releases carry the group in the leading [bracket]; a trailing
+        // (English title) parenthetical must not be claimed instead — leave it for
+        // AnimeReleaseGroup (#696/#757). Gated on an episode/season match so a movie's
+        // trailing (group) (YTS/YIFY) is untouched.
+        const holeGroup = matches.markers.atMatch(lastHole, (m: Match) => m.name === 'group', 0);
+        if (holeGroup && String((holeGroup as any).raw ?? '').startsWith('(')) {
+          const hasEpisodeish = ((matches.range(start, end,
+            (m: Match) => m.name === 'episode' || m.name === 'season') as Match[]) ?? []).length > 0;
+          if (hasEpisodeish) {
+            const firstGroup = matches.markers.range(start, end,
+              (m: Match) => m.name === 'group' && m.start === start, 0) as Match | undefined;
+            if (firstGroup) {
+              const inner = (matches.range(firstGroup.start, firstGroup.end,
+                (mm: Match) => !mm.tags.includes('weak-language')) as Match[]) ?? [];
+              const core = String((firstGroup as any).value ?? '').replace(new RegExp(`[${sepsPattern}]`, 'g'), '');
+              const emptyish = inner.length === 0 ||
+                inner.every((mm: Match) => mm.name === 'container' && mm.tags?.includes('subtitle'));
+              if (emptyish && core && !intCoercable(core)) continue;
+            }
+          }
+        }
         const previousMatchFilter = (match: Match) => {
           if (match.start < filepart.start) {
             return false;
@@ -474,8 +495,6 @@ class AnimeReleaseGroup extends Rule {
           (mm: Match) => !mm.tags.includes('weak-language')
         ) as Match[]);
         if (innerMatches.length === 0) return true;
-        // Also consider "empty" if only 'other' matches are inside
-        if (innerMatches.every((mm: Match) => mm.name === 'other')) return true;
         // A LEADING bracket whose only content is a subtitle-format container
         // name (e.g. "[SSA]", "[ASS]") is an anime release group, not a
         // container — the name happens to collide with a subtitle extension.
