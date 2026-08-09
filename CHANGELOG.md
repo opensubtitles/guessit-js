@@ -2,6 +2,41 @@
 
 All notable changes to guessit-js are documented here.
 
+## [4.2.0]
+
+Full parity with Python guessit 4.4.0's test corpus — the 25 fixtures quarantined
+in v4.1.0 all pass now (suite: 1266 green, incl. the hard tail). guessit-js also
+fixes cases upstream still has open (#929 under --type episode, mid-token weak
+numbers).
+
+### Fixed
+- **Filepart precedence** — two latent port bugs had disabled
+  RemoveLessSpecificSeasonEpisode entirely (unstable in-place sort tie-break;
+  rebulk-js rejecting duplicate rule classes). "Adam-12 S01E02" now reads episode
+  2 in every mode (#929 — Python still fails it under --type episode), S44E03
+  beats a season-only directory (#797), pack dirs (S06E01.E10) and sample files
+  defer to the generic most-valuable-filepart logic
+- **Anime brackets** — leading [ASW]/[SubsPlus+]/[Coalgirls] groups win over
+  trailing parentheticals and streaming names (#696/#757); [Remux] and other
+  bracketed property values are never claimed as release groups
+- **Weak number chains** — token boundaries stop mid-hash episodes ("My File
+  238ddcd5aff" keeps the hash in the title) while version suffixes (312v1) and
+  fansub underscores still chain; weak-separator continuations require
+  consecutive values ("S03E21.22" → [21,22], "S01E10.24" keeps the show "24")
+- **CJK-mixed titles** — a leading original-script run splits off as
+  alternative_title ("超能警探.Memorist" → Memorist / 超能警探, #890)
+- **Localized forms** — Cyrillic ordinals ("5-го сезон 9 серия"), marker
+  collisions ("Studio 60 Сезон 5" → season 5) resolved with full context
+- **Air dates** — weekday prefixes absorbed into the date ("Thu.2.Jan.2025", #794)
+- **Titles** — --exclude alternative_title keeps dashed names whole; lone-article
+  episode_title merge ("Chapter.19.The.Convert"); language-only holes stay
+  languages (#751); leading film numbers are titles ("F1.2024", #751); FoV-style
+  multi-word leading dash groups kept (#634 refinement)
+- **Audio** — audio_channels validated like codec/profile ('mono' inside "Kemono"
+  no longer parses); compound Master Audio profile ordering fixed
+- **Directory titles** — absolute-numbered anime ("zettai karen children/01 -
+  Episode Title") takes the title from the parent directory
+
 ## [4.1.0]
 
 Upstream-resync feature release. Python guessit shipped v4.0.0–v4.4.0 (adopting

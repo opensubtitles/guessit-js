@@ -843,7 +843,11 @@ class Filepart2EpisodeTitle extends Rule {
         (matches.range(directory.start, directory.end, (m: Match) => m.name === 'season', 0) as Match | undefined) ||
         (matches.range(filename.start, filename.end, (m: Match) => m.name === 'season', 0) as Match | undefined);
 
-      if (season) {
+      // Absolute numbering (no season anywhere) still puts the title in the parent
+      // directory: "zettai karen children/01 - Episode Title.mkv". (upstream 4.x)
+      const anySeason = (matches.named('season') as Match[] | Match | undefined);
+      const hasAnySeason = Array.isArray(anySeason) ? anySeason.length > 0 : !!anySeason;
+      if (season || !hasAnySeason) {
         const hole = parentTitleHole(matches, directory.start, directory.end);
         if (hole) {
           // Crop the hole at group marker boundaries so that content inside

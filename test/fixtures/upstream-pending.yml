@@ -1,5 +1,6 @@
-# Upstream 4.4 fixtures guessit-js does not pass yet — tracked, excluded from the suite.
-# Move entries back into the upstream-new-*.yml files as they start passing.
+# Formerly-pending upstream 4.4 fixtures — the hard tail of the corpus resync
+# (anime brackets, CJK-mixed titles, filepart precedence, weekday dates, weak
+# chains). All pass since v4.2.0 and run as part of the regular suite.
 
 # ── from upstream-new-enable_disable_properties.yml ──
 ? Star Wars - The Mandalorian and Grogu (2026) 720p x265.mkv
