@@ -37,10 +37,13 @@ export function markerSorted(
   predicate: (m: Match) => boolean = markerComparatorPredicate,
 ): Match[] {
   const markersArr = [...markers];
+  // Snapshot input order — Python's comparator indexes the ORIGINAL list; calling
+  // indexOf on the array being sorted in place gives unstable garbage mid-sort.
+  const originalIndex = new Map<Match, number>(markersArr.map((m, i) => [m, i]));
   return markersArr.sort((a, b) => {
     const weightDiff = markerWeight(matches, b, predicate) - markerWeight(matches, a, predicate);
     if (weightDiff !== 0) return weightDiff;
-    // Give preference to rightmost (higher index in original array = later in path)
-    return markersArr.indexOf(b) - markersArr.indexOf(a);
+    // Give preference to rightmost (higher index in the input array = later in path)
+    return (originalIndex.get(b) ?? 0) - (originalIndex.get(a) ?? 0);
   });
 }

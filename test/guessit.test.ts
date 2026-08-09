@@ -254,6 +254,7 @@ const FIXTURE_FILES = [
   'upstream-new-movies.yml',
   'upstream-new-various.yml',
   'upstream-new-enable_disable_properties.yml',
+  'upstream-pending.yml',
 ];
 
 // ─── Tests ───────────────────────────────────────────────────────────────────

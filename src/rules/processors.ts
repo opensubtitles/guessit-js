@@ -210,17 +210,46 @@ export class RemoveAmbiguous extends Rule {
   }
 }
 
+const sxxExxWeightPredicate = (m: Match) =>
+  (m.name === 'season' || m.name === 'episode') && m.tags.includes('SxxExx');
+
 export class RemoveLessSpecificSeasonEpisode extends RemoveAmbiguous {
   constructor(name: string) {
     super(
-      (markers, matches) => markerSorted(
-        [...[...markers].reverse()],
-        matches,
-        (m: Match) => m.name === name && m.tags.includes('SxxExx'),
-      ),
+      // Sort fileparts most-valuable-first: a SxxExx-tagged season/episode outweighs a
+      // weaker one, so the filename's S44E03 beats a season-only or weak-number parent
+      // directory (upstream #797/#772).
+      (markers, matches) => markerSorted(markers, matches, sxxExxWeightPredicate),
       (m: Match) => m.name === name,
     );
   }
+
+  override when(matches: Matches, context: Record<string, unknown>): Match[] {
+    // Only decide when the SxxExx weights strictly differ. Equally-specific fileparts
+    // ("S06E01.E10" pack dir vs "S06E09" file, or a real dir vs a sample file) are
+    // left to the generic RemoveAmbiguous, whose full-property weight and rightmost
+    // preference pick the correct side for both directions.
+    const markers = matches.markers.named('path') as Match[];
+    const markerArr = Array.isArray(markers) ? markers : markers ? [markers] : [];
+    if (markerArr.length > 1) {
+      const weights = markerArr.map((marker) => {
+        const inRange = matches.range(marker.start, marker.end, sxxExxWeightPredicate) as Match[];
+        return new Set((Array.isArray(inRange) ? inRange : []).map((m) => m.name)).size;
+      });
+      const top = Math.max(...weights);
+      if (weights.filter((w) => w === top).length > 1) return [];
+    }
+    return super.when(matches, context);
+  }
+}
+
+// rebulk-js (unlike Python rebulk) rejects two rule instances of the same class in one
+// priority group, so the season/episode passes need distinct classes.
+export class RemoveLessSpecificSeason extends RemoveLessSpecificSeasonEpisode {
+  constructor() { super('season'); }
+}
+export class RemoveLessSpecificEpisode extends RemoveLessSpecificSeasonEpisode {
+  constructor() { super('episode'); }
 }
 
 /** If a season is a valid year and no year found, create a year match. */
@@ -330,8 +359,8 @@ export function processors(_config: Record<string, unknown>): Rebulk {
   return new Rebulk().rules(
     EnlargeGroupMatches,
     EquivalentHoles,
-    new RemoveLessSpecificSeasonEpisode('season'),
-    new RemoveLessSpecificSeasonEpisode('episode'),
+    RemoveLessSpecificSeason,
+    RemoveLessSpecificEpisode,
     RemoveAmbiguous,
     SeasonYear,
     YearSeason,
