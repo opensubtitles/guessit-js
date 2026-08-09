@@ -232,18 +232,24 @@ class AudioValidatorRule extends Rule {
 
   when(matches: Matches, _context: Context): Match[] {
     const ret: Match[] = [];
-    const audioProps = [...matches.named('audio_codec'), ...matches.named('audio_profile')];
+    const AUDIO_PROPS = ['audio_codec', 'audio_profile', 'audio_channels'];
+    const audioProps = AUDIO_PROPS.flatMap((n) => [...matches.named(n)]);
 
     for (const prop of audioProps) {
       if (!sepsBefore(prop)) {
-        const prevMatch = matches.atIndex(prop.start - 1, null, 0) as Match | undefined;
-        if (!prevMatch || (prevMatch.name !== 'audio_codec' && prevMatch.name !== 'audio_profile')) {
+        const validBefore = matches.range(prop.start - 1, prop.start,
+          (m: Match) => AUDIO_PROPS.includes(m.name ?? '')) as Match[];
+        if (!(Array.isArray(validBefore) ? validBefore.length : validBefore)) {
           ret.push(prop);
+          continue;
         }
-      } else if (!sepsAfter(prop)) {
-        const nextMatch = matches.atIndex(prop.end + 1, null, 0) as Match | undefined;
-        if (!nextMatch || (nextMatch.name !== 'audio_codec' && nextMatch.name !== 'audio_profile' && nextMatch.name !== 'audio_channels')) {
+      }
+      if (!sepsAfter(prop)) {
+        const validAfter = matches.range(prop.end, prop.end + 1,
+          (m: Match) => AUDIO_PROPS.includes(m.name ?? '')) as Match[];
+        if (!(Array.isArray(validAfter) ? validAfter.length : validAfter)) {
           ret.push(prop);
+          continue;
         }
       }
     }

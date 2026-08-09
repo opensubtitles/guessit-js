@@ -101,6 +101,22 @@ function episodesSeasonChainBreaker(
  * Conflict solver for season/episode patterns
  */
 function seasonEpisodeConflictSolver(match: any, other: any): any {
+  // A number-first private parent ("60 Сезон") colliding with a word-first private
+  // parent ("Сезон 5") on the marker word alone: keep BOTH and let
+  // RemoveNumfirstMarkerCollision decide with full context (it can see whether the
+  // word-first number is really a resolution, as in "Temporada 720p").
+  const famChild = (p: any) => {
+    if (p?.name) return null;
+    const ch = [...(p?.children ?? [])];
+    return ch.find((c: any) => c.name === 'season' || c.name === 'episode') ?? null;
+  };
+  const mChild = famChild(match);
+  const oChild = famChild(other);
+  if (mChild && oChild) {
+    const mNumfirst = !!mChild.tags?.includes('numfirst');
+    const oNumfirst = !!oChild.tags?.includes('numfirst');
+    if (mNumfirst !== oNumfirst) return null;
+  }
   if (match.name !== other.name) {
     if (match.name === 'episode' && other.name === 'year') {
       return match;
@@ -162,7 +178,13 @@ function seasonEpisodeConflictSolver(match: any, other: any): any {
       const nfInit = nf.initiator ?? nf;
       const wfInit = wf.initiator ?? wf;
       const nfDangling = (() => { const t = digitToken(nfInit.end, 1); return t.length >= 1 && t.length <= 4 && !isYearLike(t); })();
-      const wfDangling = (() => { const t = digitToken(wfInit.start - 1, -1); return t.length >= 1 && t.length <= 3 && !isYearLike(t); })();
+      // The dangling number before a word-first marker may carry an ordinal suffix
+      // ("5-го сезон", "04ª Temporada") — match it as one token.
+      const wfDangling = (() => {
+        const before = input.slice(Math.max(0, wfInit.start - 12), wfInit.start);
+        const m = /(\d{1,3})(?:ª|º|°|a|o|-?(?:й|я|е|го|ая|ый|ое))?[\s.,_\-–]*$/iu.exec(before);
+        return !!(m && !isYearLike(m[1]));
+      })();
       if (wfDangling && !nfDangling) return wf;
       return nf;
     }
@@ -705,24 +727,34 @@ class RemoveNumfirstMarkerCollision extends Rule {
     const toRemove: any[] = [];
     const isWeak = (m: any) => !!(m.tags?.includes('weak-episode') ||
       ['weak_episode', 'weak_duplicate'].includes(m.initiator?.name));
-    const numfirsts = (matches.matches ?? []).filter((m: any) =>
+    const removeWithParent = (m: any) => {
+      const init = m.initiator ?? m;
+      if (!toRemove.includes(m)) toRemove.push(m);
+      for (const child of init.children ?? []) {
+        if (!toRemove.includes(child)) toRemove.push(child);
+      }
+    };
+    const all: any[] = [...matches];
+    const numfirsts = all.filter((m: any) =>
       (m.name === 'season' || m.name === 'episode') && m.tags?.includes('numfirst'));
     for (const nf of numfirsts) {
       const nfInit = nf.initiator ?? nf;
-      const collides = (matches.matches ?? []).some((w: any) => {
+      const wordFirst = all.find((w: any) => {
         if (w.name !== 'season' && w.name !== 'episode') return false;
         if (w.tags?.includes('numfirst') || isWeak(w)) return false;
         const wInit = w.initiator ?? w;
         if (wInit === nfInit) return false;
         return wInit.start < nfInit.end && nfInit.start < wInit.end;
       });
-      if (collides) {
-        toRemove.push(nf);
-        // Drop the whole private parent (marker + any of-count children with it)
-        for (const child of nfInit.children ?? []) {
-          if (child !== nf && !toRemove.includes(child)) toRemove.push(child);
-        }
-      }
+      if (!wordFirst) continue;
+      // The word-first reading loses only when its number is really another property
+      // (the resolution in "04ª Temporada 720p"); otherwise the explicit
+      // word-then-number form wins ("Studio 60 Сезон 5" → season 5, weak 60 → episode).
+      const claimed = all.some((m: any) =>
+        !m.private && (m.name === 'screen_size' || m.name === 'year') &&
+        m.start < wordFirst.end && wordFirst.start < m.end);
+      if (claimed) removeWithParent(wordFirst);
+      else removeWithParent(nf);
     }
     return toRemove.length ? toRemove : false;
   }
