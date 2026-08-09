@@ -2,6 +2,18 @@
 
 All notable changes to guessit-js are documented here.
 
+## [4.0.1]
+
+Licensing + release-infrastructure release (fixes #1). No parsing changes.
+
+- Restored full LGPL-3.0 `LICENSE` text; copyright + upstream guessit attribution in README
+- Added `THIRD_PARTY_NOTICES.md` (Javy Apache-2.0, embedded QuickJS MIT)
+- Removed all committed binaries (`tools/javy`, `*.wasm`) from the repo and — via
+  `git-filter-repo` — from history (~50 MB → 1.3 MB); re-clone if you have an old checkout
+- `wasm/build.sh` downloads a pinned Javy release on demand; CI builds and tests the WASM
+- Releases are published from CI via npm trusted publishing (OIDC + provenance);
+  `guessit.wasm` / `guessit.wasm.gz` attached to GitHub releases
+
 ## [4.0.0]
 
 A correctness + tooling release. guessit-js still matches Python guessit 3.8.0 on
