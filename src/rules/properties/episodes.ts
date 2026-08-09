@@ -396,7 +396,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
   })
     .defaults({ tags: ['SxxExx'] })
     .regex(
-      `(?<season>\\d+)` + asymmetricSeasonEpMarker + `@?` + seasonEpMarkerPattern + `@?(?<episode>\\d+)`,
+      `(?!0x[0-9a-fA-F])(?<season>\\d+)` + asymmetricSeasonEpMarker + `@?` + seasonEpMarkerPattern + `@?(?<episode>\\d+)`,
     )
     .repeater('+');
 
@@ -410,7 +410,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
     disabled: isSeasonEpisodeDisabled,
   })
     .defaults({ tags: ['SxxExx'] })
-    .regex(`(?<season>\\d+)` + asymmetricSeasonEpMarker + `@?` + seasonEpMarkerPattern + `@?(?<episode>\\d+)`)
+    .regex(`(?!0x[0-9a-fA-F])(?<season>\\d+)` + asymmetricSeasonEpMarker + `@?` + seasonEpMarkerPattern + `@?(?<episode>\\d+)`)
     .regex(
       buildOrPattern(
         [...config.season_ep_markers, ...discreteSeparators, ...config.range_separators],
@@ -725,6 +725,8 @@ export function episodes(config: EpisodesConfig): Rebulk {
 
   // Add rules for validation and cleanup
   rebulk.rules(
+    PreferAnchoredWeakEpisodeRule,
+    SeasonWordDashedEpisodeRule,
     RemoveNumfirstMarkerCollision,
     CountValidator,
     new DiscMarkerRule(config),
@@ -740,6 +742,127 @@ export function episodes(config: EpisodesConfig): Rebulk {
   );
 
   return rebulk;
+}
+
+/**
+ * Competing weak episode numbers in one filepart (upstream #875): a number that is
+ * plainly the anime episode — dash-delimited (" - 09"), zero-padded ("002") — wins
+ * over a digit that belongs to the title ("Mob Psycho 100") or an absolute number
+ * quoted in parentheses ("52 (227)"). An explicit episode-word match ("episode 18")
+ * outranks every weak reading. Scoring: leading zero +4, dash-delimited +1,
+ * inside brackets -2; the top-scoring initiator group survives, and lower-scoring
+ * groups are dropped. Nothing happens when all candidates tie.
+ */
+class PreferAnchoredWeakEpisodeRule extends Rule {
+  static override priority = 40;
+  override priority = 40;
+  override consequence = RemoveMatch;
+
+  when(matches: any, _context: any): any {
+    const input: string = matches.inputString ?? '';
+    const toRemove: any[] = [];
+    const isWeakEp = (m: any) => m.name === 'episode' && !m.private &&
+      (m.tags?.includes('weak-episode') || ['weak_episode', 'weak_duplicate'].includes(m.initiator?.name));
+    const removeGroup = (init: any) => {
+      for (const c of [...(init.children ?? []), init]) {
+        if (!toRemove.includes(c)) toRemove.push(c);
+      }
+      if (!init.children?.length && !toRemove.includes(init)) toRemove.push(init);
+    };
+    for (const filepart of (matches.markers.named('path') as any[]) ?? []) {
+      const weaks = ((matches.range(filepart.start, filepart.end, isWeakEp) as any[]) ?? []);
+      if (!weaks.length) continue;
+      const strong = matches.range(filepart.start, filepart.end, (m: any) =>
+        m.name === 'episode' && !m.private && !isWeakEp(m) &&
+        !!(m.initiator?.children?.named?.('episodeMarker')?.length), 0);
+      const byInit = new Map<any, any[]>();
+      for (const w of weaks) {
+        const init = w.initiator ?? w;
+        byInit.set(init, [...(byInit.get(init) ?? []), w]);
+      }
+      if (strong) {
+        for (const init of byInit.keys()) removeGroup(init);
+        continue;
+      }
+      if (byInit.size < 2) continue;
+      const score = (init: any): number => {
+        let sc = 0;
+        const raw = String(init.raw ?? '');
+        if (/^0\d/.test(raw)) sc += 4;
+        // dash-delimited: the token right before the number is a dash
+        let i = init.start - 1;
+        while (i >= 0 && (input[i] === ' ' || input[i] === '.' || input[i] === '_')) i--;
+        if (input[i] === '-') sc += 1;
+        if (matches.markers.atMatch(init, (m: any) => m.name === 'group', 0)) sc -= 2;
+        return sc;
+      };
+      const scored = [...byInit.keys()].map((init) => [init, score(init)] as const);
+      const top = Math.max(...scored.map(([, sc]) => sc));
+      const winners = scored.filter(([, sc]) => sc === top);
+      if (winners.length === scored.length) continue; // all tie — leave untouched
+      const winnerValues = new Set(winners.flatMap(([init]) => (byInit.get(init) ?? []).map((w) => Number(w.value))));
+      for (const [init, sc] of scored) {
+        if (sc >= top) continue;
+        const eps = byInit.get(init) ?? [];
+        // A multi-value group is a range/list (absolute numbering "(191-195)") and a
+        // group agreeing with the winner ("101 (01)" both read episode 1) both stay.
+        if (eps.length > 1) continue;
+        if (eps.some((w) => winnerValues.has(Number(w.value)))) continue;
+        removeGroup(init);
+      }
+    }
+    return toRemove.length ? toRemove : false;
+  }
+}
+
+/**
+ * "Season N - EE": an anime convention where the space-padded dash joins the season
+ * word to the EPISODE number, not a season range (upstream #875): "Attack on Titan
+ * Season 3 - 11" → season 3, episode 11. A glued dash ("Season 1-3") or an explicit
+ * completeness marker ("Season 1 - 4 Complete") keeps range semantics, and a plural
+ * marker ("Seasons 1 - 5") is always a range.
+ */
+class SeasonWordDashedEpisodeRule extends Rule {
+  static override priority = 32;
+  override priority = 32;
+  override consequence = [RemoveMatch, AppendMatch];
+
+  when(matches: any, _context: any): any {
+    const input: string = matches.inputString ?? '';
+    const toRemove: any[] = [];
+    const toAppend: any[] = [];
+    const seasons = (matches.named('season') as any[]) ?? [];
+    const seen = new Set<any>();
+    for (const season of seasons) {
+      const init = season.initiator ?? season;
+      if (seen.has(init)) continue;
+      seen.add(init);
+      const children = [...(init.children ?? [])];
+      const marker = children.find((c: any) => c.name === 'seasonMarker' && /^[a-zà-ÿа-я]{3,}$/i.test(String(c.raw ?? '')));
+      if (!marker) continue;
+      if (/s$/i.test(String(marker.raw ?? ''))) continue; // "Seasons" — plural means a real range
+      const nums = children.filter((c: any) => c.name === 'season');
+      if (nums.length !== 2) continue;
+      const sep = children.find((c: any) => c.name === 'seasonSeparator');
+      if (!sep || String(sep.raw ?? '').trim() !== '-') continue;
+      // only the space-padded dash ("Season 3 - 11"); a glued "Season 1-3" is a range
+      if (input[sep.start - 1] !== ' ' || input[sep.end] !== ' ') continue;
+      const filepart = matches.markers.atMatch(season, (m: any) => m.name === 'path', 0);
+      if (filepart) {
+        const complete = matches.range(filepart.start, filepart.end,
+          (m: any) => m.name === 'other' && m.value === 'Complete', 0);
+        if (complete) continue;
+      }
+      const episodeMatch = new Match(nums[1].start, nums[1].end, {
+        name: 'episode',
+        value: nums[1].value,
+        inputString: input,
+      });
+      toRemove.push(nums[1]);
+      toAppend.push(episodeMatch);
+    }
+    return (toRemove.length || toAppend.length) ? [toRemove, toAppend] : false;
+  }
 }
 
 /**
