@@ -885,6 +885,35 @@ class CountryAtTitlePosition extends Rule {
  * property to the title. Only fires when there is genuinely no title and the
  * filepart looks like media (has a year/season/episode/date). (Issues #773, #722.)
  */
+/**
+ * A property value whose spelling is also a plain title word (tagged `title-word`
+ * in the vocabulary, e.g. audio_codec "Opus") is really part of the title when it
+ * sits before the first year/season/episode/date anchor of the filepart. Removing
+ * the property match reopens the title hole: "Opus.2025…" → title "Opus",
+ * "Foo.Opus.2025…" → "Foo Opus". A spelling after the anchor stays the property.
+ * (upstream #885)
+ */
+class TitleWordAtTitlePosition extends Rule {
+  static override priority = 64;
+  override priority = 64;
+  override consequence = RemoveMatch;
+
+  override when(matches: Matches, _context: Context): Match[] | false {
+    const toRemove: Match[] = [];
+    const tagged = (matches as any).tagged('title-word') as Match[] ?? [];
+    for (const candidate of Array.isArray(tagged) ? tagged : [tagged]) {
+      if (!candidate || candidate.private) continue;
+      const filepart = matches.markers.atMatch(candidate, (m: Match) => m.name === 'path', 0) as Match | undefined;
+      if (!filepart) continue;
+      const anchor = matches.range(filepart.start, filepart.end,
+        (m: Match) => !m.private && ['year', 'season', 'episode', 'date'].includes(m.name ?? ''), 0) as Match | undefined;
+      if (!anchor || candidate.start >= anchor.start) continue;
+      toRemove.push(candidate);
+    }
+    return toRemove.length ? toRemove : false;
+  }
+}
+
 class PropertyAtTitlePositionAsTitle extends Rule {
   static override priority = -48;
   override consequence = RemoveMatch;
@@ -1046,7 +1075,7 @@ export function title(config: Record<string, unknown>): Rebulk {
     disabled: (context: Context) => isDisabled(context, 'title'),
   });
 
-  rebulk.rules(CountryAtTitlePosition, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle);
+  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle);
 
   // Expected title functional pattern
   const expectedTitle = buildExpectedFunction('expected_title');

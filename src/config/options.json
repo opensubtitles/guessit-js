@@ -114,7 +114,10 @@
             "True-?HD"
           ]
         },
-        "Opus": "Opus",
+        "Opus": {
+          "string": "Opus",
+          "tags": "title-word"
+        },
         "Vorbis": "Vorbis",
         "PCM": "PCM",
         "LPCM": "LPCM"

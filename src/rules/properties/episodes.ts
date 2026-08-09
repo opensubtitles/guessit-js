@@ -134,6 +134,20 @@ function seasonEpisodeConflictSolver(match: any, other: any): any {
     ['season', 'episode'].includes(other.name) &&
     match.initiator !== other.initiator
   ) {
+    // A number-first form ("1 Серия") is weaker than an explicit word-first form
+    // ("Серия 5" / "Сезон 1") — but only when both claim the same digits; a marker-only
+    // overlap ("04ª Temporada" vs "Temporada 720") is not a real number collision.
+    const isWeak = (m: any) => !!(m.tags?.includes('weak-episode') ||
+      ['weak_episode', 'weak_duplicate'].includes(m.initiator?.name));
+    const matchNumfirst = !!match.tags?.includes('numfirst');
+    const otherNumfirst = !!other.tags?.includes('numfirst');
+    if (
+      matchNumfirst !== otherNumfirst &&
+      !isWeak(match) && !isWeak(other) &&
+      match.start < other.end && other.start < match.end
+    ) {
+      return matchNumfirst ? match : other;
+    }
     const matchIsWeak = !!(match.tags?.includes('weak-episode') ||
       ['weak_episode', 'weak_duplicate'].includes(match.initiator?.name));
     const otherIsWeak = !!(other.tags?.includes('weak-episode') ||
@@ -629,6 +643,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
 
   // Add rules for validation and cleanup
   rebulk.rules(
+    RemoveNumfirstMarkerCollision,
     CountValidator,
     new DiscMarkerRule(config),
     FixCorruptedGroupBoundaryValues,
@@ -643,6 +658,46 @@ export function episodes(config: EpisodesConfig): Rebulk {
   );
 
   return rebulk;
+}
+
+/**
+ * RemoveNumfirstMarkerCollision — a number-first match ("60 Сезон") whose marker
+ * word is also claimed by a surviving word-first match ("Сезон 5") yields to it:
+ * the explicit word-then-number form is the intended reading. Runs after
+ * match-level conflicts, so a word-first match whose number was consumed by a
+ * stronger property (e.g. "Temporada 720" where 720 is the resolution) is
+ * already gone and leaves the number-first reading in place.
+ */
+class RemoveNumfirstMarkerCollision extends Rule {
+  static override priority = 70;
+  override priority = 70;
+  override consequence = RemoveMatch;
+
+  when(matches: any, _context: any): any {
+    const toRemove: any[] = [];
+    const isWeak = (m: any) => !!(m.tags?.includes('weak-episode') ||
+      ['weak_episode', 'weak_duplicate'].includes(m.initiator?.name));
+    const numfirsts = (matches.matches ?? []).filter((m: any) =>
+      (m.name === 'season' || m.name === 'episode') && m.tags?.includes('numfirst'));
+    for (const nf of numfirsts) {
+      const nfInit = nf.initiator ?? nf;
+      const collides = (matches.matches ?? []).some((w: any) => {
+        if (w.name !== 'season' && w.name !== 'episode') return false;
+        if (w.tags?.includes('numfirst') || isWeak(w)) return false;
+        const wInit = w.initiator ?? w;
+        if (wInit === nfInit) return false;
+        return wInit.start < nfInit.end && nfInit.start < wInit.end;
+      });
+      if (collides) {
+        toRemove.push(nf);
+        // Drop the whole private parent (marker + any of-count children with it)
+        for (const child of nfInit.children ?? []) {
+          if (child !== nf && !toRemove.includes(child)) toRemove.push(child);
+        }
+      }
+    }
+    return toRemove.length ? toRemove : false;
+  }
 }
 
 /**
