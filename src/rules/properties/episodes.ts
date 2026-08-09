@@ -297,6 +297,9 @@ export function episodes(config: EpisodesConfig): Rebulk {
 
   // 1x02, 1x02x03 patterns
   const seasonEpMarkerPattern = buildOrPattern(config.season_ep_markers, 'episodeMarker');
+  // A separator before the marker requires one after it too: "1x03" and "1 x 03" are
+  // episodes, while "1080.x264" is a number followed by a codec token (#933).
+  const asymmetricSeasonEpMarker = `(?!@` + buildOrPattern(config.season_ep_markers) + `\\d)`;
   rebulk.chain({
     tags: ['SxxExx'],
     validateAll: true,
@@ -307,7 +310,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
   })
     .defaults({ tags: ['SxxExx'] })
     .regex(
-      `(?<season>\\d+)@?` + seasonEpMarkerPattern + `@?(?<episode>\\d+)`,
+      `(?<season>\\d+)` + asymmetricSeasonEpMarker + `@?` + seasonEpMarkerPattern + `@?(?<episode>\\d+)`,
     )
     .repeater('+');
 
@@ -321,7 +324,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
     disabled: isSeasonEpisodeDisabled,
   })
     .defaults({ tags: ['SxxExx'] })
-    .regex(`(?<season>\\d+)@?` + seasonEpMarkerPattern + `@?(?<episode>\\d+)`)
+    .regex(`(?<season>\\d+)` + asymmetricSeasonEpMarker + `@?` + seasonEpMarkerPattern + `@?(?<episode>\\d+)`)
     .regex(
       buildOrPattern(
         [...config.season_ep_markers, ...discreteSeparators, ...config.range_separators],

@@ -41,7 +41,8 @@ export function screenSize(config: ScreenSizeConfig): Rebulk {
   const frameRatePattern = buildOrPattern(frameRates, 'frame_rate');
   const interlacedPattern = buildOrPattern([...interlaced], 'height');
   const progressivePattern = buildOrPattern([...progressive], 'height');
-  const resPattern = `(?:(?<width>\\d{3,4})(?:x|\\*))?`;
+  const resSeparator = `(?:x|\\*|×)`;
+  const resPattern = `(?:(?<width>\\d{3,4})${resSeparator})?`;
 
   rebulk.regex(resPattern + interlacedPattern + `(?<scan_type>i)` + frameRatePattern + `?`);
   rebulk.regex(resPattern + progressivePattern + `(?<scan_type>p)` + frameRatePattern + `?`);
@@ -52,7 +53,9 @@ export function screenSize(config: ScreenSizeConfig): Rebulk {
     conflictSolver: (match: Match, other: Match) =>
       other.name === 'screen_size' ? '__default__' : match,
   });
-  rebulk.regex(`(?<width>\\d{3,4})-?(?:x|\\*)-?(?<height>\\d{3,4})`, {
+  // Trailing "up" (upscaled) marker may glue to the resolution (#741); × is the U+00D7 separator.
+  // Separators around the "x" must be symmetric: "1920x1080" or "1920 x 1080", never "1080 x265".
+  rebulk.regex(`(?<width>\\d{3,4})(?:${resSeparator}|-${resSeparator}-)(?<height>\\d{3,4})(?:up)?`, {
     conflictSolver: (match: Match, other: Match) =>
       other.name === 'screen_size' ? '__default__' : other,
   });
@@ -108,7 +111,7 @@ class PostProcessScreenSize extends Rule {
         //   "H"              → height H only (defaults to 'p')
         const raw = String(match.raw ?? '');
         // Full WxH form (both dimensions present), allow optional separators around x/*
-        const rxWxH = /^(\d{3,4})\s*[xX*]\s*(\d{3,4})$/i;
+        const rxWxH = /^(\d{3,4})\s*[xX*×]\s*(\d{3,4})(?:up)?$/i;
         const mWxH = rxWxH.exec(raw);
         if (mWxH) {
           values = { width: mWxH[1], height: mWxH[2], scan_type: undefined };
@@ -186,10 +189,19 @@ class ResolveScreenSizeConflicts extends Rule {
 
       let hasNeighbor = false;
 
-      const videoProfile = matches.range(screenSizeMatch.end, filepart.end, (m: Match) => m.name === 'video_profile', 0) as Match | undefined;
-      if (videoProfile && (matches.holes(screenSizeMatch.end, videoProfile.start, { predicate: (h: Match) => !!(h.value && String(h.value).replace(new RegExp(`[${sepsPattern}]`, 'g'), '')) }) as Match[]).length === 0) {
-        toRemove.push(...conflicts);
-        hasNeighbor = true;
+      const allScreensizes = (matches.range(filepart.start, filepart.end, (m: Match) => m.name === 'screen_size') as Match[]) ?? [];
+      const groupOf = (m: Match) =>
+        matches.markers.atMatch(m, (marker: Match) => marker.name === 'group', 0);
+      const following = matches.range(screenSizeMatch.end, filepart.end,
+        (m: Match) => m.name === 'video_profile' || m.name === 'video_codec', 0) as Match | undefined;
+      if (following && (matches.holes(screenSizeMatch.end, following.start, { predicate: (h: Match) => !!(h.value && String(h.value).replace(new RegExp(`[${sepsPattern}]`, 'g'), '')) }) as Match[]).length === 0) {
+        // A video_codec marks the number as a resolution ("1080.x264" → 1080p) only when both
+        // sit in the same tag block and the part spells no other resolution (#933).
+        if (following.name === 'video_profile' ||
+            (allScreensizes.length === 1 && groupOf(screenSizeMatch) === groupOf(following))) {
+          toRemove.push(...conflicts);
+          hasNeighbor = true;
+        }
       }
 
       const previous = matches.previous(screenSizeMatch, (m: Match) =>
