@@ -2,6 +2,45 @@
 
 All notable changes to guessit-js are documented here.
 
+## [4.1.0]
+
+Upstream-resync feature release. Python guessit shipped v4.0.0–v4.4.0 (adopting
+several guessit-js fixes on the way); this release ports their 4.x feature set
+back. Their test corpus grew by 225 entries — guessit-js now passes 200 of them
+(suite: 1036 → 1241 fixtures, all green; the open 25 are tracked in
+`test/fixtures/upstream-pending.yml`).
+
+### New parsing features
+- **Localized season/episode words** — Temporada, Сезон, Sezon, Staffel, évad,
+  Bölüm, серия, aflevering, Folge, Episodul, rész and more; number-first forms
+  ("1ª Temporada", "5-й сезон", "2.Sezon.7.Bolum") with ordinal suffixes, and
+  totals ("Capitulo 5 de 12" → `episode_count`, "Temporada 1 de 5" → `season_count`)
+- **CJK markers** — 第3集 / 第二季 / 第十一季 with Han numerals up to 99 (Chinese,
+  upstream #779), plus tightened Japanese シーズン/期 guards
+- **Complete-series detection** — COMPLETE (MINI)SERIES, INTÉGRALE, L'Intégrale,
+  Coffret, "Seasons 1 & 2 - Complete"; a complete run without a year now types as
+  episode (upstream #953)
+- **Anime credit sequences** — OP/ED/OPED/NCOP/NCED with new `credits_number`
+  property ("OP4a" → "4a"), version suffixes (ED2v2), and a separate `Creditless` value
+- **VR / stereoscopic layouts** — VR-180/VR-360/EAC360; SBS/LR/TB/OU gated on a
+  VR/3D context signal (so SBS the broadcaster survives); Half Side By Side /
+  Half Over Under canonical values; DoVi → Dolby Vision
+- **Bare resolutions** — "1080.x264" → 1080p when a codec follows (#933),
+  "1920×1080" (U+00D7), "1280x720up" upscaled marker (#741); "1080 x265" is no
+  longer a fake 1080x265 resolution and "1080.x264" no longer a fake SxxExx
+- **Websites** — full IANA TLD list (1285 entries, the same data file Python
+  ships): "www.TamilBlasters.vip - Shang-Chi (2021)" → website + title
+- **Sources & markers** — Laserdisc/LDRip; Spanish/Portuguese T02E22/T01XE08
+- **Title fixes** — title-word reclaim ("Opus.2025" → title Opus, upstream #885),
+  leading-word titles ("Uk.Top.Gear.S01E01", "Au bout c'est la mer - 8x01"),
+  canonical-cased tags stay properties ("Extended.2019" keeps edition), CAM
+  refinement (bare Cam = episode title, Cam + release metadata = CAM source, #732)
+
+### Internals
+- `count` groups resolved by ownership (CountValidator port); word-first vs
+  number-first collision disambiguation by dangling-number analysis; asymmetric
+  SxxExx marker guard; output schema regenerated (50 properties, 16 enums)
+
 ## [4.0.2]
 
 Bug-fix release (fixes #2).

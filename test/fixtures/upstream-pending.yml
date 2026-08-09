@@ -1,0 +1,221 @@
+# Upstream 4.4 fixtures guessit-js does not pass yet — tracked, excluded from the suite.
+# Move entries back into the upstream-new-*.yml files as they start passing.
+
+? __default__
+: type: episode
+
+# ── from upstream-new-enable_disable_properties.yml ──
+? Star Wars - The Mandalorian and Grogu (2026) 720p x265.mkv
+: options: --exclude alternative_title
+  title: Star Wars - The Mandalorian and Grogu
+  -alternative_title: The Mandalorian and Grogu
+
+# ── from upstream-new-episodes.yml ──
+? Adam-12 1968 Season 1 Complete x264 [i_c]/Adam-12 S01E02 Log 141 The Color TV Bandit.mkv
+: title: Adam-12
+  year: 1968
+  season: 1
+  episode: 2
+  episode_title: Log 141 The Color TV Bandit
+  -title: Adam
+  -alternative_title: '12'
+
+# a real leading scene group followed by a multi-word title + episode is still detected
+# (the hyphenated-title guard must only fire for a single dash-joined word)
+? FoV-Show.Name.S01E01.720p.HDTV.x264.mkv
+: release_group: FoV
+  title: Show Name
+  season: 1
+  episode: 1
+
+# --- #812: a real title word must not be consumed as language/other/country ---
+
+# lone article swallows the following language word (upstream #737)
+? Chapter.19.The.Convert.720p.mkv
+: title: Chapter
+  episode: 19
+  episode_title: The Convert
+  screen_size: 720p
+  -other: Converted
+
+# regression anchors (#743 boundary): the lone-article merge must stay scoped — an episode_title
+# that merely *ends* with an article must NOT swallow a following real other/proper word into the
+# title (a broadening that did this was withdrawn from PR #838). Assert the property survives.
+? How the Universe Works (2010) Season 1 S01/How the Universe Works (2010) - S44E03 - Monster Black Hole.mkv
+: title: How the Universe Works
+  year: 2010
+  season: 44
+  episode: 3
+  episode_title: Monster Black Hole
+  -season: 1
+
+# guard: with equally-complete SxxExx in both fileparts, the parent (real episode) still wins
+# over a sample clip in a subdirectory — the filename must not override it
+? video/zettai karen children/01 - Absolutely Lovely! Their Name Is The Children.mkv
+: title: zettai karen children
+  episode: 1
+  episode_title: Absolutely Lovely! Their Name Is The Children
+  container: mkv
+  type: episode
+
+# #627: with `-t episode`, the single-digit episode rule must not steal the digit prefix of an
+# obfuscated dash-separated release group ("...x264.1-URANiME-Obfuscated"). Result matches auto.
+? Kemono.Michi.Rise.Up.E03.1080p.WEB.x264.1-URANiME-Obfuscated
+: options: -t episode
+  title: Kemono Michi Rise Up
+  episode: 3
+  release_group: 1-URANiME
+  source: Web
+  video_codec: H.264
+  other: Obfuscated
+  -episode_title: URANiME
+
+# #794: a weekday glued to the broadcast date ("Thu.2.Jan.2025") is part of the air-date stamp,
+# not the episode_title; absorbing it into the date frees the real title sitting after the date.
+? A.Place.in.the.Sun.S2025E01.Thu.2.Jan.2025.Mar.Menor.Spain.1080p.ALL4.WEB-DL.AAC2.0.H.264-TBN
+: title: A Place in the Sun
+  season: 2025
+  episode: 1
+  date: 2025-01-02
+  episode_title: Mar Menor Spain
+  screen_size: 1080p
+  streaming_service: Channel 4
+  source: Web
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: TBN
+  type: episode
+
+# #874: non-English season/episode keywords. Spanish/Portuguese "Temporada" (with
+# ordinals "1ª"/"04ª"/"3º" or bare), Turkish "Sezon"/"Bölüm", Russian
+# "Сезон"/"Серия"/"Эпизод" (both word-first and number-first, with "-й"/"-я"
+# ordinals), Italian "Stagione"/"Episodio", plus the compact "T02E22"/"T01XE08" forms.
+? Проклytie 5-й сезон 09-я серия
+: season: 5
+  episode: 9
+? Serial 5-го сезон 9 серия
+: season: 5
+  episode: 9
+
+# #874: a title ending in a number right before a number-first keyword must not
+# be read as that keyword's season number when the keyword carries its own
+# trailing number ("Studio 60 Сезон 5" -> season 5, "60" stays in the title).
+? Studio 60 Сезон 5 1080p
+: season: 5
+? Apollo 18 Temporada 2
+: season: 2
+
+# #890: a leading original-language (non-Latin) title glued before the romanized title is
+# split — the Latin part is the title, the original run becomes alternative_title.
+? 超能警探.Memorist.S01E01.2160p.WEB-DL.H265.AAC-FLTTH.mkv
+: title: Memorist
+  alternative_title: 超能警探
+  season: 1
+  episode: 1
+  screen_size: 2160p
+  source: Web
+  video_codec: H.265
+  release_group: FLTTH
+
+# #933: the "season x episode" marker tolerates separators only when they are symmetric —
+# "1 x 03" stays an episode, while a lone leading separator marks a codec token ("1080.x264").
+
+# ── from upstream-new-movies.yml ──
+? F1.The.Movie.2025.1080p.AMZN.WEB-DL.DDP5.1.Atmos.H.264-BYNDR.mkv
+: title: F1 The Movie
+  year: 2025
+  -film: 1
+? F1.2024.1080p.mkv
+: title: F1
+  -film: 1
+
+# #751: with a film_title and no real title after the film number, a language-only
+# hole ("Ita Eng") must stay languages and not be promoted to a bogus title.
+? Fast and Furious F9 2021 BluRay 1080p.H264 Ita Eng AC3 5.1 Sub Ita Eng.mkv
+: film_title: Fast and Furious
+  film: 9
+  year: 2021
+  source: Blu-ray
+  screen_size: 1080p
+  video_codec: H.264
+  language: [Italian, English]
+  subtitle_language: Italian
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  -title: y
+? 劇場版 ペンギン・ハイウェイ Penguin Highway The Movie (BD 1280x720 AVC).mp4
+: title: Penguin Highway The Movie
+  alternative_title: 劇場版 ペンギン・ハイウェイ
+  source: Blu-ray
+  screen_size: 720p
+  video_codec: H.264
+
+# #885: a property value that is also a plain title word (tagged title-word, e.g. audio_codec
+# "Opus") sitting in the title zone -- before the year/season/episode anchor -- is title text,
+# not a codec. Case-insensitive and works at the start, end or middle of the title.
+
+# ── from upstream-new-various.yml ──
+? My File 238ddcd5aff.mkv
+: title: My File 238ddcd5aff
+  -cd: 5
+
+# standalone CD tokens still match
+? Show.2020.[Remux].1080p.mkv
+: title: Show
+  year: 2020
+  other: Remux
+  screen_size: 1080p
+  -release_group: Remux
+
+# --- #816: Unicode × must be read as a resolution separator, not a season/episode ---
+
+
+? "[ASW] Fumetsu no Anata e - S01E03 [1080p HEVC x265 10Bit][AAC] (To Your Eternity)"
+: title: Fumetsu no Anata e
+  season: 1
+  episode: 3
+  release_group: ASW
+
+# the trailing "+" is normalised away by StripSeparators (it is a separator); the
+# group is now correctly identified instead of the trailing (WEB … service) parenthetical
+? "[SubsPlus+] Helck - S01E01 (WEB 1080p HIDIVE)"
+: title: Helck
+  season: 1
+  episode: 1
+  release_group: SubsPlus
+? "[SubsPlus+] Spy Classroom - S02E01 (WEB 1080p ADN) (Spy Kyoushitsu)"
+: title: Spy Classroom
+  season: 2
+  episode: 1
+  release_group: SubsPlus
+
+# casing guard: an uppercase US tag is a real country, kept
+
+? '[Coalgirls]_Bakemonogatari_OP4a_(1920x1080_Blu-ray_FLAC)_[AF4FF3CC].mkv'
+: title: Bakemonogatari
+  other: Opening Credits
+  credits_number: 4a
+  source: Blu-ray
+  release_group: Coalgirls
+? 'NC/[VCB-Studio] Ishuzoku Reviewers [NCED_EP12][Ma10p_1080p][x265_flac].mkv'
+: title: Ishuzoku Reviewers
+  other:
+  - Ending Credits
+  - Creditless
+  episode: 12
+  release_group: VCB-Studio
+
+# The name "Ed" must not be captured as an Ending Credits token (case-sensitive).
+? "Show.Name.S03E21.22.FASTSUB.VOSTFR.HDTV.XviD.GROUP"
+: title: Show Name
+  season: 3
+  episode: [21, 22]
+  release_group: GROUP
+  source: HDTV
+  video_codec: Xvid
+  other: Fast Subtitled
+  type: episode
+
+# --- #776: a release group casing must follow the actual match (the scene tag at the end of the
+# filename), not a parent folder with a different casing ---

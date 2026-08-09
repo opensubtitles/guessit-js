@@ -1222,7 +1222,7 @@
           "tags": "uhdbluray-neighbor"
         },
         "Dolby Vision": {
-          "regex": "(?:Dolby-?Vision|DV)",
+          "regex": "(?:Dolby-?Vision|DoVi|DV)",
           "tags": "uhdbluray-neighbor"
         },
         "BT.2020": {

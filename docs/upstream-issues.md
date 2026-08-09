@@ -155,3 +155,38 @@ remain open and are individually marginal/risky.
 - **Still open (no clean fix — ambiguous, not bugs):**
   - **Ambiguous anime formatting** (#690/#696/#747): "Season 2 - 15", romaji +
     "(English title)", inconsistent leading numbers.
+
+---
+
+## 2026-08-09 — upstream 4.x resync (upstream released v4.0.0–v4.4.0)
+
+Upstream shipped eight releases (June–July 2026) and adopted several guessit-js
+fixes verbatim (the `cd` word-boundary regex from #742, archive/image containers
+from #272/#273, `xXx` leading-property titles from #773). We resynced the other
+direction: their test corpus grew by 225 entries; guessit-js now passes **200 of
+them** (absorbed into `test/fixtures/upstream-new-*.yml`), the remaining 25 are
+quarantined with expectations in `test/fixtures/upstream-pending.yml`.
+
+Ported feature clusters (v4.1.0): localized season/episode words with
+number-first forms and counts (Temporada/Сезон/Sezon/Staffel/évad/Bölüm/…, "5 de
+12" → episode_count), COMPLETE/INTÉGRALE → series detection, CJK 第N季/第N集 with
+Han numerals, VR/stereoscopic layouts (VR-180, EAC360, SBS/OU gated on VR
+context), anime credit sequences (OP/ED/NCOP/NCED + credits_number + Creditless),
+bare resolutions ("1080.x264" → 1080p, #933) with the asymmetric SxxExx guard,
+U+00D7 separator, upscaled marker (#741), Laserdisc/LDRip, T02E22 markers, full
+IANA TLD website detection, title-word reclaim (Opus, #885), leading-word titles
+(Uk./Au…, widened #638), CAM refinement (#732), DoVi.
+
+New upstream issues triaged:
+| # | Claim | Status |
+|---|-------|--------|
+| 929 | `--type episode` picks episode 12 from "Adam-12" over S01E02 | not fixed — JS shares the bug (worse: also without --type); needs title-token protection in the weak-episode pass |
+| 875 | Spurious season/episode from title digits / parens / "Season N - EE" ranges | not fixed — JS shares most patterns (2/10 cases pass); same episodes.py-family heuristics needed; upstream also still open |
+| 877 | Anime/fansub epic: episode+type (B1), bracketed titles (B2) | partial — ED/OP special markers already work in JS (B1c/B1d pass); the rest (bare fansub numbers, fully-bracketed titles) tracked in upstream-pending.yml |
+
+Remaining quarantined clusters (upstream-pending.yml): anime bracketed
+release-groups ([ASW]/[SubsPlus+]/[Coalgirls] with trailing parens or `+`),
+Season-directory vs S44E03 precedence (#797), Adam-12 (#929), obfuscated
+"Ke"-title (URANiME), FASTSUB double episode, weekday-date episode_title,
+F1/film-marker titles, CJK-prefixed Latin titles, marker-collision residuals
+("Studio 60 Сезон 5", "Apollo 18 Temporada 2").

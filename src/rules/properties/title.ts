@@ -865,12 +865,20 @@ class CountryAtTitlePosition extends Rule {
       const filepart = matches.markers.atMatch(c, (m: Match) => m.name === 'path', 0) as Match | undefined;
       if (!filepart) continue;
       if (![...inp.slice(filepart.start, c.start)].every((ch: string) => seps.includes(ch))) continue;
-      const year = matches.range(c.end, filepart.end, (m: Match) => !m.private && m.name === 'year', 0) as Match | undefined;
-      if (!year) continue;
-      // Reject if a season/episode/date comes before/with the year (a real country tag).
-      const se = matches.range(c.end, year.start, (m: Match) => !m.private && ['season', 'episode', 'date'].includes(m.name ?? ''), 0) as Match | undefined;
-      if (se) continue;
-      if (![...inp.slice(c.end, year.start)].every((ch: string) => seps.includes(ch))) continue;
+      // A release tag (streaming/group prefix) or bracketed token is a deliberate tag.
+      if (['release-group-prefix', 'streaming_service.prefix', 'streaming_service.suffix']
+        .some((t) => c.tags?.includes(t))) continue;
+      if (matches.markers.atMatch(c, (m: Match) => m.name === 'group', 0)) continue;
+      // Anchor on the first year/season/episode/date after the candidate (upstream widened
+      // this beyond years so "Uk.Top.Gear.S01E01" and "Au bout ... - 8x01" qualify).
+      const anchor = matches.range(c.end, filepart.end,
+        (m: Match) => !m.private && ['year', 'season', 'episode', 'date'].includes(m.name ?? ''), 0) as Match | undefined;
+      if (!anchor) continue;
+      if (![...inp.slice(c.end, anchor.start)].every((ch: string) => seps.includes(ch))) {
+        // Plain title text between the word and the anchor means the word opens the title
+        // ("Au bout c'est la mer - 8x01"); another property in the gap means a real tag.
+        if (matches.range(c.end, anchor.start, (m: Match) => !m.private && m.value != null, 0)) continue;
+      }
       out.push(c);
     }
     return out.length ? out : false;
@@ -929,6 +937,9 @@ class PropertyAtTitlePositionAsTitle extends Rule {
       const lead = matches.range(filepart.start, filepart.end, (m: Match) => !m.private && !!m.value, 0) as Match | undefined;
       if (!lead || !['other', 'country', 'edition'].includes(lead.name ?? '')) continue;
       if (lead.start >= anchor.start) continue; // must be in the title position (before the anchor)
+      // A canonical spelling ("Extended", "Proper", "US") is a deliberate tag and stays the
+      // property; only a case-divergent spelling ("xXx" vs XXX, "Us" vs US) reads as a title.
+      if ((lead.raw ?? '') === String(lead.value ?? '')) continue;
       if (![...inp.slice(filepart.start, lead.start)].every((c: string) => seps.includes(c))) continue;
       out.push(lead);
     }

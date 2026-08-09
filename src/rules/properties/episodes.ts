@@ -644,7 +644,9 @@ export function episodes(config: EpisodesConfig): Rebulk {
   // Detached of X count (e.g. "14 of 21", "14.of.21", "1-of-6")
   // Use @? (altDash abbreviation) so separators like '.' and ' ' are also matched.
   rebulk.regex(
-    `(?<episode>\\d+)@?` +
+    // The lookbehind keeps this off token tails: "AC3-de[42]" is not "episode 3 of 42"
+    // ('de' is also a Spanish of-word — codec suffixes must stay intact).
+    `(?<![^\\W_])(?<episode>\\d+)@?` +
       ofWordPattern +
       `@?(?<count>\\d+)@?` +
       episodeWordPattern + '?',
