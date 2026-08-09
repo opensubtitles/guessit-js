@@ -7,6 +7,7 @@
 # ── from upstream-new-enable_disable_properties.yml ──
 ? Star Wars - The Mandalorian and Grogu (2026) 720p x265.mkv
 : options: --exclude alternative_title
+  type: movie
   title: Star Wars - The Mandalorian and Grogu
   -alternative_title: The Mandalorian and Grogu
 

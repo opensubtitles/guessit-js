@@ -223,6 +223,7 @@ abstract class TitleBaseRule extends Rule {
   protected checkTitlesInFilepart(
     filepart: Match,
     matches: Matches,
+    context?: any,
   ): { toAppend: Match[]; toRemove: Match[] } {
     const toAppend: Match[] = [];
     const toRemove: Match[] = [];
@@ -446,7 +447,10 @@ abstract class TitleBaseRule extends Rule {
       }
       if (trimmedHole.length > 0 && !this.shouldRemove(trimmedHole) && trimmedHole.value) {
         // Split title at titleSeps (- / | + \) to create title + alternative_title
-        const splitResult = this.splitTitleAlternative(trimmedHole, inp);
+        // Skip the split when the alternative property is excluded (--exclude alternative_title).
+        const splitResult = (this.alternativePropertyName && !isDisabled(context, this.alternativePropertyName))
+          ? this.splitTitleAlternative(trimmedHole, inp)
+          : null;
         if (splitResult) {
           splitResult.title.name = this.matchName;
           toAppend.push(splitResult.title);
@@ -619,7 +623,7 @@ abstract class TitleBaseRule extends Rule {
       yearFileparts.delete(filepart); // Track which year fileparts are processed
       if (!this.filepartFilter(filepart)) continue;
 
-      const result = this.checkTitlesInFilepart(filepart, matches);
+      const result = this.checkTitlesInFilepart(filepart, matches, context);
       if (result.toAppend.length > 0 || result.toRemove.length > 0) {
         // If we found the series name, rename titles with different values to episode_title
         if (serieNameMatch) {
@@ -643,7 +647,7 @@ abstract class TitleBaseRule extends Rule {
     // prefer the year-filepart title (e.g., "La Science des Rêves" over "La Science Des Reves").
     for (const filepart of yearFileparts) {
       if (!this.filepartFilter(filepart)) continue;
-      const result = this.checkTitlesInFilepart(filepart, matches);
+      const result = this.checkTitlesInFilepart(filepart, matches, context);
       const filteredAppend: Match[] = [];
       for (const newTitle of result.toAppend) {
         if (newTitle.name !== this.matchName) {
@@ -807,7 +811,11 @@ class ExtendLoneArticleTitle extends Rule {
     const inp = (matches as any).inputString || '';
     const out: Array<{ title: Match; prop: Match }> = [];
     const titles = (matches.named('title') as Match[] | Match | undefined);
-    const titleArr = Array.isArray(titles) ? titles : titles ? [titles] : [];
+    const epTitles = (matches.named('episode_title') as Match[] | Match | undefined);
+    const titleArr = [
+      ...(Array.isArray(titles) ? titles : titles ? [titles] : []),
+      ...(Array.isArray(epTitles) ? epTitles : epTitles ? [epTitles] : []),
+    ];
     for (const title of titleArr) {
       if (!ARTICLES.has(String(title.value ?? '').trim().toLowerCase())) continue;
       const filepart = matches.markers.atMatch(title, (m: Match) => m.name === 'path', 0) as Match | undefined;
