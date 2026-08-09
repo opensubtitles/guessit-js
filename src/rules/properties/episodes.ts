@@ -515,7 +515,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
       context?.type === 'movie' || isDisabled(context, 'episode'),
   })
     .defaults({ validator: null, tags: ['weak-episode'] })
-    .regex(`(?<episode>\\d{2})(?!(?:st|nd|rd|th)\\b)`)
+    .regex(`(?<![^\\W_])(?<episode>\\d{2})(?!(?:st|nd|rd|th)\\b)(?!(?![vV]\\d)[^\\W_])`)
     .regex(`v(?<version>\\d+)`)
     .repeater('?')
     .regex(`(?<episodeSeparator>[x-])(?<episode>\\d{2})`, {
@@ -530,7 +530,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
       context?.type === 'movie' || isDisabled(context, 'episode'),
   })
     .defaults({ validator: null, tags: ['weak-episode'] })
-    .regex(`0(?<episode>\\d{1,2})`)
+    .regex(`(?<![^\\W_])0(?<episode>\\d{1,2})(?!(?![vV]\\d)[^\\W_])`)
     .regex(`v(?<version>\\d+)`)
     .repeater('?')
     .regex(`(?<episodeSeparator>[x-])0(?<episode>\\d{1,2})`, {
@@ -550,7 +550,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
       tags: ['weak-episode'],
       name: 'weak_episode',
     })
-    .regex(`(?<episode>\\d{3,4})`)
+    .regex(`(?<![^\\W_])(?<episode>\\d{3,4})(?!(?![vV]\\d)[^\\W_])`)
     .regex(`v(?<version>\\d+)`)
     .repeater('?')
     .regex(`(?<episodeSeparator>[x-])(?<episode>\\d{3,4})`, {
@@ -565,7 +565,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
       context?.type !== 'episode' || isDisabled(context, 'episode'),
   })
     .defaults({ validator: null, tags: ['weak-episode'] })
-    .regex(`(?<episode>\\d)`)
+    .regex(`(?<![^\\W_])(?<episode>\\d)(?!-[a-z])(?!(?![vV]\\d)[^\\W_])`)
     .regex(`v(?<version>\\d+)`)
     .repeater('?')
     .regex(`(?<episodeSeparator>[x-])(?<episode>\\d{1,2})`, {
@@ -627,7 +627,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
       validator: null,
       conflictSolver: seasonEpisodeConflictSolver,
     })
-    .regex(`(?<season>\\d{1,2})(?<episode>\\d{2})`)
+    .regex(`(?<![^\\W_])(?<season>\\d{1,2})(?<episode>\\d{2})(?!(?![vV]\\d)[^\\W_])`)
     .regex(`v(?<version>\\d+)`)
     .repeater('?')
     .regex(`(?<episodeSeparator>x|-)(?<episode>\\d{2})`, {
