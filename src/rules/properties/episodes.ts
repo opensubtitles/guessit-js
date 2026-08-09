@@ -236,7 +236,10 @@ function seasonEpisodeConflictSolver(match: any, other: any): any {
  * Validate ordering of season/episode lists
  */
 function orderingValidator(match: any): boolean {
-  const values = match.children?.to_dict?.() || {};
+  // rebulk-js names it toDict (to_dict was the Python spelling and always
+  // returned undefined here, silently skipping ordering validation)
+  const dict = match.children?.toDict?.() ?? match.children?.to_dict?.();
+  const values: any = dict instanceof Map ? Object.fromEntries(dict) : (dict || {});
 
   if (values.season && Array.isArray(values.season)) {
     const sorted = [...values.season].sort((a, b) => a - b);

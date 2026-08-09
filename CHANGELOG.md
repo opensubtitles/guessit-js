@@ -2,6 +2,16 @@
 
 All notable changes to guessit-js are documented here.
 
+## [4.3.1]
+
+- **#744 fully fixed** — "Ted.Lasso.S03E03.4-5-1" keeps the formation whole:
+  episode 3, episode_title "4-5-1" (Python still reads episodes [3,4,5])
+- ordering validation was silently disabled in the SxxExx chains (a Python-named
+  `to_dict` call that always returned undefined) — now active, guarding
+  decreasing chain continuations
+- docs/upstream-issues.md refreshed: #690, #693, #696, #741, #797 rows marked
+  fixed by the v4.1–v4.3 work (verified against the current build)
+
 ## [4.3.0]
 
 Fixes upstream guessit's two remaining open parsing issues — **#875** (spurious

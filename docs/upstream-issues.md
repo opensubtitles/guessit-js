@@ -10,7 +10,7 @@ already correct or reasonable (often better than Python) · **partial** = improv
 but not complete · **not fixed / not done** = with the reason inline · `wontfix` =
 invalid/ambiguous/env-specific.
 
-**Progress (as of 2026-06-02):** every open issue below has an explicit disposition.
+**Progress (as of 2026-06-02, see the 2026-08-09 update below — several rows in this table were later fixed):** every open issue below has an explicit disposition.
 **32 fixed** (272, 273, 623, 634, 638, 640, 646, 651, 652, 667, 670, 671, 705, 722, 732,
 737, 742, 743, 745, 746, 763, 784, 789, 790, 796, 800, 773, 301, 618, 622, 630, 708) · **7 already
 work / acceptable** (648, 660, 752, 774, 637, 741, 771) · the rest carry an inline
@@ -52,7 +52,7 @@ remain open and are individually marginal/risky.
 | 737 | https://github.com/guessit-io/guessit/issues/737 | ★ `The.English.S01E01...` → `title:"The"`, `language:"English"` | **fixed** (lone-article title extend) |
 | 742 | https://github.com/guessit-io/guessit/issues/742 | `My File 238ddcd5aff.mkv` → `cd:5`; `cd` matches mid-token, needs word boundary | **fixed** — added a leading word boundary to the `cd` regex so it only matches a standalone `CD<n>` token, not `cd` glued inside a word/hash (`238ddcd5aff`/`abcd5` → no `cd`; `CD1`/`CD.1`/`(CD3)`/`_CD1`/`-CD1`/`cd1of2` still work). Python still mis-parses this. (boundary written as `(?<!\d)(?<![^\W\d_])` — no literal `-`, which the `dash` abbreviation would otherwise corrupt) |
 | 743 | https://github.com/guessit-io/guessit/issues/743 | ★ `The.Mandalorian.S03E03.Chapter.19.The.Convert...` → `other:"Converted"`, truncated episode_title | **fixed** (Title-Case Convert→title) |
-| 744 | https://github.com/guessit-io/guessit/issues/744 | `Ted.Lasso.S03E03.4-5-1...` → `episode:[3,4,5]`, `episode_title:"1"`; "4-5-1" eaten as range | partial — JS gives episode 3 + episode_title '4' (better than Python's episode [3,4,5]); the formation '4-5-1' still isn't kept whole; needs title-context |
+| 744 | https://github.com/guessit-io/guessit/issues/744 | `Ted.Lasso.S03E03.4-5-1...` → `episode:[3,4,5]`, `episode_title:"1"`; "4-5-1" eaten as range | **fixed** (v4.3.1) — episode 3 + episode_title '4-5-1' kept whole (FormationRunEpisodeTitle); Python still gives [3,4,5] |
 | 745 | https://github.com/guessit-io/guessit/issues/745 | ★ `[ASW] Oshi no Ko - 01...` → `title:"Oshi no"`, `language:"Korean"`; "Ko" → Korean | **fixed** (stop-word trailing-crop guard) |
 | 746 | https://github.com/guessit-io/guessit/issues/746 | ★ `Schmigadoon.S02E04.Something.Real...` → `other:"Proper"`, episode_title truncated | **fixed** (Title-Case Real→title) |
 | 757 | https://github.com/guessit-io/guessit/issues/757 | `[SubsPlus+] Helck...` → group mis-detected; `+` in leading-bracket group name breaks detection | not fixed — JS already gets release_group 'SubsPlus' (better than Python's wrong group); only the trailing '+' is lost because '+' is a global separator char. Low value, risky to change sep handling |
@@ -80,20 +80,20 @@ remain open and are individually marginal/risky.
 | 660 | https://github.com/guessit-io/guessit/issues/660 | `HI.SCORE.GIRL...` → `language:hi`; suppress 2-letter lang at title start (debatable) | **works** (title kept, no phantom hi) |
 | 667 | https://github.com/guessit-io/guessit/issues/667 | Anime `S2 - 01` → episode as episode_title "01" | **fixed** (numeric episode_title w/ season but no episode → episode) |
 | 671 | https://github.com/guessit-io/guessit/issues/671 | Japanese episode marker `第195話` (CJK parsing) | **fixed** (CJK 第N話/シーズン/期 markers) |
-| 690 | https://github.com/guessit-io/guessit/issues/690 | `Re ZERO -Starting Life...- Season 2 - 15` → season:15; ambiguous formatting | not fixed — ambiguous anime formatting ('Season 2 - 15'); risky |
-| 693 | https://github.com/guessit-io/guessit/issues/693 | Resolution without 'p' (`720`/`1080`) → S/E; maintainer reluctant | not done — maintainer-reluctant; bare 720/1080 as resolution collides with episode numbers |
-| 696 | https://github.com/guessit-io/guessit/issues/696 | Romaji title + `(English title)` → group mis-detected | not fixed — anime romaji + '(English title)' group mis-detection; fragile |
+| 690 | https://github.com/guessit-io/guessit/issues/690 | `Re ZERO -Starting Life...- Season 2 - 15` → season:15; ambiguous formatting | **fixed** (v4.3.0) — Season-dash-episode rule: season 2, episode 15, title whole |
+| 693 | https://github.com/guessit-io/guessit/issues/693 | Resolution without 'p' (`720`/`1080`) → S/E; maintainer reluctant | **fixed** (v4.1.0, upstream #933 port) — bare 720/1080/2160 → screen_size when a codec follows in the same tag block |
+| 696 | https://github.com/guessit-io/guessit/issues/696 | Romaji title + `(English title)` → group mis-detected | **fixed** (v4.2.0) — leading anime bracket wins over the trailing parenthetical; title/season/episode all correct |
 | 705 | https://github.com/guessit-io/guessit/issues/705 | Feature: opening/ending sequence detection (extra_type) | **fixed** (NCOP→Opening Credits, NCED→Ending Credits) |
 | 708 | https://github.com/guessit-io/guessit/issues/708 | `...(July 30 2021) [540p mp4 subs]` → release_group "July 30 2021"; should be date | **fixed** (month-name date parsing) |
 | 722 | https://github.com/guessit-io/guessit/issues/722 | `Extras (2005) - S01E01...` → `other:"Extras"`, no title; show named "Extras" | **fixed** (Title-Case property at title pos → title) |
-| 741 | https://github.com/guessit-io/guessit/issues/741 | `1280x720up` junk after resolution breaks parsing | acceptable — JS gives clean title 'Movie' (junk '1280x720up' dropped, no crash). Reasonable |
+| 741 | https://github.com/guessit-io/guessit/issues/741 | `1280x720up` junk after resolution breaks parsing | **fixed** (v4.1.0) — 'up' upscale marker parsed: screen_size 720p, release group intact |
 | 747 | https://github.com/guessit-io/guessit/issues/747 | `5. Nanatsu no Taizai...` → movie while `22.` works; inconsistent leading number | not fixed — '5. Title' vs '22. Title' inconsistent leading-number handling; ambiguous |
 | 752 | https://github.com/guessit-io/guessit/issues/752 | `S01E02.3.Kings` → `episode:[2,3]`; leading title digit read as range | **works** (ep 2, et "3 Kings"; better than Python) |
 | 763 | https://github.com/guessit-io/guessit/issues/763 | Japanese season/episode markers (シーズン/第/話) | **fixed** (CJK シーズン/第/話/期 markers) |
 | 771 | https://github.com/guessit-io/guessit/issues/771 | `3D` should match only after year (avoids titles containing 3D) | acceptable — leading '3D' stays in the title (not mis-detected); a strict after-year-only rule could regress titles legitimately containing 3D |
 | 772 | https://github.com/guessit-io/guessit/issues/772 | Folder episode range `01~43` overrides file `11`; precedence design | not done — design call: folder episode range vs filename precedence |
 | 774 | https://github.com/guessit-io/guessit/issues/774 | `Blade Runner 2049` (no year) → S20E49; needs year-range heuristic | works — with a release year JS gives title 'Blade Runner 2049' + year. The no-year case (2049→S/E) is shared Python behaviour and needs a fragile year heuristic |
-| 797 | https://github.com/guessit-io/guessit/issues/797 | Parent-dir `Season 1` overrides filename `S44`; precedence design | not done — design call: parent-dir 'Season 1' vs filename 'S44' precedence |
+| 797 | https://github.com/guessit-io/guessit/issues/797 | Parent-dir `Season 1` overrides filename `S44`; precedence design | **fixed** (v4.2.0) — SxxExx-weighted filepart precedence: filename S44E03 wins |
 | 802 | https://github.com/guessit-io/guessit/issues/802 | Feature: composite `quality` field (underspecified) | not done — underspecified feature (composite 'quality' field) |
 
 ---

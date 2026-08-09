@@ -1,6 +1,7 @@
 import { Rebulk } from 'rebulk-js';
 import { Rule, AppendMatch, RemoveMatch } from 'rebulk-js';
-import type { Match, Matches } from 'rebulk-js';
+import { Match } from 'rebulk-js';
+import type { Matches } from 'rebulk-js';
 import { POST_PROCESS } from 'rebulk-js';
 import { seps, titleSeps, sepsPattern } from '../common/index.js';
 import { cleanup, reorderTitle } from '../common/formatters.js';
@@ -19,6 +20,47 @@ function hasmatch(result: Match[] | Match | undefined): boolean {
 const LEADING_ARTICLES_RE = /^(the|a|an|le|la|les|l'|el|los|las|der|die|das)\s+/i;
 function normalizeTitle(s: string): string {
   return s.toLowerCase().replace(LEADING_ARTICLES_RE, '').trim();
+}
+
+/**
+ * A dash-joined digit run after an SxxExx chain that spills into a numeric
+ * episode_title ("S03E03.4-5-1" → episodes [3,4,5] + episode_title "1") is a
+ * formation/score, not an episode range (upstream #744): drop the continuation
+ * episodes and keep the whole run as the episode title ("4-5-1").
+ */
+class FormationRunEpisodeTitle extends Rule {
+  static override priority = POST_PROCESS;
+  override priority = POST_PROCESS;
+  override consequence = [RemoveMatch, AppendMatch];
+
+  override when(matches: any, _context: any): any {
+    const input: string = matches.inputString ?? '';
+    const toRemove: any[] = [];
+    const toAppend: any[] = [];
+    const ets = (matches.named('episode_title') as any[]) ?? [];
+    for (const et of ets) {
+      if (!/^\d{1,2}$/.test(String(et.value ?? ''))) continue;
+      const eps = ((matches.named('episode') as any[]) ?? [])
+        .filter((e: any) => e.end <= et.start && !e.private)
+        .sort((a: any, b: any) => a.start - b.start);
+      if (eps.length < 3) continue;
+      // continuation episodes = those after the first, glued to the et by dashes
+      const run = eps.slice(1);
+      const runStart = run[0].start;
+      const span = input.slice(runStart, et.end);
+      if (!/^\d{1,3}(-\d{1,3})+$/.test(span)) continue;
+      // the run must hang off the strong chain via a weak separator ('.', ' ')
+      const between = input.slice(eps[0].end, runStart);
+      if (!/^[\s._]+$/.test(between)) continue;
+      toRemove.push(...run, et);
+      toAppend.push(new Match(runStart, et.end, {
+        name: 'episode_title',
+        value: span,
+        inputString: input,
+      }));
+    }
+    return (toRemove.length || toAppend.length) ? [toRemove, toAppend] : false;
+  }
 }
 
 export function episodeTitle(config: Record<string, unknown>) {
@@ -40,6 +82,7 @@ export function episodeTitle(config: Record<string, unknown>) {
     RemoveSubtitleDescriptorEpisodeTitle,
     RemoveHashFilepartJunk,
     RemoveTailEpisodeTitle,
+    FormationRunEpisodeTitle,
     RenameEpisodeTitleWhenMovieType
   );
 

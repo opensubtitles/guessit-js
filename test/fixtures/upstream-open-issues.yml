@@ -108,3 +108,15 @@
 ? Hayate no Gotoku 2nd Season 24 (Blu-Ray 1080p) [Chihiro]
 : title: Hayate no Gotoku
   season: 2
+
+# ── #744: a dash-joined formation after the episode stays whole ──
+? Ted.Lasso.S03E03.4-5-1.1080p.WEB.H264-GGWP.mkv
+: title: Ted Lasso
+  season: 3
+  episode: 3
+  episode_title: 4-5-1
+
+# ── #690: romaji title with embedded dashes + "Season 2 - 15" ──
+? Re ZERO -Starting Life in Another World- Season 2 - 15 [1080p].mkv
+: season: 2
+  episode: 15
