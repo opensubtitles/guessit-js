@@ -73,13 +73,24 @@ class ImageArtKeywordToOther extends Rule {
   }
 }
 
+const TOKEN_START = `(?<![^\\W_])`;
+
 export function completeWords(
   rebulk: Rebulk,
-  seasonWords: string[],
-  completeArticleWords: string[]
+  opts: {
+    completeMarkerWords: string[];
+    seasonWords: string[];
+    completeArticleWords: string[];
+    completePrefixWords: string[];
+    seasonNumberSeparators: string[];
+  },
 ) {
-  const seasonWordsPattern = buildOrPattern(seasonWords);
-  const completeArticleWordsPattern = buildOrPattern(completeArticleWords);
+  const completeMarkerPattern = buildOrPattern(opts.completeMarkerWords);
+  const seasonWordsPattern = buildOrPattern(opts.seasonWords);
+  const completeArticleWordsPattern = buildOrPattern(opts.completeArticleWords);
+  // The season numbers listed between the season word and the marker: "1", "1 & 2", "1 and 2".
+  const seasonNumbersPattern =
+    `(?:-+(?:\\d+|` + buildOrPattern(opts.seasonNumberSeparators, undefined, true) + `))+-+`;
 
   function validateComplete(match: Match) {
     const children = match.children;
@@ -90,9 +101,10 @@ export function completeWords(
   }
 
   rebulk.regex(
+    TOKEN_START +
     `(?P<completeArticle>${completeArticleWordsPattern}-)?` +
     `(?P<completeWordsBefore>${seasonWordsPattern}-)?` +
-    'Complete' +
+    completeMarkerPattern +
     `(?P<completeWordsAfter>-${seasonWordsPattern})?`,
     {
       privateNames: ['completeArticle', 'completeWordsBefore', 'completeWordsAfter'],
@@ -101,6 +113,35 @@ export function completeWords(
       validator: {
         __parent__: (m: Match) => sepsSurround(m) && validateComplete(m),
       },
+    }
+  );
+
+  // "Season 1 Complete", "Seasons 1 & 2 - Complete": the season numbers sit between the
+  // season word and the marker, so the adjacency pattern above cannot see the word.
+  rebulk.regex(
+    seasonWordsPattern + seasonNumbersPattern + `(?P<other>` + completeMarkerPattern + `)`,
+    {
+      children: true,
+      privateParent: true,
+      validateAll: true,
+      value: { other: 'Complete' },
+      tags: ['release-group-prefix'],
+      validator: { __parent__: sepsSurround },
+    }
+  );
+
+  // "L'Intégrale", "Coffret Intégrale": the prefix carries the completeness with no season
+  // word to anchor on. The separator is optional because the French elided article glues to
+  // the marker ("L'Intégrale" is a single token).
+  rebulk.regex(
+    TOKEN_START +
+    `(?P<completePrefix>` + buildOrPattern(opts.completePrefixWords) + `-?)` +
+    completeMarkerPattern,
+    {
+      privateNames: ['completePrefix'],
+      value: { other: 'Complete' },
+      tags: ['release-group-prefix'],
+      validator: { __parent__: sepsSurround },
     }
   );
 }

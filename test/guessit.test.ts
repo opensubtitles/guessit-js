@@ -250,6 +250,10 @@ const FIXTURE_FILES = [
   'various.yml',
   'streaming_services.yaml',
   'enable_disable_properties.yml',
+  'upstream-new-episodes.yml',
+  'upstream-new-movies.yml',
+  'upstream-new-various.yml',
+  'upstream-new-enable_disable_properties.yml',
 ];
 
 // ─── Tests ───────────────────────────────────────────────────────────────────

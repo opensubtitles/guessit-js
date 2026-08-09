@@ -79,9 +79,13 @@ export function rebulkBuilder(config: AdvancedConfig): Rebulk {
   const otherRebulk = other(cfg('other'));
   const episodesConfig = cfg('episodes') as any;
   // Complete words use regex patterns for season words (from options.json _complete_words config)
-  const completeSeasonWords = ['seasons?', 'series?'];
-  const completeArticleWords = ['The'];
-  completeWords(otherRebulk, completeSeasonWords, completeArticleWords);
+  completeWords(otherRebulk, {
+    completeMarkerWords: ['Complete', 'Int[ée]grale'],
+    seasonWords: ['seasons?', 'mini-?series?', 'series?'],
+    completeArticleWords: ['The'],
+    completePrefixWords: ["L['’]?", 'Coffret'],
+    seasonNumberSeparators: ['&', 'and'],
+  });
   rebulk.rebulk(otherRebulk);
   rebulk.rebulk(size(cfg('size')));
   rebulk.rebulk(bitRate(cfg('bit_rate')));

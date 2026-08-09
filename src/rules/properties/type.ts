@@ -172,6 +172,17 @@ class TypeProcessor extends Rule {
       }
     }
 
+    // "COMPLETE SERIES", "COMPLETE MINISERIES": the season word next to the marker is
+    // consumed into it, so it reaches no property of its own — but a film is never a
+    // *series*. This holds even against a year, unlike a bare `Complete`. (upstream 4.x)
+    const completeSeries = matches.named('other', (m: Match) =>
+      m.value === 'Complete' &&
+      !!(m.children?.named?.('completeWordsBefore')?.length || m.children?.named?.('completeWordsAfter')?.length),
+    ) as Match[] | Match | undefined;
+    if (completeSeries && (Array.isArray(completeSeries) ? completeSeries.length > 0 : true)) {
+      return 'episode';
+    }
+
     // Check for film indicator
     const film = matches.named('film') as Match[] | Match | undefined;
     if (film && (Array.isArray(film) ? film.length > 0 : true)) {
@@ -211,6 +222,16 @@ class TypeProcessor extends Rule {
       return 'episode';
     }
 
+
+    // A complete run of a series spans several years and carries none of its own,
+    // whereas a film on a complete disc carries its release year. (upstream #953)
+    const complete = matches.named('other', (m: Match) => m.value === 'Complete') as Match[] | Match | undefined;
+    if (
+      complete && (Array.isArray(complete) ? complete.length > 0 : true) &&
+      (!year || (Array.isArray(year) ? (year as Match[]).length === 0 : false))
+    ) {
+      return 'episode';
+    }
 
     // Default to movie
     return 'movie';

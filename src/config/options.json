@@ -53,17 +53,67 @@
     },
     "audio_codec": {
       "audio_codec": {
-        "MP3": {"string": ["MP3", "LAME"],"regex": ["LAME(?:\\d)+-?(?:\\d)+"]},
+        "MP3": {
+          "string": [
+            "MP3",
+            "LAME"
+          ],
+          "regex": [
+            "LAME(?:\\d)+-?(?:\\d)+"
+          ]
+        },
         "MP2": "MP2",
-        "Dolby Digital": {"string": ["Dolby", "DolbyDigital"], "regex": ["Dolby-Digital", "DD", "AC-?3D?"]},
-        "Dolby Atmos": {"string": ["Atmos"], "regex": ["Dolby-?Atmos"]},
+        "Dolby Digital": {
+          "string": [
+            "Dolby",
+            "DolbyDigital"
+          ],
+          "regex": [
+            "Dolby-Digital",
+            "DD",
+            "AC-?3D?"
+          ]
+        },
+        "Dolby Atmos": {
+          "string": [
+            "Atmos"
+          ],
+          "regex": [
+            "Dolby-?Atmos"
+          ]
+        },
         "AAC": "AAC",
-        "Dolby Digital Plus": {"string": ["DDP", "DD+"], "regex": ["E-?AC-?3"]},
+        "Dolby Digital Plus": {
+          "string": [
+            "DDP",
+            "DD+"
+          ],
+          "regex": [
+            "E-?AC-?3"
+          ]
+        },
         "FLAC": "Flac",
         "DTS": "DTS",
-        "DTS-HD": {"regex":  ["DTS-?HD", "DTS(?=-?MA)", "DTS-?MA"], "conflict_solver": "lambda match, other: other if other.name == 'audio_codec' else '__default__'"},
-        "DTS:X": {"string": ["DTS:X", "DTS-X", "DTSX"] },
-        "Dolby TrueHD": {"regex": ["True-?HD"] },
+        "DTS-HD": {
+          "regex": [
+            "DTS-?HD",
+            "DTS(?=-?MA)",
+            "DTS-?MA"
+          ],
+          "conflict_solver": "lambda match, other: other if other.name == 'audio_codec' else '__default__'"
+        },
+        "DTS:X": {
+          "string": [
+            "DTS:X",
+            "DTS-X",
+            "DTSX"
+          ]
+        },
+        "Dolby TrueHD": {
+          "regex": [
+            "True-?HD"
+          ]
+        },
         "Opus": "Opus",
         "Vorbis": "Vorbis",
         "PCM": "PCM",
@@ -78,40 +128,114 @@
         "2.0": [
           "2ch",
           "stereo",
-          {"regex": "(2[\\W_]0(?:ch)?)(?=[^\\d]|$)", "children":  true},
-          {"string": "20", "validator": "import:seps_after", "tags": "weak-audio_channels"}
+          {
+            "regex": "(2[\\W_]0(?:ch)?)(?=[^\\d]|$)",
+            "children": true
+          },
+          {
+            "string": "20",
+            "validator": "import:seps_after",
+            "tags": "weak-audio_channels"
+          }
         ],
         "5.1": [
           "5ch",
           "6ch",
-          {"regex": "(5[\\W_][01](?:ch)?)(?=[^\\d]|$)", "children":  true},
-          {"regex": "(6[\\W_]0(?:ch)?)(?=[^\\d]|$)", "children":  true},
-          {"regex": "5[01]", "validator": "import:seps_after", "tags": "weak-audio_channels"}
+          {
+            "regex": "(5[\\W_][01](?:ch)?)(?=[^\\d]|$)",
+            "children": true
+          },
+          {
+            "regex": "(6[\\W_]0(?:ch)?)(?=[^\\d]|$)",
+            "children": true
+          },
+          {
+            "regex": "5[01]",
+            "validator": "import:seps_after",
+            "tags": "weak-audio_channels"
+          }
         ],
         "7.1": [
           "7ch",
           "8ch",
-          {"regex": "(7[\\W_][01](?:ch)?)(?=[^\\d]|$)", "children":  true},
-          {"regex": "7[01]", "validator": "import:seps_after", "tags": "weak-audio_channels"}
+          {
+            "regex": "(7[\\W_][01](?:ch)?)(?=[^\\d]|$)",
+            "children": true
+          },
+          {
+            "regex": "7[01]",
+            "validator": "import:seps_after",
+            "tags": "weak-audio_channels"
+          }
         ]
       },
       "audio_profile": {
-        "Master Audio": {"string": "MA", "tags": ["audio_profile.rule", "DTS-HD"]},
-        "High Resolution Audio": {"string": ["HR", "HRA"], "tags": ["audio_profile.rule", "DTS-HD"]},
-        "Extended Surround": {"string": "ES", "tags": ["audio_profile.rule", "DTS"]},
-        "High Efficiency": {"string": "HE", "tags": ["audio_profile.rule", "AAC"]},
-        "Low Complexity": {"string": "LC", "tags": ["audio_profile.rule", "AAC"]},
-        "High Quality": {"string": "HQ", "tags": ["audio_profile.rule", "Dolby Digital"]},
-        "EX": {"string": "EX", "tags": ["audio_profile.rule", "Dolby Digital"]}
+        "Master Audio": {
+          "string": "MA",
+          "tags": [
+            "audio_profile.rule",
+            "DTS-HD"
+          ]
+        },
+        "High Resolution Audio": {
+          "string": [
+            "HR",
+            "HRA"
+          ],
+          "tags": [
+            "audio_profile.rule",
+            "DTS-HD"
+          ]
+        },
+        "Extended Surround": {
+          "string": "ES",
+          "tags": [
+            "audio_profile.rule",
+            "DTS"
+          ]
+        },
+        "High Efficiency": {
+          "string": "HE",
+          "tags": [
+            "audio_profile.rule",
+            "AAC"
+          ]
+        },
+        "Low Complexity": {
+          "string": "LC",
+          "tags": [
+            "audio_profile.rule",
+            "AAC"
+          ]
+        },
+        "High Quality": {
+          "string": "HQ",
+          "tags": [
+            "audio_profile.rule",
+            "Dolby Digital"
+          ]
+        },
+        "EX": {
+          "string": "EX",
+          "tags": [
+            "audio_profile.rule",
+            "Dolby Digital"
+          ]
+        }
       }
     },
     "bit_rate": {
       "bit_rate": {
         "_": {
-          "regex": ["\\d+-?[kmg]b(ps|its?)", "\\d+\\.\\d+-?[kmg]b(ps|its?)"],
+          "regex": [
+            "\\d+-?[kmg]b(ps|its?)",
+            "\\d+\\.\\d+-?[kmg]b(ps|its?)"
+          ],
           "conflict_solver": "lambda match, other: match if other.name == 'audio_channels' and 'weak-audio_channels' not in other.tags else other",
           "formatter": "import:guessit.rules.common.quantity:BitRate.fromstring",
-          "tags": ["release-group-prefix"]
+          "tags": [
+            "release-group-prefix"
+          ]
         }
       }
     },
@@ -122,7 +246,9 @@
           "private_parent": true,
           "children": true,
           "formatter": "eval:int",
-          "validator": {"__parent__": "import:seps_surround"},
+          "validator": {
+            "__parent__": "import:seps_surround"
+          },
           "validate_all": true,
           "conflict_solver": "lambda match, conflicting: match if conflicting.name in ('video_codec', 'episode') and 'weak-episode' not in conflicting.tags else '__default__'"
         }
@@ -135,10 +261,20 @@
           "cd": "lambda match: 0 < match.value < 100",
           "cd_count": "lambda match: 0 < match.value < 100"
         },
-        "formatter": {"cd": "eval:int", "cd_count": "eval:int"},
+        "formatter": {
+          "cd": "eval:int",
+          "cd_count": "eval:int"
+        },
         "children": true,
         "private_parent": true,
-        "properties": {"cd": [null], "cd_count": [null]}
+        "properties": {
+          "cd": [
+            null
+          ],
+          "cd_count": [
+            null
+          ]
+        }
       },
       "_cd_count": {
         "regex": "(?P<cd_count>\\d+)-?cds?",
@@ -146,10 +282,19 @@
           "cd": "lambda match: 0 < match.value < 100",
           "cd_count": "lambda match: 0 < match.value < 100"
         },
-        "formatter": {"cd_count": "eval:int"},
+        "formatter": {
+          "cd_count": "eval:int"
+        },
         "children": true,
         "private_parent": true,
-        "properties": {"cd": [null], "cd_count": [null]}
+        "properties": {
+          "cd": [
+            null
+          ],
+          "cd_count": [
+            null
+          ]
+        }
       }
     },
     "container": {
@@ -252,34 +397,183 @@
     },
     "edition": {
       "edition": {
-        "Collector": {"string": ["collector"], "regex": ["collector'?s?-edition", "edition-collector"]},
+        "Collector": {
+          "string": [
+            "collector"
+          ],
+          "regex": [
+            "collector'?s?-edition",
+            "edition-collector"
+          ]
+        },
         "Special": [
-          {"regex": ["special-edition", "edition-special"], "conflict_solver": "lambda match, other: other if other.name == 'episode_details' and other.value == 'Special' else '__default__'"},
-          {"string": "se", "tags": "has-neighbor"}
+          {
+            "regex": [
+              "special-edition",
+              "edition-special"
+            ],
+            "conflict_solver": "lambda match, other: other if other.name == 'episode_details' and other.value == 'Special' else '__default__'"
+          },
+          {
+            "string": "se",
+            "tags": "has-neighbor"
+          }
         ],
         "Director's Definitive Cut": "ddc",
-        "Criterion": {"string": ["CC", "Criterion"], "regex": ["criterion-edition", "edition-criterion"] },
-        "Deluxe": {"string": ["deluxe"], "regex": ["deluxe-edition", "edition-deluxe"] },
-        "Limited": {"string": ["limited"], "regex": ["limited-edition"], "tags": ["has-neighbor", "release-group-prefix"]},
-        "Theatrical": {"string": ["theatrical"], "regex": ["theatrical-cut", "theatrical-edition"]},
-        "Director's Cut": {"string": ["DC"], "regex": ["director'?s?-cut", "director'?s?-cut-edition", "edition-director'?s?-cut"]},
-        "Extended": {"string": ["extended"], "regex": ["extended-?cut", "extended-?version"], "tags": ["has-neighbor", "release-group-prefix"]},
-        "Alternative Cut": {"regex": ["alternat(e|ive)(?:-?Cut)?"], "tags": ["has-neighbor", "release-group-prefix"]},
+        "Criterion": {
+          "string": [
+            "CC",
+            "Criterion"
+          ],
+          "regex": [
+            "criterion-edition",
+            "edition-criterion"
+          ]
+        },
+        "Deluxe": {
+          "string": [
+            "deluxe"
+          ],
+          "regex": [
+            "deluxe-edition",
+            "edition-deluxe"
+          ]
+        },
+        "Limited": {
+          "string": [
+            "limited"
+          ],
+          "regex": [
+            "limited-edition"
+          ],
+          "tags": [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        "Theatrical": {
+          "string": [
+            "theatrical"
+          ],
+          "regex": [
+            "theatrical-cut",
+            "theatrical-edition"
+          ]
+        },
+        "Director's Cut": {
+          "string": [
+            "DC"
+          ],
+          "regex": [
+            "director'?s?-cut",
+            "director'?s?-cut-edition",
+            "edition-director'?s?-cut"
+          ]
+        },
+        "Extended": {
+          "string": [
+            "extended"
+          ],
+          "regex": [
+            "extended-?cut",
+            "extended-?version"
+          ],
+          "tags": [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        "Alternative Cut": {
+          "regex": [
+            "alternat(e|ive)(?:-?Cut)?"
+          ],
+          "tags": [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
         "Remastered": [
-          {"regex": "(?:4k.)?remaster(?:ed)?", "tags": ["release-group-prefix"]}
+          {
+            "regex": "(?:4k.)?remaster(?:ed)?",
+            "tags": [
+              "release-group-prefix"
+            ]
+          }
         ],
         "Restored": [
-          {"regex": "(?:4k.)?restore(?:d)?", "tags": ["release-group-prefix"]}
+          {
+            "regex": "(?:4k.)?restore(?:d)?",
+            "tags": [
+              "release-group-prefix"
+            ]
+          }
         ],
-        "Uncensored": {"string": "Uncensored", "tags": ["has-neighbor", "release-group-prefix"]},
-        "Uncut": {"string": "Uncut", "tags": ["has-neighbor", "release-group-prefix"]},
-        "Unrated": {"string": "Unrated", "tags": ["has-neighbor", "release-group-prefix"]},
-        "Festival": {"string": "Festival", "tags": ["has-neighbor-before", "has-neighbor-after"]},
-        "IMAX": {"string": ["imax"], "regex": ["imax-edition"]},
-        "Fan": {"regex": ["fan-edit(?:ion)?", "fan-collection"]},
-        "Ultimate": {"regex": ["ultimate-edition"]},
-        "_Ultimate_Collector": {"regex": ["ultimate-collector'?s?-edition"], "value": ["Ultimate", "Collector"]},
-        "_Ultimate_Fan": {"regex": ["ultimate-fan-edit(?:ion)?", "ultimate-fan-collection"], "value": ["Ultimate", "Fan"]}
+        "Uncensored": {
+          "string": "Uncensored",
+          "tags": [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        "Uncut": {
+          "string": "Uncut",
+          "tags": [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        "Unrated": {
+          "string": "Unrated",
+          "tags": [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        "Festival": {
+          "string": "Festival",
+          "tags": [
+            "has-neighbor-before",
+            "has-neighbor-after"
+          ]
+        },
+        "IMAX": {
+          "string": [
+            "imax"
+          ],
+          "regex": [
+            "imax-edition"
+          ]
+        },
+        "Fan": {
+          "regex": [
+            "fan-edit(?:ion)?",
+            "fan-collection"
+          ]
+        },
+        "Ultimate": {
+          "regex": [
+            "ultimate-edition"
+          ]
+        },
+        "_Ultimate_Collector": {
+          "regex": [
+            "ultimate-collector'?s?-edition"
+          ],
+          "value": [
+            "Ultimate",
+            "Collector"
+          ]
+        },
+        "_Ultimate_Fan": {
+          "regex": [
+            "ultimate-fan-edit(?:ion)?",
+            "ultimate-fan-collection"
+          ],
+          "value": [
+            "Ultimate",
+            "Fan"
+          ]
+        }
       }
     },
     "episodes": {
@@ -324,31 +618,118 @@
         "saisons",
         "tem",
         "temp",
-        "temporada",
-        "temporadas",
-        "stagione"
+        {
+          "value": "temporada",
+          "numfirst": true
+        },
+        {
+          "value": "temporadas",
+          "numfirst": true
+        },
+        "stagione",
+        {
+          "value": "сезон",
+          "numfirst": true
+        },
+        {
+          "value": "sezon",
+          "numfirst": true
+        },
+        {
+          "value": "staffel",
+          "numfirst": true
+        },
+        "sezonul",
+        "säsong",
+        "sesong",
+        "sæson",
+        {
+          "value": "évad",
+          "numfirst": true
+        }
       ],
       "episode_words": [
         "episode",
         "episodes",
+        "épisode",
+        "épisodes",
         "eps",
         "ep",
         "episodio",
         "episodios",
         "capitulo",
-        "capitulos"
+        "capitulos",
+        {
+          "value": "серия",
+          "numfirst": true
+        },
+        {
+          "value": "серии",
+          "numfirst": true
+        },
+        {
+          "value": "эпизод",
+          "numfirst": true
+        },
+        {
+          "value": "seria",
+          "numfirst": true
+        },
+        {
+          "value": "serii",
+          "numfirst": true
+        },
+        {
+          "value": "serija",
+          "numfirst": true
+        },
+        {
+          "value": "bölüm",
+          "numfirst": true
+        },
+        {
+          "value": "bolum",
+          "numfirst": true
+        },
+        "aflevering",
+        "afl",
+        "folge",
+        "odcinek",
+        "episodul",
+        "avsnitt",
+        {
+          "value": "rész",
+          "numfirst": true
+        }
       ],
       "of_words": [
         "of",
-        "sur"
+        "sur",
+        "de",
+        "di",
+        "von",
+        "van",
+        "din",
+        "из"
       ],
       "all_words": [
         "All"
-      ]
+      ],
+      "ordinal_suffix": "(?:ª|º|°|a|o|-?(?:й|я|е|го|ая|ый|ое))?"
     },
     "film": {
       "film": {
-        "_f": {"regex": "f(\\d{1,2})", "name": "film", "validate_all": true, "validator": {"__parent__": "import:seps_surround"}, "private_parent": true, "children": true, "formatter": "eval:int"}
+        "_f": {
+          "regex": "f(\\d{1,2})",
+          "name": "film",
+          "validate_all": true,
+          "validator": {
+            "__parent__": "import:seps_surround"
+          },
+          "private_parent": true,
+          "children": true,
+          "formatter": "eval:int"
+        }
       }
     },
     "language": {
@@ -468,35 +849,165 @@
     },
     "other": {
       "other": {
-        "Audio Fixed": {"regex": ["Audio-?Fix", "Audio-?Fixed"]},
-        "Sync Fixed": {"regex": ["Sync-?Fix", "Sync-?Fixed"]},
-        "Dual Audio": {"string": ["Dual"], "regex": ["Dual-?Audio"]},
-        "Widescreen": {"string": ["ws"], "regex": ["wide-?screen"]},
-        "Reencoded": {"regex": ["Re-?Enc(?:oded)?"]},
-        "_repack_with_count": {"regex": ["Repack(?P<proper_count>\\d*)", "Rerip(?P<proper_count>\\d*)"], "value": {"other": "Proper"}, "tags": ["streaming_service.prefix", "streaming_service.suffix"]},
+        "Audio Fixed": {
+          "regex": [
+            "Audio-?Fix",
+            "Audio-?Fixed"
+          ]
+        },
+        "Sync Fixed": {
+          "regex": [
+            "Sync-?Fix",
+            "Sync-?Fixed"
+          ]
+        },
+        "Dual Audio": {
+          "string": [
+            "Dual"
+          ],
+          "regex": [
+            "Dual-?Audio"
+          ]
+        },
+        "Widescreen": {
+          "string": [
+            "ws"
+          ],
+          "regex": [
+            "wide-?screen"
+          ]
+        },
+        "Reencoded": {
+          "regex": [
+            "Re-?Enc(?:oded)?"
+          ]
+        },
+        "_repack_with_count": {
+          "regex": [
+            "Repack(?P<proper_count>\\d*)",
+            "Rerip(?P<proper_count>\\d*)"
+          ],
+          "value": {
+            "other": "Proper"
+          },
+          "tags": [
+            "streaming_service.prefix",
+            "streaming_service.suffix"
+          ]
+        },
         "Proper": [
-          {"string": "Proper", "tags": ["has-neighbor", "streaming_service.prefix", "streaming_service.suffix"]},
-          {"regex": ["Real-Proper", "Real-Repack", "Real-Rerip"], "tags": ["streaming_service.prefix", "streaming_service.suffix", "real"]},
-          {"string": "Real", "tags": ["has-neighbor", "streaming_service.prefix", "streaming_service.suffix", "real"]}
+          {
+            "string": "Proper",
+            "tags": [
+              "has-neighbor",
+              "streaming_service.prefix",
+              "streaming_service.suffix"
+            ]
+          },
+          {
+            "regex": [
+              "Real-Proper",
+              "Real-Repack",
+              "Real-Rerip"
+            ],
+            "tags": [
+              "streaming_service.prefix",
+              "streaming_service.suffix",
+              "real"
+            ]
+          },
+          {
+            "string": "Real",
+            "tags": [
+              "has-neighbor",
+              "streaming_service.prefix",
+              "streaming_service.suffix",
+              "real"
+            ]
+          }
         ],
         "Fix": [
-          {"string": ["Fix", "Fixed"], "tags": ["has-neighbor-before", "has-neighbor-after", "streaming_service.prefix", "streaming_service.suffix"]},
-          {"string": ["Dirfix", "Nfofix", "Prooffix"], "tags": ["streaming_service.prefix", "streaming_service.suffix"]},
-          {"regex": ["(?:Proof-?)?Sample-?Fix"], "tags": ["streaming_service.prefix", "streaming_service.suffix"]}
+          {
+            "string": [
+              "Fix",
+              "Fixed"
+            ],
+            "tags": [
+              "has-neighbor-before",
+              "has-neighbor-after",
+              "streaming_service.prefix",
+              "streaming_service.suffix"
+            ]
+          },
+          {
+            "string": [
+              "Dirfix",
+              "Nfofix",
+              "Prooffix"
+            ],
+            "tags": [
+              "streaming_service.prefix",
+              "streaming_service.suffix"
+            ]
+          },
+          {
+            "regex": [
+              "(?:Proof-?)?Sample-?Fix"
+            ],
+            "tags": [
+              "streaming_service.prefix",
+              "streaming_service.suffix"
+            ]
+          }
         ],
-        "Fan Subtitled": {"string": "Fansub", "tags": "has-neighbor"},
-        "Fast Subtitled": {"string": "Fastsub", "tags": "has-neighbor"},
+        "Fan Subtitled": {
+          "string": "Fansub",
+          "tags": "has-neighbor"
+        },
+        "Fast Subtitled": {
+          "string": "Fastsub",
+          "tags": "has-neighbor"
+        },
         "Region 5": "R5",
         "Region C": "RC",
-        "Preair": {"regex": "Pre-?Air"},
+        "Preair": {
+          "regex": "Pre-?Air"
+        },
         "PS Vita": [
-          {"regex": "(?:PS-?)Vita"},
-          {"string": "Vita", "tags": "has-neighbor"}
+          {
+            "regex": "(?:PS-?)Vita"
+          },
+          {
+            "string": "Vita",
+            "tags": "has-neighbor"
+          }
         ],
-        "_HdRip": {"value": {"other": "HD", "another": "Rip"}, "regex": ["(HD)(?P<another>Rip)"], "private_parent": true, "children": true, "validator":{"__parent__": "import:seps_surround"}, "validate_all": true},
+        "_HdRip": {
+          "value": {
+            "other": "HD",
+            "another": "Rip"
+          },
+          "regex": [
+            "(HD)(?P<another>Rip)"
+          ],
+          "private_parent": true,
+          "children": true,
+          "validator": {
+            "__parent__": "import:seps_surround"
+          },
+          "validate_all": true
+        },
         "Screener": [
           "Screener",
-          {"regex": "Scr(?:eener)?", "validator": null, "tags": ["other.validate.screener", "source-prefix", "source-suffix"]}
+          {
+            "regex": "Scr(?:eener)?",
+            "validator": null,
+            "tags": [
+              "other.validate.screener",
+              "source-prefix",
+              "source-suffix"
+            ]
+          }
         ],
         "Remux": "Remux",
         "Hybrid": "Hybrid",
@@ -505,59 +1016,305 @@
         "NTSC": "NTSC",
         "XXX": "XXX",
         "2in1": "2in1",
-        "3D": {"string": "3D", "tags": "has-neighbor"},
-        "Virtual Reality": {"string": ["VR"], "regex": ["VR180", "VR360"], "tags": "has-neighbor"},
-        "Opening Credits": {"string": ["NCOP", "OPED"], "regex": ["NC-?OP", "creditless-?opening"], "tags": "has-neighbor"},
-        "Ending Credits": {"string": ["NCED"], "regex": ["NC-?ED", "creditless-?ending"], "tags": "has-neighbor"},
-        "Half SBS": {"string": ["HSBS"], "regex": ["Half-?SBS"], "tags": "has-neighbor"},
-        "Half OU": {"string": ["HOU", "HTAB"], "regex": ["Half-?OU", "Half-?TAB"], "tags": "has-neighbor"},
-        "High Quality": {"string": "HQ", "tags": "uhdbluray-neighbor"},
+        "3D": {
+          "string": "3D",
+          "tags": "has-neighbor"
+        },
+        "Virtual Reality": {
+          "string": [
+            "VR"
+          ],
+          "regex": [
+            "VR180",
+            "VR360"
+          ],
+          "tags": "has-neighbor"
+        },
+        "Opening Credits": {
+          "string": [
+            "NCOP",
+            "OPED"
+          ],
+          "regex": [
+            "NC-?OP",
+            "creditless-?opening"
+          ],
+          "tags": "has-neighbor"
+        },
+        "Ending Credits": {
+          "string": [
+            "NCED"
+          ],
+          "regex": [
+            "NC-?ED",
+            "creditless-?ending"
+          ],
+          "tags": "has-neighbor"
+        },
+        "Half SBS": {
+          "string": [
+            "HSBS"
+          ],
+          "regex": [
+            "Half-?SBS"
+          ],
+          "tags": "has-neighbor"
+        },
+        "Half OU": {
+          "string": [
+            "HOU",
+            "HTAB"
+          ],
+          "regex": [
+            "Half-?OU",
+            "Half-?TAB"
+          ],
+          "tags": "has-neighbor"
+        },
+        "High Quality": {
+          "string": "HQ",
+          "tags": "uhdbluray-neighbor"
+        },
         "High Resolution": "HR",
         "Line Dubbed": "LD",
         "Mic Dubbed": "MD",
-        "Micro HD": {"string": ["mHD", "HDLight"], "regex": ["micro-?hd", "hd-?lite"]},
+        "Micro HD": {
+          "string": [
+            "mHD",
+            "HDLight"
+          ],
+          "regex": [
+            "micro-?hd",
+            "hd-?lite"
+          ]
+        },
         "Low Definition": "LDTV",
         "High Frame Rate": "HFR",
         "Variable Frame Rate": "VFR",
-        "HD": {"string": "HD", "validator": null, "tags": ["streaming_service.prefix", "streaming_service.suffix"]},
-        "Full HD": {"string": ["FHD"],"regex": ["Full-?HD"], "validator": null, "tags": ["streaming_service.prefix", "streaming_service.suffix"]},
-        "Ultra HD": {"string": ["UHD"],"regex": ["Ultra-?(?:HD)?"], "validator": null, "tags": ["streaming_service.prefix", "streaming_service.suffix"]},
-        "Upscaled": {"regex": "Upscaled?"},
-        "Complete": {"string": ["Complet", "Complete"], "tags": ["has-neighbor", "release-group-prefix"]},
-        "Classic": {"string": "Classic", "tags": ["has-neighbor", "release-group-prefix"]},
-        "Bonus": {"string": "Bonus", "tags": ["has-neighbor", "release-group-prefix"]},
-        "Trailer": {"string": "Trailer", "tags": ["has-neighbor", "release-group-prefix"]},
-        "Retail": {"string": "Retail", "tags": ["has-neighbor", "release-group-prefix"]},
-        "Colorized": {"string": "Colorized", "tags": ["has-neighbor", "release-group-prefix"]},
-        "Internal": {"string": "Internal", "tags": ["has-neighbor", "release-group-prefix"]},
-        "Line Audio": {"string": "LiNE", "tags": ["has-neighbor-before", "has-neighbor-after", "release-group-prefix"]},
-        "Read NFO": {"regex": "Read-?NFO"},
-        "Converted": {"string": "CONVERT", "tags": "has-neighbor"},
-        "Documentary": {"string": ["DOCU", "DOKU"], "tags": "has-neighbor"},
-        "Open Matte": {"regex": "(?:OM|Open-?Matte)", "tags": "has-neighbor"},
-        "Straight to Video": {"string": "STV", "tags": "has-neighbor"},
-        "Original Aspect Ratio": {"string": "OAR", "tags": "has-neighbor"},
-        "East Coast Feed": {"regex": "(?:Live-)?(?:Episode-)?East-?(?:Coast-)?Feed"},
-        "West Coast Feed": {"regex": "(?:Live-)?(?:Episode-)?West-?(?:Coast-)?Feed"},
-        "Original Video": {"string": ["VO", "OV"], "tags": "has-neighbor"},
-        "Original Animated Video": {"string": ["Ova", "Oav"]},
+        "HD": {
+          "string": "HD",
+          "validator": null,
+          "tags": [
+            "streaming_service.prefix",
+            "streaming_service.suffix"
+          ]
+        },
+        "Full HD": {
+          "string": [
+            "FHD"
+          ],
+          "regex": [
+            "Full-?HD"
+          ],
+          "validator": null,
+          "tags": [
+            "streaming_service.prefix",
+            "streaming_service.suffix"
+          ]
+        },
+        "Ultra HD": {
+          "string": [
+            "UHD"
+          ],
+          "regex": [
+            "Ultra-?(?:HD)?"
+          ],
+          "validator": null,
+          "tags": [
+            "streaming_service.prefix",
+            "streaming_service.suffix"
+          ]
+        },
+        "Upscaled": {
+          "regex": "Upscaled?"
+        },
+        "Complete": {
+          "string": [
+            "Complet",
+            "Complete"
+          ],
+          "tags": [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        "Classic": {
+          "string": "Classic",
+          "tags": [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        "Bonus": {
+          "string": "Bonus",
+          "tags": [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        "Trailer": {
+          "string": "Trailer",
+          "tags": [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        "Retail": {
+          "string": "Retail",
+          "tags": [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        "Colorized": {
+          "string": "Colorized",
+          "tags": [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        "Internal": {
+          "string": "Internal",
+          "tags": [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        "Line Audio": {
+          "string": "LiNE",
+          "tags": [
+            "has-neighbor-before",
+            "has-neighbor-after",
+            "release-group-prefix"
+          ]
+        },
+        "Read NFO": {
+          "regex": "Read-?NFO"
+        },
+        "Converted": {
+          "string": "CONVERT",
+          "tags": "has-neighbor"
+        },
+        "Documentary": {
+          "string": [
+            "DOCU",
+            "DOKU"
+          ],
+          "tags": "has-neighbor"
+        },
+        "Open Matte": {
+          "regex": "(?:OM|Open-?Matte)",
+          "tags": "has-neighbor"
+        },
+        "Straight to Video": {
+          "string": "STV",
+          "tags": "has-neighbor"
+        },
+        "Original Aspect Ratio": {
+          "string": "OAR",
+          "tags": "has-neighbor"
+        },
+        "East Coast Feed": {
+          "regex": "(?:Live-)?(?:Episode-)?East-?(?:Coast-)?Feed"
+        },
+        "West Coast Feed": {
+          "regex": "(?:Live-)?(?:Episode-)?West-?(?:Coast-)?Feed"
+        },
+        "Original Video": {
+          "string": [
+            "VO",
+            "OV"
+          ],
+          "tags": "has-neighbor"
+        },
+        "Original Animated Video": {
+          "string": [
+            "Ova",
+            "Oav"
+          ]
+        },
         "Original Net Animation": "Ona",
         "Original Animation DVD": "Oad",
-        "Mux": {"string": "Mux", "validator": "import:seps_after", "tags": ["other.validate.mux", "video-codec-prefix", "source-suffix"]},
-        "Hardcoded Subtitles": ["HC", "vost"],
-        "Standard Dynamic Range": {"string": "SDR", "tags": "uhdbluray-neighbor"},
-        "HDR10": {"regex": "HDR(?:10)?", "tags": "uhdbluray-neighbor"},
-        "Dolby Vision": {"regex": "(?:Dolby-?Vision|DV)", "tags": "uhdbluray-neighbor"},
-        "BT.2020": {"regex": "BT-?2020","tags": "uhdbluray-neighbor"},
-        "Sample": {"string": "Sample", "tags": ["at-end", "not-a-release-group"]},
-        "Extras": [
-          {"string": "Extras", "tags": "has-neighbor"},
-          {"regex": "Digital-?Extras?"}
+        "Mux": {
+          "string": "Mux",
+          "validator": "import:seps_after",
+          "tags": [
+            "other.validate.mux",
+            "video-codec-prefix",
+            "source-suffix"
+          ]
+        },
+        "Hardcoded Subtitles": [
+          "HC",
+          "vost"
         ],
-        "Proof": {"string": "Proof", "tags": ["at-end", "not-a-release-group"]},
-        "Obfuscated": {"string": ["Obfuscated", "Scrambled"], "tags": ["at-end", "not-a-release-group"]},
-        "Repost": {"string": ["xpost", "postbot", "asrequested"], "tags": "not-a-release-group"},
-        "_complete_words": {"callable": "import:guessit.rules.properties.other:complete_words", "season_words": ["seasons?", "series?"], "complete_article_words": ["The"]}
+        "Standard Dynamic Range": {
+          "string": "SDR",
+          "tags": "uhdbluray-neighbor"
+        },
+        "HDR10": {
+          "regex": "HDR(?:10)?",
+          "tags": "uhdbluray-neighbor"
+        },
+        "Dolby Vision": {
+          "regex": "(?:Dolby-?Vision|DV)",
+          "tags": "uhdbluray-neighbor"
+        },
+        "BT.2020": {
+          "regex": "BT-?2020",
+          "tags": "uhdbluray-neighbor"
+        },
+        "Sample": {
+          "string": "Sample",
+          "tags": [
+            "at-end",
+            "not-a-release-group"
+          ]
+        },
+        "Extras": [
+          {
+            "string": "Extras",
+            "tags": "has-neighbor"
+          },
+          {
+            "regex": "Digital-?Extras?"
+          }
+        ],
+        "Proof": {
+          "string": "Proof",
+          "tags": [
+            "at-end",
+            "not-a-release-group"
+          ]
+        },
+        "Obfuscated": {
+          "string": [
+            "Obfuscated",
+            "Scrambled"
+          ],
+          "tags": [
+            "at-end",
+            "not-a-release-group"
+          ]
+        },
+        "Repost": {
+          "string": [
+            "xpost",
+            "postbot",
+            "asrequested"
+          ],
+          "tags": "not-a-release-group"
+        },
+        "_complete_words": {
+          "callable": "import:guessit.rules.properties.other:complete_words",
+          "season_words": [
+            "seasons?",
+            "series?"
+          ],
+          "complete_article_words": [
+            "The"
+          ]
+        }
       }
     },
     "part": {
@@ -760,7 +1517,10 @@
       "iQIYI": "iQIYI",
       "iTunes": [
         "iTunes",
-        {"pattern": "iT", "ignore_case": false}
+        {
+          "pattern": "iT",
+          "ignore_case": false
+        }
       ],
       "ITV": "ITV",
       "Knowledge Network": "KNOW",
@@ -880,7 +1640,9 @@
       "ZDF": "ZDF"
     },
     "date": {
-      "week_words": ["week"]
+      "week_words": [
+        "week"
+      ]
     }
   }
 }

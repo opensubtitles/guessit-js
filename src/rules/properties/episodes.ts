@@ -21,10 +21,30 @@ interface EpisodesConfig {
   episode_markers: string[];
   range_separators: string[];
   discrete_separators: string[];
-  season_words: string[];
-  episode_words: string[];
+  season_words: (string | { value: string; numfirst?: boolean })[];
+  episode_words: (string | { value: string; numfirst?: boolean })[];
+  ordinal_suffix: string;
   of_words: string[];
   all_words: string[];
+}
+
+/**
+ * Split a season/episode word config into (all values, number-first values).
+ * Each entry is a plain string (word-first only) or {value, numfirst}.
+ * Mirrors Python's _split_words (upstream 4.x).
+ */
+function splitWords(entries: (string | { value: string; numfirst?: boolean })[]): { words: string[]; numfirst: string[] } {
+  const words: string[] = [];
+  const numfirst: string[] = [];
+  for (const entry of entries) {
+    if (typeof entry === 'object') {
+      if (entry.numfirst) numfirst.push(entry.value);
+      words.push(entry.value);
+    } else {
+      words.push(entry);
+    }
+  }
+  return { words, numfirst };
 }
 
 /**
@@ -206,7 +226,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
     .stringDefaults({ ignoreCase: true })
     .defaults({
       privateNames: ['episodeSeparator', 'seasonSeparator', 'episodeMarker', 'seasonMarker'],
-      formatter: { season: (v: any) => parseInt(v, 10), episode: (v: any) => parseInt(v, 10), version: (v: any) => parseInt(v, 10) },
+      formatter: { season: (v: any) => parseInt(v, 10), episode: (v: any) => parseInt(v, 10), version: (v: any) => parseInt(v, 10), count: (v: any) => parseInt(v, 10) },
       children: true,
       privateParent: true,
       conflictSolver: seasonEpisodeConflictSolver,
@@ -323,7 +343,9 @@ export function episodes(config: EpisodesConfig): Rebulk {
   }
 
   // Season-of patterns
-  const seasonWordPattern = buildOrPattern(config.season_words, 'seasonMarker');
+  const { words: seasonWords, numfirst: seasonWordsNumfirst } = splitWords(config.season_words);
+  const { words: episodeWords, numfirst: episodeWordsNumfirst } = splitWords(config.episode_words);
+  const seasonWordPattern = buildOrPattern(seasonWords, 'seasonMarker');
   const ofWordPattern = buildOrPattern(config.of_words);
 
   rebulk.chain({
@@ -358,8 +380,36 @@ export function episodes(config: EpisodesConfig): Rebulk {
     )
     .repeater('*');
 
+  // Non-English convention where the number precedes the keyword:
+  //   "1ª Temporada", "3 сезон", "2.Sezon" (season); "24 серия", "7.Bölüm" (episode).
+  // An optional ordinal suffix may sit between the two, and the total may follow
+  // the keyword ("5 серия из 12"). Mirrors upstream 4.x numfirst patterns.
+  const ofCountPattern = `(?:@?` + ofWordPattern + `@?(?<count>\\d+))?`;
+  if (seasonWordsNumfirst.length > 0) {
+    rebulk.regex(
+      `(?<season>\\d{1,2})` + config.ordinal_suffix + `@?@?` +
+        buildOrPattern(seasonWordsNumfirst, 'seasonMarker') + `(?![^\\W\\d_])` + ofCountPattern,
+      {
+        tags: ['SxxExx', 'numfirst'],
+        formatter: { season: parseNumber, count: (v: any) => parseInt(v, 10) },
+        disabled: isSeasonEpisodeDisabled,
+      },
+    );
+  }
+  if (episodeWordsNumfirst.length > 0) {
+    rebulk.regex(
+      `(?<episode>\\d{1,3})` + config.ordinal_suffix + `@?@?` +
+        buildOrPattern(episodeWordsNumfirst, 'episodeMarker') + `(?![^\\W\\d_])` + ofCountPattern,
+      {
+        tags: ['SxxExx', 'numfirst'],
+        formatter: { episode: parseNumber, count: (v: any) => parseInt(v, 10) },
+        disabled: (context: any) => isDisabled(context, 'episode'),
+      },
+    );
+  }
+
   // Episode patterns
-  const episodeWordPattern = buildOrPattern(config.episode_words, 'episodeMarker');
+  const episodeWordPattern = buildOrPattern(episodeWords, 'episodeMarker');
 
   rebulk.regex(
     `(?<![a-zA-Z\\d])` + episodeWordPattern + `@?(?<episode>\\d+)` +
@@ -532,10 +582,10 @@ export function episodes(config: EpisodesConfig): Rebulk {
   rebulk.regex(
     `(?<episode>\\d+)@?` +
       ofWordPattern +
-      `@?(?<episode_count>\\d+)@?` +
+      `@?(?<count>\\d+)@?` +
       episodeWordPattern + '?',
     {
-      formatter: { episode: (v: string) => parseInt(v, 10), episode_count: (v: string) => parseInt(v, 10) },
+      formatter: { episode: (v: string) => parseInt(v, 10), count: (v: string) => parseInt(v, 10) },
       preMatchProcessor: (match: any) => {
         match.value = cleanup(match.value);
         return match;
@@ -555,6 +605,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
 
   // Add rules for validation and cleanup
   rebulk.rules(
+    CountValidator,
     new DiscMarkerRule(config),
     FixCorruptedGroupBoundaryValues,
     new RangeExpansionRule(config),
@@ -568,6 +619,42 @@ export function episodes(config: EpisodesConfig): Rebulk {
   );
 
   return rebulk;
+}
+
+/**
+ * CountValidator — validate a `count` match and rename it to episode_count or
+ * season_count depending on the last episode/season inside its own match; drop
+ * counts with no owner. Scoped to the count's initiator rather than the nearest
+ * neighbour because another property can sit on the linking word itself ("de"
+ * is the German language code as much as the Spanish "of"). Mirrors upstream 4.x.
+ */
+class CountValidator extends Rule {
+  static override priority = 64;
+  override priority = 64;
+  static consequence = [RemoveMatch, new RenameMatch('episode_count'), new RenameMatch('season_count')];
+  override consequence = [RemoveMatch, new RenameMatch('episode_count'), new RenameMatch('season_count')];
+
+  when(matches: any, _context: any): any {
+    const toRemove: any[] = [];
+    const episodeCount: any[] = [];
+    const seasonCount: any[] = [];
+
+    for (const count of matches.named('count') ?? []) {
+      const numbers = matches.range(
+        count.initiator.start,
+        count.start,
+        (m: Match) => m.name === 'episode' || m.name === 'season',
+      ) as Match[];
+      const numbered = numbers.length ? numbers[numbers.length - 1] : undefined;
+      if (!numbered) toRemove.push(count);
+      else if (numbered.name === 'episode') episodeCount.push(count);
+      else seasonCount.push(count);
+    }
+    if (toRemove.length || episodeCount.length || seasonCount.length) {
+      return [toRemove, episodeCount, seasonCount];
+    }
+    return false;
+  }
 }
 
 /**
