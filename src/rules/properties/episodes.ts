@@ -134,9 +134,11 @@ function seasonEpisodeConflictSolver(match: any, other: any): any {
     ['season', 'episode'].includes(other.name) &&
     match.initiator !== other.initiator
   ) {
-    // A number-first form ("1 Серия") is weaker than an explicit word-first form
-    // ("Серия 5" / "Сезон 1") — but only when both claim the same digits; a marker-only
-    // overlap ("04ª Temporada" vs "Temporada 720") is not a real number collision.
+    // A number-first form ("1 Серия") and a word-first form ("Сезон 1") claiming the
+    // same digits: pick the pairing that leaves no dangling number. "Сезон 1 Серия 5"
+    // reads word-first (numfirst "1 Серия" would orphan the 5); "2 Sezon 7 Bolum"
+    // reads number-first (word-first "Sezon 7" would orphan the leading 2). Marker-only
+    // overlaps ("04ª Temporada" vs "Temporada 720") are not number collisions.
     const isWeak = (m: any) => !!(m.tags?.includes('weak-episode') ||
       ['weak_episode', 'weak_duplicate'].includes(m.initiator?.name));
     const matchNumfirst = !!match.tags?.includes('numfirst');
@@ -146,7 +148,23 @@ function seasonEpisodeConflictSolver(match: any, other: any): any {
       !isWeak(match) && !isWeak(other) &&
       match.start < other.end && other.start < match.end
     ) {
-      return matchNumfirst ? match : other;
+      const nf = matchNumfirst ? match : other;
+      const wf = matchNumfirst ? other : match;
+      const input: string = match.inputString ?? '';
+      const digitToken = (from: number, dir: 1 | -1): string => {
+        let i = from;
+        while (i >= 0 && i < input.length && seps.includes(input[i])) i += dir;
+        let tok = '';
+        while (i >= 0 && i < input.length && /\d/.test(input[i])) { tok = dir === 1 ? tok + input[i] : input[i] + tok; i += dir; }
+        return tok;
+      };
+      const isYearLike = (t: string) => t.length === 4 && +t >= 1900 && +t <= 2100;
+      const nfInit = nf.initiator ?? nf;
+      const wfInit = wf.initiator ?? wf;
+      const nfDangling = (() => { const t = digitToken(nfInit.end, 1); return t.length >= 1 && t.length <= 4 && !isYearLike(t); })();
+      const wfDangling = (() => { const t = digitToken(wfInit.start - 1, -1); return t.length >= 1 && t.length <= 3 && !isYearLike(t); })();
+      if (wfDangling && !nfDangling) return wf;
+      return nf;
     }
     const matchIsWeak = !!(match.tags?.includes('weak-episode') ||
       ['weak_episode', 'weak_duplicate'].includes(match.initiator?.name));

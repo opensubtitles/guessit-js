@@ -639,10 +639,19 @@ class RemoveTitleCaseAmbiguous extends Rule {
   // lowercase scene spellings are unaffected; only the Title-Case word is removed.
   when(matches: any) {
     const TITLE_WORDS = new Set(['Real', 'Cam', 'Convert']);
+    const RELEASE_META = new Set(['screen_size', 'video_codec', 'audio_codec', 'video_profile', 'release_group']);
     const ret: Match[] = [];
     for (const m of matches.range(0, matches.inputString?.length ?? 0) as Match[]) {
       if (m.name !== 'other' && m.name !== 'source') continue;
-      if (TITLE_WORDS.has(m.raw ?? '')) ret.push(m);
+      if (!TITLE_WORDS.has(m.raw ?? '')) continue;
+      // A word surrounded by release metadata is a real scene tag regardless of its
+      // case: "Show.S01E01.Cam.720p.x264" is a CAM release. (upstream #732 refinement)
+      const filepart = matches.markers.atMatch(m, (marker: Match) => marker.name === 'path', 0) as Match | undefined;
+      const searchEnd = filepart?.end ?? (matches.inputString?.length ?? m.end);
+      const metaAfter = (matches.range(m.end, searchEnd,
+        (o: Match) => !o.private && RELEASE_META.has(o.name ?? '')) as Match[]) ?? [];
+      if (metaAfter.length > 0) continue;
+      ret.push(m);
     }
     return ret.length ? ret : false;
   }
