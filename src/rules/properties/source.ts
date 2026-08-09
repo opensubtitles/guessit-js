@@ -90,6 +90,12 @@ export function source(config: Record<string, unknown>): Rebulk {
   // DVD
   rebulk.regex(...buildSourcePattern(['DVD'], '', optional(ripSuffix)),
     { value: { source: 'DVD', other: 'Rip' } });
+  // "LD" alone also means "Line Dubbed", so a bare "LD" is only Laserdisc with a Rip
+  // suffix; the full "Laserdisc" word matches with or without it. (upstream 4.x)
+  rebulk.regex(...buildSourcePattern(['LD'], '', ripSuffix),
+    { value: { source: 'Laserdisc', other: 'Rip' } });
+  rebulk.regex(...buildSourcePattern(['LASERDISC'], '', optional(ripSuffix)),
+    { value: { source: 'Laserdisc', other: 'Rip' } });
   rebulk.regex(...buildSourcePattern(['DM'], '', optional(ripSuffix)),
     { value: { source: 'Digital Master', other: 'Rip' } });
   rebulk.regex(...buildSourcePattern(['VIDEO-?TS', 'DVD-?R(?:$|(?!E))', 'DVD-?9', 'DVD-?5']),

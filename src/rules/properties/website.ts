@@ -7,13 +7,7 @@ import { isDisabled } from '../common/pattern.js';
 import { sepsSurround } from '../common/validators.js';
 import { buildOrPattern } from '../../reutils.js';
 
-// TLD data - in production this would be loaded from a data file
-const DEFAULT_TLDS = [
-  'com', 'org', 'net', 'edu', 'gov', 'mil', 'int',
-  'co', 'uk', 'ca', 'de', 'fr', 'it', 'es', 'nl', 'be',
-  'ch', 'se', 'no', 'dk', 'fi', 'pl', 'ru', 'cn', 'jp',
-  'au', 'nz', 'in', 'br', 'mx', 'za', 'kr', 'tw', 'hk',
-];
+import { TLDS as DEFAULT_TLDS } from '../../data/tlds.js';
 
 export function website(config: Record<string, unknown>) {
   const rebulk = new Rebulk({ disabled: (context) => isDisabled(context, 'website') });
@@ -45,15 +39,15 @@ export function website(config: Record<string, unknown>) {
     tags: ['website.prefix'],
   });
 
-  // Pass safeTlds and safePrefix from config to the rule via closure
+  // Pass safeSubdomains and safePrefix from config to the rule via closure
   class PreferTitleOverWebsiteWithConfig extends Rule {
     override consequence = RemoveMatch;
-    private safeTlds: string[];
+    private safeSubdomains: string[];
     private safePrefix: string[];
 
-    constructor(safeTldsArg: string[], safePrefixArg: string[]) {
+    constructor(safeSubdomainsArg: string[], safePrefixArg: string[]) {
       super();
-      this.safeTlds = safeTldsArg;
+      this.safeSubdomains = safeSubdomainsArg;
       this.safePrefix = safePrefixArg;
     }
 
@@ -65,7 +59,7 @@ export function website(config: Record<string, unknown>) {
       const toRemove = [];
       for (const websiteMatch of matches.named('website')) {
         let safe = false;
-        for (const safeStart of [...this.safeTlds, ...this.safePrefix]) {
+        for (const safeStart of [...this.safeSubdomains, ...this.safePrefix]) {
           if (String(websiteMatch.value ?? '').toLowerCase().startsWith(safeStart)) {
             safe = true;
             break;
@@ -95,7 +89,7 @@ export function website(config: Record<string, unknown>) {
     }
   }
 
-  rebulk.rules(new PreferTitleOverWebsiteWithConfig(safeTlds, safePrefix), ValidateWebsitePrefix);
+  rebulk.rules(new PreferTitleOverWebsiteWithConfig(safeSubdomains, safePrefix), ValidateWebsitePrefix);
 
   return rebulk;
 }

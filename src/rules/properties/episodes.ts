@@ -348,6 +348,14 @@ export function episodes(config: EpisodesConfig): Rebulk {
     )
     .repeater('*');
 
+  // Compact non-English season/episode marker: "T02E22", "T01XE08" (Spanish/Portuguese).
+  // Restricted to a "t" prefix immediately followed by an episode marker so a lone
+  // "T1" stays a title token. (upstream 4.x)
+  rebulk.regex(
+    `t(?<season>\\d{1,2})@?` + buildOrPattern(config.episode_markers, 'episodeMarker') + `@?(?<episode>\\d{1,4})`,
+    { tags: ['SxxExx'], disabled: isSeasonEpisodeDisabled },
+  );
+
   // Season-only: S01, S01S02S03
   const seasonOnlySepPattern = buildOrPattern(
     [...config.season_markers, ...discreteSeparators, ...config.range_separators],
