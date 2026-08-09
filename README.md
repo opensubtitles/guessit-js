@@ -5,13 +5,13 @@ Extract metadata (title, year, season, episode, codec, language, etc.) from medi
 [![npm version](https://img.shields.io/npm/v/guessit-js.svg)](https://www.npmjs.com/package/guessit-js)
 [![Tests](https://github.com/opensubtitles/guessit-js/actions/workflows/ci.yml/badge.svg)](https://github.com/opensubtitles/guessit-js/actions/workflows/ci.yml)
 [![License: LGPL-3.0](https://img.shields.io/badge/License-LGPL--3.0-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
-[![Python guessit compat](https://img.shields.io/badge/guessit_compat-100%25_(1036%2F1036)-brightgreen)](https://github.com/guessit-io/guessit)
+[![Python guessit compat](https://img.shields.io/badge/guessit_compat-100%25_(1289%2F1289)-brightgreen)](https://github.com/guessit-io/guessit)
 
 **[Live Demo](https://opensubtitles.github.io/guessit-js)** · **[API Docs](https://opensubtitles.github.io/guessit-js/docs)** · **[npm](https://www.npmjs.com/package/guessit-js)**
 
 ## Features
 
-- **100% compatibility** with Python guessit (1036/1036 fixtures passing) — and **more correct** in places: ships fixes for 32 upstream guessit bugs that Python still has (see [Differences from Python](#differences-from-python-guessit))
+- **100% compatibility** with Python guessit 4.4.0 (1289/1289 fixtures passing, including Python's own grown 4.x corpus) — and **more correct**: ships fixes for 32 historical upstream bugs plus Python's still-open #875 and #877 (see [Differences from Python](#differences-from-python-guessit))
 - **3.5x faster** than Python (6.87ms vs 23.86ms per parse)
 - **50 properties** detected: title, year, season, episode, resolution, codec, language, and more — with a [machine-readable schema](#output-schema)
 - **Single dependency** ([rebulk-js](https://www.npmjs.com/package/rebulk-js))
@@ -122,7 +122,7 @@ The WASM build is **bit-identical to the JS build** across the entire test corpu
 
 ## Differences from Python guessit
 
-guessit-js is a faithful port (1036/1036 fixtures match Python 3.8.0), but it is
+guessit-js is a faithful port (1289/1289 fixtures, tracking Python 4.4.0), but it is
 **not bug-for-bug identical** — where Python has a genuine parsing bug, guessit-js
 is corrected. Highlights:
 
