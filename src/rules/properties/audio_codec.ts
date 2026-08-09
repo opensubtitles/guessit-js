@@ -89,6 +89,10 @@ const COMPOUND_PROFILES: Record<string, string> = {
 };
 
 class CompoundAudioProfileRule extends Rule {
+  // Must run before AudioValidatorRule (priority 64): the appended Master Audio
+  // profile is the neighbor that keeps a glued 'MA5.1' channels match alive.
+  static priority = 128;
+  priority = 128;
   static consequence = AppendMatch;
 
   enabled(context: Context): boolean {

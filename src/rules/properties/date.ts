@@ -5,7 +5,7 @@ import { Rebulk } from 'rebulk-js';
 import { Rule, RemoveMatch } from 'rebulk-js';
 import type { Match, Matches } from 'rebulk-js';
 import type { Context } from 'rebulk-js';
-import { dash } from '../common/index.js';
+import { dash, seps } from '../common/index.js';
 import { searchDate, validYear, validWeek } from '../common/date.js';
 import { isDisabled } from '../common/pattern.js';
 import { sepsSurround } from '../common/validators.js';
@@ -169,6 +169,55 @@ export function date(config: Record<string, unknown>): Rebulk {
         : '__default__',
   });
 
-  rebulk.rules(KeepMarkedYearInFilepart, RemoveGroupedYearWithSxxExx);
+  rebulk.rules(KeepMarkedYearInFilepart, RemoveGroupedYearWithSxxExx, new AbsorbWeekdayPrefix((config['weekday_words'] as string[]) ?? []));
   return rebulk;
+}
+
+/**
+ * Absorb a weekday word glued to a date into the date match (upstream #794).
+ * "…S2025E01.Thu.2.Jan.2025.Mar.Menor.Spain…": "Thu" is the broadcast weekday, not
+ * the title — growing the date span over it removes the bogus first title hole so
+ * the real episode title after the date is reclaimed.
+ */
+class AbsorbWeekdayPrefix extends Rule {
+  override consequence = RemoveMatch;
+  private weekdayRe: RegExp;
+
+  constructor(weekdayWords: string[]) {
+    super();
+    const sepsClass = '[' + seps.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ']';
+    this.weekdayRe = new RegExp(
+      '(?:^|' + sepsClass + ')(' + buildOrPattern(weekdayWords.length ? weekdayWords : ['\\bnever\\b']) + ')' + sepsClass + '*$',
+      'i',
+    );
+  }
+
+  enabled(context: any): boolean {
+    return !isDisabled(context, 'date');
+  }
+
+  when(matches: any, _context: any): any {
+    const input: string = matches.inputString ?? '';
+    const ret: Array<[any, number]> = [];
+    for (const dateMatch of matches.named('date') ?? []) {
+      const filepart = matches.markers.atMatch(dateMatch, (m: any) => m.name === 'path', 0);
+      const lower = filepart ? filepart.start : 0;
+      const segment = input.slice(lower, dateMatch.start);
+      const weekday = this.weekdayRe.exec(segment);
+      if (!weekday) continue;
+      const groupStart = lower + weekday.index + weekday[0].indexOf(weekday[1]);
+      const claimed = matches.range(groupStart, dateMatch.start, (m: any) => !m.private) as any[];
+      if ((Array.isArray(claimed) ? claimed.length : claimed ? 1 : 0) > 0) continue;
+      ret.push([dateMatch, groupStart]);
+    }
+    return ret.length ? ret : false;
+  }
+
+  override then(matches: any, whenResponse: any, _context: any): void {
+    for (const [dateMatch, newStart] of whenResponse as Array<[any, number]>) {
+      matches.remove(dateMatch);
+      dateMatch.start = newStart;
+      matches.append(dateMatch);
+    }
+  }
 }
