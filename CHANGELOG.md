@@ -2,6 +2,21 @@
 
 All notable changes to guessit-js are documented here.
 
+## [4.3.2]
+
+Cross-parser corpus sprint: guessit-js now passes **62 of the 276 cases Python
+guessit admits failing** against anitomy/PTT/PTN/go-ptn/thcolin (was 54).
+
+- a dash-joined title starting with a bare number stays whole: "2047 - Sights of
+  Death" is one title, not title 2047 + alternative
+- "MD" is a title word before the season/episode/year anchor ("House MD Season 7"
+  → title House MD) and the Mic Dubbed tag after it
+- a title's trailing season word is cropped before a season match ("Skins Season
+  S01-S07" → title Skins)
+- sources: DvdR9/DvdR5 → DVD; HQCAM and S-Print/SPrint (Indian cam conventions)
+  → Camera
+- `scripts/cross-parser-check.mts` measures progress against the corpus
+
 ## [4.3.1]
 
 - **#744 fully fixed** — "Ted.Lasso.S03E03.4-5-1" keeps the formation whole:

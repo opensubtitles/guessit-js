@@ -213,6 +213,10 @@ abstract class TitleBaseRule extends Rule {
 
     if (segments.length < 2) return null;
 
+    // A bare number is no title on its own — "2047 - Sights of Death" is one
+    // title, not title 2047 + alternative (cross-parser corpus, go-ptn/ptn).
+    if (/^\d+$/.test(String(segments[0].value ?? '').trim())) return null;
+
     return { title: segments[0], alternatives: segments.slice(1) };
   }
 
@@ -1000,6 +1004,40 @@ class SplitOriginalScriptTitle extends Rule {
 }
 
 /**
+ * A title ending in a bare season word right before a season match ("Skins
+ * Season S01-S07") carries the marker word into the title — crop it (cross-parser
+ * corpus; mirrors the episode-marker-word cleanup on episode_title).
+ */
+class TrimSeasonWordFromTitle extends Rule {
+  static override priority = POST_PROCESS;
+  override priority = POST_PROCESS;
+  override consequence = [RemoveMatch, AppendMatch];
+
+  override when(matches: Matches, context: Context): any {
+    if (isDisabled(context, 'title')) return false;
+    const input: string = (matches as any).inputString ?? '';
+    const toRemove: Match[] = [];
+    const toAppend: Match[] = [];
+    for (const title of (matches.named('title') as Match[]) ?? []) {
+      const m = /^(.*\S)[\s._-]+(seasons?|saison)$/i.exec(String(title.value ?? ''));
+      if (!m) continue;
+      const next = matches.range(title.end, (input.length), (mm: Match) => !mm.private && !!mm.value, 0) as Match | undefined;
+      if (!next || next.name !== 'season') continue;
+      toRemove.push(title);
+      const rawHead = input.slice(title.start, title.end).slice(0, m[1].length + (String(title.value).length === (title.end - title.start) ? 0 : 0));
+      // recompute end by scanning: shrink until cleaned value equals m[1]
+      let newEnd = title.end;
+      while (newEnd > title.start && cleanup(input.slice(title.start, newEnd)).toLowerCase() !== m[1].toLowerCase()) newEnd--;
+      if (newEnd <= title.start) continue;
+      toAppend.push(new Match(title.start, newEnd, {
+        name: 'title', value: cleanup(input.slice(title.start, newEnd)), inputString: input,
+      }));
+    }
+    return (toRemove.length || toAppend.length) ? [toRemove, toAppend] : false;
+  }
+}
+
+/**
  * A short junk word before a leading anime bracket ("EvoBot.[Watakushi]_Akuma…",
  * upstream #877 B2) steals the title position. When a single-word title opens the
  * filepart, an anime release-group bracket follows it, and ANOTHER title sits
@@ -1262,7 +1300,7 @@ export function title(config: Record<string, unknown>): Rebulk {
     disabled: (context: Context) => isDisabled(context, 'title'),
   });
 
-  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, SplitOriginalScriptTitle, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle, BracketedTitleFallback, PreBracketJunkTitle);
+  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, SplitOriginalScriptTitle, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle, BracketedTitleFallback, PreBracketJunkTitle, TrimSeasonWordFromTitle);
 
   // Expected title functional pattern
   const expectedTitle = buildExpectedFunction('expected_title');

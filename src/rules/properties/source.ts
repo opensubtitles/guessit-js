@@ -49,6 +49,13 @@ export function source(config: Record<string, unknown>): Rebulk {
   rebulk.regex(...buildSourcePattern(['HD-?CAM'], '', optional(ripSuffix)),
     { value: { source: 'HD Camera', other: 'Rip' } });
 
+  // HQCAM and S-Print/SPrint (Indian cam-release conventions) are cameras too
+  // (cross-parser corpus).
+  rebulk.regex(...buildSourcePattern(['HQ-?CAM'], '', optional(ripSuffix)),
+    { value: { source: 'Camera', other: 'Rip' } });
+  rebulk.regex(...buildSourcePattern(['S-?Print'], '', optional(ripSuffix)),
+    { value: { source: 'Camera' } });
+
   // Telesync (TS is too common, avoid 'streaming_service.suffix' tag)
   rebulk.regex(...buildSourcePattern(['TELESYNC', 'TS'], '', optional(ripSuffix)),
     { value: { source: 'Telesync', other: 'Rip' }, tags: ['video-codec-prefix'], overrides: ['tags'] });
@@ -90,6 +97,9 @@ export function source(config: Record<string, unknown>): Rebulk {
   // DVD
   rebulk.regex(...buildSourcePattern(['DVD'], '', optional(ripSuffix)),
     { value: { source: 'DVD', other: 'Rip' } });
+  // DVD-R9 / DVD-R5 disc formats ("DvdR9") are DVDs (cross-parser corpus).
+  rebulk.regex(...buildSourcePattern(['DVD-?R[59]'], '', ''),
+    { value: { source: 'DVD' } });
   // "LD" alone also means "Line Dubbed", so a bare "LD" is only Laserdisc with a Rip
   // suffix; the full "Laserdisc" word matches with or without it. (upstream 4.x)
   rebulk.regex(...buildSourcePattern(['LD'], '', ripSuffix),

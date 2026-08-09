@@ -2,7 +2,7 @@
 // Python guessit admits failing vs anitomy/ptt/ptn/go-ptn/thcolin fixtures.
 // Usage: clone guessit-io/guessit, build xp-cases.json (see docs/upstream-issues.md), then npx tsx scripts/cross-parser-check.mts
 import { readFileSync, writeFileSync } from 'fs';
-import { guessit } from './src/index.js';
+import { guessit } from '../src/index.js';
 
 const SP = '/private/tmp/claude-501/-Users-brano-Documents-data-www-opensubtitles-org-public-html-github-guessit-js/d37da71b-6c4a-4670-a4af-ce5078acaee1/scratchpad';
 const cases = JSON.parse(readFileSync(SP + '/xp-cases.json', 'utf8'));

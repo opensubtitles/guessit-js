@@ -120,3 +120,38 @@
 ? Re ZERO -Starting Life in Another World- Season 2 - 15 [1080p].mkv
 : season: 2
   episode: 15
+
+# ── cross-parser corpus wins (fields Python guessit still gets wrong) ──
+? 2047 - Sights of Death (2014) 720p BrRip x264 - YIFY
+: title: 2047 - Sights of Death
+  type: movie
+  year: 2014
+
+? House MD Season 7 Complete MKV
+: title: House MD
+  season: 7
+
+# guard: a post-anchor MD stays the Mic Dubbed tag
+? House.of.Cards.S01E01.720p.MD.German.mkv
+: title: House of Cards
+  other: Mic Dubbed
+
+? Skins Season S01-S07 COMPLETE UK Soundtrack 720p WEB-DL
+: title: Skins
+  season: [1, 2, 3, 4, 5, 6, 7]
+
+? Desperation 2006 Multi Pal DvdR9-TBW1973
+: type: movie
+  title: Desperation
+  source: DVD
+  year: 2006
+
+? Thor Love and Thunder (2022) Hindi HQCAM x264 AAC.mkv
+: type: movie
+  title: Thor Love and Thunder
+  source: Camera
+
+? Avatar The Way of Water (2022) 1080p HQ S-Print Dual Audio.mkv
+: type: movie
+  title: Avatar The Way of Water
+  source: Camera
