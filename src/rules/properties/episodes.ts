@@ -101,6 +101,13 @@ function episodesSeasonChainBreaker(
  * Conflict solver for season/episode patterns
  */
 function seasonEpisodeConflictSolver(match: any, other: any): any {
+  // Any two weak-family matches (weak_episode vs weak_duplicate, parents or
+  // children) keep BOTH: the default solver would annihilate same-span pairs
+  // (264 vs 2|64) before WeakConflictSolverRule can pick the right reading.
+  const weakFamily = (m: any) => !!(m?.tags?.includes('weak-episode') ||
+    ['weak_episode', 'weak_duplicate'].includes(m?.initiator?.name) ||
+    ['weak_episode', 'weak_duplicate'].includes(m?.name));
+  if (weakFamily(match) && weakFamily(other)) return null;
   // A number-first private parent ("60 Сезон") colliding with a word-first private
   // parent ("Сезон 5") on the marker word alone: keep BOTH and let
   // RemoveNumfirstMarkerCollision decide with full context (it can see whether the
@@ -130,6 +137,13 @@ function seasonEpisodeConflictSolver(match: any, other: any): any {
           'date',
         ].includes(other.name)
       ) {
+        // A codec like "h_264" whose letter is glued to the preceding word is a
+        // phantom ("Bleach_264" is title + episode 264, upstream #877): the codec
+        // loses instead. Real "h.264"/".x264"/"HDTVx264" forms are untouched.
+        if (other.name === 'video_codec' && /^[hx][\W_]\d/i.test(String(other.raw ?? ''))) {
+          const before = (other.inputString ?? '')[other.start - 1] ?? '';
+          if (/[a-z]/i.test(before)) return other;
+        }
         return match;
       }
       if (
@@ -193,10 +207,11 @@ function seasonEpisodeConflictSolver(match: any, other: any): any {
     const otherIsWeak = !!(other.tags?.includes('weak-episode') ||
       ['weak_episode', 'weak_duplicate'].includes(other.initiator?.name));
 
-    // Both weak: don't resolve here — let WeakConflictSolverRule handle disambiguation.
-    // WeakConflictSolverRule distinguishes anime (keep weak_episode) from non-anime (keep weak_duplicate).
+    // Both weak: keep BOTH here — the default solver would annihilate the pair
+    // (264 vs 2|64 on the same span) before WeakConflictSolverRule can pick the
+    // anime (weak_episode) or non-anime (weak_duplicate) reading.
     if (matchIsWeak && otherIsWeak) {
-      return '__default__';
+      return null;
     }
     // Only one is weak: remove it
     if (matchIsWeak) return match;

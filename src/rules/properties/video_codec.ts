@@ -88,12 +88,13 @@ class ValidateVideoCodec extends Rule {
     const ret: Match[] = [];
     const codecs = matches.named('video_codec');
 
+    const hasAny = (v: any) => Array.isArray(v) ? v.length > 0 : !!v;
     for (const codec of codecs) {
-      if (!sepsBefore(codec) && !matches.atIndex(codec.start - 1, (m) => m.tags?.includes('video-codec-prefix'))) {
+      if (!sepsBefore(codec) && !hasAny(matches.atIndex(codec.start - 1, (m) => m.tags?.includes('video-codec-prefix')))) {
         ret.push(codec);
         continue;
       }
-      if (!sepsAfter(codec) && !matches.atIndex(codec.end + 1, (m) => m.tags?.includes('video-codec-suffix'))) {
+      if (!sepsAfter(codec) && !hasAny(matches.atIndex(codec.end + 1, (m) => m.tags?.includes('video-codec-suffix')))) {
         ret.push(codec);
         continue;
       }
