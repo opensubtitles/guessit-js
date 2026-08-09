@@ -19,3 +19,24 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - run: npm ci
       - run: npx vitest run test/guessit.test.ts
+
+  wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Install wasmtime
+        run: curl https://wasmtime.dev/install.sh -sSf | bash
+      - name: Build WASM (downloads pinned Javy)
+        run: bash wasm/build.sh
+      - name: Test WASM against fixtures
+        run: npx vitest run test/wasm-full.test.ts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: guessit-wasm
+          path: |
+            wasm/guessit.wasm
+            wasm/guessit.wasm.gz

@@ -185,4 +185,11 @@ that actually help:
 
 ## License
 
-LGPL-3.0
+Copyright (C) 2024-2026 OpenSubtitles
+
+Licensed under the [GNU Lesser General Public License v3.0](LICENSE) (LGPL-3.0),
+the same license as the original Python [guessit](https://github.com/guessit-io/guessit)
+library this project is ported from.
+
+Build-time and embedded third-party components (Javy, QuickJS) are covered in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

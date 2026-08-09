@@ -1,0 +1,56 @@
+name: Release
+
+# Publishes to npm via OIDC trusted publishing (no NPM_TOKEN secret).
+# Requires the "guessit-js" package on npmjs.com to have this repo + workflow
+# configured as a Trusted Publisher: https://docs.npmjs.com/trusted-publishers
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write   # create the GitHub release
+  id-token: write   # npm trusted publishing (OIDC) + provenance
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Update npm (OIDC trusted publishing needs npm >= 11.5)
+        run: npm install -g npm@latest
+
+      - run: npm ci
+
+      - name: Test
+        run: npx vitest run test/guessit.test.ts
+
+      - name: Build library
+        run: npm run build
+
+      - name: Build WASM (downloads pinned Javy)
+        run: bash wasm/build.sh
+
+      - name: Install wasmtime
+        run: curl https://wasmtime.dev/install.sh -sSf | bash
+
+      - name: Test WASM against fixtures
+        run: npx vitest run test/wasm-full.test.ts
+
+      - name: Publish to npm (trusted publishing + provenance)
+        run: npm publish --provenance --access public
+
+      - name: Create GitHub release with WASM assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            wasm/guessit.wasm wasm/guessit.wasm.gz

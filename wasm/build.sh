@@ -4,6 +4,27 @@ cd "$(dirname "$0")/.."
 
 echo "=== Building guessit-js WASM ==="
 
+# Step 0: Ensure Javy is available (downloaded on demand — never committed, see issue #1)
+JAVY="${JAVY:-tools/javy}"
+JAVY_VERSION="${JAVY_VERSION:-v9.1.0}"
+if [ ! -x "$JAVY" ]; then
+  echo "0. Downloading Javy $JAVY_VERSION..."
+  case "$(uname -s)-$(uname -m)" in
+    Linux-x86_64)  JAVY_ASSET="javy-x86_64-linux-$JAVY_VERSION.gz" ;;
+    Linux-aarch64) JAVY_ASSET="javy-arm-linux-$JAVY_VERSION.gz" ;;
+    Darwin-arm64)  JAVY_ASSET="javy-arm-macos-$JAVY_VERSION.gz" ;;
+    Darwin-x86_64) JAVY_ASSET="javy-x86_64-macos-$JAVY_VERSION.gz" ;;
+    *) echo "Unsupported platform: $(uname -s)-$(uname -m)"; exit 1 ;;
+  esac
+  mkdir -p "$(dirname "$JAVY")"
+  curl -fsSL "https://github.com/bytecodealliance/javy/releases/download/$JAVY_VERSION/$JAVY_ASSET" \
+    | gunzip > "$JAVY"
+  chmod +x "$JAVY"
+fi
+# Javy >= v3 uses `build`; older versions use `compile`
+if "$JAVY" build --help >/dev/null 2>&1; then JAVY_CMD=build; else JAVY_CMD=compile; fi
+echo "   Javy: $("$JAVY" --version 2>/dev/null || echo "$JAVY_VERSION") (subcommand: $JAVY_CMD)"
+
 # Step 1: Bundle with esbuild (IIFE, minified, all-in-one)
 echo "1. Bundling with esbuild (minified)..."
 node -e "
@@ -39,7 +60,7 @@ echo "   Wrapper: $(wc -c < wasm/guessit-wasm.js | tr -d ' ') bytes"
 
 # Step 3: Compile to WASM with Javy
 echo "3. Compiling to WASM..."
-tools/javy compile wasm/guessit-wasm.js -o wasm/guessit.wasm
+"$JAVY" $JAVY_CMD wasm/guessit-wasm.js -o wasm/guessit.wasm
 SIZE_RAW=$(stat -c%s wasm/guessit.wasm)
 echo "   Raw: $(du -h wasm/guessit.wasm | cut -f1) ($SIZE_RAW bytes)"
 

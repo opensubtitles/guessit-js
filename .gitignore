@@ -18,3 +18,9 @@ wasm/guessit-wasm.js
 # OS
 .DS_Store
 Thumbs.db
+
+# Binaries — built by CI, never committed (issue #1)
+tools/javy
+wasm/guessit.wasm
+wasm/guessit.wasm.gz
+public/wasm/guessit.wasm

@@ -23,6 +23,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm ci
+
+      - name: Build WASM for the demo (downloads pinned Javy)
+        run: bash wasm/build.sh
+
+      - name: Refresh Pages assets (copies wasm into public/)
+        run: npm run build:pages
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
