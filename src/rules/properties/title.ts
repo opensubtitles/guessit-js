@@ -466,10 +466,27 @@ abstract class TitleBaseRule extends Rule {
       }
       if (trimmedHole.length > 0 && !this.shouldRemove(trimmedHole) && trimmedHole.value) {
         // Split title at titleSeps (- / | + \) to create title + alternative_title
+        // Anime releases use " - " inside titles ("Tower of Druaga - Sword of Uruk")
+        // and a leading bracket group or CRC32 marks the naming style — keep the
+        // compound title whole instead of splitting off an alternative_title.
+        const inp0: string = (matches as any).inputString ?? '';
+        const animeStyle =
+          (matches.markers.range(filepart.start, filepart.end,
+            (m: Match) => m.name === 'group' && m.start === filepart.start, 0) as Match | undefined) !== undefined ||
+          (matches.range(filepart.start, filepart.end, (m: Match) => m.name === 'crc32', 0) as Match | undefined) !== undefined;
         // Skip the split when the alternative property is excluded (--exclude alternative_title).
-        const splitResult = (this.alternativePropertyName && !isDisabled(context, this.alternativePropertyName))
+        let splitResult = (this.alternativePropertyName && !isDisabled(context, this.alternativePropertyName))
           ? this.splitTitleAlternative(trimmedHole, inp)
           : null;
+        // Under an anime signal, wordy dash segments are one compound title
+        // ("Garo - Vanishing Line"); short coded segments ("T1", "IS") still split.
+        if (splitResult && animeStyle &&
+            splitResult.alternatives.every((a) => {
+              const v = String(a.value ?? '').trim();
+              return v.length >= 4 || /\s/.test(v);
+            })) {
+          splitResult = null;
+        }
         if (splitResult) {
           splitResult.title.name = this.matchName;
           toAppend.push(splitResult.title);
@@ -1100,17 +1117,18 @@ class BracketedTitleFallback extends Rule {
         if (rg && g.start <= rg.start && g.end >= rg.end) continue;
         const core = input.slice(g.start + 1, g.end - 1);
         if (!/[a-zA-Z]{2,}/.test(core)) continue;
-        const inner = (matches.range(g.start, g.end, (m: Match) => !m.private) as Match[]) ?? [];
-        if (inner.length) continue;
-        candidate = g;
+        // The bracket may carry property matches ("[… HD REMASTER]") — the
+        // unmatched hole inside it is the title candidate.
+        const hole = matches.holes(g.start + 1, g.end - 1, {
+          formatter: cleanup, predicate: (h: Match) => !!h.value, index: 0,
+        }) as Match | undefined;
+        if (!hole || !/[a-zA-Z]{3,}/.test(String(hole.value ?? ''))) continue;
+        candidate = hole;
         break;
       }
       if (candidate) {
-        toAppend.push(new Match(candidate.start + 1, candidate.end - 1, {
-          name: 'title',
-          value: cleanup(input.slice(candidate.start + 1, candidate.end - 1)),
-          inputString: input,
-        }));
+        candidate.name = 'title';
+        toAppend.push(candidate);
         continue;
       }
       // No wordy bracket left: a lone claimed group with only numbers/properties

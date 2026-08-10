@@ -155,3 +155,41 @@
 : type: movie
   title: Avatar The Way of Water
   source: Camera
+
+# ── anime compound titles: no dash-split under an anime signal ──
+? "[HorribleSubs] Tower of Druaga - Sword of Uruk - 04 [480p].mkv"
+: title: Tower of Druaga - Sword of Uruk
+  episode: 4
+
+? "[ACX]Neon_Genesis_Evangelion_-_Platinum_-_06_-_Showdown_in_Tokyo_3_[SaHa]_[66A8FB7D].mkv"
+: title: Neon Genesis Evangelion - Platinum
+  episode: 6
+
+? Macross Frontier - Sayonara no Tsubasa (Central Anime, 720p) [46B35E25].mkv
+: type: movie
+  title: Macross Frontier - Sayonara no Tsubasa
+
+# guards: short coded segments still split / stay separate
+? "Series/Baccano!/Baccano!_-_T1_-_Trailer_-_[Ayu](dae8173e).mkv"
+: title: Baccano!
+
+? "[Ayako]_Infinite_Stratos_-_IS_-_07_[H264][720p][EB7838FC]"
+: title: Infinite Stratos
+  episode: 7
+
+# ── bracket titles and codecs ──
+? "[Mobile Suit Gundam Seed Destiny HD REMASTER][07][Big5][720p][AVC_AAC].mp4"
+: options: -t episode
+  title: Mobile Suit Gundam Seed Destiny
+
+? "ponyo_on_the_cliff_by_the_sea[h264.dts][niizk].mkv"
+: type: movie
+  title: ponyo on the cliff by the sea
+  video_codec: H.264
+  audio_codec: DTS
+  release_group: niizk
+
+? Hayate no Gotoku 2nd Season 24 (Blu-Ray 1080p) [Chihiro] # e24 absolute
+: title: Hayate no Gotoku
+  season: 2
+  episode: 24

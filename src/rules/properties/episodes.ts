@@ -800,7 +800,9 @@ class AnimeTrailingEpisodeRule extends Rule {
       const crc = matches.range(filepart.start, filepart.end, (m: any) => m.name === 'crc32', 0);
       const animeRg = matches.range(filepart.start, filepart.end,
         (m: any) => m.name === 'release_group' && m.tags?.includes('anime'), 0);
-      if (!crc && !animeRg) continue;
+      const groupCount = ((matches.markers.range(filepart.start, filepart.end,
+        (m: any) => m.name === 'group') as any[]) ?? []).length;
+      if (!crc && !animeRg && groupCount < 3) continue;
       // Parenthesized bare number: "(9)"
       let done = false;
       for (const group of (matches.markers.range(filepart.start, filepart.end, (m: any) => m.name === 'group') as any[]) ?? []) {
@@ -976,10 +978,11 @@ class SeasonWordDashedEpisodeRule extends Rule {
 class RemoveNumfirstMarkerCollision extends Rule {
   static override priority = 70;
   override priority = 70;
-  override consequence = RemoveMatch;
+  override consequence = [RemoveMatch, AppendMatch];
 
   when(matches: any, _context: any): any {
     const toRemove: any[] = [];
+    const toAppend: any[] = [];
     const isWeak = (m: any) => !!(m.tags?.includes('weak-episode') ||
       ['weak_episode', 'weak_duplicate'].includes(m.initiator?.name));
     const removeWithParent = (m: any) => {
@@ -1012,10 +1015,22 @@ class RemoveNumfirstMarkerCollision extends Rule {
       // number-first reading wins and the trailing number stays an absolute
       // episode ("Hayate no Gotoku 2nd Season 24" → season 2).
       const gluedOrdinal = /^(?:st|nd|rd|th|ª|º|°)/i.test(String(matches.inputString ?? '').slice(nf.end, nf.end + 2));
-      if (claimed || gluedOrdinal) removeWithParent(wordFirst);
+      if (claimed || gluedOrdinal) {
+        removeWithParent(wordFirst);
+        // The word-first number was real text — resurface it as the (absolute)
+        // episode unless another property claimed it ("Studio 60 Сезон 5" → e60,
+        // "Hayate no Gotoku 2nd Season 24" → e24; matches Python).
+        if (!claimed) {
+          toAppend.push(new Match(wordFirst.start, wordFirst.end, {
+            name: 'episode',
+            value: wordFirst.value,
+            inputString: matches.inputString,
+          }));
+        }
+      }
       else removeWithParent(nf);
     }
-    return toRemove.length ? toRemove : false;
+    return (toRemove.length || toAppend.length) ? [toRemove, toAppend] : false;
   }
 }
 

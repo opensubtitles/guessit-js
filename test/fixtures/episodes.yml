@@ -4005,8 +4005,7 @@
 
 ? "[SuperGroup].Show.Name.-.Still.Name.-.11.[1080p]"
 : release_group: SuperGroup
-  title: Show Name
-  alternative_title: Still Name
+  title: Show Name - Still Name
   episode: 11
   screen_size: 1080p
   type: episode
@@ -4118,8 +4117,7 @@
 
 ? "[HorribleSubs] Garo - Vanishing Line - 01 [1080p].mkv"
 : release_group: HorribleSubs
-  title: Garo
-  alternative_title: Vanishing Line
+  title: Garo - Vanishing Line
   episode: 1
   screen_size: 1080p
   container: mkv
@@ -4127,8 +4125,7 @@
 
 ? "[HorribleSubs] Yowamushi Pedal - Glory Line - 01 [1080p].mkv"
 : release_group: HorribleSubs
-  title: Yowamushi Pedal
-  alternative_title: Glory Line
+  title: Yowamushi Pedal - Glory Line
   episode: 1
   screen_size: 1080p
   container: mkv

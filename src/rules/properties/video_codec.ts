@@ -89,12 +89,17 @@ class ValidateVideoCodec extends Rule {
     const codecs = matches.named('video_codec');
 
     const hasAny = (v: any) => Array.isArray(v) ? v.length > 0 : !!v;
+    const inp: string = (matches as any).inputString ?? '';
     for (const codec of codecs) {
-      if (!sepsBefore(codec) && !hasAny(matches.atIndex(codec.start - 1, (m) => m.tags?.includes('video-codec-prefix')))) {
+      // A codec enlarged over a bracket edge ("[h264…") is separator-bounded by
+      // the bracket itself (Python loses these — see ponyo[h264.dts]).
+      const bracketBefore = inp[codec.start] === '[' || inp[codec.start - 1] === '[';
+      const bracketAfter = inp[codec.end - 1] === ']' || inp[codec.end] === ']';
+      if (!bracketBefore && !sepsBefore(codec) && !hasAny(matches.atIndex(codec.start - 1, (m) => m.tags?.includes('video-codec-prefix')))) {
         ret.push(codec);
         continue;
       }
-      if (!sepsAfter(codec) && !hasAny(matches.atIndex(codec.end + 1, (m) => m.tags?.includes('video-codec-suffix')))) {
+      if (!bracketAfter && !sepsAfter(codec) && !hasAny(matches.atIndex(codec.end + 1, (m) => m.tags?.includes('video-codec-suffix')))) {
         ret.push(codec);
         continue;
       }

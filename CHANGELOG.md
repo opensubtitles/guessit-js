@@ -2,6 +2,28 @@
 
 All notable changes to guessit-js are documented here.
 
+## [4.4.0]
+
+Second cross-parser sprint: **74 of the 276 cases Python guessit fails** now pass
+(was 62). Minor version because alternative_title semantics change for anime
+releases.
+
+- **Anime compound titles stay whole** — under an anime signal (leading bracket
+  group or CRC32), wordy dash segments are one title: "Tower of Druaga - Sword of
+  Uruk", "Garo - Vanishing Line", "Neon Genesis Evangelion - Platinum", "Macross
+  Frontier - Sayonara no Tsubasa". Short coded segments still split ("Baccano! -
+  T1", "Infinite Stratos - IS"). Six fixtures updated to the compound reading as
+  a deliberate divergence from Python.
+- fully-bracketed names take the title from the bracket's unmatched hole even
+  when the bracket carries properties ("[Mobile Suit Gundam Seed Destiny HD
+  REMASTER][07]…")
+- codecs enlarged over a bracket edge are separator-bounded ("ponyo[h264.dts]"
+  → H.264; Python loses it)
+- a glued-ordinal marker collision resurfaces the trailing number as the
+  absolute episode ("Hayate no Gotoku 2nd Season 24" → season 2, episode 24)
+- trailing-number anime episodes also trigger on heavily bracketed names (≥3
+  groups) without CRC/release-group signals
+
 ## [4.3.2]
 
 Cross-parser corpus sprint: guessit-js now passes **62 of the 276 cases Python
