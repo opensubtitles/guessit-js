@@ -2,6 +2,26 @@
 
 All notable changes to guessit-js are documented here.
 
+## [4.5.0]
+
+Fifth cross-parser sprint — the anime/fansub tail and movie-title integrity:
+**104 of the 276 cases Python guessit fails** now pass (was 93). Minor version
+for the "Episode N before year" title semantics.
+
+- "Star Wars Episode 1 La Menace fantome 1999" → one movie title (an episode
+  word before the year with title text continuing is part of the name); a real
+  "Show.Episode.5" without a year stays an episode
+- SxxExx version suffixes ("S01E06v2") and part letters on all weak chains
+  ("111C", "09a")
+- "Mary Bell - 02 [h-b]": a scene group claimed as "NN [name]" splits into
+  episode + group
+- "Hidamari Sketch x365" — a bonus marker glued into an anime title before the
+  anchor is title text
+- lone leading years are titles ("2012.AC3.720p" → title 2012; "2012.2009" →
+  title 2012, year 2009)
+- volume variants: "Vol. 1v2 & Vol. 2" → volume [1, 2], titles no longer carry
+  the Vol token
+
 ## [4.4.2]
 
 Fourth cross-parser sprint — season/episode notations: **93 of the 276 cases

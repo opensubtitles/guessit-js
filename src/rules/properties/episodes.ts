@@ -391,7 +391,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
       seasonMarkerPattern +
         `(?<season>\\d+)@?` +
         episodeMarkerPattern +
-        `@?(?<episode>\\d+)(?:[a-d](?![a-z0-9]))?`,
+        `@?(?<episode>\\d+)(?:[a-d](?![a-z0-9]))?(?:v(?<version>\\d+))?`,
     )
     .repeater('+')
     .regex(
@@ -635,7 +635,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
       context?.type === 'movie' || isDisabled(context, 'episode'),
   })
     .defaults({ validator: null, tags: ['weak-episode'] })
-    .regex(`(?<![^\\W_])(?<episode>\\d{2})(?!(?:st|nd|rd|th)\\b)(?!(?![vV]\\d)[^\\W_])`)
+    .regex(`(?<![^\\W_])(?<episode>\\d{2})(?!(?:st|nd|rd|th)\\b)(?:[a-d](?![a-z0-9]))?(?!(?![vV]\\d)[^\\W_])`)
     .regex(`v(?<version>\\d+)`)
     .repeater('?')
     .regex(`(?<episodeSeparator>[x-])(?<episode>\\d{2})`, {
@@ -650,7 +650,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
       context?.type === 'movie' || isDisabled(context, 'episode'),
   })
     .defaults({ validator: null, tags: ['weak-episode'] })
-    .regex(`(?<![^\\W_])0(?<episode>\\d{1,2})(?!(?![vV]\\d)[^\\W_])`)
+    .regex(`(?<![^\\W_])0(?<episode>\\d{1,2})(?:[a-d](?![a-z0-9]))?(?!(?![vV]\\d)[^\\W_])`)
     .regex(`v(?<version>\\d+)`)
     .repeater('?')
     .regex(`(?<episodeSeparator>[x-])0(?<episode>\\d{1,2})`, {
@@ -670,7 +670,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
       tags: ['weak-episode'],
       name: 'weak_episode',
     })
-    .regex(`(?<![^\\W_])(?<episode>\\d{3,4})(?!(?![vV]\\d)[^\\W_])`)
+    .regex(`(?<![^\\W_])(?<episode>\\d{3,4})(?:[a-d](?![a-z0-9]))?(?!(?![vV]\\d)[^\\W_])`)
     .regex(`v(?<version>\\d+)`)
     .repeater('?')
     .regex(`(?<episodeSeparator>[x-])(?<episode>\\d{3,4})`, {
@@ -791,6 +791,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
 
   // Add rules for validation and cleanup
   rebulk.rules(
+    EpisodeWordBeforeYearAsTitle,
     RemoveGroupSuffixSeason,
     AnimeTrailingEpisodeRule,
     PreferAnchoredWeakEpisodeRule,
@@ -841,6 +842,41 @@ class RemoveGroupSuffixSeason extends Rule {
       const inGroup = matches.markers.atMatch(init, (m: any) => m.name === 'group', 0);
       if (!prev && !inGroup) continue;
       toRemove.push(season);
+      for (const c of (init.children ?? [])) if (!toRemove.includes(c)) toRemove.push(c);
+    }
+    return toRemove.length ? toRemove : false;
+  }
+}
+
+/**
+ * "Episode N" spelled out before the movie year is part of the title:
+ * "Star Wars Episode 1 La Menace fantome 1999" (cross-parser corpus). Only when
+ * a year follows and the filepart has no season/SxxExx — a real episode marker
+ * never precedes the year in movie naming.
+ */
+class EpisodeWordBeforeYearAsTitle extends Rule {
+  static override priority = 60;
+  override priority = 60;
+  override consequence = RemoveMatch;
+
+  when(matches: any, _context: any): any {
+    const toRemove: any[] = [];
+    for (const episode of (matches.named('episode') as any[]) ?? []) {
+      const init = episode.initiator ?? episode;
+      const marker = [...(init.children ?? [])].find((c: any) => c.name === 'episodeMarker');
+      if (!marker || String(marker.raw ?? '').length < 3) continue; // word marker only (Episode/Ep.)
+      const filepart = matches.markers.atMatch(episode, (m: any) => m.name === 'path', 0);
+      if (!filepart) continue;
+      const year = matches.range(episode.end, filepart.end, (m: any) => !m.private && m.name === 'year', 0);
+      if (!year) continue;
+      const seasonish = matches.range(filepart.start, filepart.end,
+        (m: any) => !m.private && (m.name === 'season' || (m.name === 'episode' && m.tags?.includes('SxxExx'))), 0);
+      if (seasonish) continue;
+      // title text must continue between the number and the year (the episode name)
+      const between = String(matches.inputString ?? '').slice(episode.end, year.start);
+      if (!/[a-zA-Z]{2,}/.test(between)) continue;
+      toRemove.push(episode);
+      if (!toRemove.includes(init)) toRemove.push(init);
       for (const c of (init.children ?? [])) if (!toRemove.includes(c)) toRemove.push(c);
     }
     return toRemove.length ? toRemove : false;

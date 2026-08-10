@@ -77,6 +77,7 @@ export function releaseGroup(config: Record<string, unknown>) {
     new SceneReleaseGroup(cleanGroupname),
     AnimeReleaseGroup,
     new TrailingTokenAfterEpisodeAsReleaseGroup(cleanGroupname),
+    NumericPrefixedGroupRule,
     RemoveSeasonPackReleaseGroup
   );
 }
@@ -553,6 +554,38 @@ class AnimeReleaseGroup extends Rule {
  * reclaim it here. Only fires when no release_group was found. (Python emits
  * release_group.)
  */
+/**
+ * A scene group claimed as "NN [name]" swallowed a leading episode number:
+ * "Mary Bell (DVD) - 02 [h-b]" (cross-parser corpus). Split it: the number is
+ * the episode, the bracket content the release group.
+ */
+class NumericPrefixedGroupRule extends Rule {
+  static override priority = -32;
+  override priority = -32;
+  override consequence = [RemoveMatch, AppendMatch];
+
+  when(matches: any, _context: any): any {
+    const input: string = matches.inputString ?? '';
+    const toRemove: any[] = [];
+    const toAppend: any[] = [];
+    for (const rg of (matches.named('release_group') as any[]) ?? []) {
+      const m = /^(\d{1,3})\s*\[([^\]]+)\]$/.exec(String(rg.value ?? ''));
+      if (!m) continue;
+      const raw = input.slice(rg.start, rg.end);
+      const numLen = m[1].length;
+      toRemove.push(rg);
+      toAppend.push(new Match(rg.start, rg.start + numLen, {
+        name: 'episode', value: parseInt(m[1], 10), inputString: input,
+      }));
+      const inner = raw.indexOf('[');
+      toAppend.push(new Match(rg.start + inner + 1, rg.end - 1, {
+        name: 'release_group', value: m[2], inputString: input,
+      }));
+    }
+    return (toRemove.length || toAppend.length) ? [toRemove, toAppend] : false;
+  }
+}
+
 class TrailingTokenAfterEpisodeAsReleaseGroup extends Rule {
   static dependency = ['AnimeReleaseGroup'];
   consequence = [RemoveMatch, AppendMatch];

@@ -273,3 +273,51 @@
 ? clny.3x11m720p.es.mkv
 : season: 3
   episode: 11
+
+# ── final sprint: anime/fansub tail + movie-title integrity ──
+? "[Judas] Aharen-san wa Hakarenai - S01E06v2.mkv"
+: season: 1
+  episode: 6
+  version: 2
+
+? "[HorribleSubs] Gintama - 111C [1080p].mkv"
+: title: Gintama
+  episode: 111
+
+? Mary Bell (DVD) - 02 [h-b].mkv
+: title: Mary Bell
+  episode: 2
+  release_group: h-b
+
+? "[SpoonSubs]_Hidamari_Sketch_x365_-_04.1_(DVD)[B6CE8458].mkv"
+: title: Hidamari Sketch x365
+  episode: 4
+
+? Star Wars Episode 1 La Menace fantome 1999 Truefrench BDrip x264-BBer
+: type: movie
+  title: Star Wars Episode 1 La Menace fantome
+  year: 1999
+
+? Star Wars Episode 6 Le Retour du Jedi 1983 Truefrench BDrip x264.mkv
+: type: movie
+  title: Star Wars Episode 6 Le Retour du Jedi
+  year: 1983
+
+# guard: a real episode word without a year stays an episode
+? Show.Episode.5.HDTV.mkv
+: title: Show
+  episode: 5
+
+? 2012.AC3.720p.BluRay.x264-XXL
+: type: movie
+  title: '2012'
+
+? "[tlacatlc6] Natsume Yuujinchou Shi Vol. 1v2 & Vol. 2 (BD 1280x720).mkv"
+: type: movie
+  title: Natsume Yuujinchou Shi
+  volume: [1, 2]
+
+? "[GS] Classroom Crisis Vol.1&2 (BD 1080p 10bit FLAC)"
+: type: movie
+  title: Classroom Crisis
+  volume: 1

@@ -1183,6 +1183,39 @@ class WordNumeralPartAtTitlePosition extends Rule {
   }
 }
 
+/**
+ * A bonus marker ("x365") glued into an anime title before the episode anchor is
+ * title text: "[SpoonSubs] Hidamari Sketch x365 - 04 …" (cross-parser corpus).
+ * Only under an anime signal (bracket release group / CRC32) and only before the
+ * anchor — a real bonus ("Movie x02 …") after the anchor stays.
+ */
+class BonusAtTitlePositionRule extends Rule {
+  static override priority = 64;
+  override priority = 64;
+  override consequence = RemoveMatch;
+
+  override when(matches: Matches, context: Context): Match[] | false {
+    if (isDisabled(context, 'bonus')) return false;
+    const toRemove: Match[] = [];
+    for (const bonus of (matches.named('bonus') as Match[]) ?? []) {
+      const filepart = matches.markers.atMatch(bonus, (m: Match) => m.name === 'path', 0) as Match | undefined;
+      if (!filepart) continue;
+      const anime =
+        matches.range(filepart.start, filepart.end, (m: Match) => m.name === 'crc32', 0) ||
+        (matches.markers.range(filepart.start, filepart.end,
+          (m: Match) => m.name === 'group' && m.start === filepart.start, 0));
+      if (!anime) continue;
+      const anchor = matches.range(bonus.end, filepart.end,
+        (m: Match) => !m.private && ['episode', 'season', 'year', 'date'].includes(m.name ?? ''), 0) as Match | undefined;
+      const bonusTitles = (matches.named('bonus_title') as Match[]) ?? [];
+      if (!anchor && !bonusTitles.length) continue;
+      toRemove.push(bonus);
+      toRemove.push(...bonusTitles.filter((bt) => bt.start >= filepart.start && bt.end <= filepart.end));
+    }
+    return toRemove.length ? toRemove : false;
+  }
+}
+
 class PropertyAtTitlePositionAsTitle extends Rule {
   static override priority = -48;
   override consequence = RemoveMatch;
@@ -1197,7 +1230,18 @@ class PropertyAtTitlePositionAsTitle extends Rule {
       // year must not anchor itself: "1923 S02E01" anchors on the season).
       const anchor = matches.range(lead.end, filepart.end,
         (m: Match) => !m.private && ['year', 'season', 'episode', 'date'].includes(m.name ?? ''), 0) as Match | undefined;
-      if (!anchor) continue;
+      // A lone leading year with nothing else title-like is itself the title
+      // ("2012.AC3.720p.BluRay", cross-parser corpus).
+      if (!anchor) {
+        const anyTitle = matches.range(filepart.start, filepart.end, (m: Match) => m.name === 'title', 0);
+        if (lead.name === 'year' && lead.start === filepart.start && !anyTitle) {
+          lead.name = 'title';
+          (lead as any).value = String((matches as any).inputString ?? '').slice(lead.start, lead.end);
+          out.push(lead);
+          continue;
+        }
+        continue;
+      }
       // A leading year with a season/episode anchor after it is a year-titled show
       // ("1923 S02E01" → title 1923, cross-parser corpus).
       const yearTitled = lead.name === 'year' && ['season', 'episode'].includes(anchor.name ?? '') &&
@@ -1358,7 +1402,7 @@ export function title(config: Record<string, unknown>): Rebulk {
     disabled: (context: Context) => isDisabled(context, 'title'),
   });
 
-  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, WordNumeralPartAtTitlePosition, SplitOriginalScriptTitle, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle, BracketedTitleFallback, PreBracketJunkTitle, TrimSeasonWordFromTitle);
+  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, WordNumeralPartAtTitlePosition, BonusAtTitlePositionRule, SplitOriginalScriptTitle, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle, BracketedTitleFallback, PreBracketJunkTitle, TrimSeasonWordFromTitle);
 
   // Expected title functional pattern
   const expectedTitle = buildExpectedFunction('expected_title');

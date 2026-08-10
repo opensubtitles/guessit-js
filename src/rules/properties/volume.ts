@@ -15,10 +15,14 @@ export function volume(_config: Record<string, unknown>): Rebulk {
   // the number. Either the short marker glued to digits ("vol127") or any marker
   // followed by a separator ("vol.3", "vol 3", "volume 12"). "volume1" (full word
   // glued, as in the NAS path "/volume1/") is intentionally NOT matched.
-  rebulk.regex('vol(?:\\d{1,3}|(?:ume)?[-. ]\\d{1,3})', {
+  // Fansub variants: "Vol. 1v2" (version), "Vol.1&2" (pair) — consume the whole
+  // token so nothing leaks into the weak-episode chains or the title.
+  rebulk.regex('vol(?:\\d{1,3}|(?:ume)?[-. ]{1,2}\\d{1,3})(?:v\\d)?(?:[&+]\\d{1,3})?', {
     name: 'volume',
     validator: sepsSurround,
-    formatter: (value: string) => parseInt(value.replace(/\D/g, ''), 10),
+    formatter: (value: string) => parseInt(String(value).replace(/^vol(?:ume)?[-. ]*/i, '').replace(/[v&+].*$/i, ''), 10),
+    conflictSolver: (match: any, other: any) =>
+      (other.name === 'episode' || other.name === 'season') ? other : '__default__',
   } as any);
 
   return rebulk;
