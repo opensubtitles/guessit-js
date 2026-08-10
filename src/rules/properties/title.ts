@@ -1154,6 +1154,35 @@ class BracketedTitleFallback extends Rule {
   }
 }
 
+/**
+ * A part written as a WORD numeral before the year/episode anchor is title text:
+ * "Dune.Part.Two.2024" → title "Dune Part Two" (cross-parser corpus). A digit
+ * part ("Part 2") and any part after the anchor stay the property.
+ */
+class WordNumeralPartAtTitlePosition extends Rule {
+  static override priority = 64;
+  override priority = 64;
+  override consequence = RemoveMatch;
+
+  override when(matches: Matches, context: Context): Match[] | false {
+    if (isDisabled(context, 'part')) return false;
+    const toRemove: Match[] = [];
+    for (const part of (matches.named('part') as Match[]) ?? []) {
+      const target = part.initiator ?? part;
+      if (/\d/.test(String(target.raw ?? ''))) continue; // digit parts stay
+      const filepart = matches.markers.atMatch(part, (m: Match) => m.name === 'path', 0) as Match | undefined;
+      if (!filepart) continue;
+      const anchor = matches.range(part.end, filepart.end,
+        (m: Match) => !m.private && ['year', 'season', 'episode', 'date'].includes(m.name ?? ''), 0) as Match | undefined;
+      if (!anchor) continue;
+      toRemove.push(part);
+      for (const c of [...(target.children ?? [])] as Match[]) if (!toRemove.includes(c)) toRemove.push(c);
+      if (target !== part && !toRemove.includes(target)) toRemove.push(target);
+    }
+    return toRemove.length ? toRemove : false;
+  }
+}
+
 class PropertyAtTitlePositionAsTitle extends Rule {
   static override priority = -48;
   override consequence = RemoveMatch;
@@ -1162,16 +1191,27 @@ class PropertyAtTitlePositionAsTitle extends Rule {
     const inp = (matches as any).inputString || '';
     const out: Match[] = [];
     for (const filepart of matches.markers.named('path') as Match[]) {
-      if (matches.range(filepart.start, filepart.end, (m: Match) => m.name === 'title', 0)) continue;
-      const anchor = matches.range(filepart.start, filepart.end,
+      const lead = matches.range(filepart.start, filepart.end, (m: Match) => !m.private && !!m.value, 0) as Match | undefined;
+      if (!lead) continue;
+      // The anchor is the first year/season/episode/date AFTER the lead (a leading
+      // year must not anchor itself: "1923 S02E01" anchors on the season).
+      const anchor = matches.range(lead.end, filepart.end,
         (m: Match) => !m.private && ['year', 'season', 'episode', 'date'].includes(m.name ?? ''), 0) as Match | undefined;
       if (!anchor) continue;
-      const lead = matches.range(filepart.start, filepart.end, (m: Match) => !m.private && !!m.value, 0) as Match | undefined;
-      if (!lead || !['other', 'country', 'edition'].includes(lead.name ?? '')) continue;
-      if (lead.start >= anchor.start) continue; // must be in the title position (before the anchor)
+      // A leading year with a season/episode anchor after it is a year-titled show
+      // ("1923 S02E01" → title 1923, cross-parser corpus).
+      const yearTitled = lead.name === 'year' && ['season', 'episode'].includes(anchor.name ?? '') &&
+        !anchor.tags?.includes('weak-episode') && !anchor.tags?.includes('weak-duplicate');
+      if (!yearTitled && !['other', 'country', 'edition'].includes(lead.name ?? '')) continue;
+      // Existing titles block the conversion unless they sit in the release zone
+      // after the anchor (a dash-group name mistaken for the title).
+      const titles = (matches.range(filepart.start, filepart.end, (m: Match) => m.name === 'title') as Match[]) ?? [];
+      if (titles.some((t) => t.start < anchor.end)) continue;
+      if (titles.length && !yearTitled) continue;
+      out.push(...titles);
       // A canonical spelling ("Extended", "Proper", "US") is a deliberate tag and stays the
       // property; only a case-divergent spelling ("xXx" vs XXX, "Us" vs US) reads as a title.
-      if ((lead.raw ?? '') === String(lead.value ?? '')) continue;
+      if (lead.name !== 'year' && (lead.raw ?? '') === String(lead.value ?? '')) continue;
       if (![...inp.slice(filepart.start, lead.start)].every((c: string) => seps.includes(c))) continue;
       out.push(lead);
     }
@@ -1318,7 +1358,7 @@ export function title(config: Record<string, unknown>): Rebulk {
     disabled: (context: Context) => isDisabled(context, 'title'),
   });
 
-  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, SplitOriginalScriptTitle, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle, BracketedTitleFallback, PreBracketJunkTitle, TrimSeasonWordFromTitle);
+  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, WordNumeralPartAtTitlePosition, SplitOriginalScriptTitle, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle, BracketedTitleFallback, PreBracketJunkTitle, TrimSeasonWordFromTitle);
 
   // Expected title functional pattern
   const expectedTitle = buildExpectedFunction('expected_title');

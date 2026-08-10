@@ -757,6 +757,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
 
   // Add rules for validation and cleanup
   rebulk.rules(
+    RemoveGroupSuffixSeason,
     AnimeTrailingEpisodeRule,
     PreferAnchoredWeakEpisodeRule,
     SeasonWordDashedEpisodeRule,
@@ -775,6 +776,41 @@ export function episodes(config: EpisodesConfig): Rebulk {
   );
 
   return rebulk;
+}
+
+/**
+ * A dash-glued "S<n>" hanging off a release token is a group name, not a season:
+ * "DD5.1-S56", "[E-AC3-S78]" (cross-parser corpus). Season-only S-chains whose
+ * initiator directly follows a dash after an audio/codec/channels token (or that
+ * sit inside a bracket group with such a token) are dropped so the release-group
+ * logic can claim them.
+ */
+class RemoveGroupSuffixSeason extends Rule {
+  static override priority = 72;
+  override priority = 72;
+  override consequence = RemoveMatch;
+
+  when(matches: any, _context: any): any {
+    const input: string = matches.inputString ?? '';
+    const toRemove: any[] = [];
+    const TOKENS = new Set(['audio_codec', 'audio_channels', 'video_codec', 'audio_profile', 'other']);
+    for (const season of (matches.named('season') as any[]) ?? []) {
+      const init = season.initiator ?? season;
+      if (!/^s\d{1,3}$/i.test(String(init.raw ?? ''))) continue;
+      const hasEpisode = [...(init.children ?? [])].some((c: any) => c.name === 'episode');
+      if (hasEpisode) continue;
+      if (input[init.start - 1] !== '-') continue;
+      const prev = matches.range(Math.max(0, init.start - 12), init.start - 1,
+        (m: any) => !m.private && TOKENS.has(m.name ?? ''), -1) ??
+        matches.range(Math.max(0, init.start - 12), init.start - 1,
+          (m: any) => !m.private && TOKENS.has(m.name ?? ''), 0);
+      const inGroup = matches.markers.atMatch(init, (m: any) => m.name === 'group', 0);
+      if (!prev && !inGroup) continue;
+      toRemove.push(season);
+      for (const c of (init.children ?? [])) if (!toRemove.includes(c)) toRemove.push(c);
+    }
+    return toRemove.length ? toRemove : false;
+  }
 }
 
 /**

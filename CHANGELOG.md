@@ -2,6 +2,21 @@
 
 All notable changes to guessit-js are documented here.
 
+## [4.4.1]
+
+Third cross-parser sprint — title integrity: **80 of the 276 cases Python
+guessit fails** now pass (was 74).
+
+- word-numeral parts before the anchor are title text: "Dune.Part.Two.2024" →
+  title "Dune Part Two" (digit "Part 2" stays the property)
+- year-titled shows: "1923 S02E01" → title "1923" (guarded to strong
+  season/episode anchors so date strings keep their year)
+- a dash-glued S<n> after an audio/codec token is a group name, not a season:
+  "DD5.1-S56", "[E-AC3-S78]" — Apollo 13 parses as the movie again
+- "DolbyD" → Dolby Digital
+- "3D-in-title" (Saw 3D vs Pacific Rim 3D) evaluated and rejected as lexically
+  unresolvable — documented, not changed
+
 ## [4.4.0]
 
 Second cross-parser sprint: **74 of the 276 cases Python guessit fails** now pass

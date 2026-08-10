@@ -193,3 +193,39 @@
 : title: Hayate no Gotoku
   season: 2
   episode: 24
+
+# ── title integrity (cross-parser sprint 3) ──
+? Dune.Part.Two.2024.2160p.WEB-DL.mkv
+: type: movie
+  title: Dune Part Two
+  year: 2024
+
+# guard: a digit part stays the property
+? Harry.Potter.Part.2.2011.1080p.mkv
+: type: movie
+  title: Harry Potter
+  part: 2
+
+? 1923 S02E01 1080p WEB H264-SuccessfulCrab
+: title: '1923'
+  season: 2
+  episode: 1
+
+? Apollo 13 (1995) [1080p] [WEB-DL] [x264] [E-AC3-S78] [Lektor PL].mkv
+: type: movie
+  title: Apollo 13
+  year: 1995
+
+? "The Killer's Game 2024 PL 1080p WEB-DL H264 DD5.1-S56"
+: type: movie
+  title: The Killer's Game
+  year: 2024
+
+# guards: real season markers stay seasons
+? Show.S05.720p.mkv
+: season: 5
+
+? Blood Diamond (2006) 1080p BluRay H264 DolbyD 5.1.mkv
+: type: movie
+  title: Blood Diamond
+  audio_codec: Dolby Digital

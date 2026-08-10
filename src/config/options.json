@@ -71,7 +71,8 @@
           "regex": [
             "Dolby-Digital",
             "DD",
-            "AC-?3D?"
+            "AC-?3D?",
+            "DolbyD"
           ]
         },
         "Dolby Atmos": {
