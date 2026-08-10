@@ -585,7 +585,8 @@
       "episode_max_range": 100,
       "max_range_gap": 1,
       "season_markers": [
-        "s"
+        "s",
+        "sn"
       ],
       "season_ep_markers": [
         "x",

@@ -2,6 +2,18 @@
 
 All notable changes to guessit-js are documented here.
 
+## [4.4.2]
+
+Fourth cross-parser sprint — season/episode notations: **93 of the 276 cases
+Python guessit fails** now pass (was 80, the best sprint yet).
+
+- "Sn4 Ep14" season marker; "S01E22c"/"S10E01b" multi-part episode letters
+- colon season ranges: "Complete Seasons 1: 11" → [1..11]
+- comma lists with ampersand: "Season 1, 2, 3, 4, 5, & 6" → [1..6]
+- decimal notations: "Episode 1.22" → s1e22, " - 6.01 - " → s6e01,
+  "[5.134]" → s5e134 — audio "5.1"/"2.0" and resolutions guarded
+- glued NxNN: "Castle1x01" and "3x11m720p" parse; 1280x720 stays a resolution
+
 ## [4.4.1]
 
 Third cross-parser sprint — title integrity: **80 of the 276 cases Python

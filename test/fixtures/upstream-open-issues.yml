@@ -229,3 +229,47 @@
 : type: movie
   title: Blood Diamond
   audio_codec: Dolby Digital
+
+# ── season/episode notations (cross-parser sprint 4) ──
+? Sons of Anarchy Sn4 Ep14 HD-TV.mkv
+: season: 4
+  episode: 14
+
+? The Twilight Zone 1985 S01E22c The Library.mp4
+: season: 1
+  episode: 22
+
+? Mash S10E01b Thats Show Biz Part 2 1080p H.264.mkv
+: season: 10
+  episode: 1
+
+? "South Park Complete Seasons 1: 11"
+: season: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+
+? "How I Met Your Mother Season 1, 2, 3, 4, 5, & 6 + Extras DVDRip"
+: season: [1, 2, 3, 4, 5, 6]
+
+? Desperate Housewives - Episode 1.22 - Goodbye for now.avi
+: season: 1
+  episode: 22
+
+? My Little Pony FiM - 6.01 - No Second Prances.mkv
+: season: 6
+  episode: 1
+
+? "Dragon Ball [5.134] Preliminary Peril.mp4"
+: season: 5
+  episode: 134
+
+# guards: audio channels and resolutions stay themselves
+? Movie.2015.DDP5.1.Atmos.mkv
+: type: movie
+  audio_channels: '5.1'
+
+? The.Man.In.The.High.Castle1x01.HDTV.XviD.mkv
+: season: 1
+  episode: 1
+
+? clny.3x11m720p.es.mkv
+: season: 3
+  episode: 11

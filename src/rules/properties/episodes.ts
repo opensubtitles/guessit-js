@@ -391,7 +391,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
       seasonMarkerPattern +
         `(?<season>\\d+)@?` +
         episodeMarkerPattern +
-        `@?(?<episode>\\d+)`,
+        `@?(?<episode>\\d+)(?:[a-d](?![a-z0-9]))?`,
     )
     .repeater('+')
     .regex(
@@ -460,6 +460,14 @@ export function episodes(config: EpisodesConfig): Rebulk {
     { tags: ['SxxExx', 'numfirst'], disabled: isSeasonEpisodeDisabled },
   );
 
+  // Glued NxNN forms without separators (cross-parser corpus): "Castle1x01",
+  // "clny.3x11m720p". Both numbers are bounded so resolutions (1280x720) and
+  // hex ids never match.
+  rebulk.regex(
+    `(?<!\\d)(?<season>\\d{1,2})(?<episodeMarker>x)(?<episode>\\d{2})(?!\\d)`,
+    { tags: ['SxxExx'], disabled: isSeasonEpisodeDisabled },
+  );
+
   // Season-only: S01, S01S02S03
   const seasonOnlySepPattern = buildOrPattern(
     [...config.season_markers, ...discreteSeparators, ...config.range_separators],
@@ -520,7 +528,8 @@ export function episodes(config: EpisodesConfig): Rebulk {
     .regex(ofWordPattern + `@?(?P<season_count>${numeral})`)
     .repeater('?')
     .regex(
-      `@?` +
+      // an optional comma before the separator covers list forms like ", & 6"
+      `(?:,@?)?@?` +
         buildOrPattern(
           [...config.range_separators, ...discreteSeparators, '@'],
           'seasonSeparator',
@@ -560,6 +569,31 @@ export function episodes(config: EpisodesConfig): Rebulk {
 
   // Episode patterns
   const episodeWordPattern = buildOrPattern(episodeWords, 'episodeMarker');
+
+  // Decimal season.episode notations (cross-parser corpus):
+  //   "Episode 1.22"        → s1 e22 (episode word + decimal)
+  //   " - 6.01 - " / "[5.134]" → s6 e1 / s5 e134 (delimited decimal)
+  // The episode needs two+ digits (or a leading zero) so audio "5.1"/"7.1" and
+  // version "2.0" never match.
+  rebulk.regex(
+    buildOrPattern(episodeWords, 'episodeMarker') + `@?(?<season>\\d{1,2})\\.(?<episode>\\d{2,3})(?!\\d)`,
+    { tags: ['SxxExx'], disabled: isSeasonEpisodeDisabled },
+  );
+  rebulk.regex(
+    `(?<=[\\s([_-][\\s._-]?)(?<season>\\d{1,2})\\.(?<episode>\\d{2,3})(?=[\\s)\\]._-]|$)(?!\\.\\d)`,
+    {
+      tags: ['SxxExx', 'decimal-episode'],
+      validator: {
+        __parent__: (m: any) => {
+          // require a real delimiter context: dash/space before, or brackets
+          const inp = m.inputString ?? '';
+          const before = inp.slice(Math.max(0, m.start - 3), m.start);
+          return /[-([]\s?$|^\s*$|\s-\s$/.test(before) || /[([]/.test(before);
+        },
+      },
+      disabled: isSeasonEpisodeDisabled,
+    },
+  );
 
   rebulk.regex(
     `(?<![a-zA-Z\\d])` + episodeWordPattern + `@?(?<episode>\\d+)` +
@@ -1295,7 +1329,9 @@ class RangeExpansionRule extends Rule {
         // (e.g. "Cap.102_104" leaves "_1" between the "02" and "04" matches).
         // "_" counts here although it is not in the configured range_separators.
         const hasRangeChar = /[-~_]/.test(between);
-        const isRange = hasRangeChar || rangeSeps.has(betweenClean) || rangeSeps.has(betweenStripMarkers);
+        // "Complete Seasons 1: 11" — a colon between two season numbers is a range
+        const seasonColon = name === 'season' && betweenClean === ':';
+        const isRange = hasRangeChar || seasonColon || rangeSeps.has(betweenClean) || rangeSeps.has(betweenStripMarkers);
 
         // Expand only on an explicit range separator. A bare episode/season
         // marker between the numbers means a new explicit value, not a range
