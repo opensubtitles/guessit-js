@@ -18,7 +18,19 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm ci
-      - run: npx vitest run test/guessit.test.ts
+      - run: npm run typecheck
+      - run: npx vitest run --exclude 'test/wasm-full.test.ts'
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Coverage (summary in job log)
+        run: npx vitest run --coverage --exclude 'test/wasm-full.test.ts'
 
   wasm:
     runs-on: ubuntu-latest

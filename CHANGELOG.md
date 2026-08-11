@@ -2,6 +2,23 @@
 
 All notable changes to guessit-js are documented here.
 
+## [4.5.3]
+
+Packaging audit + CLI:
+
+- **truly zero runtime dependencies**: rebulk-js was listed in `dependencies`
+  but has always been bundled into dist — moved to devDependencies, so
+  `npm install guessit-js` now installs nothing else
+- `exports` map: `types` condition first (fixes type resolution under
+  `moduleResolution: "bundler"` / `"node16"`), `./package.json` export added
+- `sideEffects: false` (tree-shaking) and `engines.node >= 18` declared
+- **new CLI**: `npx guessit-js <filename>` (`-j` JSON, `-t` type, `-v`, `-h`)
+- **new `version` export** — `import { version } from 'guessit-js'`
+- CI: typecheck + full unit suite in the matrix (was fixtures only),
+  separate coverage job
+- docs: README CLI/version sections, WASM corpus count 1026→1035,
+  upstream-issues.md stamped as historical snapshot
+
 ## [4.5.2]
 
 Engine upgrade: rebulk-js bumped to ^3.4.0, which fixes two bugs we filed

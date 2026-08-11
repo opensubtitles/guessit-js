@@ -25,6 +25,18 @@ Extract metadata (title, year, season, episode, codec, language, etc.) from medi
 npm install guessit-js
 ```
 
+## CLI
+
+```bash
+npx guessit-js "The.Dark.Knight.2008.1080p.BluRay.x264-GROUP.mkv"
+# title: The Dark Knight
+# year: 2008
+# ...
+
+npx guessit-js -j "Mob Psycho 100 - 09.mkv"       # JSON output
+npx guessit-js -t episode "ambiguous.file.mkv"     # force type
+```
+
 ## Usage
 
 ```typescript
@@ -65,6 +77,10 @@ guessit('file.mkv', { type: 'episode' });
 guessit('my 720p show S01E02', { expected_title: ['my 720p show'] });
 guessit('file.mkv', { allowed_languages: ['en', 'fr'] });
 guessit('file.mkv', { excludes: ['release_group'] });
+```
+
+```typescript
+import { version } from 'guessit-js';  // package version string
 ```
 
 ## Detected Properties
@@ -118,7 +134,7 @@ echo '{"filename":"Movie.2024.1080p.mkv"}' | wasmtime wasm/guessit.wasm
 ```
 
 The WASM build is **bit-identical to the JS build** across the entire test corpus
-(1026/1026, including accented titles) — verified by `test/wasm-full.test.ts`.
+(1035/1035, including accented titles) — verified by `test/wasm-full.test.ts`.
 
 ## Differences from Python guessit
 

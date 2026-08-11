@@ -1,6 +1,6 @@
 {
   "name": "guessit-js",
-  "version": "4.5.2",
+  "version": "4.5.3",
   "description": "Extract metadata (title, year, season, episode, codec, language, etc.) from media filenames — TypeScript port of Python guessit",
   "keywords": [
     "guessit",
@@ -33,15 +33,24 @@
   "main": "./dist/guessit-js.cjs",
   "module": "./dist/guessit-js.js",
   "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "bin": {
+    "guessit-js": "./bin/cli.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/guessit-js.js",
-      "require": "./dist/guessit-js.cjs",
-      "types": "./dist/index.d.ts"
-    }
+      "require": "./dist/guessit-js.cjs"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "bin"
   ],
   "scripts": {
     "dev": "vite build --watch",
@@ -66,9 +75,7 @@
     "typescript": "^5.3.0",
     "vite": "^5.0.0",
     "vite-plugin-dts": "^3.6.0",
-    "vitest": "^1.0.0"
-  },
-  "dependencies": {
+    "vitest": "^1.0.0",
     "rebulk-js": "^3.4.0"
   }
 }

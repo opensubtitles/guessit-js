@@ -15,3 +15,8 @@ export { parseOptions, loadConfig, mergeOptions } from './options.js';
 export type { GuessItOptions, RawOptions } from './options.js';
 export { rebulkBuilder } from './rules/index.js';
 export type { AdvancedConfig } from './rules/index.js';
+
+// Named import so bundlers inline only the version string, not the whole manifest.
+import { version as pkgVersion } from '../package.json';
+/** The guessit-js package version. */
+export const version: string = pkgVersion;
