@@ -346,7 +346,7 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
     "type": [
       "string"
     ],
-    "array": true,
+    "array": false,
     "scalar": true
   },
   "film": {
@@ -1079,7 +1079,7 @@ export interface GuessItResult {
   episode_count?: number;
   episode_details?: string | (string)[];
   episode_format?: "Minisode";
-  episode_title?: string | (string)[];
+  episode_title?: string;
   film?: number;
   film_title?: string;
   frame_rate?: string;

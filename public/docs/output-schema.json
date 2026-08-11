@@ -514,17 +514,7 @@
       ]
     },
     "episode_title": {
-      "oneOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      ]
+      "type": "string"
     },
     "film": {
       "type": "number"

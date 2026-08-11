@@ -14142,7 +14142,7 @@ var GUESSIT_SCHEMA = {
     "type": [
       "string"
     ],
-    "array": true,
+    "array": false,
     "scalar": true
   },
   "film": {
@@ -15007,6 +15007,12 @@ function reset() {
   defaultApi.reset();
 }
 __name(reset, "reset");
+
+// package.json
+var version = "4.7.0";
+
+// src/index.ts
+var version2 = version;
 export {
   GUESSIT_SCHEMA,
   GuessItApi,
@@ -15019,5 +15025,6 @@ export {
   parseOptions,
   properties,
   rebulkBuilder,
-  reset
+  reset,
+  version2 as version
 };

@@ -32,6 +32,9 @@ jobs:
       - name: Build WASM for the demo (downloads pinned Javy)
         run: bash wasm/build.sh
 
+      - name: Regenerate output schema (keeps /docs current)
+        run: npm run schema
+
       - name: Refresh Pages assets (copies wasm into public/)
         run: npm run build:pages
 

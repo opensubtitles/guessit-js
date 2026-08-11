@@ -15,12 +15,8 @@
   },
   "servers": [
     {
-      "url": "https://opensubtitles.github.io/guessit-js",
-      "description": "GitHub Pages (static demo)"
-    },
-    {
       "url": "http://localhost:3847",
-      "description": "Local development"
+      "description": "Local server — start with: npx guessit-js --serve (GitHub Pages is static and has no API)"
     }
   ],
   "paths": {

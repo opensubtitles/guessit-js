@@ -35,7 +35,8 @@ var GuessitJS = (() => {
     parseOptions: () => parseOptions,
     properties: () => properties,
     rebulkBuilder: () => rebulkBuilder,
-    reset: () => reset
+    reset: () => reset,
+    version: () => version2
   });
 
   // node_modules/rebulk-js/dist/rebulk-js.js
@@ -14177,7 +14178,7 @@ var GuessitJS = (() => {
       "type": [
         "string"
       ],
-      "array": true,
+      "array": false,
       "scalar": true
     },
     "film": {
@@ -15042,5 +15043,11 @@ options=${JSON.stringify(options)}
     defaultApi.reset();
   }
   __name(reset, "reset");
+
+  // package.json
+  var version = "4.7.0";
+
+  // src/index.ts
+  var version2 = version;
   return __toCommonJS(src_exports);
 })();

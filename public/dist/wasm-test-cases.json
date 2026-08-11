@@ -1,0 +1,446 @@
+[
+ [
+  "The.Dark.Knight.2008.1080p.BluRay.x264-GROUP.mkv",
+  {
+   "title": "The Dark Knight",
+   "year": 2008,
+   "screen_size": "1080p",
+   "source": "Blu-ray",
+   "video_codec": "H.264",
+   "release_group": "GROUP",
+   "container": "mkv",
+   "type": "movie",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "Breaking.Bad.S01E02.720p.BluRay.x264-DEMAND.mkv",
+  {
+   "title": "Breaking Bad",
+   "season": 1,
+   "episode": 2,
+   "screen_size": "720p",
+   "source": "Blu-ray",
+   "video_codec": "H.264",
+   "release_group": "DEMAND",
+   "container": "mkv",
+   "type": "episode",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "Game.of.Thrones.S08E06.The.Iron.Throne.1080p.AMZN.WEB-DL.DDP5.1.H.264-GoT.mkv",
+  {
+   "title": "Game of Thrones",
+   "season": 8,
+   "episode": 6,
+   "episode_title": "The Iron Throne",
+   "screen_size": "1080p",
+   "streaming_service": "Amazon Prime",
+   "source": "Web",
+   "audio_codec": "Dolby Digital Plus",
+   "audio_channels": "5.1",
+   "video_codec": "H.264",
+   "release_group": "GoT",
+   "container": "mkv",
+   "type": "episode",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "Inception.2010.REMASTERED.2160p.UHD.BluRay.x265-TERMiNAL.mkv",
+  {
+   "title": "Inception",
+   "year": 2010,
+   "edition": "Remastered",
+   "screen_size": "2160p",
+   "source": "Ultra HD Blu-ray",
+   "video_codec": "H.265",
+   "release_group": "TERMiNAL",
+   "container": "mkv",
+   "type": "movie",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "Dune Part Two 2024 1080p WEB-DL DD+ 5.1 Atmos H.265-FLUX.mkv",
+  {
+   "title": "Dune Part Two",
+   "year": 2024,
+   "screen_size": "1080p",
+   "source": "Web",
+   "audio_codec": [
+    "Dolby Digital Plus",
+    "Dolby Atmos"
+   ],
+   "audio_channels": "5.1",
+   "video_codec": "H.265",
+   "release_group": "FLUX",
+   "container": "mkv",
+   "type": "movie",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "[SubGroup] Naruto Shippuden - 301 [720p][AAC].mkv",
+  {
+   "release_group": "SubGroup",
+   "title": "Naruto Shippuden",
+   "episode": 301,
+   "screen_size": "720p",
+   "audio_codec": "AAC",
+   "container": "mkv",
+   "type": "episode",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "Cowboy.Bebop.-.23.-.Brain.Scratch.[1080p.BluRay.FLAC].mkv",
+  {
+   "title": "Cowboy Bebop",
+   "episode": 23,
+   "episode_title": "Brain Scratch",
+   "screen_size": "1080p",
+   "source": "Blu-ray",
+   "audio_codec": "FLAC",
+   "container": "mkv",
+   "type": "episode",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "The.Office.US.S02E01.The.Dundies.DVDRIP.XviD-TOPAZ.avi",
+  {
+   "title": "The Office",
+   "country": "US",
+   "season": 2,
+   "episode": 1,
+   "episode_title": "The Dundies",
+   "source": "DVD",
+   "other": "Rip",
+   "video_codec": "Xvid",
+   "release_group": "TOPAZ",
+   "container": "avi",
+   "type": "episode",
+   "mimetype": "video/x-msvideo"
+  }
+ ],
+ [
+  "Friends.S01E01.720p.BluRay.mkv",
+  {
+   "title": "Friends",
+   "season": 1,
+   "episode": 1,
+   "screen_size": "720p",
+   "source": "Blu-ray",
+   "container": "mkv",
+   "type": "episode",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "Movie.2024.2160p.UHD.BluRay.x265.mkv",
+  {
+   "title": "Movie",
+   "year": 2024,
+   "screen_size": "2160p",
+   "source": "Ultra HD Blu-ray",
+   "video_codec": "H.265",
+   "container": "mkv",
+   "type": "movie",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "Show.S01E01.720p.HDTV.x264-LOL.avi",
+  {
+   "title": "Show",
+   "season": 1,
+   "episode": 1,
+   "screen_size": "720p",
+   "source": "HDTV",
+   "video_codec": "H.264",
+   "release_group": "LOL",
+   "container": "avi",
+   "type": "episode",
+   "mimetype": "video/x-msvideo"
+  }
+ ],
+ [
+  "Movie.FRENCH.DVDRip.XviD.avi",
+  {
+   "title": "Movie",
+   "language": {
+    "alpha3": "fra"
+   },
+   "source": "DVD",
+   "other": "Rip",
+   "video_codec": "Xvid",
+   "container": "avi",
+   "type": "movie",
+   "mimetype": "video/x-msvideo"
+  }
+ ],
+ [
+  "Movie.1080p.WEB-DL.DD5.1.H.264-GROUP.mkv",
+  {
+   "title": "Movie",
+   "screen_size": "1080p",
+   "source": "Web",
+   "audio_codec": "Dolby Digital",
+   "audio_channels": "5.1",
+   "video_codec": "H.264",
+   "release_group": "GROUP",
+   "container": "mkv",
+   "type": "movie",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "test.mkv",
+  {
+   "title": "test",
+   "container": "mkv",
+   "type": "movie",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "Movie (2024).mkv",
+  {
+   "title": "Movie",
+   "year": 2024,
+   "container": "mkv",
+   "type": "movie",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "Show.Name.2x05.720p.mkv",
+  {
+   "title": "Show Name",
+   "season": 2,
+   "episode": 5,
+   "screen_size": "720p",
+   "container": "mkv",
+   "type": "episode",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "Movie.REMASTERED.2024.mkv",
+  {
+   "title": "Movie",
+   "edition": "Remastered",
+   "year": 2024,
+   "container": "mkv",
+   "type": "movie",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "Interstellar 2014 IMAX 2160p UHD Blu-ray Remux HDR HEVC Atmos-GROUP.mkv",
+  {
+   "title": "Interstellar",
+   "year": 2014,
+   "edition": "IMAX",
+   "screen_size": "2160p",
+   "source": "Ultra HD Blu-ray",
+   "other": [
+    "Remux",
+    "HDR10"
+   ],
+   "video_codec": "H.265",
+   "video_profile": "High Efficiency Video Coding",
+   "audio_codec": "Dolby Atmos",
+   "release_group": "GROUP",
+   "container": "mkv",
+   "type": "movie",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "Movies/The Matrix (1999)/The.Matrix.1999.REMASTERED.1080p.BluRay.x264-GROUP.mkv",
+  {
+   "title": "The Matrix",
+   "year": 1999,
+   "edition": "Remastered",
+   "screen_size": "1080p",
+   "source": "Blu-ray",
+   "video_codec": "H.264",
+   "release_group": "GROUP",
+   "container": "mkv",
+   "type": "movie",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "Fargo.-.Season.1.-.720p.BluRay.x264.mkv",
+  {
+   "title": "Fargo",
+   "season": 1,
+   "screen_size": "720p",
+   "source": "Blu-ray",
+   "video_codec": "H.264",
+   "container": "mkv",
+   "type": "episode",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "Mob Psycho 100 - 09 [1080p].mkv",
+  {
+   "title": "Mob Psycho 100",
+   "episode": 9,
+   "screen_size": "1080p",
+   "container": "mkv",
+   "type": "episode",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "[SCY] Attack on Titan Season 3 - 11 (BD 1080p Hi10 FLAC) [5D7A2C4E].mkv",
+  {
+   "release_group": "SCY",
+   "title": "Attack on Titan",
+   "season": 3,
+   "episode": 11,
+   "source": "Blu-ray",
+   "screen_size": "1080p",
+   "video_profile": "High 10",
+   "color_depth": "10-bit",
+   "audio_codec": "FLAC",
+   "crc32": "5D7A2C4E",
+   "container": "mkv",
+   "type": "episode",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "【MMZYSUB】★【Golden Time】[24（END）][GB][720P_MP4]",
+  {
+   "release_group": "MMZYSUB",
+   "title": "Golden Time",
+   "episode": 24,
+   "episode_title": "（END）",
+   "country": "GB",
+   "screen_size": "720p",
+   "container": "mp4",
+   "type": "episode"
+  }
+ ],
+ [
+  "UFC.247.PPV.Jones.vs.Reyes.HDTV.x264-PUNCH[TGx]",
+  {
+   "title": "UFC 247",
+   "source": [
+    "Pay-per-view",
+    "HDTV"
+   ],
+   "video_codec": "H.264",
+   "release_group": "PUNCH[TGx]",
+   "type": "movie"
+  }
+ ],
+ [
+  "[HorribleSubs] Tower of Druaga - Sword of Uruk - 04 [480p].mkv",
+  {
+   "release_group": "HorribleSubs",
+   "title": "Tower of Druaga - Sword of Uruk",
+   "episode": 4,
+   "screen_size": "480p",
+   "container": "mkv",
+   "type": "episode",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "[FuktLogik][Sayonara_Zetsubou_Sensei][01][DVDRip][x264_ogg].avi",
+  {
+   "release_group": "FuktLogik",
+   "title": "Sayonara Zetsubou Sensei",
+   "episode": 1,
+   "source": "DVD",
+   "other": "Rip",
+   "video_codec": "H.264",
+   "container": [
+    "ogg",
+    "avi"
+   ],
+   "type": "episode",
+   "mimetype": "video/x-msvideo"
+  }
+ ],
+ [
+  "Mission.Impossible.Dead.Reckoning.Part.One.2023.2160p.WEB-DL.mkv",
+  {
+   "title": "Mission Impossible Dead Reckoning Part One",
+   "year": 2023,
+   "screen_size": "2160p",
+   "source": "Web",
+   "container": "mkv",
+   "type": "movie",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "Show.S01E01E02E03.720p.mkv",
+  {
+   "title": "Show",
+   "season": 1,
+   "episode": [
+    1,
+    2,
+    3
+   ],
+   "screen_size": "720p",
+   "container": "mkv",
+   "type": "episode",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "Le.Fabuleux.Destin.d.Amelie.Poulain.2001.FRENCH.1080p.mkv",
+  {
+   "title": "Le Fabuleux Destin d Amelie Poulain",
+   "year": 2001,
+   "language": {
+    "alpha3": "fra"
+   },
+   "screen_size": "1080p",
+   "container": "mkv",
+   "type": "movie",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "4.3.2.1.2010.720p.BluRay.mkv",
+  {
+   "title": "4.3.",
+   "date": "2010-01-02T00:00:00.000Z",
+   "screen_size": "720p",
+   "source": "Blu-ray",
+   "container": "mkv",
+   "type": "episode",
+   "mimetype": "video/x-matroska"
+  }
+ ],
+ [
+  "Show (2019) - S01E01 - Pilot (1080p BluRay x265 Silence).mkv",
+  {
+   "title": "Show",
+   "year": 2019,
+   "season": 1,
+   "episode": 1,
+   "episode_details": "Pilot",
+   "episode_title": "Pilot",
+   "screen_size": "1080p",
+   "source": "Blu-ray",
+   "video_codec": "H.265",
+   "release_group": "Silence",
+   "container": "mkv",
+   "type": "episode",
+   "mimetype": "video/x-matroska"
+  }
+ ]
+]
