@@ -413,6 +413,11 @@ var __BaseMatches = class __BaseMatches {
   toArray() {
     return [...this._delegate];
   }
+  /** All matches as an array. Ported Python code reads `matches.matches` — without
+   *  this getter that silently evaluated to undefined and turned rules into no-ops. */
+  get matches() {
+    return [...this._delegate];
+  }
   // ── Cache accessors ──────────────────────────────────────────────────────
   get nameDict() {
     if (!this._nameDict) {
@@ -1710,12 +1715,10 @@ function executeRule(rule, matches, context) {
 __name(executeRule, "executeRule");
 function toposortRules(rules) {
   const graph = /* @__PURE__ */ new Map();
-  const classToDep = /* @__PURE__ */ new Map();
+  const classToDeps = /* @__PURE__ */ new Map();
   for (const rule of rules) {
-    if (classToDep.has(rule.constructor)) {
-      throw new Error(`Duplicate class rules are not allowed: ${rule.constructor.name}`);
-    }
-    classToDep.set(rule.constructor, rule);
+    const cls = rule.constructor;
+    classToDeps.set(cls, [...classToDeps.get(cls) ?? [], rule]);
   }
   for (const rule of rules) {
     const deps = /* @__PURE__ */ new Set();
@@ -1723,18 +1726,20 @@ function toposortRules(rules) {
     if (rawDeps) {
       const depArr = Array.isArray(rawDeps) ? rawDeps : [rawDeps];
       for (const dep of depArr) {
-        let resolved;
+        let resolved = [];
         if (typeof dep === "string") {
-          for (const [cls, inst] of classToDep) {
+          for (const [cls, insts] of classToDeps) {
             if (cls.name === dep) {
-              resolved = inst;
+              resolved = insts;
               break;
             }
           }
         } else {
-          resolved = classToDep.get(dep);
+          resolved = classToDeps.get(dep) ?? [];
         }
-        if (resolved) deps.add(resolved);
+        for (const inst of resolved) {
+          if (inst !== rule) deps.add(inst);
+        }
       }
     }
     graph.set(rule, deps);
@@ -2359,7 +2364,7 @@ var WORD_NUMERALS = {
   "trois": 3,
   "quatre": 4,
   "cinq": 5,
-  "six": 6,
+  // 'six' is shared with the English list above (same spelling and value)
   "sept": 7,
   "huit": 8,
   "neuf": 9,
@@ -3379,6 +3384,45 @@ function isDisabled(context, name) {
 __name(isDisabled, "isDisabled");
 
 // src/rules/properties/episodes.ts
+var CJK_DIGITS = {
+  "\u96F6": 0,
+  "\u4E00": 1,
+  "\u4E8C": 2,
+  "\u4E24": 2,
+  "\u4E09": 3,
+  "\u56DB": 4,
+  "\u4E94": 5,
+  "\u516D": 6,
+  "\u4E03": 7,
+  "\u516B": 8,
+  "\u4E5D": 9
+};
+var CJK_NUMBER = "(?:\\d{1,4}|[\u4E00\u4E8C\u4E24\u4E09\u56DB\u4E94\u516D\u4E03\u516B\u4E5D]?\u5341[\u4E00\u4E8C\u4E24\u4E09\u56DB\u4E94\u516D\u4E03\u516B\u4E5D]?|[\u96F6\u4E00\u4E8C\u4E24\u4E09\u56DB\u4E94\u516D\u4E03\u516B\u4E5D])";
+function parseCjkNumber(value) {
+  if (/^\d+$/.test(value)) return parseInt(value, 10);
+  if (value.includes("\u5341")) {
+    const [tens, ones] = value.split("\u5341");
+    const tensValue = tens ? CJK_DIGITS[tens] : 1;
+    const onesValue = ones ? CJK_DIGITS[ones] : 0;
+    return tensValue * 10 + onesValue;
+  }
+  return CJK_DIGITS[value];
+}
+__name(parseCjkNumber, "parseCjkNumber");
+function splitWords(entries) {
+  const words = [];
+  const numfirst = [];
+  for (const entry of entries) {
+    if (typeof entry === "object") {
+      if (entry.numfirst) numfirst.push(entry.value);
+      words.push(entry.value);
+    } else {
+      words.push(entry);
+    }
+  }
+  return { words, numfirst };
+}
+__name(splitWords, "splitWords");
 function episodesSeasonChainBreaker(matches, config) {
   const episodes2 = matches.named("episode") || [];
   if (episodes2.length > 1 && Math.abs(episodes2[episodes2.length - 1].value - episodes2[episodes2.length - 2].value) > config.episode_max_range) {
@@ -3399,6 +3443,20 @@ function episodesSeasonChainBreaker(matches, config) {
 }
 __name(episodesSeasonChainBreaker, "episodesSeasonChainBreaker");
 function seasonEpisodeConflictSolver(match, other2) {
+  const weakFamily = /* @__PURE__ */ __name((m) => !!(m?.tags?.includes("weak-episode") || ["weak_episode", "weak_duplicate"].includes(m?.initiator?.name) || ["weak_episode", "weak_duplicate"].includes(m?.name)), "weakFamily");
+  if (weakFamily(match) && weakFamily(other2)) return null;
+  const famChild = /* @__PURE__ */ __name((p) => {
+    if (p?.name) return null;
+    const ch = [...p?.children ?? []];
+    return ch.find((c) => c.name === "season" || c.name === "episode") ?? null;
+  }, "famChild");
+  const mChild = famChild(match);
+  const oChild = famChild(other2);
+  if (mChild && oChild) {
+    const mNumfirst = !!mChild.tags?.includes("numfirst");
+    const oNumfirst = !!oChild.tags?.includes("numfirst");
+    if (mNumfirst !== oNumfirst) return null;
+  }
   if (match.name !== other2.name) {
     if (match.name === "episode" && other2.name === "year") {
       return match;
@@ -3410,6 +3468,10 @@ function seasonEpisodeConflictSolver(match, other2) {
         "container",
         "date"
       ].includes(other2.name)) {
+        if (other2.name === "video_codec" && /^[hx][\W_]\d/i.test(String(other2.raw ?? ""))) {
+          const before = (other2.inputString ?? "")[other2.start - 1] ?? "";
+          if (/[a-z]/i.test(before)) return other2;
+        }
         return match;
       }
       if (other2.name === "audio_channels" && !other2.tags?.includes("weak-audio_channels") && !match.initiator?.children?.named(match.name + "Marker")?.length || other2.name === "screen_size" && !intCoercable(other2.raw)) {
@@ -3418,10 +3480,42 @@ function seasonEpisodeConflictSolver(match, other2) {
     }
   }
   if (["season", "episode"].includes(match.name) && ["season", "episode"].includes(other2.name) && match.initiator !== other2.initiator) {
+    const isWeak = /* @__PURE__ */ __name((m) => !!(m.tags?.includes("weak-episode") || ["weak_episode", "weak_duplicate"].includes(m.initiator?.name)), "isWeak");
+    const matchNumfirst = !!match.tags?.includes("numfirst");
+    const otherNumfirst = !!other2.tags?.includes("numfirst");
+    if (matchNumfirst !== otherNumfirst && !isWeak(match) && !isWeak(other2) && match.start < other2.end && other2.start < match.end) {
+      const nf = matchNumfirst ? match : other2;
+      const wf = matchNumfirst ? other2 : match;
+      const input = match.inputString ?? "";
+      const digitToken = /* @__PURE__ */ __name((from, dir) => {
+        let i = from;
+        while (i >= 0 && i < input.length && seps.includes(input[i])) i += dir;
+        let tok = "";
+        while (i >= 0 && i < input.length && /\d/.test(input[i])) {
+          tok = dir === 1 ? tok + input[i] : input[i] + tok;
+          i += dir;
+        }
+        return tok;
+      }, "digitToken");
+      const isYearLike = /* @__PURE__ */ __name((t) => t.length === 4 && +t >= 1900 && +t <= 2100, "isYearLike");
+      const nfInit = nf.initiator ?? nf;
+      const wfInit = wf.initiator ?? wf;
+      const nfDangling = (() => {
+        const t = digitToken(nfInit.end, 1);
+        return t.length >= 1 && t.length <= 4 && !isYearLike(t);
+      })();
+      const wfDangling = (() => {
+        const before = input.slice(Math.max(0, wfInit.start - 12), wfInit.start);
+        const m = /(\d{1,3})(?:ª|º|°|a|o|-?(?:й|я|е|го|ая|ый|ое))?[\s.,_\-–]*$/iu.exec(before);
+        return !!(m && !isYearLike(m[1]));
+      })();
+      if (wfDangling && !nfDangling) return wf;
+      return nf;
+    }
     const matchIsWeak = !!(match.tags?.includes("weak-episode") || ["weak_episode", "weak_duplicate"].includes(match.initiator?.name));
     const otherIsWeak = !!(other2.tags?.includes("weak-episode") || ["weak_episode", "weak_duplicate"].includes(other2.initiator?.name));
     if (matchIsWeak && otherIsWeak) {
-      return "__default__";
+      return null;
     }
     if (matchIsWeak) return match;
     if (otherIsWeak) return other2;
@@ -3438,7 +3532,8 @@ function seasonEpisodeConflictSolver(match, other2) {
 }
 __name(seasonEpisodeConflictSolver, "seasonEpisodeConflictSolver");
 function orderingValidator(match) {
-  const values = match.children?.to_dict?.() || {};
+  const dict = match.children?.toDict?.() ?? match.children?.to_dict?.();
+  const values = dict instanceof Map ? Object.fromEntries(dict) : dict || {};
   if (values.season && Array.isArray(values.season)) {
     const sorted = [...values.season].sort((a, b) => a - b);
     if (JSON.stringify(sorted) !== JSON.stringify(values.season)) {
@@ -3473,11 +3568,41 @@ __name(seasonWordNotYear, "seasonWordNotYear");
 function episodes(config) {
   const subtitleBoth = config.range_separators;
   const discreteSeparators = config.discrete_separators;
-  const weakDiscreteSeparators = seps.split("").filter((s) => !config.range_separators.includes(s));
+  const weakDiscreteSeparators = seps.split("").filter((s) => !config.range_separators.includes(s) && s !== "/" && s !== "\\");
   const allSeparators = [
     ...config.range_separators,
-    ...discreteSeparators
+    ...discreteSeparators,
+    ...weakDiscreteSeparators
   ];
+  const moduleOrderingValidator = orderingValidator;
+  const localOrderingValidator = /* @__PURE__ */ __name((match) => {
+    if (!moduleOrderingValidator(match)) return false;
+    const isConsecutive = /* @__PURE__ */ __name((prop) => {
+      let previous = null;
+      let valid = true;
+      const children = match.children;
+      const named = children?.named?.(prop) ?? [];
+      for (const current of Array.isArray(named) ? named : [named]) {
+        if (previous) {
+          const separator = children.previous?.(current, (m) => m.name === prop + "Separator", 0);
+          if (separator) {
+            const sraw = String(separator.raw ?? "");
+            if (!config.range_separators.includes(sraw) && weakDiscreteSeparators.includes(sraw)) {
+              const gap = Number(current.value) - Number(previous.value);
+              if (!(gap > 0 && gap <= config.max_range_gap + 1)) valid = false;
+            }
+            if (discreteSeparators.includes(sraw)) {
+              valid = true;
+              break;
+            }
+          }
+        }
+        previous = current;
+      }
+      return valid;
+    }, "isConsecutive");
+    return isConsecutive("episode") && isConsecutive("season");
+  }, "localOrderingValidator");
   const wordNumerals = [
     "zero",
     "one",
@@ -3526,15 +3651,16 @@ function episodes(config) {
   __name(isSeasonEpisodeDisabled, "isSeasonEpisodeDisabled");
   const rebulk = new Rebulk().regexDefaults({ flags: "i" }).stringDefaults({ ignoreCase: true }).defaults({
     privateNames: ["episodeSeparator", "seasonSeparator", "episodeMarker", "seasonMarker"],
-    formatter: { season: /* @__PURE__ */ __name((v) => parseInt(v, 10), "season"), episode: /* @__PURE__ */ __name((v) => parseInt(v, 10), "episode"), version: /* @__PURE__ */ __name((v) => parseInt(v, 10), "version") },
+    formatter: { season: /* @__PURE__ */ __name((v) => parseInt(v, 10), "season"), episode: /* @__PURE__ */ __name((v) => parseInt(v, 10), "episode"), version: /* @__PURE__ */ __name((v) => parseInt(v, 10), "version"), count: /* @__PURE__ */ __name((v) => parseInt(v, 10), "count") },
     children: true,
     privateParent: true,
     conflictSolver: seasonEpisodeConflictSolver,
     abbreviations: [altDash]
   });
-  rebulk.regex("\u7B2C(?<episode>\\d{1,4})\u8A71", { tags: ["SxxExx"] });
-  rebulk.regex("(?:\u30B7\u30FC\u30BA\u30F3|\u30B7\u30EA\u30FC\u30BA)(?<season>\\d{1,2})", { tags: ["SxxExx"] });
-  rebulk.regex("(?<season>\\d{1,2})\u671F", {});
+  rebulk.regex(`\u7B2C(?<episode>${CJK_NUMBER})[\u8A71\u8BDD\u96C6]`, { tags: ["SxxExx"], formatter: { episode: parseCjkNumber } });
+  rebulk.regex(`\u7B2C(?<season>${CJK_NUMBER})\u5B63`, { tags: ["SxxExx"], formatter: { season: parseCjkNumber } });
+  rebulk.regex("(?:\u30B7\u30FC\u30BA\u30F3|\u30B7\u30EA\u30FC\u30BA)(?<season>\\d{1,2})(?!\\d)", { tags: ["SxxExx"] });
+  rebulk.regex("(?<!\\d)(?<season>\\d{1,2})\u671F", {});
   const seasonMarkerPattern = buildOrPattern(config.season_markers, "seasonMarker");
   const episodeMarkerPattern = buildOrPattern(
     [...config.episode_markers, ...config.disc_markers],
@@ -3549,16 +3675,17 @@ function episodes(config) {
     tags: ["SxxExx"],
     validateAll: true,
     validator: {
-      __parent__: and_(sepsSurround, orderingValidator)
+      __parent__: and_(sepsSurround, localOrderingValidator)
     },
     chainBreaker: /* @__PURE__ */ __name((matches) => episodesSeasonChainBreaker(matches, config), "chainBreaker"),
     disabled: isSeasonEpisodeDisabled
   }).defaults({ tags: ["SxxExx"] }).regex(
-    seasonMarkerPattern + `(?<season>\\d+)@?` + episodeMarkerPattern + `@?(?<episode>\\d+)`
+    seasonMarkerPattern + `(?<season>\\d+)@?` + episodeMarkerPattern + `@?(?<episode>\\d+)(?:[a-d](?![a-z0-9]))?(?:v(?<version>\\d+))?`
   ).repeater("+").regex(
     allSeparatorsPattern + `@?(?<episode>\\d+)`
   ).repeater("*");
   const seasonEpMarkerPattern = buildOrPattern(config.season_ep_markers, "episodeMarker");
+  const asymmetricSeasonEpMarker = `(?!@` + buildOrPattern(config.season_ep_markers) + `\\d)`;
   rebulk.chain({
     tags: ["SxxExx"],
     validateAll: true,
@@ -3567,7 +3694,7 @@ function episodes(config) {
     },
     disabled: isSeasonEpisodeDisabled
   }).defaults({ tags: ["SxxExx"] }).regex(
-    `(?<season>\\d+)@?` + seasonEpMarkerPattern + `@?(?<episode>\\d+)`
+    `(?!0x[0-9a-fA-F])(?<season>\\d+)` + asymmetricSeasonEpMarker + `@?` + seasonEpMarkerPattern + `@?(?<episode>\\d+)`
   ).repeater("+");
   rebulk.chain({
     tags: ["SxxExx"],
@@ -3576,13 +3703,29 @@ function episodes(config) {
       __parent__: and_(sepsSurround, orderingValidator)
     },
     disabled: isSeasonEpisodeDisabled
-  }).defaults({ tags: ["SxxExx"] }).regex(`(?<season>\\d+)@?` + seasonEpMarkerPattern + `@?(?<episode>\\d+)`).regex(
+  }).defaults({ tags: ["SxxExx"] }).regex(`(?!0x[0-9a-fA-F])(?<season>\\d+)` + asymmetricSeasonEpMarker + `@?` + seasonEpMarkerPattern + `@?(?<episode>\\d+)`).regex(
     buildOrPattern(
       [...config.season_ep_markers, ...discreteSeparators, ...config.range_separators],
       "episodeSeparator",
       true
     ) + `(?<episode>\\d+)`
   ).repeater("*");
+  rebulk.regex(
+    `t(?<season>\\d{1,2})@?` + buildOrPattern(config.episode_markers, "episodeMarker") + `@?(?<episode>\\d{1,4})`,
+    { tags: ["SxxExx"], disabled: isSeasonEpisodeDisabled }
+  );
+  rebulk.regex(
+    `(?<![^\\W_])(?:SP|EX|OVA|OAV)-?(?<episode>\\d{1,3})(?![^\\W_])`,
+    { tags: ["SxxExx", "special-episode"], disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "episode"), "disabled") }
+  );
+  rebulk.regex(
+    `(?<season>\\d{1,2})(?:st|nd|rd|th)@?(?:season)(?![^\\W_])`,
+    { tags: ["SxxExx", "numfirst"], disabled: isSeasonEpisodeDisabled }
+  );
+  rebulk.regex(
+    `(?<!\\d)(?<season>\\d{1,2})(?<episodeMarker>x)(?<episode>\\d{2})(?!\\d)`,
+    { tags: ["SxxExx"], disabled: isSeasonEpisodeDisabled }
+  );
   const seasonOnlySepPattern = buildOrPattern(
     [...config.season_markers, ...discreteSeparators, ...config.range_separators],
     "seasonSeparator",
@@ -3605,7 +3748,9 @@ function episodes(config) {
       disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "episode_details"), "disabled")
     });
   }
-  const seasonWordPattern = buildOrPattern(config.season_words, "seasonMarker");
+  const { words: seasonWords, numfirst: seasonWordsNumfirst } = splitWords(config.season_words);
+  const { words: episodeWords, numfirst: episodeWordsNumfirst } = splitWords(config.episode_words);
+  const seasonWordPattern = buildOrPattern(seasonWords, "seasonMarker");
   const ofWordPattern = buildOrPattern(config.of_words);
   rebulk.chain({
     validateAll: true,
@@ -3623,13 +3768,53 @@ function episodes(config) {
     validator: { season: seasonWordNotYear, season_count: validateRoman },
     conflictSolver: seasonEpisodeConflictSolver
   }).regex(seasonWordPattern + `@?(?P<season>${numeralWithWords})`).regex(ofWordPattern + `@?(?P<season_count>${numeral})`).repeater("?").regex(
-    `@?` + buildOrPattern(
+    // an optional comma before the separator covers list forms like ", & 6"
+    `(?:,@?)?@?` + buildOrPattern(
       [...config.range_separators, ...discreteSeparators, "@"],
       "seasonSeparator",
       true
     ) + `@?(?P<season>\\d+)`
   ).repeater("*");
-  const episodeWordPattern = buildOrPattern(config.episode_words, "episodeMarker");
+  const ofCountPattern = `(?:@?` + ofWordPattern + `@?(?<count>\\d+))?`;
+  if (seasonWordsNumfirst.length > 0) {
+    rebulk.regex(
+      `(?<season>\\d{1,2})` + config.ordinal_suffix + `@?@?` + buildOrPattern(seasonWordsNumfirst, "seasonMarker") + `(?![^\\W\\d_])` + ofCountPattern,
+      {
+        tags: ["SxxExx", "numfirst"],
+        formatter: { season: parseNumber, count: /* @__PURE__ */ __name((v) => parseInt(v, 10), "count") },
+        disabled: isSeasonEpisodeDisabled
+      }
+    );
+  }
+  if (episodeWordsNumfirst.length > 0) {
+    rebulk.regex(
+      `(?<episode>\\d{1,3})` + config.ordinal_suffix + `@?@?` + buildOrPattern(episodeWordsNumfirst, "episodeMarker") + `(?![^\\W\\d_])` + ofCountPattern,
+      {
+        tags: ["SxxExx", "numfirst"],
+        formatter: { episode: parseNumber, count: /* @__PURE__ */ __name((v) => parseInt(v, 10), "count") },
+        disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "episode"), "disabled")
+      }
+    );
+  }
+  const episodeWordPattern = buildOrPattern(episodeWords, "episodeMarker");
+  rebulk.regex(
+    buildOrPattern(episodeWords, "episodeMarker") + `@?(?<season>\\d{1,2})\\.(?<episode>\\d{2,3})(?!\\d)`,
+    { tags: ["SxxExx"], disabled: isSeasonEpisodeDisabled }
+  );
+  rebulk.regex(
+    `(?<=[\\s([_-][\\s._-]?)(?<season>\\d{1,2})\\.(?<episode>\\d{2,3})(?=[\\s)\\]._-]|$)(?!\\.\\d)`,
+    {
+      tags: ["SxxExx", "decimal-episode"],
+      validator: {
+        __parent__: /* @__PURE__ */ __name((m) => {
+          const inp = m.inputString ?? "";
+          const before = inp.slice(Math.max(0, m.start - 3), m.start);
+          return /[-([]\s?$|^\s*$|\s-\s$/.test(before) || /[([]/.test(before);
+        }, "__parent__")
+      },
+      disabled: isSeasonEpisodeDisabled
+    }
+  );
   rebulk.regex(
     `(?<![a-zA-Z\\d])` + episodeWordPattern + `@?(?<episode>\\d+)(?:v(?<version>\\d+))?(?:@?` + ofWordPattern + `@?(?<count>\\d+))?`,
     {
@@ -3655,13 +3840,13 @@ function episodes(config) {
   rebulk.chain({
     tags: ["weak-episode"],
     disabled: /* @__PURE__ */ __name((context) => context?.type === "movie" || isDisabled(context, "episode"), "disabled")
-  }).defaults({ validator: null, tags: ["weak-episode"] }).regex(`(?<episode>\\d{2})(?!(?:st|nd|rd|th)\\b)`).regex(`v(?<version>\\d+)`).repeater("?").regex(`(?<episodeSeparator>[x-])(?<episode>\\d{2})`, {
+  }).defaults({ validator: null, tags: ["weak-episode"] }).regex(`(?<![^\\W_])(?<episode>\\d{2})(?!(?:st|nd|rd|th)\\b)(?!%)(?:[a-d](?![a-z0-9]))?(?!(?![vV]\\d)[^\\W_])`).regex(`v(?<version>\\d+)`).repeater("?").regex(`(?<episodeSeparator>[x-])(?<episode>\\d{2})`, {
     abbreviations: null
   }).repeater("*");
   rebulk.chain({
     tags: ["weak-episode"],
     disabled: /* @__PURE__ */ __name((context) => context?.type === "movie" || isDisabled(context, "episode"), "disabled")
-  }).defaults({ validator: null, tags: ["weak-episode"] }).regex(`0(?<episode>\\d{1,2})`).regex(`v(?<version>\\d+)`).repeater("?").regex(`(?<episodeSeparator>[x-])0(?<episode>\\d{1,2})`, {
+  }).defaults({ validator: null, tags: ["weak-episode"] }).regex(`(?<![^\\W_])0(?<episode>\\d{1,2})(?!%)(?:[a-d](?![a-z0-9]))?(?!(?![vV]\\d)[^\\W_])`).regex(`v(?<version>\\d+)`).repeater("?").regex(`(?<episodeSeparator>[x-])0(?<episode>\\d{1,2})`, {
     abbreviations: null
   }).repeater("*");
   rebulk.chain({
@@ -3672,13 +3857,13 @@ function episodes(config) {
     validator: null,
     tags: ["weak-episode"],
     name: "weak_episode"
-  }).regex(`(?<episode>\\d{3,4})`).regex(`v(?<version>\\d+)`).repeater("?").regex(`(?<episodeSeparator>[x-])(?<episode>\\d{3,4})`, {
+  }).regex(`(?<![^\\W_])(?<episode>\\d{3,4})(?!%)(?:[a-d](?![a-z0-9]))?(?!(?![vV]\\d)[^\\W_])`).regex(`v(?<version>\\d+)`).repeater("?").regex(`(?<episodeSeparator>[x-])(?<episode>\\d{3,4})`, {
     abbreviations: null
   }).repeater("*");
   rebulk.chain({
     tags: ["weak-episode"],
     disabled: /* @__PURE__ */ __name((context) => context?.type !== "episode" || isDisabled(context, "episode"), "disabled")
-  }).defaults({ validator: null, tags: ["weak-episode"] }).regex(`(?<episode>\\d)`).regex(`v(?<version>\\d+)`).repeater("?").regex(`(?<episodeSeparator>[x-])(?<episode>\\d{1,2})`, {
+  }).defaults({ validator: null, tags: ["weak-episode"] }).regex(`(?<![^\\W_])(?<episode>\\d)(?!-[a-z])(?!%)(?!(?![vV]\\d)[^\\W_])`).regex(`v(?<version>\\d+)`).repeater("?").regex(`(?<episodeSeparator>[x-])(?<episode>\\d{1,2})`, {
     abbreviations: null
   }).repeater("*");
   rebulk.chain({
@@ -3707,7 +3892,7 @@ function episodes(config) {
     name: "weak_duplicate",
     validator: null,
     conflictSolver: seasonEpisodeConflictSolver
-  }).regex(`(?<season>\\d{1,2})(?<episode>\\d{2})`).regex(`v(?<version>\\d+)`).repeater("?").regex(`(?<episodeSeparator>x|-)(?<episode>\\d{2})`, {
+  }).regex(`(?<![^\\W_])(?<season>\\d{1,2})(?<episode>\\d{2})(?!%)(?!(?![vV]\\d)[^\\W_])`).regex(`v(?<version>\\d+)`).repeater("?").regex(`(?<episodeSeparator>x|-)(?<episode>\\d{2})`, {
     abbreviations: null
   }).repeater("*");
   rebulk.regex(`v(?<version>\\d+)`, {
@@ -3715,9 +3900,11 @@ function episodes(config) {
     disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "version"), "disabled")
   });
   rebulk.regex(
-    `(?<episode>\\d+)@?` + ofWordPattern + `@?(?<episode_count>\\d+)@?` + episodeWordPattern + "?",
+    // The lookbehind keeps this off token tails: "AC3-de[42]" is not "episode 3 of 42"
+    // ('de' is also a Spanish of-word — codec suffixes must stay intact).
+    `(?<![^\\W_])(?<episode>\\d+)@?` + ofWordPattern + `@?(?<count>\\d+)@?` + episodeWordPattern + "?",
     {
-      formatter: { episode: /* @__PURE__ */ __name((v) => parseInt(v, 10), "episode"), episode_count: /* @__PURE__ */ __name((v) => parseInt(v, 10), "episode_count") },
+      formatter: { episode: /* @__PURE__ */ __name((v) => parseInt(v, 10), "episode"), count: /* @__PURE__ */ __name((v) => parseInt(v, 10), "count") },
       preMatchProcessor: /* @__PURE__ */ __name((match) => {
         match.value = cleanup(match.value);
         return match;
@@ -3733,6 +3920,14 @@ function episodes(config) {
     disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "episode_format"), "disabled")
   });
   rebulk.rules(
+    EventNumberAsTitleRule,
+    EpisodeWordBeforeYearAsTitle,
+    RemoveGroupSuffixSeason,
+    AnimeTrailingEpisodeRule,
+    PreferAnchoredWeakEpisodeRule,
+    SeasonWordDashedEpisodeRule,
+    RemoveNumfirstMarkerCollision,
+    CountValidator,
     new DiscMarkerRule(config),
     FixCorruptedGroupBoundaryValues,
     new RangeExpansionRule(config),
@@ -3747,6 +3942,378 @@ function episodes(config) {
   return rebulk;
 }
 __name(episodes, "episodes");
+var _RemoveGroupSuffixSeason = class _RemoveGroupSuffixSeason extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = 72;
+    this.consequence = RemoveMatch;
+  }
+  when(matches, _context) {
+    const input = matches.inputString ?? "";
+    const toRemove = [];
+    const TOKENS = /* @__PURE__ */ new Set(["audio_codec", "audio_channels", "video_codec", "audio_profile", "other"]);
+    for (const season of matches.named("season") ?? []) {
+      const init = season.initiator ?? season;
+      if (!/^s\d{1,3}$/i.test(String(init.raw ?? ""))) continue;
+      const hasEpisode = [...init.children ?? []].some((c) => c.name === "episode");
+      if (hasEpisode) continue;
+      if (input[init.start - 1] !== "-") continue;
+      const prev = matches.range(
+        Math.max(0, init.start - 12),
+        init.start - 1,
+        (m) => !m.private && TOKENS.has(m.name ?? ""),
+        -1
+      ) ?? matches.range(
+        Math.max(0, init.start - 12),
+        init.start - 1,
+        (m) => !m.private && TOKENS.has(m.name ?? ""),
+        0
+      );
+      const inGroup = matches.markers.atMatch(init, (m) => m.name === "group", 0);
+      if (!prev && !inGroup) continue;
+      toRemove.push(season);
+      for (const c of init.children ?? []) if (!toRemove.includes(c)) toRemove.push(c);
+    }
+    return toRemove.length ? toRemove : false;
+  }
+};
+__name(_RemoveGroupSuffixSeason, "RemoveGroupSuffixSeason");
+_RemoveGroupSuffixSeason.priority = 72;
+var RemoveGroupSuffixSeason = _RemoveGroupSuffixSeason;
+var _EventNumberAsTitleRule = class _EventNumberAsTitleRule extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = 60;
+    this.consequence = RemoveMatch;
+  }
+  when(matches, _context) {
+    const input = matches.inputString ?? "";
+    const toRemove = [];
+    const isWeak = /* @__PURE__ */ __name((m) => !!(m.tags?.includes("weak-episode") || ["weak_episode", "weak_duplicate"].includes(m.initiator?.name)), "isWeak");
+    for (const filepart of matches.markers.named("path") ?? []) {
+      const weaks = matches.range(
+        filepart.start,
+        filepart.end,
+        (m) => m.name === "episode" && !m.private && isWeak(m)
+      ) ?? [];
+      if (!weaks.length) continue;
+      const strong = matches.range(filepart.start, filepart.end, (m) => !m.private && (m.name === "season" || m.name === "year" || m.name === "date" || m.name === "episode" && m.tags?.includes("SxxExx")), 0);
+      for (const w of weaks) {
+        const init = w.initiator ?? w;
+        const after = input.slice(init.end, init.end + 5);
+        if (/^[\s._-]?PPV/i.test(after)) {
+          for (const c of [init, ...init.children ?? []]) if (!toRemove.includes(c)) toRemove.push(c);
+          continue;
+        }
+        if (!strong && init.start === filepart.start && /^[1-9]\d$/.test(String(init.raw ?? ""))) {
+          const rest = input.slice(init.end, filepart.end);
+          const words = rest.match(/[A-Za-z][a-z]+/g) ?? [];
+          if (words.length >= 2) {
+            for (const c of [init, ...init.children ?? []]) if (!toRemove.includes(c)) toRemove.push(c);
+          }
+        }
+      }
+    }
+    return toRemove.length ? toRemove : false;
+  }
+};
+__name(_EventNumberAsTitleRule, "EventNumberAsTitleRule");
+_EventNumberAsTitleRule.priority = 60;
+var EventNumberAsTitleRule = _EventNumberAsTitleRule;
+var _EpisodeWordBeforeYearAsTitle = class _EpisodeWordBeforeYearAsTitle extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = 60;
+    this.consequence = RemoveMatch;
+  }
+  when(matches, _context) {
+    const toRemove = [];
+    for (const episode of matches.named("episode") ?? []) {
+      const init = episode.initiator ?? episode;
+      const marker = [...init.children ?? []].find((c) => c.name === "episodeMarker");
+      if (!marker || String(marker.raw ?? "").length < 3) continue;
+      const filepart = matches.markers.atMatch(episode, (m) => m.name === "path", 0);
+      if (!filepart) continue;
+      const year = matches.range(episode.end, filepart.end, (m) => !m.private && m.name === "year", 0);
+      if (!year) continue;
+      const seasonish = matches.range(
+        filepart.start,
+        filepart.end,
+        (m) => !m.private && (m.name === "season" || m.name === "episode" && m.tags?.includes("SxxExx")),
+        0
+      );
+      if (seasonish) continue;
+      const between = String(matches.inputString ?? "").slice(episode.end, year.start);
+      if (!/[a-zA-Z]{2,}/.test(between)) continue;
+      toRemove.push(episode);
+      if (!toRemove.includes(init)) toRemove.push(init);
+      for (const c of init.children ?? []) if (!toRemove.includes(c)) toRemove.push(c);
+    }
+    return toRemove.length ? toRemove : false;
+  }
+};
+__name(_EpisodeWordBeforeYearAsTitle, "EpisodeWordBeforeYearAsTitle");
+_EpisodeWordBeforeYearAsTitle.priority = 60;
+var EpisodeWordBeforeYearAsTitle = _EpisodeWordBeforeYearAsTitle;
+var _AnimeTrailingEpisodeRule = class _AnimeTrailingEpisodeRule extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = -64;
+    this.consequence = [RemoveMatch, AppendMatch];
+  }
+  when(matches, _context) {
+    const input = matches.inputString ?? "";
+    const toRemove = [];
+    const toAppend = [];
+    const episodes2 = matches.named("episode") ?? [];
+    if (episodes2.length) return false;
+    for (const filepart of matches.markers.named("path") ?? []) {
+      const crc2 = matches.range(filepart.start, filepart.end, (m2) => m2.name === "crc32", 0);
+      const animeRg = matches.range(
+        filepart.start,
+        filepart.end,
+        (m2) => m2.name === "release_group" && m2.tags?.includes("anime"),
+        0
+      );
+      const groupCount = (matches.markers.range(
+        filepart.start,
+        filepart.end,
+        (m2) => m2.name === "group"
+      ) ?? []).length;
+      if (!crc2 && !animeRg && groupCount < 3) continue;
+      let done = false;
+      for (const group of matches.markers.range(filepart.start, filepart.end, (m2) => m2.name === "group") ?? []) {
+        const core = input.slice(group.start + 1, group.end - 1).trim();
+        if (!/^\d{1,3}$/.test(core)) continue;
+        const inner = matches.range(group.start, group.end, (m2) => !m2.private) ?? [];
+        if (inner.some((m2) => !["alternative_title", "episode_title"].includes(m2.name ?? "") && !m2.tags?.includes("weak-episode"))) continue;
+        toRemove.push(...inner);
+        toAppend.push(new Match(group.start + 1, group.end - 1, {
+          name: "episode",
+          value: parseInt(core, 10),
+          inputString: input,
+          tags: ["anime"]
+        }));
+        done = true;
+        break;
+      }
+      if (done) continue;
+      const title2 = matches.range(filepart.start, filepart.end, (m2) => m2.name === "title", 0);
+      if (!title2) continue;
+      const m = /^(.*[^\W\d_])[\s._-]+(\d{1,3})$/.exec(input.slice(title2.start, title2.end));
+      if (!m) continue;
+      const numStart = title2.start + m[1].length + (m[0].length - m[1].length - m[2].length);
+      toRemove.push(title2);
+      const newTitle = new Match(title2.start, title2.start + m[1].length, {
+        name: "title",
+        value: cleanup(m[1]),
+        inputString: input
+      });
+      toAppend.push(newTitle);
+      toAppend.push(new Match(numStart, title2.end, {
+        name: "episode",
+        value: parseInt(m[2], 10),
+        inputString: input,
+        tags: ["anime"]
+      }));
+    }
+    return toRemove.length || toAppend.length ? [toRemove, toAppend] : false;
+  }
+};
+__name(_AnimeTrailingEpisodeRule, "AnimeTrailingEpisodeRule");
+_AnimeTrailingEpisodeRule.priority = -64;
+var AnimeTrailingEpisodeRule = _AnimeTrailingEpisodeRule;
+var _PreferAnchoredWeakEpisodeRule = class _PreferAnchoredWeakEpisodeRule extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = 40;
+    this.consequence = RemoveMatch;
+  }
+  when(matches, _context) {
+    const input = matches.inputString ?? "";
+    const toRemove = [];
+    const isWeakEp = /* @__PURE__ */ __name((m) => m.name === "episode" && !m.private && (m.tags?.includes("weak-episode") || ["weak_episode", "weak_duplicate"].includes(m.initiator?.name)), "isWeakEp");
+    const removeGroup = /* @__PURE__ */ __name((init) => {
+      for (const c of [...init.children ?? [], init]) {
+        if (!toRemove.includes(c)) toRemove.push(c);
+      }
+      if (!init.children?.length && !toRemove.includes(init)) toRemove.push(init);
+    }, "removeGroup");
+    for (const filepart of matches.markers.named("path") ?? []) {
+      const weaks = matches.range(filepart.start, filepart.end, isWeakEp) ?? [];
+      if (!weaks.length) continue;
+      const strong = matches.range(filepart.start, filepart.end, (m) => m.name === "episode" && !m.private && !isWeakEp(m) && !!m.initiator?.children?.named?.("episodeMarker")?.length, 0);
+      const byInit = /* @__PURE__ */ new Map();
+      for (const w of weaks) {
+        const init = w.initiator ?? w;
+        byInit.set(init, [...byInit.get(init) ?? [], w]);
+      }
+      if (strong) {
+        for (const init of byInit.keys()) removeGroup(init);
+        continue;
+      }
+      if (byInit.size < 2) continue;
+      const score = /* @__PURE__ */ __name((init) => {
+        let sc = 0;
+        const raw = String(init.raw ?? "");
+        if (/^0\d/.test(raw)) sc += 4;
+        let i = init.start - 1;
+        while (i >= 0 && (input[i] === " " || input[i] === "." || input[i] === "_")) i--;
+        if (input[i] === "-") sc += 1;
+        if (matches.markers.atMatch(init, (m) => m.name === "group", 0)) sc -= 2;
+        return sc;
+      }, "score");
+      const scored = [...byInit.keys()].map((init) => [init, score(init)]);
+      const top = Math.max(...scored.map(([, sc]) => sc));
+      const winners = scored.filter(([, sc]) => sc === top);
+      if (winners.length === scored.length) continue;
+      const winnerValues = new Set(winners.flatMap(([init]) => (byInit.get(init) ?? []).map((w) => Number(w.value))));
+      for (const [init, sc] of scored) {
+        if (sc >= top) continue;
+        const eps = byInit.get(init) ?? [];
+        if (eps.length > 1) continue;
+        if (eps.some((w) => winnerValues.has(Number(w.value)))) continue;
+        removeGroup(init);
+      }
+    }
+    return toRemove.length ? toRemove : false;
+  }
+};
+__name(_PreferAnchoredWeakEpisodeRule, "PreferAnchoredWeakEpisodeRule");
+_PreferAnchoredWeakEpisodeRule.priority = 40;
+var PreferAnchoredWeakEpisodeRule = _PreferAnchoredWeakEpisodeRule;
+var _SeasonWordDashedEpisodeRule = class _SeasonWordDashedEpisodeRule extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = 32;
+    this.consequence = [RemoveMatch, AppendMatch];
+  }
+  when(matches, _context) {
+    const input = matches.inputString ?? "";
+    const toRemove = [];
+    const toAppend = [];
+    const seasons = matches.named("season") ?? [];
+    const seen = /* @__PURE__ */ new Set();
+    for (const season of seasons) {
+      const init = season.initiator ?? season;
+      if (seen.has(init)) continue;
+      seen.add(init);
+      const children = [...init.children ?? []];
+      const marker = children.find((c) => c.name === "seasonMarker");
+      if (!marker) continue;
+      const markerRaw = String(marker.raw ?? "");
+      const isWordMarker = /^[a-zà-ÿа-я]{3,}$/i.test(markerRaw);
+      const inBracket = !!matches.markers.atMatch(season, (m) => m.name === "group", 0);
+      if (!isWordMarker && !(markerRaw.toLowerCase() === "s" && inBracket)) continue;
+      if (isWordMarker && /s$/i.test(markerRaw)) continue;
+      const nums = children.filter((c) => c.name === "season");
+      if (nums.length !== 2) continue;
+      const sep = children.find((c) => c.name === "seasonSeparator");
+      if (!sep || String(sep.raw ?? "").trim() !== "-") continue;
+      if (isWordMarker && (input[sep.start - 1] !== " " || input[sep.end] !== " ")) continue;
+      const filepart = matches.markers.atMatch(season, (m) => m.name === "path", 0);
+      if (filepart) {
+        const complete = matches.range(
+          filepart.start,
+          filepart.end,
+          (m) => m.name === "other" && m.value === "Complete",
+          0
+        );
+        if (complete) continue;
+      }
+      const episodeMatch = new Match(nums[1].start, nums[1].end, {
+        name: "episode",
+        value: nums[1].value,
+        inputString: input
+      });
+      toRemove.push(nums[1]);
+      toAppend.push(episodeMatch);
+    }
+    return toRemove.length || toAppend.length ? [toRemove, toAppend] : false;
+  }
+};
+__name(_SeasonWordDashedEpisodeRule, "SeasonWordDashedEpisodeRule");
+_SeasonWordDashedEpisodeRule.priority = 32;
+var SeasonWordDashedEpisodeRule = _SeasonWordDashedEpisodeRule;
+var _RemoveNumfirstMarkerCollision = class _RemoveNumfirstMarkerCollision extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = 70;
+    this.consequence = [RemoveMatch, AppendMatch];
+  }
+  when(matches, _context) {
+    const toRemove = [];
+    const toAppend = [];
+    const isWeak = /* @__PURE__ */ __name((m) => !!(m.tags?.includes("weak-episode") || ["weak_episode", "weak_duplicate"].includes(m.initiator?.name)), "isWeak");
+    const removeWithParent = /* @__PURE__ */ __name((m) => {
+      const init = m.initiator ?? m;
+      if (!toRemove.includes(m)) toRemove.push(m);
+      for (const child of init.children ?? []) {
+        if (!toRemove.includes(child)) toRemove.push(child);
+      }
+    }, "removeWithParent");
+    const all = [...matches];
+    const numfirsts = all.filter((m) => (m.name === "season" || m.name === "episode") && m.tags?.includes("numfirst"));
+    for (const nf of numfirsts) {
+      const nfInit = nf.initiator ?? nf;
+      const wordFirst = all.find((w) => {
+        if (w.name !== "season" && w.name !== "episode") return false;
+        if (w.tags?.includes("numfirst") || isWeak(w)) return false;
+        const wInit = w.initiator ?? w;
+        if (wInit === nfInit) return false;
+        return wInit.start < nfInit.end && nfInit.start < wInit.end;
+      });
+      if (!wordFirst) continue;
+      const claimed = all.some((m) => !m.private && (m.name === "screen_size" || m.name === "year") && m.start < wordFirst.end && wordFirst.start < m.end);
+      const gluedOrdinal = /^(?:st|nd|rd|th|ª|º|°)/i.test(String(matches.inputString ?? "").slice(nf.end, nf.end + 2));
+      if (claimed || gluedOrdinal) {
+        removeWithParent(wordFirst);
+        if (!claimed) {
+          toAppend.push(new Match(wordFirst.start, wordFirst.end, {
+            name: "episode",
+            value: wordFirst.value,
+            inputString: matches.inputString
+          }));
+        }
+      } else removeWithParent(nf);
+    }
+    return toRemove.length || toAppend.length ? [toRemove, toAppend] : false;
+  }
+};
+__name(_RemoveNumfirstMarkerCollision, "RemoveNumfirstMarkerCollision");
+_RemoveNumfirstMarkerCollision.priority = 70;
+var RemoveNumfirstMarkerCollision = _RemoveNumfirstMarkerCollision;
+var _CountValidator = class _CountValidator extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = 64;
+    this.consequence = [RemoveMatch, new RenameMatch("episode_count"), new RenameMatch("season_count")];
+  }
+  when(matches, _context) {
+    const toRemove = [];
+    const episodeCount = [];
+    const seasonCount = [];
+    for (const count of matches.named("count") ?? []) {
+      const numbers = matches.range(
+        count.initiator.start,
+        count.start,
+        (m) => m.name === "episode" || m.name === "season"
+      );
+      const numbered = numbers.length ? numbers[numbers.length - 1] : void 0;
+      if (!numbered) toRemove.push(count);
+      else if (numbered.name === "episode") episodeCount.push(count);
+      else seasonCount.push(count);
+    }
+    if (toRemove.length || episodeCount.length || seasonCount.length) {
+      return [toRemove, episodeCount, seasonCount];
+    }
+    return false;
+  }
+};
+__name(_CountValidator, "CountValidator");
+_CountValidator.priority = 64;
+_CountValidator.consequence = [RemoveMatch, new RenameMatch("episode_count"), new RenameMatch("season_count")];
+var CountValidator = _CountValidator;
 var _DiscMarkerRule = class _DiscMarkerRule extends Rule {
   constructor(config) {
     super();
@@ -3873,7 +4440,8 @@ var _RangeExpansionRule = class _RangeExpansionRule extends Rule {
         const betweenClean = between.replace(/[\s.]/g, "").toLowerCase();
         const betweenStripMarkers = betweenClean.replace(/[sexp]/gi, "");
         const hasRangeChar = /[-~_]/.test(between);
-        const isRange = hasRangeChar || rangeSeps.has(betweenClean) || rangeSeps.has(betweenStripMarkers);
+        const seasonColon = name === "season" && betweenClean === ":";
+        const isRange = hasRangeChar || seasonColon || rangeSeps.has(betweenClean) || rangeSeps.has(betweenStripMarkers);
         if (isRange) {
           for (let v = curVal + 1; v < nextVal; v++) {
             const m = new Match(current.start, next.end, {
@@ -4326,6 +4894,14 @@ function source(config) {
     { value: { source: "HD Camera", other: "Rip" } }
   );
   rebulk.regex(
+    ...buildSourcePattern(["HQ-?CAM"], "", optional(ripSuffix)),
+    { value: { source: "Camera", other: "Rip" } }
+  );
+  rebulk.regex(
+    ...buildSourcePattern(["S-?Print"], "", optional(ripSuffix)),
+    { value: { source: "Camera" } }
+  );
+  rebulk.regex(
     ...buildSourcePattern(["TELESYNC", "TS"], "", optional(ripSuffix)),
     { value: { source: "Telesync", other: "Rip" }, tags: ["video-codec-prefix"], overrides: ["tags"] }
   );
@@ -4372,6 +4948,18 @@ function source(config) {
   rebulk.regex(
     ...buildSourcePattern(["DVD"], "", optional(ripSuffix)),
     { value: { source: "DVD", other: "Rip" } }
+  );
+  rebulk.regex(
+    ...buildSourcePattern(["DVD-?R[59]"], "", ""),
+    { value: { source: "DVD" } }
+  );
+  rebulk.regex(
+    ...buildSourcePattern(["LD"], "", ripSuffix),
+    { value: { source: "Laserdisc", other: "Rip" } }
+  );
+  rebulk.regex(
+    ...buildSourcePattern(["LASERDISC"], "", optional(ripSuffix)),
+    { value: { source: "Laserdisc", other: "Rip" } }
   );
   rebulk.regex(
     ...buildSourcePattern(["DM"], "", optional(ripSuffix)),
@@ -4680,12 +5268,16 @@ var _ValidateVideoCodec = class _ValidateVideoCodec extends Rule {
   when(matches, _context) {
     const ret = [];
     const codecs = matches.named("video_codec");
+    const hasAny = /* @__PURE__ */ __name((v) => Array.isArray(v) ? v.length > 0 : !!v, "hasAny");
+    const inp = matches.inputString ?? "";
     for (const codec of codecs) {
-      if (!sepsBefore(codec) && !matches.atIndex(codec.start - 1, (m) => m.tags?.includes("video-codec-prefix"))) {
+      const bracketBefore = inp[codec.start] === "[" || inp[codec.start - 1] === "[";
+      const bracketAfter = inp[codec.end - 1] === "]" || inp[codec.end] === "]";
+      if (!bracketBefore && !sepsBefore(codec) && !hasAny(matches.atIndex(codec.start - 1, (m) => m.tags?.includes("video-codec-prefix")))) {
         ret.push(codec);
         continue;
       }
-      if (!sepsAfter(codec) && !matches.atIndex(codec.end + 1, (m) => m.tags?.includes("video-codec-suffix"))) {
+      if (!bracketAfter && !sepsAfter(codec) && !hasAny(matches.atIndex(codec.end + 1, (m) => m.tags?.includes("video-codec-suffix")))) {
         ret.push(codec);
         continue;
       }
@@ -4977,6 +5569,10 @@ var COMPOUND_PROFILES = {
   "Dolby Digital": "EX"
 };
 var _CompoundAudioProfileRule = class _CompoundAudioProfileRule extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = 128;
+  }
   enabled(context) {
     return !isDisabled(context, "audio_profile");
   }
@@ -5020,6 +5616,9 @@ var _CompoundAudioProfileRule = class _CompoundAudioProfileRule extends Rule {
   }
 };
 __name(_CompoundAudioProfileRule, "CompoundAudioProfileRule");
+// Must run before AudioValidatorRule (priority 64): the appended Master Audio
+// profile is the neighbor that keeps a glued 'MA5.1' channels match alive.
+_CompoundAudioProfileRule.priority = 128;
 _CompoundAudioProfileRule.consequence = AppendMatch;
 var CompoundAudioProfileRule = _CompoundAudioProfileRule;
 var _AudioProfileRule = class _AudioProfileRule extends Rule {
@@ -5114,17 +5713,29 @@ var _AudioValidatorRule = class _AudioValidatorRule extends Rule {
   }
   when(matches, _context) {
     const ret = [];
-    const audioProps = [...matches.named("audio_codec"), ...matches.named("audio_profile")];
+    const AUDIO_PROPS = ["audio_codec", "audio_profile", "audio_channels"];
+    const audioProps = AUDIO_PROPS.flatMap((n) => [...matches.named(n)]);
     for (const prop of audioProps) {
       if (!sepsBefore(prop)) {
-        const prevMatch = matches.atIndex(prop.start - 1, null, 0);
-        if (!prevMatch || prevMatch.name !== "audio_codec" && prevMatch.name !== "audio_profile") {
+        const validBefore = matches.range(
+          prop.start - 1,
+          prop.start,
+          (m) => AUDIO_PROPS.includes(m.name ?? "")
+        );
+        if (!(Array.isArray(validBefore) ? validBefore.length : validBefore)) {
           ret.push(prop);
+          continue;
         }
-      } else if (!sepsAfter(prop)) {
-        const nextMatch = matches.atIndex(prop.end + 1, null, 0);
-        if (!nextMatch || nextMatch.name !== "audio_codec" && nextMatch.name !== "audio_profile" && nextMatch.name !== "audio_channels") {
+      }
+      if (!sepsAfter(prop)) {
+        const validAfter = matches.range(
+          prop.end,
+          prop.end + 1,
+          (m) => AUDIO_PROPS.includes(m.name ?? "")
+        );
+        if (!(Array.isArray(validAfter) ? validAfter.length : validAfter)) {
           ret.push(prop);
+          continue;
         }
       }
     }
@@ -5245,7 +5856,8 @@ function screenSize(config) {
   const frameRatePattern = buildOrPattern(frameRates, "frame_rate");
   const interlacedPattern = buildOrPattern([...interlaced], "height");
   const progressivePattern = buildOrPattern([...progressive], "height");
-  const resPattern = `(?:(?<width>\\d{3,4})(?:x|\\*))?`;
+  const resSeparator = `(?:x|\\*|\xD7)`;
+  const resPattern = `(?:(?<width>\\d{3,4})${resSeparator})?`;
   rebulk.regex(resPattern + interlacedPattern + `(?<scan_type>i)` + frameRatePattern + `?`);
   rebulk.regex(resPattern + progressivePattern + `(?<scan_type>p)` + frameRatePattern + `?`);
   rebulk.regex(resPattern + progressivePattern + `(?<scan_type>p)?(?:hd)`);
@@ -5254,7 +5866,7 @@ function screenSize(config) {
     value: "2160p",
     conflictSolver: /* @__PURE__ */ __name((match, other2) => other2.name === "screen_size" ? "__default__" : match, "conflictSolver")
   });
-  rebulk.regex(`(?<width>\\d{3,4})-?(?:x|\\*)-?(?<height>\\d{3,4})`, {
+  rebulk.regex(`(?<width>\\d{3,4})(?:${resSeparator}|-${resSeparator}-)(?<height>\\d{3,4})(?:up)?`, {
     conflictSolver: /* @__PURE__ */ __name((match, other2) => other2.name === "screen_size" ? "__default__" : other2, "conflictSolver")
   });
   rebulk.regex(frameRatePattern + `-?(?:p|fps)`, {
@@ -5289,7 +5901,7 @@ var _PostProcessScreenSize = class _PostProcessScreenSize extends Rule {
       let values = match.children.toDict();
       if (!("height" in values)) {
         const raw = String(match.raw ?? "");
-        const rxWxH = /^(\d{3,4})\s*[xX*]\s*(\d{3,4})$/i;
+        const rxWxH = /^(\d{3,4})\s*[xX*×]\s*(\d{3,4})(?:up)?$/i;
         const mWxH = rxWxH.exec(raw);
         if (mWxH) {
           values = { width: mWxH[1], height: mWxH[2], scan_type: void 0 };
@@ -5356,10 +5968,19 @@ var _ResolveScreenSizeConflicts = class _ResolveScreenSizeConflicts extends Rule
       const conflicts = matches.conflicting(screenSizeMatch, (m) => ["season", "episode"].includes(m.name ?? "")) ?? [];
       if (conflicts.length === 0) continue;
       let hasNeighbor = false;
-      const videoProfile = matches.range(screenSizeMatch.end, filepart.end, (m) => m.name === "video_profile", 0);
-      if (videoProfile && matches.holes(screenSizeMatch.end, videoProfile.start, { predicate: /* @__PURE__ */ __name((h) => !!(h.value && String(h.value).replace(new RegExp(`[${sepsPattern}]`, "g"), "")), "predicate") }).length === 0) {
-        toRemove.push(...conflicts);
-        hasNeighbor = true;
+      const allScreensizes = matches.range(filepart.start, filepart.end, (m) => m.name === "screen_size") ?? [];
+      const groupOf = /* @__PURE__ */ __name((m) => matches.markers.atMatch(m, (marker) => marker.name === "group", 0), "groupOf");
+      const following = matches.range(
+        screenSizeMatch.end,
+        filepart.end,
+        (m) => m.name === "video_profile" || m.name === "video_codec",
+        0
+      );
+      if (following && matches.holes(screenSizeMatch.end, following.start, { predicate: /* @__PURE__ */ __name((h) => !!(h.value && String(h.value).replace(new RegExp(`[${sepsPattern}]`, "g"), "")), "predicate") }).length === 0) {
+        if (following.name === "video_profile" || allScreensizes.length === 1 && groupOf(screenSizeMatch) === groupOf(following)) {
+          toRemove.push(...conflicts);
+          hasNeighbor = true;
+        }
       }
       const previous = matches.previous(screenSizeMatch, (m) => ["date", "source", "other", "streaming_service"].includes(m.name ?? ""), 0);
       if (previous && matches.holes(previous.end, screenSizeMatch.start, { predicate: /* @__PURE__ */ __name((h) => !!(h.value && String(h.value).replace(new RegExp(`[${sepsPattern}]`, "g"), "")), "predicate") }).length === 0) {
@@ -5377,48 +5998,15 @@ __name(_ResolveScreenSizeConflicts, "ResolveScreenSizeConflicts");
 _ResolveScreenSizeConflicts.consequence = RemoveMatch;
 var ResolveScreenSizeConflicts = _ResolveScreenSizeConflicts;
 
+// src/data/tlds.ts
+var TLDS = ["aarp", "abb", "abbott", "abbvie", "abc", "able", "abogado", "abudhabi", "ac", "academy", "accenture", "accountant", "accountants", "aco", "actor", "ad", "ads", "adult", "ae", "aeg", "aero", "aetna", "af", "afl", "africa", "ag", "agakhan", "agency", "ai", "aig", "airbus", "airforce", "airtel", "akdn", "al", "alibaba", "alipay", "allfinanz", "allstate", "ally", "alsace", "alstom", "am", "amazon", "americanexpress", "americanfamily", "amex", "amfam", "amica", "amsterdam", "analytics", "android", "anquan", "anz", "ao", "aol", "apartments", "app", "apple", "aq", "aquarelle", "ar", "arab", "aramco", "archi", "army", "arpa", "art", "arte", "as", "asda", "asia", "associates", "at", "athleta", "attorney", "au", "auction", "audi", "audible", "audio", "auspost", "author", "auto", "autos", "aw", "aws", "ax", "axa", "az", "azure", "ba", "baby", "baidu", "banamex", "band", "bank", "bar", "barcelona", "barclaycard", "barclays", "barefoot", "bargains", "baseball", "basketball", "bauhaus", "bayern", "bb", "bbc", "bbt", "bbva", "bcg", "bcn", "bd", "be", "beats", "beauty", "beer", "berlin", "best", "bestbuy", "bet", "bf", "bg", "bh", "bharti", "bi", "bible", "bid", "bike", "bing", "bingo", "bio", "biz", "bj", "black", "blackfriday", "blockbuster", "blog", "bloomberg", "blue", "bm", "bms", "bmw", "bn", "bnpparibas", "bo", "boats", "boehringer", "bofa", "bom", "bond", "boo", "book", "booking", "bosch", "bostik", "boston", "bot", "boutique", "box", "br", "bradesco", "bridgestone", "broadway", "broker", "brother", "brussels", "bs", "bt", "build", "builders", "business", "buy", "buzz", "bv", "bw", "by", "bz", "bzh", "ca", "cab", "cafe", "cal", "call", "calvinklein", "cam", "camera", "camp", "canon", "capetown", "capital", "capitalone", "car", "caravan", "cards", "care", "career", "careers", "cars", "casa", "case", "cash", "casino", "cat", "catering", "catholic", "cba", "cbn", "cbre", "cc", "cd", "center", "ceo", "cern", "cf", "cfa", "cfd", "cg", "ch", "chanel", "channel", "charity", "chase", "chat", "cheap", "chintai", "christmas", "chrome", "church", "ci", "cipriani", "circle", "cisco", "citadel", "citi", "citic", "city", "ck", "cl", "claims", "cleaning", "click", "clinic", "clinique", "clothing", "cloud", "club", "clubmed", "cm", "cn", "co", "coach", "codes", "coffee", "college", "cologne", "com", "commbank", "community", "company", "compare", "computer", "comsec", "condos", "construction", "consulting", "contact", "contractors", "cooking", "cool", "coop", "corsica", "country", "coupon", "coupons", "courses", "cpa", "cr", "credit", "creditcard", "creditunion", "cricket", "crown", "crs", "cruise", "cruises", "cu", "cuisinella", "cv", "cw", "cx", "cy", "cymru", "cyou", "cz", "dad", "dance", "data", "date", "dating", "datsun", "day", "dclk", "dds", "de", "deal", "dealer", "deals", "degree", "delivery", "dell", "deloitte", "delta", "democrat", "dental", "dentist", "desi", "design", "dev", "dhl", "diamonds", "diet", "digital", "direct", "directory", "discount", "discover", "dish", "diy", "dj", "dk", "dm", "dnp", "do", "docs", "doctor", "dog", "domains", "dot", "download", "drive", "dtv", "dubai", "dupont", "durban", "dvag", "dvr", "dz", "earth", "eat", "ec", "eco", "edeka", "edu", "education", "ee", "eg", "email", "emerck", "energy", "engineer", "engineering", "enterprises", "epson", "equipment", "er", "ericsson", "erni", "es", "esq", "estate", "et", "eu", "eurovision", "eus", "events", "exchange", "expert", "exposed", "express", "extraspace", "fage", "fail", "fairwinds", "faith", "family", "fan", "fans", "farm", "farmers", "fashion", "fast", "fedex", "feedback", "ferrari", "ferrero", "fi", "fidelity", "fido", "film", "final", "finance", "financial", "fire", "firestone", "firmdale", "fish", "fishing", "fit", "fitness", "fj", "fk", "flickr", "flights", "flir", "florist", "flowers", "fly", "fm", "fo", "foo", "food", "football", "ford", "forex", "forsale", "forum", "foundation", "fox", "fr", "free", "fresenius", "frl", "frogans", "frontier", "ftr", "fujitsu", "fun", "fund", "furniture", "futbol", "fyi", "ga", "gal", "gallery", "gallo", "gallup", "game", "games", "gap", "garden", "gay", "gb", "gbiz", "gd", "gdn", "ge", "gea", "gent", "genting", "george", "gf", "gg", "ggee", "gh", "gi", "gift", "gifts", "gives", "giving", "gl", "glass", "gle", "global", "globo", "gm", "gmail", "gmbh", "gmo", "gmx", "gn", "godaddy", "gold", "goldpoint", "golf", "goodyear", "goog", "google", "gop", "got", "gov", "gp", "gq", "gr", "grainger", "graphics", "gratis", "green", "gripe", "grocery", "group", "gs", "gt", "gu", "gucci", "guge", "guide", "guitars", "guru", "gw", "gy", "hair", "hamburg", "hangout", "haus", "hbo", "hdfc", "hdfcbank", "health", "healthcare", "help", "helsinki", "here", "hermes", "hiphop", "hisamitsu", "hitachi", "hiv", "hk", "hkt", "hm", "hn", "hockey", "holdings", "holiday", "homedepot", "homegoods", "homes", "homesense", "honda", "horse", "hospital", "host", "hosting", "hot", "hotels", "hotmail", "house", "how", "hr", "hsbc", "ht", "hu", "hughes", "hyatt", "hyundai", "ibm", "icbc", "ice", "icu", "id", "ie", "ieee", "ifm", "ikano", "il", "im", "imamat", "imdb", "immo", "immobilien", "in", "inc", "industries", "infiniti", "info", "ing", "ink", "institute", "insurance", "insure", "int", "international", "intuit", "investments", "io", "ipiranga", "iq", "ir", "irish", "is", "ismaili", "ist", "istanbul", "it", "itau", "itv", "jaguar", "java", "jcb", "je", "jeep", "jetzt", "jewelry", "jio", "jll", "jm", "jmp", "jnj", "jo", "jobs", "joburg", "jot", "joy", "jp", "jpmorgan", "jprs", "juegos", "juniper", "kaufen", "kddi", "ke", "kerryhotels", "kerryproperties", "kfh", "kg", "kh", "ki", "kia", "kids", "kim", "kindle", "kitchen", "kiwi", "km", "kn", "koeln", "komatsu", "kosher", "kp", "kpmg", "kpn", "kr", "krd", "kred", "kuokgroup", "kw", "ky", "kyoto", "kz", "la", "lacaixa", "lamborghini", "lamer", "land", "landrover", "lanxess", "lasalle", "lat", "latino", "latrobe", "law", "lawyer", "lb", "lc", "lds", "lease", "leclerc", "lefrak", "legal", "lego", "lexus", "lgbt", "li", "lidl", "life", "lifeinsurance", "lifestyle", "lighting", "like", "lilly", "limited", "limo", "lincoln", "link", "live", "living", "lk", "llc", "llp", "loan", "loans", "locker", "locus", "lol", "london", "lotte", "lotto", "love", "lpl", "lplfinancial", "lr", "ls", "lt", "ltd", "ltda", "lu", "lundbeck", "luxe", "luxury", "lv", "ly", "ma", "madrid", "maif", "maison", "makeup", "man", "management", "mango", "map", "market", "marketing", "markets", "marriott", "marshalls", "mattel", "mba", "mc", "mckinsey", "md", "me", "med", "media", "meet", "melbourne", "meme", "memorial", "men", "menu", "merck", "merckmsd", "mg", "mh", "miami", "microsoft", "mil", "mini", "mint", "mit", "mitsubishi", "mk", "ml", "mlb", "mls", "mm", "mma", "mn", "mo", "mobi", "mobile", "moda", "moe", "moi", "mom", "monash", "money", "monster", "mormon", "mortgage", "moscow", "moto", "motorcycles", "mov", "movie", "mp", "mq", "mr", "ms", "msd", "mt", "mtn", "mtr", "mu", "museum", "music", "mv", "mw", "mx", "my", "mz", "na", "nab", "nagoya", "name", "navy", "nba", "nc", "ne", "nec", "net", "netbank", "netflix", "network", "neustar", "new", "news", "next", "nextdirect", "nexus", "nf", "nfl", "ng", "ngo", "nhk", "ni", "nico", "nike", "nikon", "ninja", "nissan", "nissay", "nl", "no", "nokia", "norton", "now", "nowruz", "nowtv", "np", "nr", "nra", "nrw", "ntt", "nu", "nyc", "nz", "obi", "observer", "office", "okinawa", "olayan", "olayangroup", "ollo", "om", "omega", "one", "ong", "onl", "online", "ooo", "open", "oracle", "orange", "org", "organic", "origins", "osaka", "otsuka", "ott", "ovh", "pa", "page", "panasonic", "paris", "pars", "partners", "parts", "party", "pay", "pccw", "pe", "pet", "pf", "pfizer", "pg", "ph", "pharmacy", "phd", "philips", "phone", "photo", "photography", "photos", "physio", "pics", "pictet", "pictures", "pid", "pin", "ping", "pink", "pioneer", "pizza", "pk", "pl", "place", "play", "playstation", "plumbing", "plus", "pm", "pn", "pnc", "pohl", "poker", "politie", "porn", "post", "pr", "praxi", "press", "prime", "pro", "prod", "productions", "prof", "progressive", "promo", "properties", "property", "protection", "pru", "prudential", "ps", "pt", "pub", "pw", "pwc", "py", "qa", "qpon", "quebec", "quest", "racing", "radio", "re", "read", "realestate", "realtor", "realty", "recipes", "red", "redumbrella", "rehab", "reise", "reisen", "reit", "reliance", "ren", "rent", "rentals", "repair", "report", "republican", "rest", "restaurant", "review", "reviews", "rexroth", "rich", "richardli", "ricoh", "ril", "rio", "rip", "ro", "rocks", "rodeo", "rogers", "room", "rs", "rsvp", "ru", "rugby", "ruhr", "run", "rw", "rwe", "ryukyu", "sa", "saarland", "safe", "safety", "sakura", "sale", "salon", "samsclub", "samsung", "sandvik", "sandvikcoromant", "sanofi", "sap", "sarl", "sas", "save", "saxo", "sb", "sbi", "sbs", "sc", "scb", "schaeffler", "schmidt", "scholarships", "school", "schule", "schwarz", "science", "scot", "sd", "se", "search", "seat", "secure", "security", "seek", "select", "sener", "services", "seven", "sew", "sex", "sexy", "sfr", "sg", "sh", "shangrila", "sharp", "shell", "shia", "shiksha", "shoes", "shop", "shopping", "shouji", "show", "si", "silk", "sina", "singles", "site", "sj", "sk", "ski", "skin", "sky", "skype", "sl", "sling", "sm", "smart", "smile", "sn", "sncf", "so", "soccer", "social", "softbank", "software", "sohu", "solar", "solutions", "song", "sony", "soy", "spa", "space", "sport", "spot", "sr", "srl", "ss", "st", "stada", "staples", "star", "statebank", "statefarm", "stc", "stcgroup", "stockholm", "storage", "store", "stream", "studio", "study", "style", "su", "sucks", "supplies", "supply", "support", "surf", "surgery", "suzuki", "sv", "swatch", "swiss", "sx", "sy", "sydney", "systems", "sz", "tab", "taipei", "talk", "taobao", "target", "tatamotors", "tatar", "tattoo", "tax", "taxi", "tc", "tci", "td", "tdk", "team", "tech", "technology", "tel", "temasek", "tennis", "teva", "tf", "tg", "th", "thd", "theater", "theatre", "tiaa", "tickets", "tienda", "tips", "tires", "tirol", "tj", "tjmaxx", "tjx", "tk", "tkmaxx", "tl", "tm", "tmall", "tn", "to", "today", "tokyo", "tools", "top", "toray", "toshiba", "total", "tours", "town", "toyota", "toys", "tr", "trade", "trading", "training", "travel", "travelers", "travelersinsurance", "trust", "trv", "tt", "tube", "tui", "tunes", "tushu", "tv", "tvs", "tw", "tz", "ua", "ubank", "ubs", "ug", "uk", "unicom", "university", "uno", "uol", "ups", "us", "uy", "uz", "va", "vacations", "vana", "vanguard", "vc", "ve", "vegas", "ventures", "verisign", "versicherung", "vet", "vg", "vi", "viajes", "video", "vig", "viking", "villas", "vin", "vip", "virgin", "visa", "vision", "viva", "vivo", "vlaanderen", "vn", "vodka", "volvo", "vote", "voting", "voto", "voyage", "vu", "wales", "walmart", "walter", "wang", "wanggou", "watch", "watches", "weather", "weatherchannel", "webcam", "weber", "website", "wed", "wedding", "weibo", "weir", "wf", "whoswho", "wien", "wiki", "williamhill", "win", "windows", "wine", "winners", "wme", "woodside", "work", "works", "world", "wow", "ws", "wtc", "wtf", "xbox", "xerox", "xihuan", "xin", "xxx", "xyz", "yachts", "yahoo", "yamaxun", "yandex", "ye", "yodobashi", "yoga", "yokohama", "you", "youtube", "yt", "yun", "za", "zappos", "zara", "zero", "zip", "zm", "zone", "zuerich", "zw"];
+
 // src/rules/properties/website.ts
-var DEFAULT_TLDS = [
-  "com",
-  "org",
-  "net",
-  "edu",
-  "gov",
-  "mil",
-  "int",
-  "co",
-  "uk",
-  "ca",
-  "de",
-  "fr",
-  "it",
-  "es",
-  "nl",
-  "be",
-  "ch",
-  "se",
-  "no",
-  "dk",
-  "fi",
-  "pl",
-  "ru",
-  "cn",
-  "jp",
-  "au",
-  "nz",
-  "in",
-  "br",
-  "mx",
-  "za",
-  "kr",
-  "tw",
-  "hk"
-];
 function website(config) {
   const rebulk = new Rebulk({ disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "website"), "disabled") });
   rebulk.regexDefaults({ flags: "i" }).stringDefaults({ ignoreCase: true });
   rebulk.defaults({ name: "website" });
-  const tlds = config["tlds"] || DEFAULT_TLDS;
+  const tlds = config["tlds"] || TLDS;
   const safeTlds = config["safe_tlds"] || ["com", "org", "net"];
   const safeSubdomains = config["safe_subdomains"] || ["www"];
   const safePrefix = config["safe_prefixes"] || [];
@@ -5441,10 +6029,10 @@ function website(config) {
     tags: ["website.prefix"]
   });
   const _PreferTitleOverWebsiteWithConfig = class _PreferTitleOverWebsiteWithConfig extends Rule {
-    constructor(safeTldsArg, safePrefixArg) {
+    constructor(safeSubdomainsArg, safePrefixArg) {
       super();
       this.consequence = RemoveMatch;
-      this.safeTlds = safeTldsArg;
+      this.safeSubdomains = safeSubdomainsArg;
       this.safePrefix = safePrefixArg;
     }
     validFollowers(match) {
@@ -5454,7 +6042,7 @@ function website(config) {
       const toRemove = [];
       for (const websiteMatch of matches.named("website")) {
         let safe = false;
-        for (const safeStart of [...this.safeTlds, ...this.safePrefix]) {
+        for (const safeStart of [...this.safeSubdomains, ...this.safePrefix]) {
           if (String(websiteMatch.value ?? "").toLowerCase().startsWith(safeStart)) {
             safe = true;
             break;
@@ -5487,7 +6075,7 @@ function website(config) {
   };
   __name(_PreferTitleOverWebsiteWithConfig, "PreferTitleOverWebsiteWithConfig");
   let PreferTitleOverWebsiteWithConfig = _PreferTitleOverWebsiteWithConfig;
-  rebulk.rules(new PreferTitleOverWebsiteWithConfig(safeTlds, safePrefix), ValidateWebsitePrefix);
+  rebulk.rules(new PreferTitleOverWebsiteWithConfig(safeSubdomains, safePrefix), ValidateWebsitePrefix);
   return rebulk;
 }
 __name(website, "website");
@@ -5809,10 +6397,49 @@ function date(config) {
     disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "date"), "disabled"),
     conflictSolver: /* @__PURE__ */ __name((match, other2) => other2.name === "episode" || other2.name === "season" || other2.name === "crc32" ? other2 : "__default__", "conflictSolver")
   });
-  rebulk.rules(KeepMarkedYearInFilepart, RemoveGroupedYearWithSxxExx);
+  rebulk.rules(KeepMarkedYearInFilepart, RemoveGroupedYearWithSxxExx, new AbsorbWeekdayPrefix(config["weekday_words"] ?? []));
   return rebulk;
 }
 __name(date, "date");
+var _AbsorbWeekdayPrefix = class _AbsorbWeekdayPrefix extends Rule {
+  constructor(weekdayWords) {
+    super();
+    this.consequence = RemoveMatch;
+    const sepsClass = "[" + seps.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "]";
+    this.weekdayRe = new RegExp(
+      "(?:^|" + sepsClass + ")(" + buildOrPattern(weekdayWords.length ? weekdayWords : ["\\bnever\\b"]) + ")" + sepsClass + "*$",
+      "i"
+    );
+  }
+  enabled(context) {
+    return !isDisabled(context, "date");
+  }
+  when(matches, _context) {
+    const input = matches.inputString ?? "";
+    const ret = [];
+    for (const dateMatch of matches.named("date") ?? []) {
+      const filepart = matches.markers.atMatch(dateMatch, (m) => m.name === "path", 0);
+      const lower = filepart ? filepart.start : 0;
+      const segment = input.slice(lower, dateMatch.start);
+      const weekday = this.weekdayRe.exec(segment);
+      if (!weekday) continue;
+      const groupStart = lower + weekday.index + weekday[0].indexOf(weekday[1]);
+      const claimed = matches.range(groupStart, dateMatch.start, (m) => !m.private);
+      if ((Array.isArray(claimed) ? claimed.length : claimed ? 1 : 0) > 0) continue;
+      ret.push([dateMatch, groupStart]);
+    }
+    return ret.length ? ret : false;
+  }
+  then(matches, whenResponse, _context) {
+    for (const [dateMatch, newStart] of whenResponse) {
+      matches.remove(dateMatch);
+      dateMatch.start = newStart;
+      matches.append(dateMatch);
+    }
+  }
+};
+__name(_AbsorbWeekdayPrefix, "AbsorbWeekdayPrefix");
+var AbsorbWeekdayPrefix = _AbsorbWeekdayPrefix;
 
 // src/rules/common/comparators.ts
 function markerComparatorPredicate(m) {
@@ -5828,10 +6455,11 @@ function markerWeight(matches, marker, predicate) {
 __name(markerWeight, "markerWeight");
 function markerSorted(markers, matches, predicate = markerComparatorPredicate) {
   const markersArr = [...markers];
+  const originalIndex = new Map(markersArr.map((m, i) => [m, i]));
   return markersArr.sort((a, b) => {
     const weightDiff = markerWeight(matches, b, predicate) - markerWeight(matches, a, predicate);
     if (weightDiff !== 0) return weightDiff;
-    return markersArr.indexOf(b) - markersArr.indexOf(a);
+    return (originalIndex.get(b) ?? 0) - (originalIndex.get(a) ?? 0);
   });
 }
 __name(markerSorted, "markerSorted");
@@ -6045,13 +6673,14 @@ var _TitleBaseRule = class _TitleBaseRule extends Rule {
     const lastSeg = createMatch(prevEnd, hole.end);
     if (lastSeg) segments.push(lastSeg);
     if (segments.length < 2) return null;
+    if (/^\d+$/.test(String(segments[0].value ?? "").trim())) return null;
     return { title: segments[0], alternatives: segments.slice(1) };
   }
   /**
    * Check and extract titles from a filepart.
    * Mirrors Python's TitleBaseRule.check_titles_in_filepart().
    */
-  checkTitlesInFilepart(filepart, matches) {
+  checkTitlesInFilepart(filepart, matches, context) {
     const toAppend = [];
     const toRemove = [];
     const firstYearInFilepart = matches.range(
@@ -6122,6 +6751,16 @@ var _TitleBaseRule = class _TitleBaseRule extends Rule {
         (m) => this.isIgnored(m)
       );
       const ignoredArray = Array.isArray(ignoredInHole) ? ignoredInHole : ignoredInHole ? [ignoredInHole] : [];
+      if (ignoredArray.length > 0 && ignoredArray.every((m) => m.name === "language" || m.name === "country")) {
+        const inpFull = matches.inputString ?? "";
+        let rest = inpFull.slice(hole.start, hole.end);
+        for (const m of ignoredArray) {
+          const rel = m.start - hole.start;
+          rest = rest.slice(0, rel) + " ".repeat(m.end - m.start) + rest.slice(m.end - hole.start);
+        }
+        const hasTitleText = [...rest].some((c) => !seps.includes(c) && c !== " ");
+        if (!hasTitleText) continue;
+      }
       let trimmedHole = hole;
       const inp = matches.inputString ?? "";
       while (trimmedHole.start < trimmedHole.end && seps.includes(inp[trimmedHole.start])) {
@@ -6227,7 +6866,20 @@ var _TitleBaseRule = class _TitleBaseRule extends Rule {
         console.log(`  result: hole=[${trimmedHole.start},${trimmedHole.end}) length=${trimmedHole.length} value="${trimmedHole.value}"`);
       }
       if (trimmedHole.length > 0 && !this.shouldRemove(trimmedHole) && trimmedHole.value) {
-        const splitResult = this.splitTitleAlternative(trimmedHole, inp);
+        const inp0 = matches.inputString ?? "";
+        const animeStyle = matches.markers.range(
+          filepart.start,
+          filepart.end,
+          (m) => m.name === "group" && m.start === filepart.start,
+          0
+        ) !== void 0 || matches.range(filepart.start, filepart.end, (m) => m.name === "crc32", 0) !== void 0;
+        let splitResult = this.alternativePropertyName && !isDisabled(context, this.alternativePropertyName) ? this.splitTitleAlternative(trimmedHole, inp) : null;
+        if (splitResult && animeStyle && splitResult.alternatives.every((a) => {
+          const v = String(a.value ?? "").trim();
+          return v.length >= 4 || /\s/.test(v);
+        })) {
+          splitResult = null;
+        }
         if (splitResult) {
           splitResult.title.name = this.matchName;
           toAppend.push(splitResult.title);
@@ -6353,7 +7005,7 @@ var _TitleBaseRule = class _TitleBaseRule extends Rule {
     for (const filepart of sortedFileparts) {
       yearFileparts.delete(filepart);
       if (!this.filepartFilter(filepart)) continue;
-      const result = this.checkTitlesInFilepart(filepart, matches);
+      const result = this.checkTitlesInFilepart(filepart, matches, context);
       if (result.toAppend.length > 0 || result.toRemove.length > 0) {
         if (serieNameMatch) {
           const normTitle = /* @__PURE__ */ __name((s) => foldDiacritics(s).replace(/[''`]/g, "").replace(/\.+$/, "").toLowerCase().trim(), "normTitle");
@@ -6370,7 +7022,7 @@ var _TitleBaseRule = class _TitleBaseRule extends Rule {
     }
     for (const filepart of yearFileparts) {
       if (!this.filepartFilter(filepart)) continue;
-      const result = this.checkTitlesInFilepart(filepart, matches);
+      const result = this.checkTitlesInFilepart(filepart, matches, context);
       const filteredAppend = [];
       for (const newTitle of result.toAppend) {
         if (newTitle.name !== this.matchName) {
@@ -6511,7 +7163,11 @@ var _ExtendLoneArticleTitle = class _ExtendLoneArticleTitle extends Rule {
     const inp = matches.inputString || "";
     const out = [];
     const titles = matches.named("title");
-    const titleArr = Array.isArray(titles) ? titles : titles ? [titles] : [];
+    const epTitles = matches.named("episode_title");
+    const titleArr = [
+      ...Array.isArray(titles) ? titles : titles ? [titles] : [],
+      ...Array.isArray(epTitles) ? epTitles : epTitles ? [epTitles] : []
+    ];
     for (const title2 of titleArr) {
       if (!ARTICLES.has(String(title2.value ?? "").trim().toLowerCase())) continue;
       const filepart = matches.markers.atMatch(title2, (m) => m.name === "path", 0);
@@ -6568,11 +7224,18 @@ var _CountryAtTitlePosition = class _CountryAtTitlePosition extends Rule {
       const filepart = matches.markers.atMatch(c, (m) => m.name === "path", 0);
       if (!filepart) continue;
       if (![...inp.slice(filepart.start, c.start)].every((ch) => seps.includes(ch))) continue;
-      const year = matches.range(c.end, filepart.end, (m) => !m.private && m.name === "year", 0);
-      if (!year) continue;
-      const se = matches.range(c.end, year.start, (m) => !m.private && ["season", "episode", "date"].includes(m.name ?? ""), 0);
-      if (se) continue;
-      if (![...inp.slice(c.end, year.start)].every((ch) => seps.includes(ch))) continue;
+      if (["release-group-prefix", "streaming_service.prefix", "streaming_service.suffix"].some((t) => c.tags?.includes(t))) continue;
+      if (matches.markers.atMatch(c, (m) => m.name === "group", 0)) continue;
+      const anchor = matches.range(
+        c.end,
+        filepart.end,
+        (m) => !m.private && ["year", "season", "episode", "date"].includes(m.name ?? ""),
+        0
+      );
+      if (!anchor) continue;
+      if (![...inp.slice(c.end, anchor.start)].every((ch) => seps.includes(ch))) {
+        if (matches.range(c.end, anchor.start, (m) => !m.private && m.value != null, 0)) continue;
+      }
       out.push(c);
     }
     return out.length ? out : false;
@@ -6581,6 +7244,329 @@ var _CountryAtTitlePosition = class _CountryAtTitlePosition extends Rule {
 __name(_CountryAtTitlePosition, "CountryAtTitlePosition");
 _CountryAtTitlePosition.priority = 64;
 var CountryAtTitlePosition = _CountryAtTitlePosition;
+var _TitleWordAtTitlePosition = class _TitleWordAtTitlePosition extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = 64;
+    this.consequence = RemoveMatch;
+  }
+  when(matches, _context) {
+    const toRemove = [];
+    const tagged = matches.tagged("title-word") ?? [];
+    for (const candidate of Array.isArray(tagged) ? tagged : [tagged]) {
+      if (!candidate || candidate.private) continue;
+      const filepart = matches.markers.atMatch(candidate, (m) => m.name === "path", 0);
+      if (!filepart) continue;
+      const anchor = matches.range(
+        filepart.start,
+        filepart.end,
+        (m) => !m.private && ["year", "season", "episode", "date"].includes(m.name ?? ""),
+        0
+      );
+      if (!anchor || candidate.start >= anchor.start) continue;
+      toRemove.push(candidate);
+    }
+    return toRemove.length ? toRemove : false;
+  }
+};
+__name(_TitleWordAtTitlePosition, "TitleWordAtTitlePosition");
+_TitleWordAtTitlePosition.priority = 64;
+var TitleWordAtTitlePosition = _TitleWordAtTitlePosition;
+var NON_LATIN_SCRIPT_RE = /[\u0370-\u03FF\u0400-\u04FF\u0590-\u05FF\u0600-\u06FF\u0E00-\u0E7F\u3000-\u303F\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uAC00-\uD7AF\uFF00-\uFFEF]/;
+var _SplitOriginalScriptTitle = class _SplitOriginalScriptTitle extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = POST_PROCESS;
+    this.consequence = [RemoveMatch, AppendMatch];
+  }
+  when(matches, context) {
+    if (isDisabled(context, "alternative_title")) return false;
+    const input = matches.inputString ?? "";
+    const toRemove = [];
+    const toAppend = [];
+    for (const titleMatch of matches.named("title")) {
+      if (titleMatch.tags?.includes("expected")) continue;
+      const raw = input.slice(titleMatch.start, titleMatch.end);
+      const latin = new RegExp("(?:^|[" + sepsPattern + "])([A-Za-z])").exec(raw);
+      if (!latin) continue;
+      const latinOffset = latin.index + latin[0].indexOf(latin[1]);
+      const prefix = raw.slice(0, latinOffset);
+      if (!NON_LATIN_SCRIPT_RE.test(prefix)) continue;
+      let prefixTrim = prefix;
+      while (prefixTrim.length && seps.includes(prefixTrim[prefixTrim.length - 1])) prefixTrim = prefixTrim.slice(0, -1);
+      const prefixEnd = titleMatch.start + prefixTrim.length;
+      const latinStart = titleMatch.start + latinOffset;
+      if (prefixEnd <= titleMatch.start) continue;
+      toRemove.push(titleMatch);
+      toAppend.push(new Match(titleMatch.start, prefixEnd, {
+        name: "alternative_title",
+        value: cleanup(input.slice(titleMatch.start, prefixEnd)),
+        inputString: input
+      }));
+      toAppend.push(new Match(latinStart, titleMatch.end, {
+        name: "title",
+        tags: ["title"],
+        value: cleanup(input.slice(latinStart, titleMatch.end)),
+        inputString: input
+      }));
+    }
+    return toRemove.length || toAppend.length ? [toRemove, toAppend] : false;
+  }
+};
+__name(_SplitOriginalScriptTitle, "SplitOriginalScriptTitle");
+_SplitOriginalScriptTitle.priority = POST_PROCESS;
+var SplitOriginalScriptTitle = _SplitOriginalScriptTitle;
+var _TrimSeasonWordFromTitle = class _TrimSeasonWordFromTitle extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = POST_PROCESS;
+    this.consequence = [RemoveMatch, AppendMatch];
+  }
+  when(matches, context) {
+    if (isDisabled(context, "title")) return false;
+    const input = matches.inputString ?? "";
+    const toRemove = [];
+    const toAppend = [];
+    for (const title2 of matches.named("title") ?? []) {
+      const m = /^(.*\S)[\s._-]+(seasons?|saison)$/i.exec(String(title2.value ?? ""));
+      if (!m) continue;
+      const next = matches.range(title2.end, input.length, (mm) => !mm.private && !!mm.value, 0);
+      if (!next || next.name !== "season") continue;
+      toRemove.push(title2);
+      const rawHead = input.slice(title2.start, title2.end).slice(0, m[1].length + (String(title2.value).length === title2.end - title2.start ? 0 : 0));
+      let newEnd = title2.end;
+      while (newEnd > title2.start && cleanup(input.slice(title2.start, newEnd)).toLowerCase() !== m[1].toLowerCase()) newEnd--;
+      if (newEnd <= title2.start) continue;
+      toAppend.push(new Match(title2.start, newEnd, {
+        name: "title",
+        value: cleanup(input.slice(title2.start, newEnd)),
+        inputString: input
+      }));
+    }
+    return toRemove.length || toAppend.length ? [toRemove, toAppend] : false;
+  }
+};
+__name(_TrimSeasonWordFromTitle, "TrimSeasonWordFromTitle");
+_TrimSeasonWordFromTitle.priority = POST_PROCESS;
+var TrimSeasonWordFromTitle = _TrimSeasonWordFromTitle;
+var _PreBracketJunkTitle = class _PreBracketJunkTitle extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = POST_PROCESS;
+    this.consequence = RemoveMatch;
+  }
+  when(matches, context) {
+    if (isDisabled(context, "title")) return false;
+    const input = matches.inputString ?? "";
+    const toRemove = [];
+    for (const filepart of matches.markers.named("path")) {
+      const titles = (matches.range(filepart.start, filepart.end, (m) => m.name === "title") ?? []).sort((a, b) => a.start - b.start);
+      if (titles.length < 2) continue;
+      const first = titles[0];
+      if (first.start !== filepart.start) continue;
+      if (/[\s._-]/.test(String(first.value ?? "").trim())) continue;
+      const group = matches.markers.range(first.end, filepart.end, (m) => m.name === "group", 0);
+      if (!group || group.start >= titles[1].start) continue;
+      if (![...input.slice(first.end, group.start)].every((c) => seps.includes(c))) continue;
+      const rg = matches.range(
+        group.start,
+        group.end,
+        (m) => m.name === "release_group" && !!m.tags?.includes("anime"),
+        0
+      );
+      if (!rg) continue;
+      toRemove.push(first);
+    }
+    return toRemove.length ? toRemove : false;
+  }
+};
+__name(_PreBracketJunkTitle, "PreBracketJunkTitle");
+_PreBracketJunkTitle.priority = POST_PROCESS;
+var PreBracketJunkTitle = _PreBracketJunkTitle;
+var _BracketedTitleFallback = class _BracketedTitleFallback extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = POST_PROCESS;
+    this.consequence = [RemoveMatch, AppendMatch];
+  }
+  when(matches, context) {
+    if (isDisabled(context, "title")) return false;
+    const input = matches.inputString ?? "";
+    const toRemove = [];
+    const toAppend = [];
+    for (const filepart of matches.markers.named("path")) {
+      const titlesHere = matches.range(filepart.start, filepart.end, (m) => m.name === "title") ?? [];
+      const realTitle = titlesHere.find((t) => /[\p{L}\p{N}]/u.test(String(t.value ?? "")));
+      if (realTitle) continue;
+      toRemove.push(...titlesHere);
+      const groups2 = matches.markers.range(filepart.start, filepart.end, (m) => m.name === "group") ?? [];
+      if (!groups2.length) continue;
+      const rg = matches.range(filepart.start, filepart.end, (m) => m.name === "release_group", 0);
+      let candidate;
+      for (const g of groups2) {
+        if (rg && g.start <= rg.start && g.end >= rg.end) continue;
+        const core = input.slice(g.start + 1, g.end - 1);
+        if (!/[a-zA-Z]{2,}/.test(core)) continue;
+        const softInner = matches.range(
+          g.start,
+          g.end,
+          (m) => !m.private && ["episode_title", "alternative_title"].includes(m.name ?? "")
+        ) ?? [];
+        const hardInner = matches.range(
+          g.start,
+          g.end,
+          (m) => !m.private && !["episode_title", "alternative_title"].includes(m.name ?? "")
+        ) ?? [];
+        if (softInner.length && !hardInner.length) {
+          toRemove.push(...softInner);
+          candidate = new Match(g.start + 1, g.end - 1, {
+            name: "title",
+            value: cleanup(input.slice(g.start + 1, g.end - 1)),
+            inputString: input
+          });
+          break;
+        }
+        const hole = matches.holes(g.start + 1, g.end - 1, {
+          formatter: cleanup,
+          predicate: /* @__PURE__ */ __name((h) => !!h.value, "predicate"),
+          index: 0
+        });
+        if (!hole || !/[a-zA-Z]{3,}/.test(String(hole.value ?? ""))) continue;
+        candidate = hole;
+        break;
+      }
+      if (candidate) {
+        candidate.name = "title";
+        toAppend.push(candidate);
+        continue;
+      }
+      if (rg && rg.tags?.includes("anime")) {
+        const outside = input.slice(filepart.start, filepart.end).replace(input.slice(rg.start - 1 >= filepart.start ? rg.start - 1 : rg.start, Math.min(rg.end + 1, filepart.end)), "");
+        const outsideMatches = matches.range(
+          filepart.start,
+          filepart.end,
+          (m) => !m.private && m.name !== "release_group" && m.start >= filepart.start
+        ) ?? [];
+        const wordyOutside = /[a-zA-Z]{2,}/.test(outside.replace(/\b(mkv|avi|mp4)\b/gi, "")) && outsideMatches.some((m) => ["title", "episode_title", "alternative_title"].includes(m.name ?? ""));
+        if (!wordyOutside) {
+          toRemove.push(rg);
+          toAppend.push(new Match(rg.start, rg.end, {
+            name: "title",
+            value: cleanup(input.slice(rg.start, rg.end)),
+            inputString: input
+          }));
+        }
+      }
+    }
+    return toRemove.length || toAppend.length ? [toRemove, toAppend] : false;
+  }
+};
+__name(_BracketedTitleFallback, "BracketedTitleFallback");
+_BracketedTitleFallback.priority = POST_PROCESS;
+var BracketedTitleFallback = _BracketedTitleFallback;
+var _WordNumeralPartAtTitlePosition = class _WordNumeralPartAtTitlePosition extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = 64;
+    this.consequence = RemoveMatch;
+  }
+  when(matches, context) {
+    if (isDisabled(context, "part")) return false;
+    const toRemove = [];
+    for (const part2 of matches.named("part") ?? []) {
+      const target = part2.initiator ?? part2;
+      if (/\d/.test(String(target.raw ?? ""))) continue;
+      const filepart = matches.markers.atMatch(part2, (m) => m.name === "path", 0);
+      if (!filepart) continue;
+      const anchor = matches.range(
+        part2.end,
+        filepart.end,
+        (m) => !m.private && ["year", "season", "episode", "date"].includes(m.name ?? ""),
+        0
+      );
+      if (!anchor) continue;
+      toRemove.push(part2);
+      for (const c of [...target.children ?? []]) if (!toRemove.includes(c)) toRemove.push(c);
+      if (target !== part2 && !toRemove.includes(target)) toRemove.push(target);
+    }
+    return toRemove.length ? toRemove : false;
+  }
+};
+__name(_WordNumeralPartAtTitlePosition, "WordNumeralPartAtTitlePosition");
+_WordNumeralPartAtTitlePosition.priority = 64;
+var WordNumeralPartAtTitlePosition = _WordNumeralPartAtTitlePosition;
+var _BonusAtTitlePositionRule = class _BonusAtTitlePositionRule extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = 64;
+    this.consequence = RemoveMatch;
+  }
+  when(matches, context) {
+    if (isDisabled(context, "bonus")) return false;
+    const toRemove = [];
+    for (const bonus2 of matches.named("bonus") ?? []) {
+      const filepart = matches.markers.atMatch(bonus2, (m) => m.name === "path", 0);
+      if (!filepart) continue;
+      const anime = matches.range(filepart.start, filepart.end, (m) => m.name === "crc32", 0) || matches.markers.range(
+        filepart.start,
+        filepart.end,
+        (m) => m.name === "group" && m.start === filepart.start,
+        0
+      );
+      if (!anime) continue;
+      const anchor = matches.range(
+        bonus2.end,
+        filepart.end,
+        (m) => !m.private && ["episode", "season", "year", "date"].includes(m.name ?? ""),
+        0
+      );
+      const bonusTitles = matches.named("bonus_title") ?? [];
+      if (!anchor && !bonusTitles.length) continue;
+      toRemove.push(bonus2);
+      toRemove.push(...bonusTitles.filter((bt) => bt.start >= filepart.start && bt.end <= filepart.end));
+    }
+    return toRemove.length ? toRemove : false;
+  }
+};
+__name(_BonusAtTitlePositionRule, "BonusAtTitlePositionRule");
+_BonusAtTitlePositionRule.priority = 64;
+var BonusAtTitlePositionRule = _BonusAtTitlePositionRule;
+var _LanguageWordInAnimeTitle = class _LanguageWordInAnimeTitle extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = 64;
+    this.consequence = RemoveMatch;
+  }
+  when(matches, context) {
+    if (isDisabled(context, "language")) return false;
+    const toRemove = [];
+    for (const lang of matches.named("language") ?? []) {
+      const raw = String(lang.raw ?? "");
+      if (raw.length > 3 || !/^[A-Z][a-z]{0,2}$/.test(raw)) continue;
+      const filepart = matches.markers.atMatch(lang, (m) => m.name === "path", 0);
+      if (!filepart) continue;
+      const leadingBracket = matches.markers.range(
+        filepart.start,
+        filepart.end,
+        (m) => m.name === "group" && m.start === filepart.start,
+        0
+      );
+      if (!leadingBracket) continue;
+      const anchor = matches.range(
+        lang.end,
+        filepart.end,
+        (m) => !m.private && ["episode", "season", "year", "date"].includes(m.name ?? ""),
+        0
+      );
+      if (!anchor) continue;
+      toRemove.push(lang);
+    }
+    return toRemove.length ? toRemove : false;
+  }
+};
+__name(_LanguageWordInAnimeTitle, "LanguageWordInAnimeTitle");
+_LanguageWordInAnimeTitle.priority = 64;
+var LanguageWordInAnimeTitle = _LanguageWordInAnimeTitle;
 var _PropertyAtTitlePositionAsTitle = class _PropertyAtTitlePositionAsTitle extends Rule {
   constructor() {
     super(...arguments);
@@ -6590,17 +7576,31 @@ var _PropertyAtTitlePositionAsTitle = class _PropertyAtTitlePositionAsTitle exte
     const inp = matches.inputString || "";
     const out = [];
     for (const filepart of matches.markers.named("path")) {
-      if (matches.range(filepart.start, filepart.end, (m) => m.name === "title", 0)) continue;
+      const lead = matches.range(filepart.start, filepart.end, (m) => !m.private && !!m.value, 0);
+      if (!lead) continue;
       const anchor = matches.range(
-        filepart.start,
+        lead.end,
         filepart.end,
         (m) => !m.private && ["year", "season", "episode", "date"].includes(m.name ?? ""),
         0
       );
-      if (!anchor) continue;
-      const lead = matches.range(filepart.start, filepart.end, (m) => !m.private && !!m.value, 0);
-      if (!lead || !["other", "country", "edition"].includes(lead.name ?? "")) continue;
-      if (lead.start >= anchor.start) continue;
+      if (!anchor) {
+        const anyTitle = matches.range(filepart.start, filepart.end, (m) => m.name === "title", 0);
+        if (lead.name === "year" && lead.start === filepart.start && !anyTitle) {
+          lead.name = "title";
+          lead.value = String(matches.inputString ?? "").slice(lead.start, lead.end);
+          out.push(lead);
+          continue;
+        }
+        continue;
+      }
+      const yearTitled = lead.name === "year" && ["season", "episode"].includes(anchor.name ?? "") && !anchor.tags?.includes("weak-episode") && !anchor.tags?.includes("weak-duplicate");
+      if (!yearTitled && !["other", "country", "edition"].includes(lead.name ?? "")) continue;
+      const titles = matches.range(filepart.start, filepart.end, (m) => m.name === "title") ?? [];
+      if (titles.some((t) => t.start < anchor.end)) continue;
+      if (titles.length && !yearTitled) continue;
+      out.push(...titles);
+      if (lead.name !== "year" && (lead.raw ?? "") === String(lead.value ?? "")) continue;
       if (![...inp.slice(filepart.start, lead.start)].every((c) => seps.includes(c))) continue;
       out.push(lead);
     }
@@ -6733,7 +7733,7 @@ function title(config) {
   const rebulk = new Rebulk({
     disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "title"), "disabled")
   });
-  rebulk.rules(CountryAtTitlePosition, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle);
+  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, WordNumeralPartAtTitlePosition, BonusAtTitlePositionRule, LanguageWordInAnimeTitle, SplitOriginalScriptTitle, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle, BracketedTitleFallback, PreBracketJunkTitle, TrimSeasonWordFromTitle);
   const expectedTitle = buildExpectedFunction("expected_title");
   rebulk.functional(expectedTitle, {
     name: "title",
@@ -6759,6 +7759,40 @@ function normalizeTitle(s) {
   return s.toLowerCase().replace(LEADING_ARTICLES_RE, "").trim();
 }
 __name(normalizeTitle, "normalizeTitle");
+var _FormationRunEpisodeTitle = class _FormationRunEpisodeTitle extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = POST_PROCESS;
+    this.consequence = [RemoveMatch, AppendMatch];
+  }
+  when(matches, _context) {
+    const input = matches.inputString ?? "";
+    const toRemove = [];
+    const toAppend = [];
+    const ets = matches.named("episode_title") ?? [];
+    for (const et of ets) {
+      if (!/^\d{1,2}$/.test(String(et.value ?? ""))) continue;
+      const eps = (matches.named("episode") ?? []).filter((e) => e.end <= et.start && !e.private).sort((a, b) => a.start - b.start);
+      if (eps.length < 3) continue;
+      const run = eps.slice(1);
+      const runStart = run[0].start;
+      const span = input.slice(runStart, et.end);
+      if (!/^\d{1,3}(-\d{1,3})+$/.test(span)) continue;
+      const between = input.slice(eps[0].end, runStart);
+      if (!/^[\s._]+$/.test(between)) continue;
+      toRemove.push(...run, et);
+      toAppend.push(new Match(runStart, et.end, {
+        name: "episode_title",
+        value: span,
+        inputString: input
+      }));
+    }
+    return toRemove.length || toAppend.length ? [toRemove, toAppend] : false;
+  }
+};
+__name(_FormationRunEpisodeTitle, "FormationRunEpisodeTitle");
+_FormationRunEpisodeTitle.priority = POST_PROCESS;
+var FormationRunEpisodeTitle = _FormationRunEpisodeTitle;
 function episodeTitle(config) {
   const rebulk = new Rebulk({ disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "episode_title"), "disabled") });
   rebulk.rules(
@@ -6778,6 +7812,7 @@ function episodeTitle(config) {
     RemoveSubtitleDescriptorEpisodeTitle,
     RemoveHashFilepartJunk,
     RemoveTailEpisodeTitle,
+    FormationRunEpisodeTitle,
     RenameEpisodeTitleWhenMovieType
   );
   return rebulk;
@@ -7455,6 +8490,33 @@ var _TrimLanguageFromEpisodeTitle = class _TrimLanguageFromEpisodeTitle extends 
 __name(_TrimLanguageFromEpisodeTitle, "TrimLanguageFromEpisodeTitle");
 _TrimLanguageFromEpisodeTitle.dependency = ["EpisodeTitleFromPosition", "AlternativeTitleReplace"];
 var TrimLanguageFromEpisodeTitle = _TrimLanguageFromEpisodeTitle;
+function parentTitleHole(matches, start, end) {
+  const holesResult = matches.holes(start, end, {
+    ignore: or_(
+      (m) => !!m.tags?.includes("weak-episode"),
+      (m) => m.name === "language" || m.name === "country" || m.name === "episode_details"
+    ),
+    formatter: cleanup,
+    seps: titleSeps,
+    predicate: /* @__PURE__ */ __name((m) => !!m.value, "predicate")
+  });
+  const holes = Array.isArray(holesResult) ? holesResult : holesResult ? [holesResult] : [];
+  if (holes.length === 0) return void 0;
+  const hole = holes[0];
+  const inputString = hole.inputString ?? "";
+  for (const nextHole of holes.slice(1)) {
+    const separator = inputString.slice(hole.end, nextHole.start);
+    const holeRaw = hole.raw;
+    const nextRaw = nextHole.raw;
+    if (separator === "-" && holeRaw && !seps.includes(holeRaw[holeRaw.length - 1]) && nextRaw && !seps.includes(nextRaw[0])) {
+      hole.end = nextHole.end;
+    } else {
+      break;
+    }
+  }
+  return hole;
+}
+__name(parentTitleHole, "parentTitleHole");
 var _Filepart3EpisodeTitle = class _Filepart3EpisodeTitle extends Rule {
   constructor() {
     super(...arguments);
@@ -7486,16 +8548,7 @@ var _Filepart3EpisodeTitle = class _Filepart3EpisodeTitle extends Rule {
         0
       );
       if (season) {
-        const hole = matches.holes(subdirectory.start, subdirectory.end, {
-          ignore: or_(
-            (m) => !!m.tags?.includes("weak-episode"),
-            (m) => m.name === "language" || m.name === "country" || m.name === "episode_details"
-          ),
-          formatter: cleanup,
-          seps: titleSeps,
-          predicate: /* @__PURE__ */ __name((m) => !!m.value, "predicate"),
-          index: 0
-        });
+        const hole = parentTitleHole(matches, subdirectory.start, subdirectory.end);
         if (hole) {
           return hole;
         }
@@ -7530,17 +8583,10 @@ var _Filepart2EpisodeTitle = class _Filepart2EpisodeTitle extends Rule {
     );
     if (episodeNumber) {
       const season = matches.range(directory.start, directory.end, (m) => m.name === "season", 0) || matches.range(filename.start, filename.end, (m) => m.name === "season", 0);
-      if (season) {
-        const hole = matches.holes(directory.start, directory.end, {
-          ignore: or_(
-            (m) => !!m.tags?.includes("weak-episode"),
-            (m) => m.name === "language" || m.name === "country" || m.name === "episode_details"
-          ),
-          formatter: cleanup,
-          seps: titleSeps,
-          predicate: /* @__PURE__ */ __name((m) => !!m.value, "predicate"),
-          index: 0
-        });
+      const anySeason = matches.named("season");
+      const hasAnySeason = Array.isArray(anySeason) ? anySeason.length > 0 : !!anySeason;
+      if (season || !hasAnySeason) {
+        const hole = parentTitleHole(matches, directory.start, directory.end);
         if (hole) {
           const groupMarkers = matches.markers.named("group");
           const groupArray = Array.isArray(groupMarkers) ? groupMarkers : groupMarkers ? [groupMarkers] : [];
@@ -8746,6 +9792,7 @@ function releaseGroup(config) {
     new SceneReleaseGroup(cleanGroupname),
     AnimeReleaseGroup,
     new TrailingTokenAfterEpisodeAsReleaseGroup(cleanGroupname),
+    NumericPrefixedGroupRule,
     RemoveSeasonPackReleaseGroup
   );
 }
@@ -8781,20 +9828,22 @@ var _DashSeparatedReleaseGroup = class _DashSeparatedReleaseGroup extends Rule {
       if (matches.range(candidate.start, candidate.end, (m) => m.name === "episode", 0)) {
         return false;
       }
-      if (candidate.start === start && matches.range(
-        candidate.end,
-        end,
-        (m) => ["season", "episode", "date"].includes(m.name ?? "") && !m.private,
-        0
-      )) {
-        return false;
-      }
       const firstHole = matches.holes(
         candidate.end,
         end,
         { predicate: /* @__PURE__ */ __name((m) => m.start === candidate.end, "predicate"), index: 0 }
       );
       if (!firstHole) {
+        return false;
+      }
+      const holeRaw = String(firstHole.raw ?? "");
+      const holeCore = holeRaw.replace(new RegExp("^[" + sepsPattern + "]+|[" + sepsPattern + "]+$", "g"), "");
+      if (candidate.start === start && !holeCore.includes(".") && !holeCore.includes(" ") && matches.range(
+        candidate.end,
+        end,
+        (m) => ["season", "episode", "date"].includes(m.name ?? "") && !m.private,
+        0
+      )) {
         return false;
       }
       const rawValue = firstHole.raw;
@@ -8967,6 +10016,32 @@ var _SceneReleaseGroup = class _SceneReleaseGroup extends Rule {
         }
       );
       if (lastHole) {
+        const holeGroup = matches.markers.atMatch(lastHole, (m) => m.name === "group", 0);
+        if (holeGroup && String(holeGroup.raw ?? "").startsWith("(")) {
+          const hasEpisodeish = (matches.range(
+            start,
+            end,
+            (m) => m.name === "episode" || m.name === "season"
+          ) ?? []).length > 0;
+          if (hasEpisodeish) {
+            const firstGroup = matches.markers.range(
+              start,
+              end,
+              (m) => m.name === "group" && m.start === start,
+              0
+            );
+            if (firstGroup) {
+              const inner = matches.range(
+                firstGroup.start,
+                firstGroup.end,
+                (mm) => !mm.tags.includes("weak-language")
+              ) ?? [];
+              const core = String(firstGroup.value ?? "").replace(new RegExp(`[${sepsPattern}]`, "g"), "");
+              const emptyish = inner.length === 0 || inner.every((mm) => mm.name === "container" && mm.tags?.includes("subtitle"));
+              if (emptyish && core && !intCoercable(core)) continue;
+            }
+          }
+        }
         const previousMatchFilter = /* @__PURE__ */ __name((match) => {
           if (match.start < filepart.start) {
             return false;
@@ -9031,7 +10106,6 @@ var _AnimeReleaseGroup = class _AnimeReleaseGroup extends Rule {
           (mm) => !mm.tags.includes("weak-language")
         );
         if (innerMatches.length === 0) return true;
-        if (innerMatches.every((mm) => mm.name === "other")) return true;
         if (m.start === filepart.start && innerMatches.every((mm) => mm.name === "container" && mm.tags?.includes("subtitle"))) {
           return true;
         }
@@ -9070,6 +10144,40 @@ _AnimeReleaseGroup.dependency = ["SceneReleaseGroup", "TitleFromPosition"];
 _AnimeReleaseGroup.consequence = [RemoveMatch, AppendMatch];
 _AnimeReleaseGroup.properties = { release_group: [null] };
 var AnimeReleaseGroup = _AnimeReleaseGroup;
+var _NumericPrefixedGroupRule = class _NumericPrefixedGroupRule extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = -32;
+    this.consequence = [RemoveMatch, AppendMatch];
+  }
+  when(matches, _context) {
+    const input = matches.inputString ?? "";
+    const toRemove = [];
+    const toAppend = [];
+    for (const rg of matches.named("release_group") ?? []) {
+      const m = /^(\d{1,3})\s*\[([^\]]+)\]$/.exec(String(rg.value ?? ""));
+      if (!m) continue;
+      const raw = input.slice(rg.start, rg.end);
+      const numLen = m[1].length;
+      toRemove.push(rg);
+      toAppend.push(new Match(rg.start, rg.start + numLen, {
+        name: "episode",
+        value: parseInt(m[1], 10),
+        inputString: input
+      }));
+      const inner = raw.indexOf("[");
+      toAppend.push(new Match(rg.start + inner + 1, rg.end - 1, {
+        name: "release_group",
+        value: m[2],
+        inputString: input
+      }));
+    }
+    return toRemove.length || toAppend.length ? [toRemove, toAppend] : false;
+  }
+};
+__name(_NumericPrefixedGroupRule, "NumericPrefixedGroupRule");
+_NumericPrefixedGroupRule.priority = -32;
+var NumericPrefixedGroupRule = _NumericPrefixedGroupRule;
 var _TrailingTokenAfterEpisodeAsReleaseGroup = class _TrailingTokenAfterEpisodeAsReleaseGroup extends Rule {
   constructor(valueFormatter) {
     super();
@@ -9208,7 +10316,11 @@ function other(config) {
   rebulk.regexDefaults({ flags: "i", abbreviations: [dash] }).stringDefaults({ ignoreCase: true });
   rebulk.defaults({ name: "other", validator: sepsSurround });
   loadConfigPatterns(rebulk, config["other"]);
+  openingEndingCredits(rebulk);
   rebulk.rules(
+    AppendCreditless,
+    AppendOpedEndingCredits,
+    ValidateStereoVRContext,
     RenameAnotherToOther,
     ValidateHasNeighbor,
     ValidateHasNeighborAfter,
@@ -9275,9 +10387,137 @@ var _ImageArtKeywordToOther = class _ImageArtKeywordToOther extends Rule {
 __name(_ImageArtKeywordToOther, "ImageArtKeywordToOther");
 _ImageArtKeywordToOther.priority = POST_PROCESS;
 var ImageArtKeywordToOther = _ImageArtKeywordToOther;
-function completeWords(rebulk, seasonWords, completeArticleWords) {
-  const seasonWordsPattern = buildOrPattern(seasonWords);
-  const completeArticleWordsPattern = buildOrPattern(completeArticleWords);
+var CREDITS_NUMBER = `(?P<credits_number>\\d+(?:(?![vV]\\d)[^\\W\\d_])?)?`;
+var CREDITS_VERSION = `(?:-?[vV](?P<version>\\d+))?`;
+var CREDITS_SUFFIX = CREDITS_NUMBER + CREDITS_VERSION;
+function formatCreditsNumber(value) {
+  const m = /^(\d+)(\w?)$/.exec(value);
+  if (!m) return value;
+  return String(parseInt(m[1], 10)) + m[2].toLowerCase();
+}
+__name(formatCreditsNumber, "formatCreditsNumber");
+function openingEndingCredits(rebulk) {
+  const add = /* @__PURE__ */ __name((pattern, value, ignoreCase) => {
+    rebulk.regex(
+      `(?P<other>` + pattern + `)` + CREDITS_SUFFIX,
+      {
+        flags: ignoreCase ? "i" : "",
+        name: "other",
+        children: true,
+        privateParent: true,
+        validateAll: true,
+        validator: { __parent__: sepsSurround },
+        formatter: {
+          other: /* @__PURE__ */ __name(() => value, "other"),
+          credits_number: formatCreditsNumber,
+          version: /* @__PURE__ */ __name((v) => parseInt(v, 10), "version")
+        },
+        disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "other"), "disabled")
+      }
+    );
+  }, "add");
+  add(`NC-?OP|creditless-?op(?:ening)?`, "Opening Credits", true);
+  add(`NC-?ED|creditless-?(?:ed|ending)`, "Ending Credits", true);
+  add(`OPED|OP`, "Opening Credits", false);
+  add(`ED`, "Ending Credits", false);
+}
+__name(openingEndingCredits, "openingEndingCredits");
+var _AppendCreditless = class _AppendCreditless extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = POST_PROCESS;
+    this.consequence = AppendMatch;
+  }
+  when(matches, _context) {
+    const toAppend = [];
+    for (const match of matches.named("other", (m) => m.value === "Opening Credits" || m.value === "Ending Credits") ?? []) {
+      const raw = (match.raw ?? "").toLowerCase().replace(/[\s._-]+/g, "");
+      if (raw.startsWith("nc") || raw.includes("creditless")) {
+        toAppend.push(new Match(match.start, match.end, {
+          name: "other",
+          value: "Creditless",
+          inputString: matches.inputString
+        }));
+      }
+    }
+    return toAppend.length ? toAppend : false;
+  }
+};
+__name(_AppendCreditless, "AppendCreditless");
+_AppendCreditless.priority = POST_PROCESS;
+_AppendCreditless.properties = { other: ["Creditless"] };
+var AppendCreditless = _AppendCreditless;
+var _AppendOpedEndingCredits = class _AppendOpedEndingCredits extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = POST_PROCESS;
+    this.consequence = AppendMatch;
+  }
+  when(matches, _context) {
+    const toAppend = [];
+    for (const match of matches.named("other", (m) => m.value === "Opening Credits") ?? []) {
+      if ((match.raw ?? "").toLowerCase().replace(/[\s._-]+/g, "") === "oped") {
+        toAppend.push(new Match(match.start, match.end, {
+          name: "other",
+          value: "Ending Credits",
+          inputString: matches.inputString
+        }));
+      }
+    }
+    return toAppend.length ? toAppend : false;
+  }
+};
+__name(_AppendOpedEndingCredits, "AppendOpedEndingCredits");
+_AppendOpedEndingCredits.priority = POST_PROCESS;
+_AppendOpedEndingCredits.properties = { other: ["Ending Credits"] };
+var AppendOpedEndingCredits = _AppendOpedEndingCredits;
+var STEREO_VR_CONTEXT_TAG = "stereo-vr-context";
+var VR_CONTEXT_VALUES = /* @__PURE__ */ new Set(["Virtual Reality", "3D"]);
+var _ValidateStereoVRContext = class _ValidateStereoVRContext extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = 64;
+    this.consequence = RemoveMatch;
+  }
+  when(matches, _context) {
+    const toRemove = [];
+    const fileparts = matches.markers.named("path");
+    for (const filepart of Array.isArray(fileparts) ? fileparts : fileparts ? [fileparts] : []) {
+      const gated = matches.range(
+        filepart.start,
+        filepart.end,
+        (m) => m.name === "other" && m.tags.includes(STEREO_VR_CONTEXT_TAG)
+      );
+      if (!gated?.length) continue;
+      const hasVrContext = matches.range(
+        filepart.start,
+        filepart.end,
+        (m) => m.name === "other" && VR_CONTEXT_VALUES.has(String(m.value))
+      )?.length > 0;
+      if (hasVrContext) {
+        for (const stereo of gated) {
+          toRemove.push(...matches.range(
+            stereo.start,
+            stereo.end,
+            (m) => m.name === "streaming_service"
+          ) ?? []);
+        }
+      } else {
+        toRemove.push(...gated);
+      }
+    }
+    return toRemove.length ? toRemove : false;
+  }
+};
+__name(_ValidateStereoVRContext, "ValidateStereoVRContext");
+_ValidateStereoVRContext.priority = 64;
+var ValidateStereoVRContext = _ValidateStereoVRContext;
+var TOKEN_START = `(?<![^\\W_])`;
+function completeWords(rebulk, opts) {
+  const completeMarkerPattern = buildOrPattern(opts.completeMarkerWords);
+  const seasonWordsPattern = buildOrPattern(opts.seasonWords);
+  const completeArticleWordsPattern = buildOrPattern(opts.completeArticleWords);
+  const seasonNumbersPattern = `(?:-+(?:\\d+|` + buildOrPattern(opts.seasonNumberSeparators, void 0, true) + `))+-+`;
   function validateComplete(match) {
     const children = match.children;
     if (!children.named("completeWordsBefore") && !children.named("completeWordsAfter")) {
@@ -9287,7 +10527,7 @@ function completeWords(rebulk, seasonWords, completeArticleWords) {
   }
   __name(validateComplete, "validateComplete");
   rebulk.regex(
-    `(?P<completeArticle>${completeArticleWordsPattern}-)?(?P<completeWordsBefore>${seasonWordsPattern}-)?Complete(?P<completeWordsAfter>-${seasonWordsPattern})?`,
+    TOKEN_START + `(?P<completeArticle>${completeArticleWordsPattern}-)?(?P<completeWordsBefore>${seasonWordsPattern}-)?` + completeMarkerPattern + `(?P<completeWordsAfter>-${seasonWordsPattern})?`,
     {
       privateNames: ["completeArticle", "completeWordsBefore", "completeWordsAfter"],
       value: { other: "Complete" },
@@ -9295,6 +10535,26 @@ function completeWords(rebulk, seasonWords, completeArticleWords) {
       validator: {
         __parent__: /* @__PURE__ */ __name((m) => sepsSurround(m) && validateComplete(m), "__parent__")
       }
+    }
+  );
+  rebulk.regex(
+    seasonWordsPattern + seasonNumbersPattern + `(?P<other>` + completeMarkerPattern + `)`,
+    {
+      children: true,
+      privateParent: true,
+      validateAll: true,
+      value: { other: "Complete" },
+      tags: ["release-group-prefix"],
+      validator: { __parent__: sepsSurround }
+    }
+  );
+  rebulk.regex(
+    TOKEN_START + `(?P<completePrefix>` + buildOrPattern(opts.completePrefixWords) + `-?)` + completeMarkerPattern,
+    {
+      privateNames: ["completePrefix"],
+      value: { other: "Complete" },
+      tags: ["release-group-prefix"],
+      validator: { __parent__: sepsSurround }
     }
   );
 }
@@ -9343,7 +10603,7 @@ var ProperCountRule = _ProperCountRule;
 var _FixCountRule = class _FixCountRule extends Rule {
   when(matches) {
     const fixes = matches.named("other", (m2) => m2.value === "Fix").filter((m2) => {
-      const raw = rawCleanup(m2.raw).toLowerCase();
+      const raw = rawCleanup(m2.raw ?? "").toLowerCase();
       return raw === "fix" || raw === "fixed";
     });
     if (!fixes || fixes.length === 0) return;
@@ -9602,10 +10862,20 @@ var _RemoveTitleCaseAmbiguous = class _RemoveTitleCaseAmbiguous extends Rule {
   // lowercase scene spellings are unaffected; only the Title-Case word is removed.
   when(matches) {
     const TITLE_WORDS = /* @__PURE__ */ new Set(["Real", "Cam", "Convert"]);
+    const RELEASE_META = /* @__PURE__ */ new Set(["screen_size", "video_codec", "audio_codec", "video_profile", "release_group"]);
     const ret = [];
     for (const m of matches.range(0, matches.inputString?.length ?? 0)) {
       if (m.name !== "other" && m.name !== "source") continue;
-      if (TITLE_WORDS.has(m.raw ?? "")) ret.push(m);
+      if (!TITLE_WORDS.has(m.raw ?? "")) continue;
+      const filepart = matches.markers.atMatch(m, (marker) => marker.name === "path", 0);
+      const searchEnd = filepart?.end ?? (matches.inputString?.length ?? m.end);
+      const metaAfter = matches.range(
+        m.end,
+        searchEnd,
+        (o) => !o.private && RELEASE_META.has(o.name ?? "")
+      ) ?? [];
+      if (metaAfter.length > 0) continue;
+      ret.push(m);
     }
     return ret.length ? ret : false;
   }
@@ -9963,10 +11233,37 @@ function film(config) {
   rebulk.regexDefaults({ flags: "i", abbreviations: [dash] }).stringDefaults({ ignoreCase: true });
   rebulk.defaults({ name: "film", validator: sepsSurround });
   loadConfigPatterns(rebulk, config["film"]);
-  rebulk.rules(FilmTitleRule);
+  rebulk.rules(LeadingFilmNumberRule, FilmTitleRule);
   return rebulk;
 }
 __name(film, "film");
+var _LeadingFilmNumberRule = class _LeadingFilmNumberRule extends Rule {
+  constructor() {
+    super(...arguments);
+    this.consequence = RemoveMatch;
+  }
+  when(matches, _context) {
+    const toRemove = [];
+    const films = matches.named("film", (m) => !m.private) ?? [];
+    for (const filmMatch of Array.isArray(films) ? films : [films]) {
+      const filepath = matches.markers.atMatch(filmMatch, (m) => m.name === "path", 0);
+      if (!filepath) continue;
+      const hole = matches.holes(
+        filepath.start,
+        filmMatch.start + 1,
+        { formatter: cleanup, index: 0 }
+      );
+      if (!(hole && hole.value)) {
+        toRemove.push(filmMatch);
+        if (filmMatch.parent) toRemove.push(filmMatch.parent);
+      }
+    }
+    return toRemove.length ? toRemove : false;
+  }
+};
+__name(_LeadingFilmNumberRule, "LeadingFilmNumberRule");
+_LeadingFilmNumberRule.consequence = RemoveMatch;
+var LeadingFilmNumberRule = _LeadingFilmNumberRule;
 var _FilmTitleRule = class _FilmTitleRule extends Rule {
   enabled(context) {
     return !isDisabled(context, "film_title");
@@ -10116,7 +11413,7 @@ function crc(_config) {
   });
   rebulk.regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", {
     name: "uuid",
-    validator: null,
+    validator: void 0,
     conflictSolver: /* @__PURE__ */ __name((_match, other2) => ["episode", "season", "crc32"].includes(other2.name ?? "") ? other2 : "__default__", "conflictSolver")
   });
   rebulk.functional(guessIdnumber, {
@@ -10156,10 +11453,11 @@ __name(imdb, "imdb");
 function volume(_config) {
   const rebulk = new Rebulk({ disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "volume"), "disabled") });
   rebulk.regexDefaults({ flags: "i" });
-  rebulk.regex("vol(?:\\d{1,3}|(?:ume)?[-. ]\\d{1,3})", {
+  rebulk.regex("vol(?:\\d{1,3}|(?:ume)?[-. ]{1,2}\\d{1,3})(?:v\\d)?(?:[&+]\\d{1,3})?", {
     name: "volume",
     validator: sepsSurround,
-    formatter: /* @__PURE__ */ __name((value) => parseInt(value.replace(/\D/g, ""), 10), "formatter")
+    formatter: /* @__PURE__ */ __name((value) => parseInt(String(value).replace(/^vol(?:ume)?[-. ]*/i, "").replace(/[v&+].*$/i, ""), 10), "formatter"),
+    conflictSolver: /* @__PURE__ */ __name((match, other2) => other2.name === "episode" || other2.name === "season" ? other2 : "__default__", "conflictSolver")
   });
   return rebulk;
 }
@@ -10314,6 +11612,13 @@ var _TypeProcessor = class _TypeProcessor extends Rule {
         return "episode";
       }
     }
+    const completeSeries = matches.named(
+      "other",
+      (m) => m.value === "Complete" && !!(m.children?.named?.("completeWordsBefore")?.length || m.children?.named?.("completeWordsAfter")?.length)
+    );
+    if (completeSeries && (Array.isArray(completeSeries) ? completeSeries.length > 0 : true)) {
+      return "episode";
+    }
     const film2 = matches.named("film");
     if (film2 && (Array.isArray(film2) ? film2.length > 0 : true)) {
       return "movie";
@@ -10336,6 +11641,10 @@ var _TypeProcessor = class _TypeProcessor extends Rule {
       (m) => m.tags.includes("anime")
     );
     if (crc32 && (Array.isArray(crc32) ? crc32.length > 0 : true) && animeReleaseGroup && (Array.isArray(animeReleaseGroup) ? animeReleaseGroup.length > 0 : true)) {
+      return "episode";
+    }
+    const complete = matches.named("other", (m) => m.value === "Complete");
+    if (complete && (Array.isArray(complete) ? complete.length > 0 : true) && (!year || (Array.isArray(year) ? year.length === 0 : false))) {
       return "episode";
     }
     return "movie";
@@ -10553,20 +11862,47 @@ __name(_RemoveAmbiguous, "RemoveAmbiguous");
 _RemoveAmbiguous.priority = POST_PROCESS;
 _RemoveAmbiguous.consequence = RemoveMatch;
 var RemoveAmbiguous = _RemoveAmbiguous;
+var sxxExxWeightPredicate = /* @__PURE__ */ __name((m) => (m.name === "season" || m.name === "episode") && m.tags.includes("SxxExx"), "sxxExxWeightPredicate");
 var _RemoveLessSpecificSeasonEpisode = class _RemoveLessSpecificSeasonEpisode extends RemoveAmbiguous {
   constructor(name) {
     super(
-      (markers, matches) => markerSorted(
-        [...[...markers].reverse()],
-        matches,
-        (m) => m.name === name && m.tags.includes("SxxExx")
-      ),
+      // Sort fileparts most-valuable-first: a SxxExx-tagged season/episode outweighs a
+      // weaker one, so the filename's S44E03 beats a season-only or weak-number parent
+      // directory (upstream #797/#772).
+      (markers, matches) => markerSorted(markers, matches, sxxExxWeightPredicate),
       (m) => m.name === name
     );
+  }
+  when(matches, context) {
+    const markers = matches.markers.named("path");
+    const markerArr = Array.isArray(markers) ? markers : markers ? [markers] : [];
+    if (markerArr.length > 1) {
+      const weights = markerArr.map((marker) => {
+        const inRange = matches.range(marker.start, marker.end, sxxExxWeightPredicate);
+        return new Set((Array.isArray(inRange) ? inRange : []).map((m) => m.name)).size;
+      });
+      const top = Math.max(...weights);
+      if (weights.filter((w) => w === top).length > 1) return [];
+    }
+    return super.when(matches, context);
   }
 };
 __name(_RemoveLessSpecificSeasonEpisode, "RemoveLessSpecificSeasonEpisode");
 var RemoveLessSpecificSeasonEpisode = _RemoveLessSpecificSeasonEpisode;
+var _RemoveLessSpecificSeason = class _RemoveLessSpecificSeason extends RemoveLessSpecificSeasonEpisode {
+  constructor() {
+    super("season");
+  }
+};
+__name(_RemoveLessSpecificSeason, "RemoveLessSpecificSeason");
+var RemoveLessSpecificSeason = _RemoveLessSpecificSeason;
+var _RemoveLessSpecificEpisode = class _RemoveLessSpecificEpisode extends RemoveLessSpecificSeasonEpisode {
+  constructor() {
+    super("episode");
+  }
+};
+__name(_RemoveLessSpecificEpisode, "RemoveLessSpecificEpisode");
+var RemoveLessSpecificEpisode = _RemoveLessSpecificEpisode;
 var _SeasonYear = class _SeasonYear extends Rule {
   when(matches, _context) {
     const ret = [];
@@ -10663,8 +11999,8 @@ function processors(_config) {
   return new Rebulk().rules(
     EnlargeGroupMatches,
     EquivalentHoles,
-    new RemoveLessSpecificSeasonEpisode("season"),
-    new RemoveLessSpecificSeasonEpisode("episode"),
+    RemoveLessSpecificSeason,
+    RemoveLessSpecificEpisode,
     RemoveAmbiguous,
     SeasonYear,
     YearSeason,
@@ -10701,9 +12037,13 @@ function rebulkBuilder(config) {
   rebulk.rebulk(streamingService(cfg("streaming_service")));
   const otherRebulk = other(cfg("other"));
   const episodesConfig = cfg("episodes");
-  const completeSeasonWords = ["seasons?", "series?"];
-  const completeArticleWords = ["The"];
-  completeWords(otherRebulk, completeSeasonWords, completeArticleWords);
+  completeWords(otherRebulk, {
+    completeMarkerWords: ["Complete", "Int[\xE9e]grale"],
+    seasonWords: ["seasons?", "mini-?series?", "series?"],
+    completeArticleWords: ["The"],
+    completePrefixWords: ["L['\u2019]?", "Coffret"],
+    seasonNumberSeparators: ["&", "and"]
+  });
   rebulk.rebulk(otherRebulk);
   rebulk.rebulk(size(cfg("size")));
   rebulk.rebulk(bitRate(cfg("bit_rate")));
@@ -10780,23 +12120,77 @@ var options_default = {
       "sub"
     ],
     groups: {
-      starting: "([{",
-      ending: ")]}"
+      starting: "([{\u3010\u300C\uFF08",
+      ending: ")]}\u3011\u300D\uFF09"
     },
     audio_codec: {
       audio_codec: {
-        MP3: { string: ["MP3", "LAME"], regex: ["LAME(?:\\d)+-?(?:\\d)+"] },
+        MP3: {
+          string: [
+            "MP3",
+            "LAME"
+          ],
+          regex: [
+            "LAME(?:\\d)+-?(?:\\d)+"
+          ]
+        },
         MP2: "MP2",
-        "Dolby Digital": { string: ["Dolby", "DolbyDigital"], regex: ["Dolby-Digital", "DD", "AC-?3D?"] },
-        "Dolby Atmos": { string: ["Atmos"], regex: ["Dolby-?Atmos"] },
+        "Dolby Digital": {
+          string: [
+            "Dolby",
+            "DolbyDigital"
+          ],
+          regex: [
+            "Dolby-Digital",
+            "DD",
+            "AC-?3D?",
+            "DolbyD"
+          ]
+        },
+        "Dolby Atmos": {
+          string: [
+            "Atmos"
+          ],
+          regex: [
+            "Dolby-?Atmos"
+          ]
+        },
         AAC: "AAC",
-        "Dolby Digital Plus": { string: ["DDP", "DD+"], regex: ["E-?AC-?3"] },
+        "Dolby Digital Plus": {
+          string: [
+            "DDP",
+            "DD+"
+          ],
+          regex: [
+            "E-?AC-?3"
+          ]
+        },
         FLAC: "Flac",
         DTS: "DTS",
-        "DTS-HD": { regex: ["DTS-?HD", "DTS(?=-?MA)", "DTS-?MA"], conflict_solver: "lambda match, other: other if other.name == 'audio_codec' else '__default__'" },
-        "DTS:X": { string: ["DTS:X", "DTS-X", "DTSX"] },
-        "Dolby TrueHD": { regex: ["True-?HD"] },
-        Opus: "Opus",
+        "DTS-HD": {
+          regex: [
+            "DTS-?HD",
+            "DTS(?=-?MA)",
+            "DTS-?MA"
+          ],
+          conflict_solver: "lambda match, other: other if other.name == 'audio_codec' else '__default__'"
+        },
+        "DTS:X": {
+          string: [
+            "DTS:X",
+            "DTS-X",
+            "DTSX"
+          ]
+        },
+        "Dolby TrueHD": {
+          regex: [
+            "True-?HD"
+          ]
+        },
+        Opus: {
+          string: "Opus",
+          tags: "title-word"
+        },
         Vorbis: "Vorbis",
         PCM: "PCM",
         LPCM: "LPCM"
@@ -10810,40 +12204,114 @@ var options_default = {
         "2.0": [
           "2ch",
           "stereo",
-          { regex: "(2[\\W_]0(?:ch)?)(?=[^\\d]|$)", children: true },
-          { string: "20", validator: "import:seps_after", tags: "weak-audio_channels" }
+          {
+            regex: "(2[\\W_]0(?:ch)?)(?=[^\\d]|$)",
+            children: true
+          },
+          {
+            string: "20",
+            validator: "import:seps_after",
+            tags: "weak-audio_channels"
+          }
         ],
         "5.1": [
           "5ch",
           "6ch",
-          { regex: "(5[\\W_][01](?:ch)?)(?=[^\\d]|$)", children: true },
-          { regex: "(6[\\W_]0(?:ch)?)(?=[^\\d]|$)", children: true },
-          { regex: "5[01]", validator: "import:seps_after", tags: "weak-audio_channels" }
+          {
+            regex: "(5[\\W_][01](?:ch)?)(?=[^\\d]|$)",
+            children: true
+          },
+          {
+            regex: "(6[\\W_]0(?:ch)?)(?=[^\\d]|$)",
+            children: true
+          },
+          {
+            regex: "5[01]",
+            validator: "import:seps_after",
+            tags: "weak-audio_channels"
+          }
         ],
         "7.1": [
           "7ch",
           "8ch",
-          { regex: "(7[\\W_][01](?:ch)?)(?=[^\\d]|$)", children: true },
-          { regex: "7[01]", validator: "import:seps_after", tags: "weak-audio_channels" }
+          {
+            regex: "(7[\\W_][01](?:ch)?)(?=[^\\d]|$)",
+            children: true
+          },
+          {
+            regex: "7[01]",
+            validator: "import:seps_after",
+            tags: "weak-audio_channels"
+          }
         ]
       },
       audio_profile: {
-        "Master Audio": { string: "MA", tags: ["audio_profile.rule", "DTS-HD"] },
-        "High Resolution Audio": { string: ["HR", "HRA"], tags: ["audio_profile.rule", "DTS-HD"] },
-        "Extended Surround": { string: "ES", tags: ["audio_profile.rule", "DTS"] },
-        "High Efficiency": { string: "HE", tags: ["audio_profile.rule", "AAC"] },
-        "Low Complexity": { string: "LC", tags: ["audio_profile.rule", "AAC"] },
-        "High Quality": { string: "HQ", tags: ["audio_profile.rule", "Dolby Digital"] },
-        EX: { string: "EX", tags: ["audio_profile.rule", "Dolby Digital"] }
+        "Master Audio": {
+          string: "MA",
+          tags: [
+            "audio_profile.rule",
+            "DTS-HD"
+          ]
+        },
+        "High Resolution Audio": {
+          string: [
+            "HR",
+            "HRA"
+          ],
+          tags: [
+            "audio_profile.rule",
+            "DTS-HD"
+          ]
+        },
+        "Extended Surround": {
+          string: "ES",
+          tags: [
+            "audio_profile.rule",
+            "DTS"
+          ]
+        },
+        "High Efficiency": {
+          string: "HE",
+          tags: [
+            "audio_profile.rule",
+            "AAC"
+          ]
+        },
+        "Low Complexity": {
+          string: "LC",
+          tags: [
+            "audio_profile.rule",
+            "AAC"
+          ]
+        },
+        "High Quality": {
+          string: "HQ",
+          tags: [
+            "audio_profile.rule",
+            "Dolby Digital"
+          ]
+        },
+        EX: {
+          string: "EX",
+          tags: [
+            "audio_profile.rule",
+            "Dolby Digital"
+          ]
+        }
       }
     },
     bit_rate: {
       bit_rate: {
         _: {
-          regex: ["\\d+-?[kmg]b(ps|its?)", "\\d+\\.\\d+-?[kmg]b(ps|its?)"],
+          regex: [
+            "\\d+-?[kmg]b(ps|its?)",
+            "\\d+\\.\\d+-?[kmg]b(ps|its?)"
+          ],
           conflict_solver: "lambda match, other: match if other.name == 'audio_channels' and 'weak-audio_channels' not in other.tags else other",
           formatter: "import:guessit.rules.common.quantity:BitRate.fromstring",
-          tags: ["release-group-prefix"]
+          tags: [
+            "release-group-prefix"
+          ]
         }
       }
     },
@@ -10854,7 +12322,9 @@ var options_default = {
           private_parent: true,
           children: true,
           formatter: "eval:int",
-          validator: { __parent__: "import:seps_surround" },
+          validator: {
+            __parent__: "import:seps_surround"
+          },
           validate_all: true,
           conflict_solver: "lambda match, conflicting: match if conflicting.name in ('video_codec', 'episode') and 'weak-episode' not in conflicting.tags else '__default__'"
         }
@@ -10867,10 +12337,20 @@ var options_default = {
           cd: "lambda match: 0 < match.value < 100",
           cd_count: "lambda match: 0 < match.value < 100"
         },
-        formatter: { cd: "eval:int", cd_count: "eval:int" },
+        formatter: {
+          cd: "eval:int",
+          cd_count: "eval:int"
+        },
         children: true,
         private_parent: true,
-        properties: { cd: [null], cd_count: [null] }
+        properties: {
+          cd: [
+            null
+          ],
+          cd_count: [
+            null
+          ]
+        }
       },
       _cd_count: {
         regex: "(?P<cd_count>\\d+)-?cds?",
@@ -10878,10 +12358,19 @@ var options_default = {
           cd: "lambda match: 0 < match.value < 100",
           cd_count: "lambda match: 0 < match.value < 100"
         },
-        formatter: { cd_count: "eval:int" },
+        formatter: {
+          cd_count: "eval:int"
+        },
         children: true,
         private_parent: true,
-        properties: { cd: [null], cd_count: [null] }
+        properties: {
+          cd: [
+            null
+          ],
+          cd_count: [
+            null
+          ]
+        }
       }
     },
     container: {
@@ -10984,34 +12473,183 @@ var options_default = {
     },
     edition: {
       edition: {
-        Collector: { string: ["collector"], regex: ["collector'?s?-edition", "edition-collector"] },
+        Collector: {
+          string: [
+            "collector"
+          ],
+          regex: [
+            "collector'?s?-edition",
+            "edition-collector"
+          ]
+        },
         Special: [
-          { regex: ["special-edition", "edition-special"], conflict_solver: "lambda match, other: other if other.name == 'episode_details' and other.value == 'Special' else '__default__'" },
-          { string: "se", tags: "has-neighbor" }
+          {
+            regex: [
+              "special-edition",
+              "edition-special"
+            ],
+            conflict_solver: "lambda match, other: other if other.name == 'episode_details' and other.value == 'Special' else '__default__'"
+          },
+          {
+            string: "se",
+            tags: "has-neighbor"
+          }
         ],
         "Director's Definitive Cut": "ddc",
-        Criterion: { string: ["CC", "Criterion"], regex: ["criterion-edition", "edition-criterion"] },
-        Deluxe: { string: ["deluxe"], regex: ["deluxe-edition", "edition-deluxe"] },
-        Limited: { string: ["limited"], regex: ["limited-edition"], tags: ["has-neighbor", "release-group-prefix"] },
-        Theatrical: { string: ["theatrical"], regex: ["theatrical-cut", "theatrical-edition"] },
-        "Director's Cut": { string: ["DC"], regex: ["director'?s?-cut", "director'?s?-cut-edition", "edition-director'?s?-cut"] },
-        Extended: { string: ["extended"], regex: ["extended-?cut", "extended-?version"], tags: ["has-neighbor", "release-group-prefix"] },
-        "Alternative Cut": { regex: ["alternat(e|ive)(?:-?Cut)?"], tags: ["has-neighbor", "release-group-prefix"] },
+        Criterion: {
+          string: [
+            "CC",
+            "Criterion"
+          ],
+          regex: [
+            "criterion-edition",
+            "edition-criterion"
+          ]
+        },
+        Deluxe: {
+          string: [
+            "deluxe"
+          ],
+          regex: [
+            "deluxe-edition",
+            "edition-deluxe"
+          ]
+        },
+        Limited: {
+          string: [
+            "limited"
+          ],
+          regex: [
+            "limited-edition"
+          ],
+          tags: [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        Theatrical: {
+          string: [
+            "theatrical"
+          ],
+          regex: [
+            "theatrical-cut",
+            "theatrical-edition"
+          ]
+        },
+        "Director's Cut": {
+          string: [
+            "DC"
+          ],
+          regex: [
+            "director'?s?-cut",
+            "director'?s?-cut-edition",
+            "edition-director'?s?-cut"
+          ]
+        },
+        Extended: {
+          string: [
+            "extended"
+          ],
+          regex: [
+            "extended-?cut",
+            "extended-?version"
+          ],
+          tags: [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        "Alternative Cut": {
+          regex: [
+            "alternat(e|ive)(?:-?Cut)?"
+          ],
+          tags: [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
         Remastered: [
-          { regex: "(?:4k.)?remaster(?:ed)?", tags: ["release-group-prefix"] }
+          {
+            regex: "(?:4k.)?remaster(?:ed)?",
+            tags: [
+              "release-group-prefix"
+            ]
+          }
         ],
         Restored: [
-          { regex: "(?:4k.)?restore(?:d)?", tags: ["release-group-prefix"] }
+          {
+            regex: "(?:4k.)?restore(?:d)?",
+            tags: [
+              "release-group-prefix"
+            ]
+          }
         ],
-        Uncensored: { string: "Uncensored", tags: ["has-neighbor", "release-group-prefix"] },
-        Uncut: { string: "Uncut", tags: ["has-neighbor", "release-group-prefix"] },
-        Unrated: { string: "Unrated", tags: ["has-neighbor", "release-group-prefix"] },
-        Festival: { string: "Festival", tags: ["has-neighbor-before", "has-neighbor-after"] },
-        IMAX: { string: ["imax"], regex: ["imax-edition"] },
-        Fan: { regex: ["fan-edit(?:ion)?", "fan-collection"] },
-        Ultimate: { regex: ["ultimate-edition"] },
-        _Ultimate_Collector: { regex: ["ultimate-collector'?s?-edition"], value: ["Ultimate", "Collector"] },
-        _Ultimate_Fan: { regex: ["ultimate-fan-edit(?:ion)?", "ultimate-fan-collection"], value: ["Ultimate", "Fan"] }
+        Uncensored: {
+          string: "Uncensored",
+          tags: [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        Uncut: {
+          string: "Uncut",
+          tags: [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        Unrated: {
+          string: "Unrated",
+          tags: [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        Festival: {
+          string: "Festival",
+          tags: [
+            "has-neighbor-before",
+            "has-neighbor-after"
+          ]
+        },
+        IMAX: {
+          string: [
+            "imax"
+          ],
+          regex: [
+            "imax-edition"
+          ]
+        },
+        Fan: {
+          regex: [
+            "fan-edit(?:ion)?",
+            "fan-collection"
+          ]
+        },
+        Ultimate: {
+          regex: [
+            "ultimate-edition"
+          ]
+        },
+        _Ultimate_Collector: {
+          regex: [
+            "ultimate-collector'?s?-edition"
+          ],
+          value: [
+            "Ultimate",
+            "Collector"
+          ]
+        },
+        _Ultimate_Fan: {
+          regex: [
+            "ultimate-fan-edit(?:ion)?",
+            "ultimate-fan-collection"
+          ],
+          value: [
+            "Ultimate",
+            "Fan"
+          ]
+        }
       }
     },
     episodes: {
@@ -11019,7 +12657,8 @@ var options_default = {
       episode_max_range: 100,
       max_range_gap: 1,
       season_markers: [
-        "s"
+        "s",
+        "sn"
       ],
       season_ep_markers: [
         "x",
@@ -11056,31 +12695,118 @@ var options_default = {
         "saisons",
         "tem",
         "temp",
-        "temporada",
-        "temporadas",
-        "stagione"
+        {
+          value: "temporada",
+          numfirst: true
+        },
+        {
+          value: "temporadas",
+          numfirst: true
+        },
+        "stagione",
+        {
+          value: "\u0441\u0435\u0437\u043E\u043D",
+          numfirst: true
+        },
+        {
+          value: "sezon",
+          numfirst: true
+        },
+        {
+          value: "staffel",
+          numfirst: true
+        },
+        "sezonul",
+        "s\xE4song",
+        "sesong",
+        "s\xE6son",
+        {
+          value: "\xE9vad",
+          numfirst: true
+        }
       ],
       episode_words: [
         "episode",
         "episodes",
+        "\xE9pisode",
+        "\xE9pisodes",
         "eps",
         "ep",
         "episodio",
         "episodios",
         "capitulo",
-        "capitulos"
+        "capitulos",
+        {
+          value: "\u0441\u0435\u0440\u0438\u044F",
+          numfirst: true
+        },
+        {
+          value: "\u0441\u0435\u0440\u0438\u0438",
+          numfirst: true
+        },
+        {
+          value: "\u044D\u043F\u0438\u0437\u043E\u0434",
+          numfirst: true
+        },
+        {
+          value: "seria",
+          numfirst: true
+        },
+        {
+          value: "serii",
+          numfirst: true
+        },
+        {
+          value: "serija",
+          numfirst: true
+        },
+        {
+          value: "b\xF6l\xFCm",
+          numfirst: true
+        },
+        {
+          value: "bolum",
+          numfirst: true
+        },
+        "aflevering",
+        "afl",
+        "folge",
+        "odcinek",
+        "episodul",
+        "avsnitt",
+        {
+          value: "r\xE9sz",
+          numfirst: true
+        }
       ],
       of_words: [
         "of",
-        "sur"
+        "sur",
+        "de",
+        "di",
+        "von",
+        "van",
+        "din",
+        "\u0438\u0437"
       ],
       all_words: [
         "All"
-      ]
+      ],
+      ordinal_suffix: "(?:\xAA|\xBA|\xB0|a|o|-?(?:\u0439|\u044F|\u0435|\u0433\u043E|\u0430\u044F|\u044B\u0439|\u043E\u0435))?"
     },
     film: {
       film: {
-        _f: { regex: "f(\\d{1,2})", name: "film", validate_all: true, validator: { __parent__: "import:seps_surround" }, private_parent: true, children: true, formatter: "eval:int" }
+        _f: {
+          regex: "f(\\d{1,2})",
+          name: "film",
+          validate_all: true,
+          validator: {
+            __parent__: "import:seps_surround"
+          },
+          private_parent: true,
+          children: true,
+          formatter: "eval:int"
+        }
       }
     },
     language: {
@@ -11200,35 +12926,165 @@ var options_default = {
     },
     other: {
       other: {
-        "Audio Fixed": { regex: ["Audio-?Fix", "Audio-?Fixed"] },
-        "Sync Fixed": { regex: ["Sync-?Fix", "Sync-?Fixed"] },
-        "Dual Audio": { string: ["Dual"], regex: ["Dual-?Audio"] },
-        Widescreen: { string: ["ws"], regex: ["wide-?screen"] },
-        Reencoded: { regex: ["Re-?Enc(?:oded)?"] },
-        _repack_with_count: { regex: ["Repack(?P<proper_count>\\d*)", "Rerip(?P<proper_count>\\d*)"], value: { other: "Proper" }, tags: ["streaming_service.prefix", "streaming_service.suffix"] },
+        "Audio Fixed": {
+          regex: [
+            "Audio-?Fix",
+            "Audio-?Fixed"
+          ]
+        },
+        "Sync Fixed": {
+          regex: [
+            "Sync-?Fix",
+            "Sync-?Fixed"
+          ]
+        },
+        "Dual Audio": {
+          string: [
+            "Dual"
+          ],
+          regex: [
+            "Dual-?Audio"
+          ]
+        },
+        Widescreen: {
+          string: [
+            "ws"
+          ],
+          regex: [
+            "wide-?screen"
+          ]
+        },
+        Reencoded: {
+          regex: [
+            "Re-?Enc(?:oded)?"
+          ]
+        },
+        _repack_with_count: {
+          regex: [
+            "Repack(?P<proper_count>\\d*)",
+            "Rerip(?P<proper_count>\\d*)"
+          ],
+          value: {
+            other: "Proper"
+          },
+          tags: [
+            "streaming_service.prefix",
+            "streaming_service.suffix"
+          ]
+        },
         Proper: [
-          { string: "Proper", tags: ["has-neighbor", "streaming_service.prefix", "streaming_service.suffix"] },
-          { regex: ["Real-Proper", "Real-Repack", "Real-Rerip"], tags: ["streaming_service.prefix", "streaming_service.suffix", "real"] },
-          { string: "Real", tags: ["has-neighbor", "streaming_service.prefix", "streaming_service.suffix", "real"] }
+          {
+            string: "Proper",
+            tags: [
+              "has-neighbor",
+              "streaming_service.prefix",
+              "streaming_service.suffix"
+            ]
+          },
+          {
+            regex: [
+              "Real-Proper",
+              "Real-Repack",
+              "Real-Rerip"
+            ],
+            tags: [
+              "streaming_service.prefix",
+              "streaming_service.suffix",
+              "real"
+            ]
+          },
+          {
+            string: "Real",
+            tags: [
+              "has-neighbor",
+              "streaming_service.prefix",
+              "streaming_service.suffix",
+              "real"
+            ]
+          }
         ],
         Fix: [
-          { string: ["Fix", "Fixed"], tags: ["has-neighbor-before", "has-neighbor-after", "streaming_service.prefix", "streaming_service.suffix"] },
-          { string: ["Dirfix", "Nfofix", "Prooffix"], tags: ["streaming_service.prefix", "streaming_service.suffix"] },
-          { regex: ["(?:Proof-?)?Sample-?Fix"], tags: ["streaming_service.prefix", "streaming_service.suffix"] }
+          {
+            string: [
+              "Fix",
+              "Fixed"
+            ],
+            tags: [
+              "has-neighbor-before",
+              "has-neighbor-after",
+              "streaming_service.prefix",
+              "streaming_service.suffix"
+            ]
+          },
+          {
+            string: [
+              "Dirfix",
+              "Nfofix",
+              "Prooffix"
+            ],
+            tags: [
+              "streaming_service.prefix",
+              "streaming_service.suffix"
+            ]
+          },
+          {
+            regex: [
+              "(?:Proof-?)?Sample-?Fix"
+            ],
+            tags: [
+              "streaming_service.prefix",
+              "streaming_service.suffix"
+            ]
+          }
         ],
-        "Fan Subtitled": { string: "Fansub", tags: "has-neighbor" },
-        "Fast Subtitled": { string: "Fastsub", tags: "has-neighbor" },
+        "Fan Subtitled": {
+          string: "Fansub",
+          tags: "has-neighbor"
+        },
+        "Fast Subtitled": {
+          string: "Fastsub",
+          tags: "has-neighbor"
+        },
         "Region 5": "R5",
         "Region C": "RC",
-        Preair: { regex: "Pre-?Air" },
+        Preair: {
+          regex: "Pre-?Air"
+        },
         "PS Vita": [
-          { regex: "(?:PS-?)Vita" },
-          { string: "Vita", tags: "has-neighbor" }
+          {
+            regex: "(?:PS-?)Vita"
+          },
+          {
+            string: "Vita",
+            tags: "has-neighbor"
+          }
         ],
-        _HdRip: { value: { other: "HD", another: "Rip" }, regex: ["(HD)(?P<another>Rip)"], private_parent: true, children: true, validator: { __parent__: "import:seps_surround" }, validate_all: true },
+        _HdRip: {
+          value: {
+            other: "HD",
+            another: "Rip"
+          },
+          regex: [
+            "(HD)(?P<another>Rip)"
+          ],
+          private_parent: true,
+          children: true,
+          validator: {
+            __parent__: "import:seps_surround"
+          },
+          validate_all: true
+        },
         Screener: [
           "Screener",
-          { regex: "Scr(?:eener)?", validator: null, tags: ["other.validate.screener", "source-prefix", "source-suffix"] }
+          {
+            regex: "Scr(?:eener)?",
+            validator: null,
+            tags: [
+              "other.validate.screener",
+              "source-prefix",
+              "source-suffix"
+            ]
+          }
         ],
         Remux: "Remux",
         Hybrid: "Hybrid",
@@ -11237,59 +13093,313 @@ var options_default = {
         NTSC: "NTSC",
         XXX: "XXX",
         "2in1": "2in1",
-        "3D": { string: "3D", tags: "has-neighbor" },
-        "Virtual Reality": { string: ["VR"], regex: ["VR180", "VR360"], tags: "has-neighbor" },
-        "Opening Credits": { string: ["NCOP", "OPED"], regex: ["NC-?OP", "creditless-?opening"], tags: "has-neighbor" },
-        "Ending Credits": { string: ["NCED"], regex: ["NC-?ED", "creditless-?ending"], tags: "has-neighbor" },
-        "Half SBS": { string: ["HSBS"], regex: ["Half-?SBS"], tags: "has-neighbor" },
-        "Half OU": { string: ["HOU", "HTAB"], regex: ["Half-?OU", "Half-?TAB"], tags: "has-neighbor" },
-        "High Quality": { string: "HQ", tags: "uhdbluray-neighbor" },
+        "3D": {
+          string: "3D",
+          tags: "has-neighbor"
+        },
+        "Virtual Reality": {
+          string: [
+            "VR",
+            "EAC360"
+          ],
+          regex: [
+            "VR180",
+            "VR360",
+            "VR-180",
+            "VR-360"
+          ],
+          tags: "has-neighbor"
+        },
+        "High Quality": {
+          string: "HQ",
+          tags: "uhdbluray-neighbor"
+        },
         "High Resolution": "HR",
         "Line Dubbed": "LD",
-        "Mic Dubbed": "MD",
-        "Micro HD": { string: ["mHD", "HDLight"], regex: ["micro-?hd", "hd-?lite"] },
+        "Mic Dubbed": {
+          string: "MD",
+          tags: "title-word"
+        },
+        "Micro HD": {
+          string: [
+            "mHD",
+            "HDLight"
+          ],
+          regex: [
+            "micro-?hd",
+            "hd-?lite"
+          ]
+        },
         "Low Definition": "LDTV",
         "High Frame Rate": "HFR",
         "Variable Frame Rate": "VFR",
-        HD: { string: "HD", validator: null, tags: ["streaming_service.prefix", "streaming_service.suffix"] },
-        "Full HD": { string: ["FHD"], regex: ["Full-?HD"], validator: null, tags: ["streaming_service.prefix", "streaming_service.suffix"] },
-        "Ultra HD": { string: ["UHD"], regex: ["Ultra-?(?:HD)?"], validator: null, tags: ["streaming_service.prefix", "streaming_service.suffix"] },
-        Upscaled: { regex: "Upscaled?" },
-        Complete: { string: ["Complet", "Complete"], tags: ["has-neighbor", "release-group-prefix"] },
-        Classic: { string: "Classic", tags: ["has-neighbor", "release-group-prefix"] },
-        Bonus: { string: "Bonus", tags: ["has-neighbor", "release-group-prefix"] },
-        Trailer: { string: "Trailer", tags: ["has-neighbor", "release-group-prefix"] },
-        Retail: { string: "Retail", tags: ["has-neighbor", "release-group-prefix"] },
-        Colorized: { string: "Colorized", tags: ["has-neighbor", "release-group-prefix"] },
-        Internal: { string: "Internal", tags: ["has-neighbor", "release-group-prefix"] },
-        "Line Audio": { string: "LiNE", tags: ["has-neighbor-before", "has-neighbor-after", "release-group-prefix"] },
-        "Read NFO": { regex: "Read-?NFO" },
-        Converted: { string: "CONVERT", tags: "has-neighbor" },
-        Documentary: { string: ["DOCU", "DOKU"], tags: "has-neighbor" },
-        "Open Matte": { regex: "(?:OM|Open-?Matte)", tags: "has-neighbor" },
-        "Straight to Video": { string: "STV", tags: "has-neighbor" },
-        "Original Aspect Ratio": { string: "OAR", tags: "has-neighbor" },
-        "East Coast Feed": { regex: "(?:Live-)?(?:Episode-)?East-?(?:Coast-)?Feed" },
-        "West Coast Feed": { regex: "(?:Live-)?(?:Episode-)?West-?(?:Coast-)?Feed" },
-        "Original Video": { string: ["VO", "OV"], tags: "has-neighbor" },
-        "Original Animated Video": { string: ["Ova", "Oav"] },
+        HD: {
+          string: "HD",
+          validator: null,
+          tags: [
+            "streaming_service.prefix",
+            "streaming_service.suffix"
+          ]
+        },
+        "Full HD": {
+          string: [
+            "FHD"
+          ],
+          regex: [
+            "Full-?HD"
+          ],
+          validator: null,
+          tags: [
+            "streaming_service.prefix",
+            "streaming_service.suffix"
+          ]
+        },
+        "Ultra HD": {
+          string: [
+            "UHD"
+          ],
+          regex: [
+            "Ultra-?(?:HD)?"
+          ],
+          validator: null,
+          tags: [
+            "streaming_service.prefix",
+            "streaming_service.suffix"
+          ]
+        },
+        Upscaled: {
+          regex: "Upscaled?"
+        },
+        Complete: {
+          string: [
+            "Complet",
+            "Complete"
+          ],
+          tags: [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        Classic: {
+          string: "Classic",
+          tags: [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        Bonus: {
+          string: "Bonus",
+          tags: [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        Trailer: {
+          string: "Trailer",
+          tags: [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        Retail: {
+          string: "Retail",
+          tags: [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        Colorized: {
+          string: "Colorized",
+          tags: [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        Internal: {
+          string: "Internal",
+          tags: [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        "Line Audio": {
+          string: "LiNE",
+          tags: [
+            "has-neighbor-before",
+            "has-neighbor-after",
+            "release-group-prefix"
+          ]
+        },
+        "Read NFO": {
+          regex: "Read-?NFO"
+        },
+        Converted: {
+          string: "CONVERT",
+          tags: "has-neighbor"
+        },
+        Documentary: {
+          string: [
+            "DOCU",
+            "DOKU"
+          ],
+          tags: "has-neighbor"
+        },
+        "Open Matte": {
+          regex: "(?:OM|Open-?Matte)",
+          tags: "has-neighbor"
+        },
+        "Straight to Video": {
+          string: "STV",
+          tags: "has-neighbor"
+        },
+        "Original Aspect Ratio": {
+          string: "OAR",
+          tags: "has-neighbor"
+        },
+        "East Coast Feed": {
+          regex: "(?:Live-)?(?:Episode-)?East-?(?:Coast-)?Feed"
+        },
+        "West Coast Feed": {
+          regex: "(?:Live-)?(?:Episode-)?West-?(?:Coast-)?Feed"
+        },
+        "Original Video": {
+          string: [
+            "VO",
+            "OV"
+          ],
+          tags: "has-neighbor"
+        },
+        "Original Animated Video": {
+          string: [
+            "Ova",
+            "Oav"
+          ],
+          tags: "title-word"
+        },
         "Original Net Animation": "Ona",
         "Original Animation DVD": "Oad",
-        Mux: { string: "Mux", validator: "import:seps_after", tags: ["other.validate.mux", "video-codec-prefix", "source-suffix"] },
-        "Hardcoded Subtitles": ["HC", "vost"],
-        "Standard Dynamic Range": { string: "SDR", tags: "uhdbluray-neighbor" },
-        HDR10: { regex: "HDR(?:10)?", tags: "uhdbluray-neighbor" },
-        "Dolby Vision": { regex: "(?:Dolby-?Vision|DV)", tags: "uhdbluray-neighbor" },
-        "BT.2020": { regex: "BT-?2020", tags: "uhdbluray-neighbor" },
-        Sample: { string: "Sample", tags: ["at-end", "not-a-release-group"] },
-        Extras: [
-          { string: "Extras", tags: "has-neighbor" },
-          { regex: "Digital-?Extras?" }
+        Mux: {
+          string: "Mux",
+          validator: "import:seps_after",
+          tags: [
+            "other.validate.mux",
+            "video-codec-prefix",
+            "source-suffix"
+          ]
+        },
+        "Hardcoded Subtitles": [
+          "HC",
+          "vost"
         ],
-        Proof: { string: "Proof", tags: ["at-end", "not-a-release-group"] },
-        Obfuscated: { string: ["Obfuscated", "Scrambled"], tags: ["at-end", "not-a-release-group"] },
-        Repost: { string: ["xpost", "postbot", "asrequested"], tags: "not-a-release-group" },
-        _complete_words: { callable: "import:guessit.rules.properties.other:complete_words", season_words: ["seasons?", "series?"], complete_article_words: ["The"] }
+        "Standard Dynamic Range": {
+          string: "SDR",
+          tags: "uhdbluray-neighbor"
+        },
+        HDR10: {
+          regex: "HDR(?:10)?",
+          tags: "uhdbluray-neighbor"
+        },
+        "Dolby Vision": {
+          regex: "(?:Dolby-?Vision|DoVi|DV)",
+          tags: "uhdbluray-neighbor"
+        },
+        "BT.2020": {
+          regex: "BT-?2020",
+          tags: "uhdbluray-neighbor"
+        },
+        Sample: {
+          string: "Sample",
+          tags: [
+            "at-end",
+            "not-a-release-group"
+          ]
+        },
+        Extras: [
+          {
+            string: "Extras",
+            tags: "has-neighbor"
+          },
+          {
+            regex: "Digital-?Extras?"
+          }
+        ],
+        Proof: {
+          string: "Proof",
+          tags: [
+            "at-end",
+            "not-a-release-group"
+          ]
+        },
+        Obfuscated: {
+          string: [
+            "Obfuscated",
+            "Scrambled"
+          ],
+          tags: [
+            "at-end",
+            "not-a-release-group"
+          ]
+        },
+        Repost: {
+          string: [
+            "xpost",
+            "postbot",
+            "asrequested"
+          ],
+          tags: "not-a-release-group"
+        },
+        _complete_words: {
+          callable: "import:guessit.rules.properties.other:complete_words",
+          season_words: [
+            "seasons?",
+            "series?"
+          ],
+          complete_article_words: [
+            "The"
+          ]
+        },
+        "Side By Side": {
+          string: [
+            "SBS",
+            "LR"
+          ],
+          tags: [
+            "has-neighbor",
+            "stereo-vr-context"
+          ]
+        },
+        "Over Under": {
+          string: [
+            "TB",
+            "OU"
+          ],
+          tags: [
+            "has-neighbor",
+            "stereo-vr-context"
+          ]
+        },
+        "Half Side By Side": {
+          string: [
+            "HSBS"
+          ],
+          regex: [
+            "h-?sbs",
+            "half-?sbs"
+          ],
+          tags: "has-neighbor"
+        },
+        "Half Over Under": {
+          string: [
+            "HOU",
+            "HTAB"
+          ],
+          regex: [
+            "h-?ou",
+            "half-?ou",
+            "half-?tab"
+          ],
+          tags: "has-neighbor"
+        }
       }
     },
     part: {
@@ -11492,7 +13602,10 @@ var options_default = {
       iQIYI: "iQIYI",
       iTunes: [
         "iTunes",
-        { pattern: "iT", ignore_case: false }
+        {
+          pattern: "iT",
+          ignore_case: false
+        }
       ],
       ITV: "ITV",
       "Knowledge Network": "KNOW",
@@ -11612,7 +13725,29 @@ var options_default = {
       ZDF: "ZDF"
     },
     date: {
-      week_words: ["week"]
+      week_words: [
+        "week"
+      ],
+      weekday_words: [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+        "mon",
+        "tue",
+        "tues",
+        "wed",
+        "weds",
+        "thu",
+        "thur",
+        "thurs",
+        "fri",
+        "sat",
+        "sun"
+      ]
     }
   }
 };
@@ -12092,7 +14227,6 @@ var GUESSIT_SCHEMA = {
       "Dual",
       "Dual Audio",
       "East Coast Feed",
-      "Ending Credits",
       "Extras",
       "Fan Subtitled",
       "Fanart",
@@ -12103,8 +14237,8 @@ var GUESSIT_SCHEMA = {
       "Fix",
       "Fixed",
       "Full HD",
-      "Half OU",
-      "Half SBS",
+      "Half Over Under",
+      "Half Side By Side",
       "Hardcoded Subtitles",
       "HC",
       "HD",
@@ -12139,7 +14273,6 @@ var GUESSIT_SCHEMA = {
       "Obfuscated",
       "Ona",
       "Open Matte",
-      "Opening Credits",
       "Original Animated Video",
       "Original Animation DVD",
       "Original Aspect Ratio",
@@ -12147,6 +14280,7 @@ var GUESSIT_SCHEMA = {
       "Original Video",
       "OV",
       "Ova",
+      "Over Under",
       "PAL",
       "postbot",
       "Poster",
@@ -12171,6 +14305,7 @@ var GUESSIT_SCHEMA = {
       "Screener",
       "SDR",
       "SECAM",
+      "Side By Side",
       "Standard Dynamic Range",
       "Straight to Video",
       "STV",
@@ -12276,6 +14411,7 @@ var GUESSIT_SCHEMA = {
       "HD Telesync",
       "HD-DVD",
       "HDTV",
+      "Laserdisc",
       "Pay-per-view",
       "Satellite",
       "Telecine",
