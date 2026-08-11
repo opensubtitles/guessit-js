@@ -2,6 +2,23 @@
 
 All notable changes to guessit-js are documented here.
 
+## [4.5.4]
+
+Full-featured CLI, mirroring the Python `guessit` command:
+
+- inputs: multiple filenames, `@list.txt`, `-f/--input-file` (`-` = stdin),
+  piped stdin (one filename per line)
+- outputs: property lines (default), `-j` JSON, `--jsonl` (one object per
+  line), `-y` YAML, `-P/--show-property`, `-i/--output-input-string`
+- parsing options: `-t` type, `-n` name-only, `-Y`/`-D` date order, `-L`/`-C`
+  allowed languages/countries, `-E` episode-prefer-number, `-T`/`-G` expected
+  title/group, `--includes`/`--excludes`, `-s` single-value, `-c` JSON config
+- `-a/--advanced` now emits the Python shape (`{value, raw, start, end}`)
+  instead of raw engine internals
+- introspection: `-p` property list, `-V` properties with values
+- standard behavior: `--` end-of-options, exit codes 0/1/2, value validation
+- CI: dedicated CLI smoke-test job
+
 ## [4.5.3]
 
 Packaging audit + CLI:

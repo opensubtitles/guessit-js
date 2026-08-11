@@ -27,15 +27,27 @@ npm install guessit-js
 
 ## CLI
 
+Mirrors the Python `guessit` command:
+
 ```bash
 npx guessit-js "The.Dark.Knight.2008.1080p.BluRay.x264-GROUP.mkv"
 # title: The Dark Knight
 # year: 2008
 # ...
 
-npx guessit-js -j "Mob Psycho 100 - 09.mkv"       # JSON output
+npx guessit-js -j "Mob Psycho 100 - 09.mkv"        # JSON (-y YAML, --jsonl streaming)
+npx guessit-js -P title "Movie.2020.mkv"           # single property
 npx guessit-js -t episode "ambiguous.file.mkv"     # force type
+npx guessit-js @list.txt                           # filenames from file (also -f list.txt)
+find . -name '*.mkv' | npx guessit-js --jsonl      # from stdin, one JSON per line
+npx guessit-js -a "Movie.2020.mkv"                 # advanced: value/raw/start/end
+npx guessit-js -p                                  # list detectable properties (-V with values)
 ```
+
+Parsing options match the Python CLI: `-n` name-only, `-Y`/`-D` date order,
+`-L`/`-C` allowed languages/countries, `-E` episode-prefer-number,
+`-T`/`-G` expected title/group, `--includes`/`--excludes`, `-s` single-value,
+`-c` JSON config file. See `npx guessit-js --help`.
 
 ## Usage
 

@@ -21,6 +21,25 @@ jobs:
       - run: npm run typecheck
       - run: npx vitest run --exclude 'test/wasm-full.test.ts'
 
+  cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run build
+      - name: CLI smoke test
+        run: |
+          set -e
+          test "$(node bin/cli.mjs -P title 'The.Matrix.1999.mkv')" = "The Matrix"
+          node bin/cli.mjs -j 'Show.S01E02.mkv' | grep -q '"season": 1'
+          printf 'A.2020.mkv\nB.2021.mkv\n' | node bin/cli.mjs --jsonl | wc -l | grep -q 2
+          node bin/cli.mjs -a -j 'Movie.2020.mkv' | grep -q '"raw": "2020"'
+          node bin/cli.mjs -p | grep -qx title
+          node bin/cli.mjs --nope 2>/dev/null && exit 1 || test $? = 2
+
   coverage:
     runs-on: ubuntu-latest
     steps:
