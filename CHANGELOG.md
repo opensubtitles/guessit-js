@@ -2,6 +2,22 @@
 
 All notable changes to guessit-js are documented here.
 
+## [4.5.1]
+
+Closing cross-parser sprint: **112 of the 276 cases Python guessit fails** now
+pass (was 104), plus CI housekeeping.
+
+- OVA is a title word before the episode anchor ("AIKa ZERO OVA - 01")
+- percent numbers are never episodes ("Magical☆Star Kanon 100%")
+- short Titlecase language codes inside anime titles stay title text
+  ("Bokura Ga Ita", "Ro-Kyu-Bu! SS")
+- fullwidth CJK brackets 【】「」（） are group markers — "【MMZYSUB】★【Golden Time】[24…]"
+  → release group MMZYSUB, title Golden Time, episode 24
+- event numbers: "UFC.247.PPV" → title UFC 247; a leading non-padded 2-digit
+  before a multi-word title with no other signals is a movie title
+  ("22 Jump Street") — zero-padded "01 - Ep Name" stays an episode
+- CI: actions/checkout and setup-node bumped to v5 (Node 20 deprecation)
+
 ## [4.5.0]
 
 Fifth cross-parser sprint — the anime/fansub tail and movie-title integrity:

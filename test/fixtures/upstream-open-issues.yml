@@ -321,3 +321,43 @@
 : type: movie
   title: Classroom Crisis
   volume: 1
+
+# ── closing sprint: anime title words, CJK brackets, event numbers ──
+? "[Seto_Otaku]_AIKa_ZERO_OVA_-_01_[BD][1920x1080_H264-Flac][6730D40A].mkv"
+: title: AIKa ZERO OVA
+  episode: 1
+
+? "[CMS] Magical☆Star Kanon 100% OVA[DVD][E9F43685].mkv"
+: title: Magical☆Star Kanon 100%
+
+? "[Urusai]_Bokura_Ga_Ita_01_[DVD_h264_AC3]_[BFCE1627][Fixed].mkv"
+: title: Bokura Ga Ita
+  episode: 1
+
+? "[Doremi].Ro-Kyu-Bu!.SS.01.[C1B5CE5D].mkv"
+: title: Ro-Kyu-Bu! SS
+  episode: 1
+
+? "【MMZYSUB】★【Golden Time】[24（END）][GB][720P_MP4]"
+: title: Golden Time
+  episode: 24
+  release_group: MMZYSUB
+
+? "UFC.247.PPV.Jones.vs.Reyes.HDTV.x264-PUNCH[TGx]"
+: type: movie
+  title: UFC 247
+
+? 22.Jump.Street.GERMAN.DL.AC3.Dubbed.1080p.BluRay.x264-SOV
+: type: movie
+  title: 22 Jump Street
+
+# guards
+? 24.S01E01.mkv
+: title: '24'
+  season: 1
+  episode: 1
+
+? 03-Criminal.Minds.avi
+: options: -t episode
+  episode: 3
+  title: Criminal Minds

@@ -1107,8 +1107,11 @@ class BracketedTitleFallback extends Rule {
     const toRemove: Match[] = [];
     const toAppend: Match[] = [];
     for (const filepart of matches.markers.named('path') as Match[]) {
-      const hasTitle = matches.range(filepart.start, filepart.end, (m: Match) => m.name === 'title', 0);
-      if (hasTitle) continue;
+      // A symbol-only "title" (★ between fullwidth brackets) does not count.
+      const titlesHere = (matches.range(filepart.start, filepart.end, (m: Match) => m.name === 'title') as Match[]) ?? [];
+      const realTitle = titlesHere.find((t) => /[\p{L}\p{N}]/u.test(String(t.value ?? '')));
+      if (realTitle) continue;
+      toRemove.push(...titlesHere);
       const groups = (matches.markers.range(filepart.start, filepart.end, (m: Match) => m.name === 'group') as Match[]) ?? [];
       if (!groups.length) continue;
       const rg = matches.range(filepart.start, filepart.end, (m: Match) => m.name === 'release_group', 0) as Match | undefined;
@@ -1117,6 +1120,21 @@ class BracketedTitleFallback extends Rule {
         if (rg && g.start <= rg.start && g.end >= rg.end) continue;
         const core = input.slice(g.start + 1, g.end - 1);
         if (!/[a-zA-Z]{2,}/.test(core)) continue;
+        // A bracket fully claimed as an episode_title/alternative_title is really
+        // the missing series title ("【Golden Time】[24…]") — reclaim it.
+        const softInner = (matches.range(g.start, g.end,
+          (m: Match) => !m.private && ['episode_title', 'alternative_title'].includes(m.name ?? '')) as Match[]) ?? [];
+        const hardInner = (matches.range(g.start, g.end,
+          (m: Match) => !m.private && !['episode_title', 'alternative_title'].includes(m.name ?? '')) as Match[]) ?? [];
+        if (softInner.length && !hardInner.length) {
+          toRemove.push(...softInner);
+          candidate = new Match(g.start + 1, g.end - 1, {
+            name: 'title',
+            value: cleanup(input.slice(g.start + 1, g.end - 1)),
+            inputString: input,
+          });
+          break;
+        }
         // The bracket may carry property matches ("[… HD REMASTER]") — the
         // unmatched hole inside it is the title candidate.
         const hole = matches.holes(g.start + 1, g.end - 1, {
@@ -1211,6 +1229,36 @@ class BonusAtTitlePositionRule extends Rule {
       if (!anchor && !bonusTitles.length) continue;
       toRemove.push(bonus);
       toRemove.push(...bonusTitles.filter((bt) => bt.start >= filepart.start && bt.end <= filepart.end));
+    }
+    return toRemove.length ? toRemove : false;
+  }
+}
+
+/**
+ * A short Titlecase language code inside an anime title zone is a title word:
+ * "Bokura Ga Ita" (Ita ≠ Italian), "Ro-Kyu-Bu!" (Ro ≠ Romanian). Scoped to a
+ * leading bracket-group filepart and the pre-anchor zone.
+ */
+class LanguageWordInAnimeTitle extends Rule {
+  static override priority = 64;
+  override priority = 64;
+  override consequence = RemoveMatch;
+
+  override when(matches: Matches, context: Context): Match[] | false {
+    if (isDisabled(context, 'language')) return false;
+    const toRemove: Match[] = [];
+    for (const lang of (matches.named('language') as Match[]) ?? []) {
+      const raw = String(lang.raw ?? '');
+      if (raw.length > 3 || !/^[A-Z][a-z]{0,2}$/.test(raw)) continue;
+      const filepart = matches.markers.atMatch(lang, (m: Match) => m.name === 'path', 0) as Match | undefined;
+      if (!filepart) continue;
+      const leadingBracket = matches.markers.range(filepart.start, filepart.end,
+        (m: Match) => m.name === 'group' && m.start === filepart.start, 0);
+      if (!leadingBracket) continue;
+      const anchor = matches.range(lang.end, filepart.end,
+        (m: Match) => !m.private && ['episode', 'season', 'year', 'date'].includes(m.name ?? ''), 0);
+      if (!anchor) continue;
+      toRemove.push(lang);
     }
     return toRemove.length ? toRemove : false;
   }
@@ -1402,7 +1450,7 @@ export function title(config: Record<string, unknown>): Rebulk {
     disabled: (context: Context) => isDisabled(context, 'title'),
   });
 
-  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, WordNumeralPartAtTitlePosition, BonusAtTitlePositionRule, SplitOriginalScriptTitle, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle, BracketedTitleFallback, PreBracketJunkTitle, TrimSeasonWordFromTitle);
+  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, WordNumeralPartAtTitlePosition, BonusAtTitlePositionRule, LanguageWordInAnimeTitle, SplitOriginalScriptTitle, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle, BracketedTitleFallback, PreBracketJunkTitle, TrimSeasonWordFromTitle);
 
   // Expected title functional pattern
   const expectedTitle = buildExpectedFunction('expected_title');

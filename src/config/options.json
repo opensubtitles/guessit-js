@@ -48,8 +48,8 @@
       "sub"
     ],
     "groups": {
-      "starting": "([{",
-      "ending": ")]}"
+      "starting": "([{【「（",
+      "ending": ")]}】」）"
     },
     "audio_codec": {
       "audio_codec": {
@@ -1201,7 +1201,8 @@
           "string": [
             "Ova",
             "Oav"
-          ]
+          ],
+          "tags": "title-word"
         },
         "Original Net Animation": "Ona",
         "Original Animation DVD": "Oad",

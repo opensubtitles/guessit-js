@@ -635,7 +635,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
       context?.type === 'movie' || isDisabled(context, 'episode'),
   })
     .defaults({ validator: null, tags: ['weak-episode'] })
-    .regex(`(?<![^\\W_])(?<episode>\\d{2})(?!(?:st|nd|rd|th)\\b)(?:[a-d](?![a-z0-9]))?(?!(?![vV]\\d)[^\\W_])`)
+    .regex(`(?<![^\\W_])(?<episode>\\d{2})(?!(?:st|nd|rd|th)\\b)(?!%)(?:[a-d](?![a-z0-9]))?(?!(?![vV]\\d)[^\\W_])`)
     .regex(`v(?<version>\\d+)`)
     .repeater('?')
     .regex(`(?<episodeSeparator>[x-])(?<episode>\\d{2})`, {
@@ -650,7 +650,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
       context?.type === 'movie' || isDisabled(context, 'episode'),
   })
     .defaults({ validator: null, tags: ['weak-episode'] })
-    .regex(`(?<![^\\W_])0(?<episode>\\d{1,2})(?:[a-d](?![a-z0-9]))?(?!(?![vV]\\d)[^\\W_])`)
+    .regex(`(?<![^\\W_])0(?<episode>\\d{1,2})(?!%)(?:[a-d](?![a-z0-9]))?(?!(?![vV]\\d)[^\\W_])`)
     .regex(`v(?<version>\\d+)`)
     .repeater('?')
     .regex(`(?<episodeSeparator>[x-])0(?<episode>\\d{1,2})`, {
@@ -670,7 +670,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
       tags: ['weak-episode'],
       name: 'weak_episode',
     })
-    .regex(`(?<![^\\W_])(?<episode>\\d{3,4})(?:[a-d](?![a-z0-9]))?(?!(?![vV]\\d)[^\\W_])`)
+    .regex(`(?<![^\\W_])(?<episode>\\d{3,4})(?!%)(?:[a-d](?![a-z0-9]))?(?!(?![vV]\\d)[^\\W_])`)
     .regex(`v(?<version>\\d+)`)
     .repeater('?')
     .regex(`(?<episodeSeparator>[x-])(?<episode>\\d{3,4})`, {
@@ -685,7 +685,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
       context?.type !== 'episode' || isDisabled(context, 'episode'),
   })
     .defaults({ validator: null, tags: ['weak-episode'] })
-    .regex(`(?<![^\\W_])(?<episode>\\d)(?!-[a-z])(?!(?![vV]\\d)[^\\W_])`)
+    .regex(`(?<![^\\W_])(?<episode>\\d)(?!-[a-z])(?!%)(?!(?![vV]\\d)[^\\W_])`)
     .regex(`v(?<version>\\d+)`)
     .repeater('?')
     .regex(`(?<episodeSeparator>[x-])(?<episode>\\d{1,2})`, {
@@ -747,7 +747,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
       validator: null,
       conflictSolver: seasonEpisodeConflictSolver,
     })
-    .regex(`(?<![^\\W_])(?<season>\\d{1,2})(?<episode>\\d{2})(?!(?![vV]\\d)[^\\W_])`)
+    .regex(`(?<![^\\W_])(?<season>\\d{1,2})(?<episode>\\d{2})(?!%)(?!(?![vV]\\d)[^\\W_])`)
     .regex(`v(?<version>\\d+)`)
     .repeater('?')
     .regex(`(?<episodeSeparator>x|-)(?<episode>\\d{2})`, {
@@ -791,6 +791,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
 
   // Add rules for validation and cleanup
   rebulk.rules(
+    EventNumberAsTitleRule,
     EpisodeWordBeforeYearAsTitle,
     RemoveGroupSuffixSeason,
     AnimeTrailingEpisodeRule,
@@ -843,6 +844,53 @@ class RemoveGroupSuffixSeason extends Rule {
       if (!prev && !inGroup) continue;
       toRemove.push(season);
       for (const c of (init.children ?? [])) if (!toRemove.includes(c)) toRemove.push(c);
+    }
+    return toRemove.length ? toRemove : false;
+  }
+}
+
+/**
+ * Event/title numbers that are not episodes (cross-parser corpus):
+ * - "UFC.247.PPV…" — a number directly followed by PPV numbers the event
+ * - "22.Jump.Street.GERMAN…" — a leading 2-digit before a multi-word title with
+ *   no year/season/SxxExx anywhere is part of a movie title
+ * The weak match is dropped so the number rejoins the title.
+ */
+class EventNumberAsTitleRule extends Rule {
+  static override priority = 60;
+  override priority = 60;
+  override consequence = RemoveMatch;
+
+  when(matches: any, _context: any): any {
+    const input: string = matches.inputString ?? '';
+    const toRemove: any[] = [];
+    const isWeak = (m: any) => !!(m.tags?.includes('weak-episode') ||
+      ['weak_episode', 'weak_duplicate'].includes(m.initiator?.name));
+    for (const filepart of (matches.markers.named('path') as any[]) ?? []) {
+      const weaks = ((matches.range(filepart.start, filepart.end,
+        (m: any) => m.name === 'episode' && !m.private && isWeak(m)) as any[]) ?? []);
+      if (!weaks.length) continue;
+      const strong = matches.range(filepart.start, filepart.end, (m: any) =>
+        !m.private && (m.name === 'season' || m.name === 'year' || m.name === 'date' ||
+          (m.name === 'episode' && m.tags?.includes('SxxExx'))), 0);
+      for (const w of weaks) {
+        const init = w.initiator ?? w;
+        const after = input.slice(init.end, init.end + 5);
+        // "UFC 247 PPV": number glued to a PPV marker is the event number
+        if (/^[\s._-]?PPV/i.test(after)) {
+          for (const c of [init, ...(init.children ?? [])]) if (!toRemove.includes(c)) toRemove.push(c);
+          continue;
+        }
+        // Leading 2-digit + multi-word title, no year/season/SxxExx anywhere
+        // zero-padded leading numbers ("01 - Ep Name") are deliberate episode numbering
+        if (!strong && init.start === filepart.start && /^[1-9]\d$/.test(String(init.raw ?? ''))) {
+          const rest = input.slice(init.end, filepart.end);
+          const words = (rest.match(/[A-Za-z][a-z]+/g) ?? []);
+          if (words.length >= 2) {
+            for (const c of [init, ...(init.children ?? [])]) if (!toRemove.includes(c)) toRemove.push(c);
+          }
+        }
+      }
     }
     return toRemove.length ? toRemove : false;
   }
