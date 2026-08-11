@@ -2,6 +2,27 @@
 
 All notable changes to guessit-js are documented here.
 
+## [4.5.2]
+
+Engine upgrade: rebulk-js bumped to ^3.4.0, which fixes two bugs we filed
+during the parity work (opensubtitles/rebulk-js#1, #2):
+
+- duplicate rule classes are now allowed and every instance executes;
+  class dependencies resolve to all instances (previously the second
+  instance was silently dropped or `toposortRules` threw)
+- `Matches.matches` getter added, so Python-spelled rule code
+  (`matches.matches`) is no longer a silent no-op
+
+No behavior change in guessit-js — our `RemoveLessSpecificSeason` /
+`RemoveLessSpecificEpisode` subclass workaround stays (harmless and
+explicit). Full suite green: 1357 tests, WASM bit-identical on all
+1035 corpus fixtures.
+
+Related discovery, reported upstream as guessit-io/guessit#961: Python
+rebulk's `Rules` container silently dedupes by class too, so upstream
+guessit's `RemoveLessSpecificSeasonEpisode("season")` pass has never
+executed.
+
 ## [4.5.1]
 
 Closing cross-parser sprint: **112 of the 276 cases Python guessit fails** now

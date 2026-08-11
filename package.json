@@ -1,6 +1,6 @@
 {
   "name": "guessit-js",
-  "version": "4.5.1",
+  "version": "4.5.2",
   "description": "Extract metadata (title, year, season, episode, codec, language, etc.) from media filenames — TypeScript port of Python guessit",
   "keywords": [
     "guessit",
@@ -69,6 +69,6 @@
     "vitest": "^1.0.0"
   },
   "dependencies": {
-    "rebulk-js": "^3.3.1"
+    "rebulk-js": "^3.4.0"
   }
 }
