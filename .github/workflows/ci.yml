@@ -72,8 +72,13 @@ jobs:
         with:
           node-version: 22
       - run: npm ci
-      - name: Install wasmtime
-        run: curl https://wasmtime.dev/install.sh -sSf | bash
+      - name: Install wasmtime (pinned — the install.sh "latest" lookup is rate-limited on shared runners)
+        run: |
+          V=v47.0.3
+          curl -sSfL "https://github.com/bytecodealliance/wasmtime/releases/download/${V}/wasmtime-${V}-x86_64-linux.tar.xz" | tar -xJ
+          mkdir -p ~/.wasmtime/bin
+          mv "wasmtime-${V}-x86_64-linux/wasmtime" ~/.wasmtime/bin/
+          ~/.wasmtime/bin/wasmtime --version
       - name: Build WASM (downloads pinned Javy)
         run: bash wasm/build.sh
       - name: Test WASM against fixtures
