@@ -2,6 +2,21 @@
 
 All notable changes to guessit-js are documented here.
 
+## [4.7.0]
+
+Developer-experience layer on top of the drop-in CLI:
+
+- **`--serve [port]`** — instant zero-dependency REST API:
+  `GET /api/guessit?filename=…`, `POST` with `{filename}` or batch
+  `{filenames: [...], options: {...}}`, `/api/health`, CORS enabled;
+  CLI parsing flags become server defaults (`guessit-js --serve -t episode`)
+- **`--benchmark [N]`** — throughput report (per-parse ms, parses/s)
+- **`--completion bash|zsh`** — shell completion scripts
+- **CLI test suite** (`test/cli.test.ts`, 14 tests): output formats, config
+  loading, exit codes, extras — suite is now 1371 tests
+- `server.ts` health endpoint reports the real package version (was
+  hardcoded 3.9.0) and `npm start` docs added to README
+
 ## [4.6.0]
 
 CLI is now a **drop-in replacement** for the Python `guessit` command,

@@ -11,7 +11,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { guessit } from './src/index.js';
+import { guessit, version } from './src/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env['PORT'] || '3847', 10);
@@ -188,7 +188,7 @@ const server = http.createServer(async (req, res) => {
 
   // Health check
   if (url.pathname === '/api/health') {
-    sendJson(res, 200, { status: 'ok', version: '3.9.0' });
+    sendJson(res, 200, { status: 'ok', version });
     return;
   }
 

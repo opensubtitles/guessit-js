@@ -53,6 +53,14 @@ Parsing options match the Python CLI: `-n` name-only, `-Y`/`-D` date order,
 `~/.config/guessit/options.json` (`.yaml`/`.yml` too; disable with
 `--no-user-config`), plus explicit `-c <file>`. See `npx guessit-js --help`.
 
+Extras beyond the Python CLI:
+
+```bash
+npx guessit-js --serve 3847            # instant REST API (see below)
+npx guessit-js --benchmark 1000 "Movie.2020.1080p.mkv"   # throughput report
+eval "$(npx guessit-js --completion bash)"               # shell completion (bash/zsh)
+```
+
 ## Usage
 
 ```typescript
@@ -135,10 +143,19 @@ Regenerate the schema (after parsing changes) with `npm run schema`. A test (`te
 
 ## REST API
 
+No install needed beyond the package itself:
+
 ```bash
-npm start  # port 3847
+npx guessit-js --serve                 # port 3847 (or --serve 8080 / PORT env)
 curl "http://localhost:3847/api/guessit?filename=Movie.2024.1080p.mkv"
+curl -X POST http://localhost:3847/api/guessit \
+  -H 'Content-Type: application/json' \
+  -d '{"filenames": ["A.2020.mkv", "B.S01E02.mkv"], "options": {"type": "episode"}}'
 ```
+
+CLI parsing flags become server defaults: `guessit-js --serve -t episode -L en`.
+The repo also ships a fuller dev server (`npm start`) with the demo page,
+Swagger UI at `/docs`, and static WASM serving.
 
 ## WASM
 

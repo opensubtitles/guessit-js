@@ -66,6 +66,14 @@ Information:
   -V, --values          Display property values that can be guessed
   --version             Display the guessit-js version banner
 
+Extras (not in the Python CLI):
+  --serve [PORT]        Start a REST API server (default port 3847;
+                        GET /api/guessit?filename=..., POST {filename|filenames})
+  --benchmark [N]       Parse the given filenames N times (default 1000)
+                        and report throughput
+  --completion SHELL    Print a bash or zsh completion script
+                        (eval "$(guessit-js --completion bash)")
+
 Exit codes: 0 success, 1 processing error, 2 usage error.`;
 
 function fail(msg) {
@@ -123,6 +131,10 @@ let listProperties = false;
 let listValues = false;
 let noUserConfig = false;
 let endOfOptions = false;
+let serve = false;
+let servePort = 3847;
+let benchmark = 0;
+let completionShell = null;
 
 const needsValue = (a, i) => {
   if (i + 1 >= args.length) fail(`option ${a} requires a value`);
@@ -171,6 +183,15 @@ for (let i = 0; i < args.length; i++) {
     case '--no-default-config': cliOptions.no_default_config = true; break;
     case '-p': case '--properties': listProperties = true; break;
     case '-V': case '--values': listValues = true; break;
+    case '--serve':
+      serve = true;
+      if (args[i + 1] && /^\d+$/.test(args[i + 1])) { servePort = Number(args[++i]); }
+      else if (process.env.PORT) servePort = Number(process.env.PORT);
+      break;
+    case '--benchmark':
+      benchmark = args[i + 1] && /^\d+$/.test(args[i + 1]) ? Number(args[++i]) : 1000;
+      break;
+    case '--completion': completionShell = needsValue(a, i); i++; break;
     case '--version': {
       console.log('+-------------------------------------------------------+');
       console.log(`+                 GuessIt-JS ${version}`.padEnd(56) + '+');
@@ -310,11 +331,115 @@ if (listProperties || listValues) {
   process.exit(0);
 }
 
+// ---- shell completion -------------------------------------------------------
+if (completionShell) {
+  const flags = '-t --type -n --name-only -Y --date-year-first -D --date-day-first -L --allowed-languages -C --allowed-countries -E --episode-prefer-number -T --expected-title -G --expected-group --includes --excludes -f --input-file -v --verbose -P --show-property -a --advanced -s --single-value -j --json --jsonl -y --yaml -i --output-input-string -c --config --no-user-config --no-default-config -p --properties -V --values --version --serve --benchmark --completion -h --help';
+  if (completionShell === 'bash') {
+    console.log(`_guessit_js() {
+  local cur="\${COMP_WORDS[COMP_CWORD]}"
+  if [[ "$cur" == -* ]]; then
+    COMPREPLY=( $(compgen -W "${flags}" -- "$cur") )
+  else
+    COMPREPLY=( $(compgen -f -- "$cur") )
+  fi
+}
+complete -F _guessit_js guessit-js guessit`);
+  } else if (completionShell === 'zsh') {
+    console.log(`#compdef guessit-js guessit
+_arguments '*: :{ _alternative "flags:flag:(${flags})" "files:filename:_files" }'`);
+  } else {
+    fail(`unsupported shell "${completionShell}": use bash or zsh`);
+  }
+  process.exit(0);
+}
+
+// ---- REST API server --------------------------------------------------------
+if (serve) {
+  const { createServer } = await import('http');
+  const baseOptions = options;
+  const sendJson = (res, status, data) => {
+    res.writeHead(status, {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    });
+    res.end(JSON.stringify(data, null, 2));
+  };
+  const server = createServer((req, res) => {
+    const url = new URL(req.url || '/', `http://localhost:${servePort}`);
+    if (req.method === 'OPTIONS') { sendJson(res, 204, {}); return; }
+    if (url.pathname === '/api/health') { sendJson(res, 200, { status: 'ok', version }); return; }
+    if (url.pathname !== '/api/guessit' && url.pathname !== '/') {
+      sendJson(res, 404, { error: 'Not found — use /api/guessit' });
+      return;
+    }
+    if (req.method === 'GET') {
+      const filename = url.searchParams.get('filename');
+      if (!filename) {
+        sendJson(res, 400, {
+          error: 'Missing required parameter: filename',
+          usage: `GET /api/guessit?filename=Movie.2020.1080p.mkv[&type=movie|episode] · POST /api/guessit {"filename": "..."} or {"filenames": ["..."]}`,
+        });
+        return;
+      }
+      const opts = { ...baseOptions };
+      const type = url.searchParams.get('type');
+      if (type === 'movie' || type === 'episode') opts.type = type;
+      try { sendJson(res, 200, display(guessit(filename, opts), 'json')); }
+      catch (e) { sendJson(res, 500, { error: String((e && e.message) || e) }); }
+      return;
+    }
+    if (req.method === 'POST') {
+      const chunks = [];
+      let size = 0;
+      req.on('data', (c) => { size += c.length; if (size > 1 << 20) req.destroy(); else chunks.push(c); });
+      req.on('end', () => {
+        try {
+          const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+          const opts = { ...baseOptions, ...(body.options || {}) };
+          if (Array.isArray(body.filenames)) {
+            sendJson(res, 200, body.filenames.map((f) => display(guessit(String(f), opts), 'json')));
+          } else if (typeof body.filename === 'string') {
+            sendJson(res, 200, display(guessit(body.filename, opts), 'json'));
+          } else {
+            sendJson(res, 400, { error: 'Body must contain "filename" (string) or "filenames" (array)' });
+          }
+        } catch (e) { sendJson(res, 400, { error: String((e && e.message) || e) }); }
+      });
+      return;
+    }
+    sendJson(res, 405, { error: 'Method not allowed' });
+  });
+  server.listen(servePort, () => {
+    console.log(`guessit-js ${version} API listening on http://localhost:${servePort}`);
+    console.log(`  GET  /api/guessit?filename=Movie.2020.1080p.mkv`);
+    console.log(`  POST /api/guessit {"filename": "..."} or {"filenames": ["...", "..."]}`);
+    console.log(`  GET  /api/health`);
+  });
+} else {
+
 // ---- main -------------------------------------------------------------------
 if (!process.stdin.isTTY && !filenames.length) {
   filenames.push(...readLines('-'));
 }
 if (!filenames.length) fail('usage: guessit-js [options] <filename> — see --help');
+
+if (benchmark > 0) {
+  guessit(filenames[0], options); // warm up (builds the pattern matcher)
+  const t0 = performance.now();
+  for (let n = 0; n < benchmark; n++) {
+    for (const f of filenames) guessit(f, options);
+  }
+  const elapsed = performance.now() - t0;
+  const total = benchmark * filenames.length;
+  console.log(`guessit-js ${version} benchmark`);
+  console.log(`  ${total} parses (${filenames.length} filename${filenames.length > 1 ? 's' : ''} × ${benchmark} iterations)`);
+  console.log(`  total:      ${(elapsed / 1000).toFixed(2)} s`);
+  console.log(`  per parse:  ${(elapsed / total).toFixed(3)} ms`);
+  console.log(`  throughput: ${Math.round(total / (elapsed / 1000))} parses/s`);
+  process.exit(0);
+}
 
 let hadError = false;
 for (const filename of filenames) {
@@ -362,3 +487,4 @@ for (const filename of filenames) {
 }
 
 process.exit(hadError ? 1 : 0);
+} // end of non-serve mode
