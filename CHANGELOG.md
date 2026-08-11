@@ -2,6 +2,28 @@
 
 All notable changes to guessit-js are documented here.
 
+## [4.6.0]
+
+CLI is now a **drop-in replacement** for the Python `guessit` command,
+byte-identical output verified against the real Python CLI in CI:
+
+- installs a `guessit` bin alias next to `guessit-js`
+- default output: `For: <file>` + `GuessIt found: {…}` (4-space JSON, Python
+  separators); `-j` = one compact JSON per file with Python's `", "`/`": "`
+  separators; `-y` = pyyaml block style (`? file` / `: key: value`, lists at
+  key level, single-quoted scalars)
+- babelfish-compatible values: JSON uses language/country display names
+  ("English", "UNITED STATES"), YAML uses codes ("en", "pt-BR", "US")
+- user config auto-loaded from `~/.guessit/options.*` and
+  `~/.config/guessit/options.*` (json/yaml/yml); `--no-user-config` /
+  `--no-default-config`; `-c` accepts JSON or flat YAML
+- **breaking**: `-v` is now `--verbose` (Python semantics; per-match debug
+  lines) — version banner moved to `--version` like Python
+- `-a` advanced output omits `raw` for synthesized matches (valid JSON,
+  Python shape)
+- CI: drop-in parity job diffs our output against `pip install guessit`
+  across formats
+
 ## [4.5.4]
 
 Full-featured CLI, mirroring the Python `guessit` command:

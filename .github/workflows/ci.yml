@@ -39,6 +39,19 @@ jobs:
           node bin/cli.mjs -a -j 'Movie.2020.mkv' | grep -q '"raw": "2020"'
           node bin/cli.mjs -p | grep -qx title
           node bin/cli.mjs --nope 2>/dev/null && exit 1 || test $? = 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Drop-in parity vs Python guessit CLI
+        run: |
+          set -e
+          pip install --quiet guessit pyyaml
+          for fmt in "" "-j" "-y" "-s"; do
+            for f in 'Movie.2020.1080p.mkv' 'B.S01E02 en.mkv' 'Dune.2021.2160p.WEB-DL.DDP5.1.Atmos.mkv'; do
+              diff <(guessit $fmt "$f") <(node bin/cli.mjs $fmt "$f") \
+                || { echo "DROP-IN DIFF: [$fmt] $f"; exit 1; }
+            done
+          done
 
   coverage:
     runs-on: ubuntu-latest

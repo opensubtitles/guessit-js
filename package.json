@@ -1,6 +1,6 @@
 {
   "name": "guessit-js",
-  "version": "4.5.4",
+  "version": "4.6.0",
   "description": "Extract metadata (title, year, season, episode, codec, language, etc.) from media filenames — TypeScript port of Python guessit",
   "keywords": [
     "guessit",
@@ -35,7 +35,8 @@
   "types": "./dist/index.d.ts",
   "sideEffects": false,
   "bin": {
-    "guessit-js": "./bin/cli.mjs"
+    "guessit-js": "./bin/cli.mjs",
+    "guessit": "./bin/cli.mjs"
   },
   "engines": {
     "node": ">=18"

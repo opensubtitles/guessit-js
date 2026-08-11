@@ -27,7 +27,9 @@ npm install guessit-js
 
 ## CLI
 
-Mirrors the Python `guessit` command:
+**Drop-in replacement** for the Python `guessit` command — same flags, same
+output formats (verified against the real Python CLI in CI). Installs both
+`guessit-js` and `guessit` binaries:
 
 ```bash
 npx guessit-js "The.Dark.Knight.2008.1080p.BluRay.x264-GROUP.mkv"
@@ -47,7 +49,9 @@ npx guessit-js -p                                  # list detectable properties 
 Parsing options match the Python CLI: `-n` name-only, `-Y`/`-D` date order,
 `-L`/`-C` allowed languages/countries, `-E` episode-prefer-number,
 `-T`/`-G` expected title/group, `--includes`/`--excludes`, `-s` single-value,
-`-c` JSON config file. See `npx guessit-js --help`.
+`-v` verbose. User config is auto-loaded from `~/.guessit/options.json` and
+`~/.config/guessit/options.json` (`.yaml`/`.yml` too; disable with
+`--no-user-config`), plus explicit `-c <file>`. See `npx guessit-js --help`.
 
 ## Usage
 
