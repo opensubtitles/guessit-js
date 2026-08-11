@@ -163,6 +163,13 @@
     }
     .example-btn:hover { border-color: var(--accent); background: var(--bg-input); transform: translateY(-1px); }
     .example-btn:active { transform: translateY(0); }
+    .example-btn.pyfail { border-left: 3px solid var(--red); }
+    .example-btn.pyfail:hover { border-color: var(--red); border-left-color: var(--red); }
+    .pyfail-tag {
+      display: inline-block; margin-right: 8px; padding: 0 7px;
+      background: rgba(248, 113, 113, 0.12); color: var(--red);
+      border-radius: 4px; font-size: 0.72rem; font-weight: 600;
+    }
 
     /* ---- API DOCS ---- */
     .endpoint {
@@ -281,7 +288,7 @@
 
 <section id="examples">
   <h2><span class="icon">&#128196;</span> Examples</h2>
-  <p style="color: var(--text-dim); margin: -12px 0 16px; font-size: 0.9rem;">Click any filename to parse it instantly. The last six render a live side-by-side with real Python guessit output (regenerated from the released PyPI package at every deploy) — see for yourself who parses them right.</p>
+  <p style="color: var(--text-dim); margin: -12px 0 16px; font-size: 0.9rem;">Click any filename to parse it instantly. Buttons marked <span style="color:var(--red); font-weight:600;">py ✗</span> are cases the released Python guessit parses wrong — they render a live side-by-side with real Python output, regenerated from PyPI at every deploy.</p>
   <div class="examples-grid" id="examples-list"></div>
 </section>
 
@@ -535,17 +542,16 @@ Built with Vite. Type-checked with tsc --noEmit.</pre>
 (function() {
   var EXAMPLES = [
     'The.Dark.Knight.2008.1080p.BluRay.x264-GROUP.mkv',
-    'X2.2003.720p.DSNP.WEB-DL.DDP5.1.H.264-EVO.mkv',
-    'Breaking.Bad.S01E02.720p.BluRay.x264-DEMAND.mkv',
     'Game.of.Thrones.S08E06.The.Iron.Throne.1080p.AMZN.WEB-DL.DDP5.1.H.264-GoT.mkv',
-    'Inception.2010.REMASTERED.2160p.UHD.BluRay.x265-TERMiNAL.mkv',
     'Dune Part Two 2024 1080p WEB-DL DD+ 5.1 Atmos H.265-FLUX.mkv',
     'Interstellar 2014 IMAX 2160p UHD Blu-ray Remux HDR HEVC Atmos-GROUP.mkv',
-    'The.Office.US.S02E01.The.Dundies.DVDRIP.XviD-TOPAZ.avi',
     'Cowboy.Bebop.-.23.-.Brain.Scratch.[1080p.BluRay.FLAC].mkv',
-    '[SubGroup] Naruto Shippuden - 301 [720p][AAC].mkv',
     'Movies/The Matrix (1999)/The.Matrix.1999.REMASTERED.1080p.BluRay.x264-GROUP.mkv',
-    // Cases Python guessit gets wrong — fixed in guessit-js
+  ];
+
+  // Cases the released Python guessit parses wrong — rendered with a red marker
+  // and a live side-by-side against real Python output (see python-compare.json).
+  var SHOWCASE = [
     'Mob Psycho 100 - 09 [1080p].mkv',
     '[SCY] Attack on Titan Season 3 - 11 (BD 1080p Hi10 FLAC) [5D7A2C4E].mkv',
     '【MMZYSUB】★【Golden Time】[24（END）][GB][720P_MP4]',
@@ -590,11 +596,19 @@ Built with Vite. Type-checked with tsc --noEmit.</pre>
   });
 
   // Populate examples
-  EXAMPLES.forEach(function(ex) {
+  function addExample(ex, pyfail) {
     var btn = document.createElement('button');
-    btn.className = 'example-btn';
+    btn.className = 'example-btn' + (pyfail ? ' pyfail' : '');
     btn.textContent = ex;
-    btn.title = 'Click to parse: ' + ex;
+    btn.title = pyfail
+      ? 'Python guessit parses this wrong — click for the live side-by-side: ' + ex
+      : 'Click to parse: ' + ex;
+    if (pyfail) {
+      var tag = document.createElement('span');
+      tag.className = 'pyfail-tag';
+      tag.textContent = 'py ✗';
+      btn.prepend(tag);
+    }
     btn.addEventListener('click', function() {
       input.value = ex;
       input.focus();
@@ -602,7 +616,9 @@ Built with Vite. Type-checked with tsc --noEmit.</pre>
       document.getElementById('demo').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
     examplesList.appendChild(btn);
-  });
+  }
+  EXAMPLES.forEach(function(ex) { addExample(ex, false); });
+  SHOWCASE.forEach(function(ex) { addExample(ex, true); });
 
   var debounceTimer = null;
   input.addEventListener('input', function() {
