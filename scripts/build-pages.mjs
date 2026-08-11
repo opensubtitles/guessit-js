@@ -4,7 +4,7 @@
 //   - public/docs/output-schema.json   (the output JSON Schema)
 // Run with: npm run build:pages   (run `npm run wasm` first to refresh the .wasm)
 import { build } from 'esbuild';
-import { copyFileSync, existsSync, mkdirSync } from 'fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -45,3 +45,15 @@ if (existsSync(r('wasm/guessit.wasm'))) {
 }
 copyFileSync(r('docs/output-schema.json'), r('public/docs/output-schema.json'));
 console.log('✓ public/docs/output-schema.json');
+
+// Stamp the current package version into the pages so they never go stale.
+// Python guessit references are written without the vX.Y.Z pattern on purpose.
+const { version } = JSON.parse(readFileSync(r('package.json'), 'utf8'));
+for (const page of ['public/index.html', 'public/docs/index.html']) {
+  const html = readFileSync(r(page), 'utf8');
+  const stamped = html.replace(/v\d+\.\d+\.\d+/g, `v${version}`);
+  if (stamped !== html) {
+    writeFileSync(r(page), stamped);
+    console.log(`✓ ${page} stamped v${version}`);
+  }
+}
