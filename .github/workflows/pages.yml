@@ -35,6 +35,15 @@ jobs:
       - name: Refresh Pages assets (copies wasm into public/)
         run: npm run build:pages
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Generate live Python guessit comparison for the demo
+        run: |
+          pip install --quiet guessit
+          python scripts/python-compare.py
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3

@@ -281,7 +281,7 @@
 
 <section id="examples">
   <h2><span class="icon">&#128196;</span> Examples</h2>
-  <p style="color: var(--text-dim); margin: -12px 0 16px; font-size: 0.9rem;">Click any filename to parse it instantly. The last six are cases Python guessit parses wrong — guessit-js gets them right.</p>
+  <p style="color: var(--text-dim); margin: -12px 0 16px; font-size: 0.9rem;">Click any filename to parse it instantly. The last six render a live side-by-side with real Python guessit output (regenerated from the released PyPI package at every deploy) — see for yourself who parses them right.</p>
   <div class="examples-grid" id="examples-list"></div>
 </section>
 
@@ -569,6 +569,18 @@ Built with Vite. Type-checked with tsc --noEmit.</pre>
   var examplesList = document.getElementById('examples-list');
   var propsGrid = document.getElementById('props-grid');
 
+  // Real Python guessit output for the showcase examples, regenerated from the
+  // released PyPI package at every deploy — the comparison is live, not a claim.
+  var PYCMP = null;
+  var lastFilename = null;
+  fetch('dist/python-compare.json')
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(d) {
+      PYCMP = d;
+      if (lastFilename) fetchResult(lastFilename);
+    })
+    .catch(function() {});
+
   // Populate properties
   PROPERTIES.forEach(function(p) {
     var d = document.createElement('div');
@@ -650,7 +662,8 @@ Built with Vite. Type-checked with tsc --noEmit.</pre>
     if (window.GuessitJS) {
       try {
         var data = window.GuessitJS.guessit(filename);
-        renderResult(data, start);
+        lastFilename = filename;
+        renderResult(data, start, filename);
       } catch(e) {
         resultDiv.innerHTML = '<div class="demo-empty" style="color:var(--red)">Error: ' + escapeHtml(String(e)) + '</div>';
       }
@@ -666,22 +679,48 @@ Built with Vite. Type-checked with tsc --noEmit.</pre>
       });
   }
 
-  function renderResult(data, start) {
+  function canon(v) {
+    if (v && typeof v === 'object' && !Array.isArray(v)) return JSON.stringify(v.alpha3 || v.name || v);
+    return JSON.stringify(v);
+  }
+
+  function renderGrid(data, other) {
+    var html = '<div class="result-grid">';
+    Object.keys(data).forEach(function(key) {
+      var differs = other && canon(data[key]) !== canon(other[key]);
+      html += '<div class="result-item"' + (differs ? ' style="border-color:var(--red)"' : '') + '>'
+        + '<span class="result-key">' + escapeHtml(key) + '</span>'
+        + formatValue(key, data[key])
+        + '</div>';
+    });
+    return html + '</div>';
+  }
+
+  function renderResult(data, start, filename) {
     var elapsed = (performance.now() - start).toFixed(0);
     if (data && data.error) {
       resultDiv.innerHTML = '<div class="demo-empty" style="color:var(--red)">Error: ' + escapeHtml(data.error) + '</div>';
       return;
     }
-    var html = '<div class="result-grid">';
-    var keys = Object.keys(data);
-    keys.forEach(function(key) {
-      html += '<div class="result-item">'
-        + '<span class="result-key">' + escapeHtml(key) + '</span>'
-        + formatValue(key, data[key])
+    var py = PYCMP && filename && PYCMP.results && PYCMP.results[filename];
+    var html = renderGrid(data, py);
+    html += '<div class="demo-timing"><span class="dot"></span> ' + Object.keys(data).length + ' properties &middot; ' + elapsed + 'ms (in-browser)</div>';
+    if (py) {
+      var same = canon(data) === canon(py) || JSON.stringify(data) === JSON.stringify(py);
+      var keysDiffer = Object.keys(data).concat(Object.keys(py)).filter(function(k, i, a) {
+        return a.indexOf(k) === i && canon(data[k]) !== canon(py[k]);
+      });
+      html += '<div style="margin-top:22px; padding-top:18px; border-top:1px dashed var(--border);">'
+        + '<div style="font-size:0.8rem; font-weight:600; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px;">'
+        + 'Python guessit v' + escapeHtml(PYCMP.python_guessit_version) + ' says'
+        + (keysDiffer.length
+            ? ' <span style="color:var(--red); text-transform:none; letter-spacing:0;">&mdash; differs on ' + escapeHtml(keysDiffer.join(', ')) + '</span>'
+            : ' <span style="color:var(--green); text-transform:none; letter-spacing:0;">&mdash; identical</span>')
+        + '</div>'
+        + renderGrid(py, data)
+        + '<div style="margin-top:10px; font-size:0.72rem; color:var(--text-dim);">Real output from the released PyPI package, regenerated at every deploy.</div>'
         + '</div>';
-    });
-    html += '</div>';
-    html += '<div class="demo-timing"><span class="dot"></span> ' + keys.length + ' properties &middot; ' + elapsed + 'ms (in-browser)</div>';
+    }
     resultDiv.innerHTML = html;
   }
 

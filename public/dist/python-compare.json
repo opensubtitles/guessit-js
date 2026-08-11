@@ -1,0 +1,84 @@
+{
+ "python_guessit_version": "4.4.0",
+ "results": {
+  "Mob Psycho 100 - 09 [1080p].mkv": {
+   "title": "Mob Psycho",
+   "episode": [
+    100,
+    9
+   ],
+   "screen_size": "1080p",
+   "container": "mkv",
+   "mimetype": "video/x-matroska",
+   "type": "episode"
+  },
+  "[SCY] Attack on Titan Season 3 - 11 (BD 1080p Hi10 FLAC) [5D7A2C4E].mkv": {
+   "release_group": "SCY",
+   "title": "Attack on Titan",
+   "season": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+   ],
+   "source": "Blu-ray",
+   "screen_size": "1080p",
+   "video_profile": "High 10",
+   "color_depth": "10-bit",
+   "audio_codec": "FLAC",
+   "crc32": "5D7A2C4E",
+   "container": "mkv",
+   "mimetype": "video/x-matroska",
+   "type": "episode"
+  },
+  "【MMZYSUB】★【Golden Time】[24（END）][GB][720P_MP4]": {
+   "alternative_title": "【MMZYSUB】★【Golden",
+   "title": "Time】",
+   "release_group": "24（END）",
+   "country": "UNITED KINGDOM",
+   "screen_size": "720p",
+   "container": "mp4",
+   "type": "movie"
+  },
+  "UFC.247.PPV.Jones.vs.Reyes.HDTV.x264-PUNCH[TGx]": {
+   "title": "UFC",
+   "season": 2,
+   "episode": 47,
+   "source": [
+    "Pay-per-view",
+    "HDTV"
+   ],
+   "video_codec": "H.264",
+   "release_group": "PUNCH[TGx]",
+   "type": "episode"
+  },
+  "[HorribleSubs] Tower of Druaga - Sword of Uruk - 04 [480p].mkv": {
+   "release_group": "HorribleSubs",
+   "title": "Tower of Druaga",
+   "alternative_title": "Sword of Uruk",
+   "episode": 4,
+   "screen_size": "480p",
+   "container": "mkv",
+   "mimetype": "video/x-matroska",
+   "type": "episode"
+  },
+  "[FuktLogik][Sayonara_Zetsubou_Sensei][01][DVDRip][x264_ogg].avi": {
+   "release_group": "FuktLogik",
+   "episode": 1,
+   "source": "DVD",
+   "other": "Rip",
+   "video_codec": "H.264",
+   "container": [
+    "ogg",
+    "avi"
+   ],
+   "mimetype": "video/x-msvideo",
+   "type": "episode"
+  }
+ }
+}
