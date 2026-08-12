@@ -83,7 +83,7 @@ jobs:
         run: bash wasm/build.sh
       - name: Test WASM against fixtures
         run: npx vitest run test/wasm-full.test.ts
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: guessit-wasm
           path: |
