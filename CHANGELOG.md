@@ -2,6 +2,17 @@
 
 All notable changes to guessit-js are documented here.
 
+## [4.7.1]
+
+Housekeeping sweep:
+
+- dist is now minified with sourcemaps (ESM 460K→336K, CJS 460K→232K,
+  83 KB gzipped) — debuggability kept via `.map` files
+- Dependabot enabled (npm weekly, grouped devDependencies; GitHub Actions)
+- CONTRIBUTING.md (fixtures-first workflow) and SECURITY.md (private
+  vulnerability reporting, ReDoS/pollution scope) added
+- coverage badge — statement coverage is 97%
+
 ## [4.7.0]
 
 Developer-experience layer on top of the drop-in CLI:

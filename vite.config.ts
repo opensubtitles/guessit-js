@@ -21,8 +21,8 @@ export default defineConfig({
       external: [],
     },
     target: 'es2020',
-    sourcemap: true,
-    minify: false,
+    sourcemap: true, // sourcemaps ship alongside, so minified dist stays debuggable
+    minify: 'esbuild',
     emptyOutDir: true,
     copyPublicDir: false, // don't copy the public/ demo site into the npm dist/
   },
