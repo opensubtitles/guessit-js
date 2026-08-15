@@ -309,7 +309,7 @@
       <p>Parse a media filename and return extracted metadata as JSON.</p>
       <p><strong>Parameters:</strong> <code>filename</code> (required), <code>type</code> (optional: <code>movie</code> | <code>episode</code>)</p>
       <pre class="code-block"><span class="code-comment">// Example</span>
-curl "<span class="code-string">/api/guessit?filename=Breaking.Bad.S01E02.720p.BluRay.x264-DEMAND.mkv</span>"
+curl "<span class="code-string">https://guessit.opensubtitles.com/api/guessit?filename=Breaking.Bad.S01E02.720p.BluRay.x264-DEMAND.mkv</span>"
 
 <span class="code-comment">// Response</span>
 {
@@ -334,7 +334,7 @@ curl "<span class="code-string">/api/guessit?filename=Breaking.Bad.S01E02.720p.B
     <div class="endpoint-body">
       <p>Parse with full options. Send JSON body with <code>filename</code> and optional <code>options</code> object.</p>
       <pre class="code-block"><span class="code-comment">// Example</span>
-curl -X POST <span class="code-string">/api/guessit</span> \
+curl -X POST <span class="code-string">https://guessit.opensubtitles.com/api/guessit</span> \
   -H "Content-Type: application/json" \
   -d '{<span class="code-key">"filename"</span>: <span class="code-string">"The.Matrix.1999.REMASTERED.2160p.UHD.BluRay.x265-GROUP.mkv"</span>,
        <span class="code-key">"options"</span>: {<span class="code-key">"type"</span>: <span class="code-string">"movie"</span>}}'</pre>
