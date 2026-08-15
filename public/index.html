@@ -186,7 +186,7 @@
     }
     .method.get { background: rgba(52, 211, 153, 0.12); color: var(--green); }
     .method.post { background: rgba(129, 140, 248, 0.12); color: var(--accent-bright); }
-    .endpoint-path { font-family: var(--font-mono); font-size: 0.88rem; color: var(--text-heading); }
+    .endpoint-path { font-family: var(--font-mono); font-size: 0.88rem; color: var(--text-heading); word-break: break-all; }
     .endpoint-body { padding: 20px; }
     .endpoint-body p { color: var(--text-dim); font-size: 0.88rem; margin-bottom: 12px; }
     .endpoint-body p strong { color: var(--text); }
@@ -309,7 +309,8 @@
       <p>Parse a media filename and return extracted metadata as JSON.</p>
       <p><strong>Parameters:</strong> <code>filename</code> (required), <code>type</code> (optional: <code>movie</code> | <code>episode</code>)</p>
       <pre class="code-block"><span class="code-comment">// Example</span>
-curl "<span class="code-string">https://guessit.opensubtitles.com/api/guessit?filename=Breaking.Bad.S01E02.720p.BluRay.x264-DEMAND.mkv</span>"
+curl "<span class="code-string">https://guessit.opensubtitles.com/api/guessit</span>\
+<span class="code-string">?filename=Breaking.Bad.S01E02.720p.BluRay.x264-DEMAND.mkv</span>"
 
 <span class="code-comment">// Response</span>
 {
