@@ -194,17 +194,27 @@ guessit-js is a faithful port (1342/1342 fixtures, tracking Python 4.4.0), but i
 **not bug-for-bug identical** — where Python has a genuine parsing bug, guessit-js
 is corrected. Highlights:
 
-- **32 upstream guessit bugs fixed** that Python still gets wrong — e.g. `Us.2019`
-  (title vs country `US`), `The.Collector` (title vs edition), `X2.2003…` (short
-  title), `grown-ish…[eztv]` (hyphenated title split), `cd`-matching mid-hash, and
-  source/codec/extension tokens leaking into `release_group`/`title`. Full ledger:
+- **Cases the released Python 4.4.0 still gets wrong** (each verified against the
+  real Python CLI; the [demo](https://opensubtitles.github.io/guessit-js) shows
+  live side-by-sides): `X2.2003…` (Python: `bonus: 2`, no title), Python's
+  still-open [#875](https://github.com/guessit-io/guessit/issues/875) and
+  [#877](https://github.com/guessit-io/guessit/issues/877) (`Season 3 - 11`,
+  anchored weak episodes, `0x539` ids), Python's dead
+  `RemoveLessSpecificSeasonEpisode("episode")` pass
+  ([#961](https://github.com/guessit-io/guessit/issues/961), our fix submitted as
+  [#962](https://github.com/guessit-io/guessit/pull/962)), and **112 of the 276
+  cross-parser cases Python's own test data admits failing** — fullwidth CJK
+  bracket groups, UFC event numbers, anime compound dash titles, fully-bracketed
+  titles, and more.
+- **32 historical upstream bugs** were fixed here ahead of upstream during the
+  4.x catch-up (many since adopted by Python 4.4 — e.g. `Us.2019`,
+  `The.Collector`, `grown-ish`, `imdb_id`/`tmdb_id`, `volume`, artwork and
+  month-date detection are now correct in both). Full ledger with dispositions:
   [`docs/upstream-issues.md`](docs/upstream-issues.md).
-- **More properties / better detection:** `imdb_id`/`tmdb_id`/`tvdb_id`, `volume`,
-  archive & image **containers** (`.rar`/`.7z`/`.jpg`…), artwork classification
-  (`poster`/`fanart` → `other`), VR / Opening-Ending credits, month-name dates,
-  CJK season/episode markers, and detection of Telugu/Spanish that Python misses.
-- **Typed, schema-described output:** a precise `GuessItResult` interface, a
-  complete `properties()` (Python's is partial), and a JSON Schema.
+- **Typed, schema-described output:** a precise `GuessItResult` interface with
+  enum'd value fields, `properties()` mirroring Python's API, and a JSON Schema
+  (draft-07) of the output — none of which Python provides as machine-readable
+  artifacts.
 - **No Python runtime:** zero runtime dependencies, ESM + CJS + WASM, ~3.5x faster.
 - **Intentional divergences** (cases where guessit-js is *more* correct than
   Python) are catalogued per-example in [`docs/python-parity.md`](docs/python-parity.md).
