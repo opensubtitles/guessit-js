@@ -69,6 +69,10 @@
     nav .logo { font-weight: 700; font-size: 1.05rem; color: var(--text-heading); letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; }
     nav .logo-icon { font-size: 1.2rem; }
     nav .links { display: flex; gap: 24px; }
+    @media (max-width: 640px) {
+      nav .inner { height: auto; flex-direction: column; align-items: flex-start; padding: 8px 0; gap: 6px; }
+      nav .links { flex-wrap: wrap; gap: 10px 14px; }
+    }
     nav .links a { color: var(--text-dim); font-size: 0.85rem; font-weight: 500; transition: color 0.15s; }
     nav .links a:hover { color: var(--text); text-decoration: none; }
 
