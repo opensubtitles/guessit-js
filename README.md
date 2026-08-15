@@ -144,7 +144,19 @@ Regenerate the schema (after parsing changes) with `npm run schema`. A test (`te
 
 ## REST API
 
-No install needed beyond the package itself:
+**Hosted (free, no setup):**
+
+```bash
+curl "https://guessit.opensubtitles.com/api/guessit?filename=Movie.2024.1080p.mkv"
+curl -X POST https://guessit.opensubtitles.com/api/guessit \
+  -H 'Content-Type: application/json' \
+  -d '{"filenames": ["A.2020.mkv", "B.S01E02.mkv"]}'
+```
+
+Runs on Cloudflare Workers at the edge, CORS enabled, batch up to 500
+filenames per POST, redeployed automatically with every release.
+
+**Self-hosted** — no install needed beyond the package itself:
 
 ```bash
 npx guessit-js --serve                 # port 3847 (or --serve 8080 / PORT env)

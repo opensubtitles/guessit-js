@@ -15045,7 +15045,7 @@ options=${JSON.stringify(options)}
   __name(reset, "reset");
 
   // package.json
-  var version = "4.7.0";
+  var version = "4.7.1";
 
   // src/index.ts
   var version2 = version;

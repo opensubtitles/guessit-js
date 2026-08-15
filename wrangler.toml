@@ -2,5 +2,9 @@ name = "guessit-js-api"
 main = "workers/api.mjs"
 compatibility_date = "2026-08-01"
 
+routes = [
+  { pattern = "guessit.opensubtitles.com", custom_domain = true }
+]
+
 # Zero-dependency bundle: wrangler inlines dist/guessit-js.js at deploy time.
 # Build first: npm run build

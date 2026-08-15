@@ -95,3 +95,13 @@ for (const page of ['public/index.html', 'public/docs/index.html']) {
     console.log(`✓ ${page} stamped v${version}`);
   }
 }
+
+// Keep the OpenAPI spec's version in sync too.
+{
+  const spec = JSON.parse(readFileSync(r('public/openapi.json'), 'utf8'));
+  if (spec.info.version !== version) {
+    spec.info.version = version;
+    writeFileSync(r('public/openapi.json'), JSON.stringify(spec, null, 2) + '\n');
+    console.log(`✓ public/openapi.json stamped ${version}`);
+  }
+}
