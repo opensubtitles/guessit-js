@@ -52,8 +52,23 @@ export default {
       const type = url.searchParams.get('type');
       if (type === 'movie' || type === 'episode') options.type = type;
       try {
-        // Identical input → identical output: let Cloudflare's edge cache serve repeats.
-        return json(guessit(filename, options), 200, { 'Cache-Control': 'public, max-age=86400' });
+        // Cloudflare does NOT auto-cache Worker responses — a Cache-Control
+        // header alone only instructs browsers. Real edge caching needs the
+        // Cache API. Identical input → identical output, so cache hard.
+        const cache = caches.default;
+        const cacheKey = new Request(url.toString(), { method: 'GET' });
+        const hit = await cache.match(cacheKey);
+        if (hit) {
+          const res = new Response(hit.body, hit);
+          res.headers.set('X-Cache', 'HIT');
+          return res;
+        }
+        const res = json(guessit(filename, options), 200, {
+          'Cache-Control': 'public, max-age=86400',
+          'X-Cache': 'MISS',
+        });
+        await cache.put(cacheKey, res.clone());
+        return res;
       } catch (e) {
         return json({ error: String((e && e.message) || e) }, 500);
       }

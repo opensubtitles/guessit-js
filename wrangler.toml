@@ -1,6 +1,7 @@
 name = "guessit-js-api"
 main = "workers/api.mjs"
 compatibility_date = "2026-08-01"
+account_id = "2f65694cebf9fc67ae77c288d36541c8"
 
 routes = [
   { pattern = "guessit.opensubtitles.com", custom_domain = true }
