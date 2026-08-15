@@ -30,6 +30,7 @@ function json(data, status = 200, extra = {}) {
 
 const USAGE = {
   service: 'guessit-js API',
+  notice: 'DEMO for testing/evaluation only — never use in production. Free tier, daily request cap, no SLA. Self-host: npx guessit-js --serve',
   docs: 'https://opensubtitles.github.io/guessit-js/docs/',
   get: '/api/guessit?filename=Movie.2020.1080p.mkv&type=movie|episode (type optional)',
   post: '/api/guessit with {"filename": "..."} or {"filenames": [...], "options": {...}}',

@@ -144,7 +144,7 @@ Regenerate the schema (after parsing changes) with `npm run schema`. A test (`te
 
 ## REST API
 
-**Hosted (free, no setup):**
+**Hosted demo (testing only):**
 
 ```bash
 curl "https://guessit.opensubtitles.com/api/guessit?filename=Movie.2024.1080p.mkv"
@@ -152,6 +152,12 @@ curl -X POST https://guessit.opensubtitles.com/api/guessit \
   -H 'Content-Type: application/json' \
   -d '{"filenames": ["A.2020.mkv", "B.S01E02.mkv"]}'
 ```
+
+> ⚠️ **For testing and evaluation only — never use in production.** It runs on
+> a free Cloudflare Workers tier with a hard daily request cap and no uptime
+> guarantee; it can be throttled, rate-limited, or removed at any time. For
+> production, self-host (`npx guessit-js --serve`, one command) or better,
+> call the library in-process (~1.5 ms per parse, no HTTP at all).
 
 Runs on Cloudflare Workers at the edge, CORS enabled, batch up to 500
 filenames per POST, redeployed automatically with every release.
