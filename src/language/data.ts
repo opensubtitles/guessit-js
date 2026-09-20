@@ -128,7 +128,9 @@ export const GUESSIT_SYNONYMS: Record<string, string[]> = {
   'cat': ['català', 'castellano', 'espanol castellano', 'español castellano'],
   'ces': ['cz'],
   'ukr': ['ua'],
-  'zho': ['cn'],
+  // "cn" is the country, not the language, and it collides with Cartoon Network
+  // ("…720p.CN.WEBRip…"). Chinese answers to zh / zho / chi / chinese instead.
+  'zho': [],
   'jpn': ['jp'],
   'hrv': ['scr'],
   'mul': ['multi', 'multiple', 'dl'],

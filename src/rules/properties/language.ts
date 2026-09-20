@@ -880,9 +880,42 @@ export function language(config: LanguageConfig, commonWords: Set<string>): Rebu
     RemoveUndeterminedLanguagesRule,
     DedupLanguageRule,
     RemoveLanguageInsideTitle,
+    RemoveDashGluedBibliographicCode,
   );
 
   return rebulk;
+}
+
+/**
+ * The bibliographic half of ISO 639-2 ("chi", "ger", "fre", "dut") is a file-suffix
+ * convention — "movie.chi.srt", a Matroska track name. Glued to the previous word
+ * by a dash it is part of a title instead: "Shang-Chi" is a film, not Shang in
+ * Chinese. The terminology codes ("zho", "deu") are unambiguous and unaffected.
+ */
+class RemoveDashGluedBibliographicCode extends Rule {
+  static override priority = 32;
+  override priority = 32;
+  override consequence = RemoveMatch;
+
+  private static isBibliographicOnly(raw: string): boolean {
+    const code = raw.trim().toLowerCase();
+    if (code.length !== 3) return false;
+    return !Language.fromAlpha3(code) && !!Language.fromOpenSubtitles(code);
+  }
+
+  when(matches: any, _context: any): any {
+    const input: string = matches.inputString ?? '';
+    const out: Match[] = [];
+    for (const match of (matches.named('language') ?? []) as Match[]) {
+      if (!RemoveDashGluedBibliographicCode.isBibliographicOnly(String(match.raw ?? ''))) continue;
+      if (input[match.start - 1] === '-') out.push(match);
+    }
+    for (const match of (matches.named('subtitle_language') ?? []) as Match[]) {
+      if (!RemoveDashGluedBibliographicCode.isBibliographicOnly(String(match.raw ?? ''))) continue;
+      if (input[match.start - 1] === '-') out.push(match);
+    }
+    return out.length ? out : false;
+  }
 }
 
 /**

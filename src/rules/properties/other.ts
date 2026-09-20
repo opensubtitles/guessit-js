@@ -31,6 +31,8 @@ export function other(config: Record<string, unknown>) {
     ValidateHardcodedSubs,
     ValidateStreamingServiceNeighbor,
     ValidateAtEnd,
+    ValidateSubtitleFlag,
+    HearingImpairedLanguageToSDH,
     ValidateReal,
     RemoveTitleCaseAmbiguous,
     ImageArtKeywordToOther,
@@ -356,6 +358,66 @@ class FixCountRule extends Rule {
     const m = new Match(start!, end!, { name: 'proper_count' });
     m.value = -1;
     return [m];
+  }
+}
+
+/**
+ * SDH / Forced / CC describe a subtitle track, so they only mean anything in a
+ * subtitle file. Without that guard the tail of a dash-joined release group is
+ * read as a flag — the group "SC-SDH" ("…H.264-SC-SDH") would lose its name, and
+ * "CC" is also the Criterion edition.
+ */
+class ValidateSubtitleFlag extends Rule {
+  static override priority = 64;
+  override priority = 64;
+  override consequence = RemoveMatch;
+
+  when(matches: any, _context: any): any {
+    const flags = matches.named('other',
+      (m: Match) => m.tags?.includes('subtitle-flag')) as Match[] | undefined;
+    if (!flags?.length) return false;
+    const out: Match[] = [];
+    for (const flag of flags) {
+      const filepart = matches.markers.atMatch(flag, (m: Match) => m.name === 'path', 0);
+      if (!filepart) { out.push(flag); continue; }
+      const subtitleContainer = matches.range(filepart.start, filepart.end,
+        (m: Match) => m.name === 'container' && m.tags?.includes('subtitle'), 0);
+      if (!subtitleContainer) out.push(flag);
+    }
+    return out.length ? out : false;
+  }
+}
+
+/**
+ * "Movie…eng.hi.srt" is an English subtitle for the hearing-impaired, not an
+ * English *and* Hindi one. A trailing "hi" only reads as Hindi when it is the
+ * file's only language — behind another subtitle language in a subtitle file it
+ * is the same flag SDH spells out.
+ */
+class HearingImpairedLanguageToSDH extends Rule {
+  static override priority = POST_PROCESS;
+  override priority = POST_PROCESS;
+  override consequence = [RemoveMatch, AppendMatch];
+
+  when(matches: any, _context: any): any {
+    const toRemove: Match[] = [];
+    const toAppend: Match[] = [];
+    for (const filepart of (matches.markers.named('path') as Match[]) ?? []) {
+      const subtitleContainer = matches.range(filepart.start, filepart.end,
+        (m: Match) => m.name === 'container' && m.tags?.includes('subtitle'), 0);
+      if (!subtitleContainer) continue;
+      const langs = (matches.range(filepart.start, filepart.end,
+        (m: Match) => m.name === 'subtitle_language' && !m.private) as Match[] ?? [])
+        .slice().sort((a, b) => a.start - b.start);
+      if (langs.length < 2) continue;
+      const last = langs[langs.length - 1];
+      if (String(last.raw ?? '').trim().toLowerCase() !== 'hi') continue;
+      toRemove.push(last);
+      toAppend.push(new Match(last.start, last.end, {
+        name: 'other', value: 'SDH', inputString: matches.inputString,
+      }));
+    }
+    return toRemove.length ? [toRemove, toAppend] : false;
   }
 }
 

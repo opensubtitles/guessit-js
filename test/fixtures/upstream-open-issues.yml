@@ -529,3 +529,104 @@
   episode: 1
   container: ogg
   -audio_codec:
+
+# "Final Cut" is an edition like "Director's Cut" — without it the film is typed
+# as an episode with episode_details "Final"
+? Blade.Runner.1982.Final.Cut.2160p.UHD.BluRay.x265-GRP.mkv
+: type: movie
+  title: Blade Runner
+  year: 1982
+  edition: Final Cut
+  -episode_details:
+  -episode_title:
+
+? Apocalypse.Now.Redux.2001.1080p.BluRay.x264-GRP.mkv
+: type: movie
+  title: Apocalypse Now
+  edition: Redux
+
+? Watchmen.2009.Ultimate.Cut.1080p.BluRay.x264-GRP.mkv
+: type: movie
+  title: Watchmen
+  edition: Ultimate Cut
+
+? Jaws.1975.45th.Anniversary.Edition.1080p.BluRay.x264-GRP.mkv
+: type: movie
+  title: Jaws
+  edition: Anniversary
+
+# Subtitle flags belong to the track, and the release group keeps its name
+? Movie.2020.1080p.BluRay.x264-GRP.eng.forced.srt
+: type: movie
+  title: Movie
+  subtitle_language: en
+  other: Forced
+  release_group: GRP
+
+? Movie.2020.1080p.BluRay.x264-GRP.eng.sdh.srt
+: type: movie
+  title: Movie
+  subtitle_language: en
+  other: SDH
+  release_group: GRP
+
+# …but in a video file the same token is the release group, not a flag — the
+# guard is the subtitle container
+? Total.Divas.S05E01.720p.HDTV.AAC2.0.H.264-SC-SDH
+: title: Total Divas
+  release_group: SDH
+  video_profile: Scalable Video Coding
+  -other: SDH
+
+# A trailing "hi" behind another subtitle language is hearing-impaired, not Hindi
+? Movie.2020.1080p.BluRay.x264-GRP.eng.hi.srt
+: type: movie
+  title: Movie
+  subtitle_language: en
+  other: SDH
+
+# …alone it is still Hindi
+? Movie.2020.1080p.BluRay.x264-GRP.hi.srt
+: type: movie
+  title: Movie
+  subtitle_language: hi
+
+# Chinese, and its two written forms
+? Movie.2020.1080p.BluRay.x264-GRP.chi.srt
+: type: movie
+  title: Movie
+  subtitle_language: zh
+
+? Movie.2020.1080p.BluRay.x264-GRP.zh-Hans.srt
+: type: movie
+  title: Movie
+  subtitle_language: zh
+
+# The bibliographic half of ISO 639-2 is what subtitle files carry
+? Movie.2020.1080p.BluRay.x264-GRP.ger.srt
+: type: movie
+  title: Movie
+  subtitle_language: de
+
+? Movie.2020.1080p.BluRay.x264-GRP.fre.srt
+: type: movie
+  title: Movie
+  subtitle_language: fr
+
+# …but glued to the previous word by a dash it is part of the title
+? Shang-Chi.2021.1080p.BluRay.x264-GRP.mkv
+: type: movie
+  title: Shang-Chi
+  -language:
+
+# A hyphenated title before a year is not a leading scene group
+? Spider-Man.2002.1080p.mkv
+: type: movie
+  title: Spider-Man
+  year: 2002
+  -release_group:
+
+? Ant-Man.2015.1080p.BluRay.x264-GRP.mkv
+: type: movie
+  title: Ant-Man
+  release_group: GRP

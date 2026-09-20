@@ -4,6 +4,38 @@ All notable changes to guessit-js are documented here.
 
 ## [Unreleased]
 
+Subtitle-metadata sweep — the second pass over a modern corpus, this time
+through subtitle files, editions and language tags:
+
+- **"Final Cut" is an edition**: without it `Blade.Runner.1982.Final.Cut.…` typed
+  a dated film as an *episode* with `episode_details: Final`. `Redux`,
+  `Ultimate Cut`, `Assembly Cut`, `International Cut` and `Anniversary` join it —
+  previously they landed in the title (*Apocalypse Now Redux*) or in
+  `alternative_title`
+- **subtitle flags**: `SDH`, `Forced` and `Closed Caption` are `other` values
+  rather than the release group. `…-GRP.eng.forced.srt` kept "forced" as the
+  group and lost GRP; both are now right. The flags are scoped to subtitle
+  containers, so the group "SC-SDH" on a video file survives and "CC" stays the
+  Criterion edition
+- **`.hi.srt` was Hindi**: behind another subtitle language it is the
+  hearing-impaired flag (`other: SDH`). Alone it is still Hindi
+- **Chinese was invisible**: `zh` was missing from the default `allowed_languages`,
+  so `.zh.srt`, `.chi.srt`, `.zho.srt` and `.chinese.srt` all fell into the
+  release group. (`cn` is deliberately not a synonym — it is the country, and it
+  collides with Cartoon Network.)
+- **BCP-47 script subtags**: `zh-Hans` / `zh-Hant` / `sr-Latn` are parsed and kept
+  on the language as `script`; the two written forms of Chinese are catalogued
+  separately. Region subtags (`pt-BR`, `es-MX`) already worked
+- **ISO 639-2 bibliographic codes**: `chi`, `ger`, `fre`, `dut`, `cze` resolved to
+  nothing — a three-letter miss returned early instead of falling through to the
+  code table that holds them. These are what subtitle files and Matroska tracks
+  carry. Glued to the previous word by a dash they stay title text, so "Shang-Chi"
+  is a film rather than Shang in Chinese
+- **a hyphenated title before a year is not a release group**:
+  `Spider-Man.2002.1080p.mkv` returned title "Man", release_group "Spider" — the
+  #634 guard covered a following season/episode/date but not a year. Ant-Man,
+  X-Men and Spider-Man all parse now. Python still gets this one wrong
+
 Real-world sweep — the gaps a modern release corpus hits that the fixture corpus
 never did:
 

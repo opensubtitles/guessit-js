@@ -26,6 +26,9 @@ export class Language {
    * Convert to string representation: "eng" or "eng-US"
    */
   toString(): string {
+    if (this.script) {
+      return `${this.alpha3}-${this.script}`;
+    }
     if (this.country) {
       return `${this.alpha3}-${this.country}`;
     }
@@ -109,13 +112,18 @@ export class Language {
     const lang = this.fromSynonym(lower);
     if (lang) return lang;
 
-    // Try as direct codes
+    // Try as direct codes. A miss must fall through rather than return: the
+    // bibliographic half of ISO 639-2 ("fre", "ger", "dut", "chi") is not an
+    // alpha-3 terminology code, and those spellings are what subtitle files and
+    // Matroska tracks carry.
     if (lower.length === 3) {
-      return this.fromAlpha3(lower);
+      const byAlpha3 = this.fromAlpha3(lower);
+      if (byAlpha3) return byAlpha3;
     }
 
     if (lower.length === 2) {
-      return this.fromAlpha2(lower);
+      const byAlpha2 = this.fromAlpha2(lower);
+      if (byAlpha2) return byAlpha2;
     }
 
     // Try as name
@@ -202,6 +210,11 @@ export class Language {
         // If the second part is 3+ letters it's likely a language code, not a country.
         if (parts[1].length === 2) {
           byAlpha2.country = parts[1].toUpperCase();
+        } else if (parts[1].length === 4 && /^[a-z]{4}$/.test(parts[1])) {
+          // A four-letter subtag is an ISO 15924 script: "zh-Hans" and "zh-Hant"
+          // are the two written forms of Chinese and are catalogued separately,
+          // as are "sr-Latn" and "sr-Cyrl".
+          byAlpha2.script = parts[1].charAt(0).toUpperCase() + parts[1].slice(1);
         } else {
           // Not a valid IETF tag - return undefined so each part is parsed separately
           return undefined;

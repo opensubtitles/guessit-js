@@ -145,16 +145,17 @@ class DashSeparatedReleaseGroup extends Rule {
       }
 
       // A candidate at the filepart start, joined by a dash to a SINGLE word (no
-      // internal separator) and followed by a season/episode/date anchor, is the
-      // first half of a hyphenated title ("grown-ish.s03e01" → "grown-ish"), not a
-      // release group (#634/#640). A multi-word remainder ("FoV-Show.Name.S01E01")
-      // keeps the leading scene group. (upstream 4.4 refinement)
+      // internal separator) and followed by a season/episode/date/year anchor, is
+      // the first half of a hyphenated title ("grown-ish.s03e01" → "grown-ish",
+      // "Spider-Man.2002" → "Spider-Man"), not a release group (#634/#640). A
+      // multi-word remainder ("FoV-Show.Name.S01E01") keeps the leading scene
+      // group. (upstream 4.4 refinement)
       const holeRaw = String((firstHole as any).raw ?? '');
       const holeCore = holeRaw.replace(new RegExp('^[' + sepsPattern + ']+|[' + sepsPattern + ']+$', 'g'), '');
       if (candidate.start === start &&
           !holeCore.includes('.') && !holeCore.includes(' ') &&
           matches.range(candidate.end, end,
-            (m: Match) => ['season', 'episode', 'date'].includes(m.name ?? '') && !m.private, 0)) {
+            (m: Match) => ['season', 'episode', 'date', 'year'].includes(m.name ?? '') && !m.private, 0)) {
         return false;
       }
 

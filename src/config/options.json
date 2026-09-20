@@ -31,7 +31,8 @@
     "sv",
     "te",
     "uk",
-    "und"
+    "und",
+    "zh"
   ],
   "advanced_config": {
     "common_words": [
@@ -472,6 +473,42 @@
             "director'?s?-cut",
             "director'?s?-cut-edition",
             "edition-director'?s?-cut"
+          ]
+        },
+        "Final Cut": {
+          "regex": [
+            "final-cut",
+            "final-cut-edition",
+            "edition-final-cut"
+          ]
+        },
+        "Ultimate Cut": {
+          "regex": [
+            "ultimate-cut"
+          ]
+        },
+        "Assembly Cut": {
+          "regex": [
+            "assembly-cut"
+          ]
+        },
+        "International Cut": {
+          "regex": [
+            "international-cut"
+          ]
+        },
+        "Redux": {
+          "string": [
+            "Redux"
+          ],
+          "tags": [
+            "has-neighbor",
+            "release-group-prefix"
+          ]
+        },
+        "Anniversary": {
+          "regex": [
+            "(?:\\d{1,3}(?:st|nd|rd|th)-)?anniversary-edition"
           ]
         },
         "Extended": {
@@ -1234,6 +1271,30 @@
         "HLG": {
           "regex": "HLG",
           "tags": "uhdbluray-neighbor"
+        },
+        "SDH": {
+          "string": "SDH",
+          "tags": [
+            "at-end",
+            "not-a-release-group",
+            "subtitle-flag"
+          ]
+        },
+        "Forced": {
+          "string": "forced",
+          "tags": [
+            "at-end",
+            "not-a-release-group",
+            "subtitle-flag"
+          ]
+        },
+        "Closed Caption": {
+          "regex": "CC",
+          "tags": [
+            "at-end",
+            "not-a-release-group",
+            "subtitle-flag"
+          ]
         },
         "Dolby Vision": {
           "regex": "(?:Dolby-?Vision|DoVi|DV)",
