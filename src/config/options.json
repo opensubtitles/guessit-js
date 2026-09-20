@@ -1223,8 +1223,16 @@
           "string": "SDR",
           "tags": "uhdbluray-neighbor"
         },
+        "HDR10+": {
+          "regex": "HDR-?10-?(?:\\+|Plus)",
+          "tags": "uhdbluray-neighbor"
+        },
         "HDR10": {
           "regex": "HDR(?:10)?",
+          "tags": "uhdbluray-neighbor"
+        },
+        "HLG": {
+          "regex": "HLG",
           "tags": "uhdbluray-neighbor"
         },
         "Dolby Vision": {

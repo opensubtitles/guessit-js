@@ -1,4 +1,5 @@
-import { Rebulk } from 'rebulk-js';
+import { Rebulk, Rule, RemoveMatch, AppendMatch, POST_PROCESS } from 'rebulk-js';
+import type { Matches, Context } from 'rebulk-js';
 import { Match } from 'rebulk-js';
 import { seps, reEscape, sepsPattern } from '../common/index.js';
 import { isDisabled } from '../common/pattern.js';
@@ -74,5 +75,36 @@ export function container(config: Record<string, unknown>) {
   rebulk.string(...torrent, { tags: ['torrent'] });
   rebulk.string(...nzb, { tags: ['nzb'] });
 
-  return rebulk;
+  return rebulk.rules(OggCodecTagToVorbis);
+}
+
+/**
+ * A codec bracket lists what the file was encoded with, not what it is stored in:
+ * "[x264_ogg].avi" is H.264 video and Vorbis audio inside an AVI, so the "ogg"
+ * there is the audio codec. Only a non-extension "ogg" sharing its bracket with a
+ * video codec qualifies — a real ".ogg" file keeps its container.
+ */
+class OggCodecTagToVorbis extends Rule {
+  static override priority = POST_PROCESS;
+  override consequence = [RemoveMatch, AppendMatch];
+
+  override when(matches: Matches, _context: Context): [Match[], Match[]] | false {
+    const containers = matches.named('container') as Match[] | Match | undefined;
+    const toRemove: Match[] = [];
+    const toAppend: Match[] = [];
+    for (const c of Array.isArray(containers) ? containers : containers ? [containers] : []) {
+      if (String(c.value ?? '').toLowerCase() !== 'ogg') continue;
+      if (c.tags?.includes('extension')) continue;
+      const group = matches.markers.atMatch(c, (m: Match) => m.name === 'group', 0) as Match | undefined;
+      if (!group) continue;
+      const codec = matches.range(group.start, group.end,
+        (m: Match) => m.name === 'video_codec', 0);
+      if (!codec) continue;
+      toRemove.push(c);
+      toAppend.push(new Match(c.start, c.end, {
+        name: 'audio_codec', value: 'Vorbis', inputString: matches.inputString,
+      }));
+    }
+    return toRemove.length ? [toRemove, toAppend] : false;
+  }
 }

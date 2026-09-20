@@ -750,7 +750,17 @@ export function episodes(config: EpisodesConfig): Rebulk {
       validator: null,
       conflictSolver: seasonEpisodeConflictSolver,
     })
-    .regex(`(?<![^\\W_])(?<season>\\d{1,2})(?<episode>\\d{2})(?!%)(?!(?![vV]\\d)[^\\W_])`)
+    // Season half: zero-padded ("0102" → s01e02), a single digit ("102" → s1e02),
+    // or an unpadded two-digit season only when the episode half stays under 40
+    // ("2401" → s24e01). A four-digit run whose tail is 40+ is the absolute
+    // episode of a long-running show ("One.Piece.1089"), not season 10 episode
+    // 89 — no season anywhere carries 89 episodes. "1120" stays ambiguous and
+    // keeps the season reading.
+    // A three-digit run keeps Python's reading throughout, including the
+    // episode-zero quirk ("Show.Name.100" → s1e0), which the corpus pins.
+    // A zero-padded season is never season zero: "RE.0096" is part of the title
+    // "Gundam Unicorn RE:0096", not season 0 episode 96.
+    .regex(`(?<![^\\W_])(?<season>0[1-9]|[1-9]\\d(?=[0-3]\\d)|\\d)(?<episode>\\d{2})(?!%)(?!(?![vV]\\d)[^\\W_])`)
     .regex(`v(?<version>\\d+)`)
     .repeater('?')
     .regex(`(?<episodeSeparator>x|-)(?<episode>\\d{2})`, {
@@ -1039,7 +1049,10 @@ class PreferAnchoredWeakEpisodeRule extends Rule {
       const score = (init: any): number => {
         let sc = 0;
         const raw = String(init.raw ?? '');
-        if (/^0\d/.test(raw)) sc += 4;
+        // A padded run of two or three digits is the anime episode-number
+        // convention ("- 01 -"). Four digits with a leading zero is a number the
+        // title carries — "Gundam Unicorn RE.0096" is not episode 96.
+        if (/^0\d{1,2}$/.test(raw)) sc += 4;
         // dash-delimited: the token right before the number is a dash
         let i = init.start - 1;
         while (i >= 0 && (input[i] === ' ' || input[i] === '.' || input[i] === '_')) i--;
@@ -1653,9 +1666,23 @@ class WeakConflictSolverRule extends Rule {
         m.initiator?.name === 'weak_episode',
       ) || [];
 
-      const weakDupMatches: any[] = matches.range?.(filepart.start, filepart.end, (m: any) =>
+      const allDupMatches: any[] = matches.range?.(filepart.start, filepart.end, (m: any) =>
         m.initiator?.name === 'weak_duplicate',
       ) || [];
+
+      // The digits inside a codec are not a season/episode pair: "H.264" offers
+      // "264" as a weak duplicate (s2e64), and letting it outrank a real weak
+      // episode costs the episode entirely ("One.Piece.1089.…H.264-VARYG" kept
+      // neither). A duplicate sitting inside another recognised property is
+      // noise and takes no part in the contest.
+      const weakDupMatches = allDupMatches.filter((dup: any) => {
+        const covering = matches.range?.(dup.start, dup.end, (m: any) =>
+          !m.private && !!m.name && m.name !== 'season' && m.name !== 'episode' &&
+          !m.tags?.includes('weak-episode') &&
+          m.start <= dup.start && m.end >= dup.end && (m.start < dup.start || m.end > dup.end),
+        ) || [];
+        return !(Array.isArray(covering) ? covering.length > 0 : !!covering);
+      });
 
       if (animeDetected) {
         // Anime: remove weak_duplicate, keep weak_episode

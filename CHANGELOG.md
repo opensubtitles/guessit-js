@@ -2,6 +2,48 @@
 
 All notable changes to guessit-js are documented here.
 
+## [Unreleased]
+
+Real-world sweep — the gaps a modern release corpus hits that the fixture corpus
+never did:
+
+- **four-digit absolute episodes**: `One.Piece.1089.1080p.CR.WEB-DL…` was read as
+  season 10 episode 89. No season carries 89 episodes — a four-digit run whose
+  tail is 40+ is the absolute episode of a long-running show, which is how the
+  highest-volume anime (One Piece, Detective Conan, Naruto) name every file. The
+  plausible pairs still read as pairs (`the.simpsons.2401` → s24e01,
+  `Show.1024` → s10e24), and `1120` stays ambiguous and keeps its season. Python
+  has the same bug, so this one is ours alone
+- **`H.264` no longer eats the episode**: the digits inside a dotted codec offered
+  "264" as a competing season/episode pair, and letting it win cost the episode
+  entirely — `One.Piece.1089.…H.264-VARYG` kept neither reading. A duplicate
+  sitting strictly inside another recognised property now takes no part in the
+  contest
+- **HLG** (upstream drops it, we made it worse): `…WEB-DL.HLG.H.265-GRP` reported
+  `episode_title: "HLG"`. It is an HDR transfer curve — `other: HLG` — and every
+  2160p BBC iPlayer rip carries it
+- **HDR10+** is its own format: `HDR10Plus` vanished entirely and `HDR10+`
+  collapsed to plain `HDR10`. Both spellings now report `HDR10+`
+- **bracketed end-markers**: `[24（END）]`, `[12(END)]`, `[完]` are the completeness
+  of the run (`other: Complete`), not an episode title. The bracket is what tells
+  them apart from title words — "World's End" and "End of Days" are untouched
+- **`[GB]` is not Great Britain**: in a Chinese fansub release it is the subtitle
+  encoding (GB2312, simplified), and its sibling tags `[BIG5]`/`[CHS]` already
+  parsed to nothing. A country that travels with the title still reads as one
+  (`The.Voice.UK.S03E12` → GB)
+- **a padded four-digit run belongs to the title**: the anime episode-number bonus
+  now applies to two- and three-digit runs only, so
+  `Mobile.Suit.Gundam.Unicorn.RE.0096.-.14` is episode 14 of
+  "Mobile Suit Gundam Unicorn RE 0096" — previously episode 96 with "14" as the
+  title, and better than Python, which returns episode [14, 96]
+- **`[x264_ogg].avi`**: a codec bracket lists codecs, so the ogg beside x264 is
+  `audio_codec: Vorbis`, not a second container. A real `.ogg` file is untouched
+
+Not changed: `Show.Name.500` still reads s5e0, matching Python and the corpus,
+which pins the same quirk on `Show.Name.100`. `Show-A (US) - Episode Title S02E09`
+keeps its `alternative_title` — routing it to `episode_title` collides with five
+fixtures that want an alternative title on a numbered episode.
+
 ## [4.8.0]
 
 **The published v4.7.1 bundle mis-parses — upgrade.** rebulk identifies a rule

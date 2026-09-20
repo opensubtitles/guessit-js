@@ -78,6 +78,7 @@ export function episodeTitle(config: Record<string, unknown>) {
     RemoveEpisodeTitleInReleaseGroup,
     RemoveEpisodeMarkerWordTitle,
     RemoveEpisodeTitleCoveredByDetailsInGroup,
+    EndMarkerEpisodeTitleToComplete,
     RemoveFansubCreditEpisodeTitle,
     RemoveSubtitleDescriptorEpisodeTitle,
     RemoveHashFilepartJunk,
@@ -177,6 +178,43 @@ class RemoveEpisodeTitleCoveredByDetailsInGroup extends Rule {
       if (covered) out.push(et);
     }
     return out.length ? out : false;
+  }
+}
+
+/**
+ * Asian fansubs flag the last episode of a run with a bracketed end-marker —
+ * "[24（END）]", "[12(END)]", "[完]". It rides in the same bracket as the episode
+ * number, so it lands in `episode_title`; it is the completeness of the run, not
+ * a title. The bracket is what tells it apart from an ordinary title word, so
+ * "World's End" and "End of Days" never reach this rule.
+ */
+const END_OF_RUN_MARKER = /^[\s([（【「]*(?:end|fin|完结|完|全)[\s)\]）】」]*$/i;
+
+class EndMarkerEpisodeTitleToComplete extends Rule {
+  static override priority = POST_PROCESS;
+  override consequence = [RemoveMatch, AppendMatch];
+
+  override when(matches: Matches, _context: any): [Match[], Match[]] | false {
+    const ets = matches.named('episode_title') as Match[] | Match | undefined;
+    const etArr = Array.isArray(ets) ? ets : ets ? [ets] : [];
+    const toRemove: Match[] = [];
+    const toAppend: Match[] = [];
+    for (const et of etArr) {
+      if (!matches.markers.atMatch(et, (m: Match) => m.name === 'group', 0)) continue;
+      if (!END_OF_RUN_MARKER.test(String(et.raw ?? et.value ?? ''))) continue;
+      toRemove.push(et);
+      const alreadyComplete = matches.named('other',
+        (m: Match) => m.value === 'Complete') as Match[] | Match | undefined;
+      const completeCount = Array.isArray(alreadyComplete)
+        ? alreadyComplete.length
+        : alreadyComplete ? 1 : 0;
+      if (completeCount === 0) {
+        toAppend.push(new Match(et.start, et.end, {
+          name: 'other', value: 'Complete', inputString: matches.inputString,
+        }));
+      }
+    }
+    return toRemove.length ? [toRemove, toAppend] : false;
   }
 }
 

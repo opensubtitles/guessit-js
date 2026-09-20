@@ -338,10 +338,27 @@
 : title: Ro-Kyu-Bu! SS
   episode: 1
 
+# The bracketed end-marker is the completeness of the run, and [GB] is the
+# subtitle encoding (GB2312, simplified Chinese) — neither is a title or a country
 ? "【MMZYSUB】★【Golden Time】[24（END）][GB][720P_MP4]"
 : title: Golden Time
   episode: 24
   release_group: MMZYSUB
+  other: Complete
+  -episode_title:
+  -country: GB
+
+? "[KTXP][Fate][24][GB][1080P].mp4"
+: title: Fate
+  episode: 24
+  -country: GB
+
+# …but a country that travels with the title is still a country
+? The.Voice.UK.S03E12.HDTV.x264-C4TV
+: title: The Voice
+  country: GB
+  season: 3
+  episode: 12
 
 # The fight card names the release as much as the event number does — it is an
 # alternative_title, not release noise to drop
@@ -438,3 +455,77 @@
   title: Foo 2
   episode: 2
   episode_title: bar
+
+# A four-digit run whose tail is 40+ is the absolute episode of a long-running
+# show, not a season/episode pair — no season carries 89 episodes
+? One.Piece.1089.1080p.CR.WEB-DL.AAC2.0.H.264-VARYG.mkv
+: title: One Piece
+  episode: 1089
+  -season:
+
+? One.Piece.1089.1080p.WEB-DL.mkv
+: title: One Piece
+  episode: 1089
+
+# …and the digits inside "H.264" do not get to outrank it
+? Show.Name.1089.1080p.WEB-DL.H.264-VARYG.mkv
+: title: Show Name
+  episode: 1089
+  video_codec: H.264
+
+# A plausible pair still reads as season/episode
+? Show.1024.hdtv-abc
+: title: Show
+  season: 10
+  episode: 24
+
+# HLG is an HDR transfer curve, not an episode title — BBC iPlayer rips carry it
+? Planet.Earth.III.S01E01.Coasts.2160p.iP.WEB-DL.AAC2.0.HLG.H.265-RAWR.mkv
+: title: Planet Earth III
+  episode_title: Coasts
+  other: HLG
+
+# HDR10+ is its own format, both spellings
+? Oppenheimer.2023.2160p.UHD.BluRay.DV.HDR10Plus.TrueHD.7.1.Atmos.x265-W4NK3R.mkv
+: type: movie
+  title: Oppenheimer
+  other: [Dolby Vision, HDR10+]
+
+? Movie.2023.2160p.HDR10+.x265-GRP.mkv
+: type: movie
+  title: Movie
+  other: HDR10+
+
+? Movie.2023.2160p.HDR.x265-GRP.mkv
+: type: movie
+  title: Movie
+  other: HDR10
+
+# A four-digit run with a leading zero is a number the title carries — the
+# dash-anchored number after it is the episode
+? "[GROUP].Mobile.Suit.Gundam.Unicorn.RE.0096.-.14.[720p].mkv"
+: title: Mobile Suit Gundam Unicorn RE 0096
+  episode: 14
+  -season:
+
+# …but a padded two-digit run keeps the anime episode-number convention
+? "[GROUP] Fairy Tail - 01 [720p].mkv"
+: title: Fairy Tail
+  episode: 1
+
+# A codec bracket lists codecs: the "ogg" beside x264 is Vorbis audio, and the
+# container is the real extension
+? "[FuktLogik][Sayonara_Zetsubou_Sensei][01][DVDRip][x264_ogg].avi"
+: title: Sayonara Zetsubou Sensei
+  episode: 1
+  video_codec: H.264
+  audio_codec: Vorbis
+  container: avi
+
+# …a genuine .ogg file keeps its container
+? Show.S01E01.ogg
+: title: Show
+  season: 1
+  episode: 1
+  container: ogg
+  -audio_codec:

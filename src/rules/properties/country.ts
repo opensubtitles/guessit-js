@@ -1,4 +1,5 @@
-import { Rebulk } from 'rebulk-js';
+import { Rebulk, Rule, RemoveMatch } from 'rebulk-js';
+import type { Match, Matches, Context } from 'rebulk-js';
 import { isDisabled } from '../common/pattern.js';
 import { iterWords } from '../common/words.js';
 
@@ -78,7 +79,46 @@ export function country(config: Record<string, unknown>, commonWords: Set<string
     disabled: (context) => !context?.['allowed_countries'],
   });
 
-  return rebulk;
+  return rebulk.rules(RemoveEncodingTagCountry);
+}
+
+/**
+ * A bracket holding nothing but "GB" is the subtitle encoding of a Chinese
+ * fansub release (GB2312, simplified) — its sibling tags [BIG5] and [CHS]
+ * already parse to nothing, and reading this one as Great Britain both invents
+ * a country and pushes the neighbouring "(END)" marker into the episode title.
+ * A real country marker travels with the title instead ("The Voice UK",
+ * "Shameless.US.S01E01"), never alone inside its own bracket.
+ */
+class RemoveEncodingTagCountry extends Rule {
+  override consequence = RemoveMatch;
+
+  /**
+   * The tag still has to occupy its span. Dropping it outright opens a hole that
+   * the episode-title logic joins with the neighbouring bracket, so
+   * "…[24（END）][GB]…" would trade a bogus country for a bogus episode title.
+   */
+  override then(matches: Matches, whenResponse: Match[] | false, _context: Context): void {
+    if (!Array.isArray(whenResponse)) return;
+    for (const match of whenResponse) {
+      matches.remove(match);
+      (match as unknown as { private: boolean }).private = true;
+      matches.append(match);
+    }
+  }
+
+  override when(matches: Matches, _context: Context): Match[] | false {
+    const countries = matches.named('country') as Match[] | Match | undefined;
+    const out: Match[] = [];
+    for (const match of Array.isArray(countries) ? countries : countries ? [countries] : []) {
+      if (String(match.value) !== 'GB') continue;
+      const group = matches.markers.atMatch(match, (m) => m.name === 'group', 0) as Match | undefined;
+      if (!group) continue;
+      const inner = (matches.inputString ?? '').slice(group.start + 1, group.end - 1).trim();
+      if (/^gbk?$/i.test(inner)) out.push(match);
+    }
+    return out.length ? out : false;
+  }
 }
 
 class CountryFinder {
