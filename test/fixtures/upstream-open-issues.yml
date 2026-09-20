@@ -630,3 +630,86 @@
 : type: movie
   title: Ant-Man
   release_group: GRP
+
+# ── allowed_languages widened from 24 to 60 ──
+# The high-volume subtitle languages upstream omits
+? Movie.2020.1080p.BluRay.x264-GRP.ara.srt
+: type: movie
+  title: Movie
+  subtitle_language: ar
+
+? Movie.2020.1080p.BluRay.x264-GRP.turkish.srt
+: type: movie
+  title: Movie
+  subtitle_language: tr
+
+? Movie.2020.1080p.BluRay.x264-GRP.tha.srt
+: type: movie
+  title: Movie
+  subtitle_language: th
+
+? Movie.2020.1080p.BluRay.x264-GRP.vie.srt
+: type: movie
+  title: Movie
+  subtitle_language: vi
+
+? Movie.2020.1080p.BluRay.x264-GRP.indonesian.srt
+: type: movie
+  title: Movie
+  subtitle_language: id
+
+# The bibliographic spellings resolve too
+? Movie.2020.1080p.BluRay.x264-GRP.gre.srt
+: type: movie
+  title: Movie
+  subtitle_language: el
+
+? Movie.2020.1080p.BluRay.x264-GRP.per.srt
+: type: movie
+  title: Movie
+  subtitle_language: fa
+
+# …while the ambiguous two-letter spellings stay suppressed: these are words,
+# scene tags and TLDs, not languages
+? My.Name.Is.Earl.S01E01.720p.HDTV.x264-GRP.mkv
+: title: My Name Is Earl
+  -language:
+
+? Mr.Robot.S04E01.1080p.WEB-DL.x264-GRP.mkv
+: title: Mr Robot
+  -language:
+
+? El.Camino.A.Breaking.Bad.Movie.2019.1080p.NF.WEB-DL.x264-GRP.mkv
+: type: movie
+  title: El Camino A Breaking Bad Movie
+  -language:
+
+? Star.Trek.Into.Darkness.2013.1080p.BluRay.x264-GRP.mkv
+: type: movie
+  title: Star Trek Into Darkness
+  -language:
+  -subtitle_language:
+
+? The.Lizzie.McGuire.Movie.2003.HR.DVDRip.avi
+: type: movie
+  title: The Lizzie McGuire Movie
+  -language:
+
+? Movie.2020.1080p.WEB-DL.x264-YTS.LT.mp4
+: type: movie
+  title: Movie
+  -language:
+
+? Lo.Imposible.2012.1080p.BluRay.x264-GRP.mkv
+: type: movie
+  title: Lo Imposible
+  -language:
+
+? Jules.et.Jim.1962.1080p.BluRay.x264-GRP.mkv
+: type: movie
+  title: Jules et Jim
+  -language:
+
+? Show.S01E01.720p.ID.WEBRip.AAC2.0.x264-BTW
+: title: Show
+  -language:

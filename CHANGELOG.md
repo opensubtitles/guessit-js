@@ -4,6 +4,26 @@ All notable changes to guessit-js are documented here.
 
 ## [Unreleased]
 
+**`allowed_languages` widened from 24 to 60.** The default whitelist was
+upstream's, and it left out Arabic, Turkish, Greek, Thai, Vietnamese, Indonesian,
+Persian, Tamil, Bengali, Urdu and two dozen more — every one of them fell into
+the release group instead. All 36 additions are reachable by the spellings
+subtitle files actually carry (`ara`/`arabic`, `tur`/`turkish`/`tr`,
+`gre`/`ell`/`greek`, …), including the ISO 639-2 bibliographic halves.
+
+Eighteen two-letter spellings are suppressed in `common_words` instead of being
+dropped, so the language stays reachable by its three-letter and written-out
+forms while the ambiguous token cannot fire: `ar` (Star Trek), `is` (My Name Is
+Earl), `my`, `mr` (Mr. Robot), `el` (El Camino), `hr` (HR.DVDRip), `lt` (YTS.LT),
+`id`/`as` (streaming tags), `da`, `et` (Jules et Jim), `lo` (Lo Imposible), and
+the three-letter `scr` (screener) and `kan`. Macedonian is left out entirely —
+`mk` collides with release-group names and the language is negligible here.
+
+Verified by replaying every corpus and golden-reference name (1458 of them)
+before and after and diffing `language` / `subtitle_language` / `country` /
+`title` / `release_group`: **zero changes**. An adversarial probe over titles
+built from the ambiguous tokens is clean too.
+
 Subtitle-metadata sweep — the second pass over a modern corpus, this time
 through subtitle files, editions and language tags:
 

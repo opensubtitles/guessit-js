@@ -118,7 +118,8 @@ export const OPENSUBTITLES_MAP = buildLookupMap('opensubtitles');
  * Guessit synonym mappings from config
  */
 export const GUESSIT_SYNONYMS: Record<string, string[]> = {
-  'ell': ['gr', 'greek'],
+  // 'gre' is the ISO 639-2 bibliographic code — what .gre.srt files carry
+  'ell': ['gr', 'gre', 'greek'],
   'spa': ['esp', 'español', 'espanol'],
   'fra': ['français', 'vf', 'vff', 'vfi', 'vfq'],
   'swe': ['se'],
