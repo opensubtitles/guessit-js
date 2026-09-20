@@ -361,3 +361,63 @@
 : options: -t episode
   episode: 3
   title: Criminal Minds
+
+# upstream #963 — a decimal sequel number is title text, not a broadcast date
+# nor an audio channel layout
+? Jackass.2.5.2007.DVDRip.x264.AC3-DEEP
+: type: movie
+  title: Jackass 2.5
+  year: 2007
+  source: DVD
+
+? Jackass.4.5.2022.1080p.NF.WEB-DL.DDP5.1.x264-KHN
+: type: movie
+  title: Jackass 4.5
+  year: 2022
+  audio_channels: '5.1'
+
+? Ghost.In.The.Shell.2.0.2008.1080p.BluRay.x264-MOOVEE
+: type: movie
+  title: Ghost In The Shell 2.0
+  year: 2008
+
+? M3GAN.2.0.2025.UNRATED.1080p.BluRay.x264-ROEN
+: type: movie
+  title: M3GAN 2.0
+  year: 2025
+
+# A version run keeps every dot; the year behind it is the release year
+? Evangelion.3.0.1.11.Thrice.Upon.A.Time.2021.COMPLETE.UHD.BLURAY-NERV
+: type: movie
+  title: Evangelion 3.0.1.11 Thrice Upon A Time
+  year: 2021
+  other: Complete
+
+# upstream #964 — "Vhs" inside an episode title is title text: a tag block
+# (1080p) separates it from the real source
+? Solar.Opposites.S06E05.The.Family.Memories.Vhs.Mix.Tape.1080p.WEBRip.10bit.EAC3.5.1.x265-iVy.mkv
+: title: Solar Opposites
+  season: 6
+  episode: 5
+  episode_title: The Family Memories Vhs Mix Tape
+  source: Web
+
+# …but two real sources with only title text between them both stand, and the
+# file extension never outranks a source earlier in the name
+? Game of Thrones S03E06 1080i HDTV DD5.1 MPEG2-TrollHD.ts
+: title: Game of Thrones
+  source: HDTV
+  container: ts
+
+# upstream #966 — a space in a re: expected_title matches any separator, so the
+# digit left over after the match is the episode, not episode_title
+? Foo.2.2
+: options: -t episode -T 're:Foo 2'
+  title: Foo 2
+  episode: 2
+
+? Foo.2.2.bar
+: options: -t episode -T 're:Foo 2'
+  title: Foo 2
+  episode: 2
+  episode_title: bar

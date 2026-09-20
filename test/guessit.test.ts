@@ -122,9 +122,29 @@ function loadFixtures(filename: string): FixtureEntry[] {
   const defaults: Record<string, unknown> = (doc['__default__'] as Record<string, unknown>) ?? {};
   const entries: FixtureEntry[] = [];
 
+  // A fixture block may list several names against one expectation:
+  //
+  //   ? Bleach - s16e03-04 - 313-314
+  //   ? Bleach.s16e03-04.313-314-GROUP
+  //   : title: Bleach
+  //
+  // YAML gives each of those names its own mapping entry, and every one but the
+  // last carries a null value. Carry the expectation back onto them, otherwise
+  // the whole block collapses to its final name and the rest never run.
+  const pairs: Array<[string, unknown]> = [];
+  let pendingKeys: string[] = [];
   for (const [key, value] of Object.entries(doc)) {
     if (key === '__default__') continue;
-    if (value === null || value === undefined) continue; // skip entries with no expected values
+    if (value === null || value === undefined) {
+      pendingKeys.push(key);
+      continue;
+    }
+    for (const pendingKey of pendingKeys) pairs.push([pendingKey, value]);
+    pendingKeys = [];
+    pairs.push([key, value]);
+  }
+
+  for (const [key, value] of pairs) {
     const rawExpected: Record<string, unknown> = { ...defaults, ...(value as Record<string, unknown>) };
 
     // Extract and remove the special 'options' key from the expected dict.

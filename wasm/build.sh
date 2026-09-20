@@ -61,14 +61,14 @@ echo "   Wrapper: $(wc -c < wasm/guessit-wasm.js | tr -d ' ') bytes"
 # Step 3: Compile to WASM with Javy
 echo "3. Compiling to WASM..."
 "$JAVY" $JAVY_CMD wasm/guessit-wasm.js -o wasm/guessit.wasm
-SIZE_RAW=$(stat -c%s wasm/guessit.wasm)
+SIZE_RAW=$(wc -c < wasm/guessit.wasm | tr -d " ")
 echo "   Raw: $(du -h wasm/guessit.wasm | cut -f1) ($SIZE_RAW bytes)"
 
 # Step 4: Optimize with wasm-opt if available
 if command -v npx &>/dev/null && npx wasm-opt --version &>/dev/null 2>&1; then
   echo "4. Optimizing with wasm-opt..."
   npx wasm-opt wasm/guessit.wasm -Oz --strip-debug -o wasm/guessit.opt.wasm
-  SIZE_OPT=$(stat -c%s wasm/guessit.opt.wasm)
+  SIZE_OPT=$(wc -c < wasm/guessit.opt.wasm | tr -d " ")
   SAVED=$(( SIZE_RAW - SIZE_OPT ))
   echo "   Optimized: $(du -h wasm/guessit.opt.wasm | cut -f1) ($SIZE_OPT bytes, saved $SAVED bytes)"
   mv wasm/guessit.opt.wasm wasm/guessit.wasm
@@ -79,7 +79,7 @@ fi
 # Step 5: Create gzipped version
 echo "5. Creating compressed version..."
 gzip -9 -k -f wasm/guessit.wasm
-echo "   Gzipped: $(du -h wasm/guessit.wasm.gz | cut -f1) ($(stat -c%s wasm/guessit.wasm.gz) bytes)"
+echo "   Gzipped: $(du -h wasm/guessit.wasm.gz | cut -f1) ($(wc -c < wasm/guessit.wasm.gz | tr -d " ") bytes)"
 
 echo ""
 echo "=== Build complete ==="

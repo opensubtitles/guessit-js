@@ -3,7 +3,7 @@
   "info": {
     "title": "guessit-js API",
     "description": "Extract metadata from media filenames. A TypeScript port of the Python [guessit](https://github.com/guessit-io/guessit) library.\n\nParses movie and TV episode filenames to extract properties like title, year, season, episode, resolution, codec, language, release group, and 50 metadata fields.\n\n## Quick Start\n\n```bash\ncurl \"https://guessit.opensubtitles.com/api/guessit?filename=Breaking.Bad.S01E02.720p.BluRay.x264-DEMAND.mkv\"\n```\n\n## Features\n- **100% compatibility** with Python guessit test suite (1342/1342 fixtures)\n- **~3.5x faster** than Python (~4.4ms vs ~15.5ms per parse, same machine)\n- **Zero runtime dependencies**\n- **50 detected properties**: title, year, season, episode, resolution, codec, language, and more\n\n## ⚠️ Hosted demo disclaimer\nThe hosted endpoint (guessit.opensubtitles.com) is for **testing and evaluation only — never use it in production**. Free tier, hard daily request cap, no uptime guarantee. For production, self-host (`npx guessit-js --serve`) or call the library in-process.",
-    "version": "4.7.1",
+    "version": "4.8.0",
     "contact": {
       "name": "guessit-js",
       "url": "https://opensubtitles.github.io/guessit-js"

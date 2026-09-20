@@ -2,6 +2,51 @@
 
 All notable changes to guessit-js are documented here.
 
+## [4.8.0]
+
+**The published v4.7.1 bundle mis-parses — upgrade.** rebulk identifies a rule
+by `this.constructor.name`, so the minifier introduced in 4.7.1 collapsed rule
+identity and the engine lost dependency order and dedup. `dist` diverged from
+`src` on **337 of 1412** corpus names — `episode_title` reported as
+`alternative_title`, filepart title selection wrong, `film_title` dropped —
+while every source-level test stayed green, because nothing exercised the built
+bundle. `vite.config.ts` now sets `keepNames`, matching what `wasm/build.sh`
+always did (which is why the WASM target was never affected), and
+`test/dist-parity.test.ts` parses the whole corpus through both and fails on any
+divergence. It runs after `npm run build` in the CI and release workflows.
+
+Upstream triage sweep — the parsing bugs open at guessit-io/guessit that the
+port still shared, plus the test-harness hole that hid one of them:
+
+- **decimal sequel numbers** (upstream #963): `Jackass.2.5.2007` is a film, not
+  2 May 2007, and `M3GAN.2.0` keeps its version instead of reporting stereo
+  audio. A dotted version run trailing a title keeps every dot, so
+  `Evangelion.3.0.1.11` no longer sheds its last one — a run that *opens* the
+  value still follows Python (the show `11.22.63` is titled `11 22 63`)
+- **source picked out of an episode title** (upstream #964): `…Vhs.Mix.Tape.
+  1080p.WEBRip…` reports `Web` alone, because a tag block separates the two
+  candidates. Two real sources with only title text between them still compose
+  (`UFC.247.PPV.…HDTV` → `[Pay-per-view, HDTV]`), and the file extension never
+  outranks a source earlier in the name (`…MPEG2-TrollHD.ts` keeps `HDTV`)
+- **`re:` expected titles ignored separators** (upstream #966): Python rewrites
+  the space to a dash and compiles with the `dash` abbreviation, so `re:Foo 2`
+  matches `Foo.2`. We compiled the pattern raw and matched nothing on a dotted
+  name. `Foo.2.2` with `-T 're:Foo 2'` is now `title: Foo 2, episode: 2` —
+  what #966 asks for, and ahead of Python, which still returns
+  `episode_title: '2'`
+- **absolute episodes behind a dotted range** (upstream #944):
+  `Bleach.s16e03-04.313-314-GROUP` → `absolute_episode: [313, 314]` and
+  `release_group: GROUP`. The bare decimal notation was reading `04.313` as
+  season 4, stealing the 313; it no longer starts on the tail of an
+  episode range
+- **the test loader dropped 96 fixtures**: a block listing several names against
+  one expectation (`? name-a` / `? name-b` / `: …`) gives every name but the
+  last a null value in YAML, and those were skipped — so only the final name of
+  each block ever ran. The two `absolute_episode` names above were among them.
+  Suite: 1342 → 1477 tests
+- `wasm/build.sh` uses `wc -c` instead of GNU `stat -c%s`, so the WASM target
+  builds on macOS
+
 ## [4.7.1]
 
 Housekeeping sweep:

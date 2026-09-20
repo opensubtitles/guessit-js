@@ -24,7 +24,11 @@ export function buildExpectedFunction(optionName: string) {
 
       // Support "re:" prefix for raw regex patterns (e.g. "re:my \\d+p show")
       if (title.startsWith('re:')) {
-        const rawPattern = title.slice(3);
+        // Python rewrites the space to a dash and compiles with the `dash`
+        // abbreviation, which expands every literal "-" to [\W_]? — so a space
+        // in a re: pattern matches any filename separator, and "re:Foo 2" finds
+        // "Foo.2" (guessit/rules/common/expected.py, upstream #966).
+        const rawPattern = title.slice(3).replace(/ /g, '-').replace(/-/g, '[\\W_]?');
         try {
           pattern = new RegExp(rawPattern, 'gi');
         } catch {

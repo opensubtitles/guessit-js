@@ -580,7 +580,10 @@ export function episodes(config: EpisodesConfig): Rebulk {
     { tags: ['SxxExx'], disabled: isSeasonEpisodeDisabled },
   );
   rebulk.regex(
-    `(?<=[\\s([_-][\\s._-]?)(?<season>\\d{1,2})\\.(?<episode>\\d{2,3})(?=[\\s)\\]._-]|$)(?!\\.\\d)`,
+    // The season half may not be the tail of an episode range: "s16e03-04.313"
+    // must leave "04" to the SxxExx chain and "313" to the absolute-episode
+    // range behind it, instead of reading "04.313" as season 4 (upstream #944).
+    `(?<=[\\s([_-][\\s._-]?)(?<!\\d[-x])(?<season>\\d{1,2})\\.(?<episode>\\d{2,3})(?=[\\s)\\]._-]|$)(?!\\.\\d)`,
     {
       tags: ['SxxExx', 'decimal-episode'],
       validator: {

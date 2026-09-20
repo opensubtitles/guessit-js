@@ -107,6 +107,44 @@ class RemoveGroupedYearWithSxxExx extends Rule {
 }
 
 /**
+ * Drop a date that is really a fragment of a longer dotted numeric run in the
+ * title (upstream #963): "Evangelion.3.0.1.11" matches "0.1.11" as 2000-11-01
+ * while the "3." in front of it belongs to the title. A digit claimed by another
+ * property (the "1" of "S01" before a real "2015.10.13" stamp) does not count.
+ *
+ * The sibling shape — an unpadded "D.M.YYYY" like "Jackass.2.5.2007" — is
+ * rejected earlier, inside searchDate, so the trailing "2007" still surfaces as
+ * a year instead of being swallowed by the discarded date span.
+ */
+class RemoveDecimalVersionDate extends Rule {
+  static override priority = 128;
+  override consequence = RemoveMatch;
+
+  override enabled(context: Context): boolean {
+    return !isDisabled(context, 'date');
+  }
+
+  override when(matches: Matches, _context: Context): Match[] {
+    const input: string = matches.inputString ?? '';
+    const ret: Match[] = [];
+
+    for (const dateMatch of (matches.named('date') as Match[])) {
+      const prevChar = input[dateMatch.start - 1];
+      const prevDigit = input[dateMatch.start - 2];
+      if (prevChar && prevDigit && /[.\-_/ ]/.test(prevChar) && /\d/.test(prevDigit)) {
+        const claimed = matches.range(dateMatch.start - 2, dateMatch.start - 1,
+          (m: Match) => !m.private) as Match[];
+        if (!(Array.isArray(claimed) ? claimed.length : claimed ? 1 : 0)) {
+          ret.push(dateMatch);
+        }
+      }
+    }
+
+    return ret;
+  }
+}
+
+/**
  * Create a rebulk pattern for date detection.
  */
 export function date(config: Record<string, unknown>): Rebulk {
@@ -169,7 +207,7 @@ export function date(config: Record<string, unknown>): Rebulk {
         : '__default__',
   });
 
-  rebulk.rules(KeepMarkedYearInFilepart, RemoveGroupedYearWithSxxExx, new AbsorbWeekdayPrefix((config['weekday_words'] as string[]) ?? []));
+  rebulk.rules(RemoveDecimalVersionDate, KeepMarkedYearInFilepart, RemoveGroupedYearWithSxxExx, new AbsorbWeekdayPrefix((config['weekday_words'] as string[]) ?? []));
   return rebulk;
 }
 

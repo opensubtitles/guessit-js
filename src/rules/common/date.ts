@@ -165,6 +165,12 @@ export function searchDate(
       const groups = m.slice(2).filter(Boolean);
       const matchStr = m[1];
 
+      // "Jackass.2.5.2007" is sequel 2.5 released in 2007, not 2 May 2007
+      // (upstream #963). Release names zero-pad genuine broadcast dates
+      // ("10.11.2008"), so two unpadded single digits in front of a full year
+      // means decimal versioning — skip this candidate and keep scanning.
+      if (/^\d\.\d\.\d{4}$/.test(matchStr)) continue;
+
       let dfGuess = dayFirst;
       if (yearFirst && dfGuess === undefined) dfGuess = false;
       const dfGuessWasExplicit = dfGuess !== undefined;

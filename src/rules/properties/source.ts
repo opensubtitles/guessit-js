@@ -218,25 +218,55 @@ class ValidateWeakSource extends Rule {
   override when(matches: Matches, _context: Context): Match[] {
     const ret: Match[] = [];
 
+    const toArray = (result: unknown): Match[] =>
+      (Array.isArray(result) ? result : result ? [result] : []) as Match[];
+
     for (const filepart of [matches.markers.named('path')].flat().filter(Boolean) as Match[]) {
       const sources = matches.range(filepart.start, filepart.end, (m) => m.name === 'source');
-      for (const match of (Array.isArray(sources) ? sources : sources ? [sources] : []) as Match[]) {
-        if (!match.tags?.includes('weak.source')) continue;
+      const hasText = (holes: unknown) =>
+        Array.isArray(holes) ? holes.length > 0 : !!holes;
+      const textHoles = (start: number, end: number) => matches.holes(start, end, {
+        predicate: (m: Match) => !!(m.value && String(m.value).replace(new RegExp(`[${sepsPattern}]`, 'g'), '')),
+      });
+
+      const containerMatches = toArray(
+        matches.range(filepart.start, filepart.end, (m) => m.name === 'container'),
+      );
+      // ".ts" is the file extension — a container that also spells a source
+      // abbreviation. It must never outrank a real source earlier in the name.
+      const isExtension = (m: Match) =>
+        containerMatches.some((c) => c.start <= m.start && c.end >= m.end);
+
+      for (const match of toArray(sources)) {
+        const weak = !!match.tags?.includes('weak.source');
 
         // If another source exists after this match
-        const nextSource = matches.range(match.end, filepart.end, (m) => m.name === 'source');
-        const hasNextSource = Array.isArray(nextSource) ? nextSource.length > 0 : !!nextSource;
+        const nextSources = toArray(matches.range(match.end, filepart.end, (m) => m.name === 'source'));
+        if (nextSources.length === 0) continue;
 
         // And there's a title-like hole before this match
-        const holeBeforeMatch = matches.holes(filepart.start, match.start, {
-          predicate: (m: Match) => !!(m.value && String(m.value).replace(new RegExp(`[${sepsPattern}]`, 'g'), '')),
-        });
-        const hasHoleBefore = Array.isArray(holeBeforeMatch) ? holeBeforeMatch.length > 0 : !!holeBeforeMatch;
+        if (!hasText(textHoles(filepart.start, match.start))) continue;
 
-        if (hasNextSource && hasHoleBefore) {
-          if ((match as any).children?.length > 0) ret.push(...(match as any).children.toArray());
-          ret.push(match);
+        if (!weak) {
+          // A non-weak source only loses to a later one that is a genuine rival:
+          // the extension does not count ("…MPEG2-TrollHD.ts" keeps its HDTV).
+          const rivals = nextSources.filter((m) => !isExtension(m));
+          if (rivals.length === 0) continue;
+
+          // Title text between the two is necessary but not sufficient — two
+          // real sources compose across it ("UFC.247.PPV.Jones.vs.Reyes.HDTV").
+          // What marks the earlier one as episode-title text is a tag block
+          // opening before the rival: "…Vhs.Mix.Tape.1080p.WEBRip…" puts a
+          // screen_size between the two, so "Vhs" is title text (upstream #964).
+          if (!hasText(textHoles(match.end, rivals[0].start))) continue;
+          const tagsBetween = toArray(
+            matches.range(match.end, rivals[0].start, (m) => !!m.name && m.name !== 'source'),
+          );
+          if (tagsBetween.length === 0) continue;
         }
+
+        if ((match as any).children?.length > 0) ret.push(...(match as any).children.toArray());
+        ret.push(match);
       }
     }
 

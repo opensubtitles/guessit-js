@@ -26,6 +26,12 @@ export default defineConfig({
     emptyOutDir: true,
     copyPublicDir: false, // don't copy the public/ demo site into the npm dist/
   },
+  // rebulk identifies a rule by `this.constructor.name`, so minified class names
+  // collapse rule identity and the engine loses dependency order and dedup.
+  // wasm/build.sh passes the same flag — the two bundles must agree.
+  esbuild: {
+    keepNames: true,
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),

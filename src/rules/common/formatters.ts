@@ -89,9 +89,38 @@ export function cleanup(inputString: string): string {
     }
   }
 
+  // A dotted version run trailing a title is one token ("Evangelion.3.0.1.11").
+  // The acronym rule above only keeps a separator between single characters, so
+  // the ".11" tail would be split off; restore every dot inside the run
+  // (upstream #963). A run that opens the value is the title itself and keeps
+  // Python's spelling — the show "11.22.63" is titled "11 22 63".
+  const versionDots: number[] = [];
+  const versionPattern = /\d+(?:\.\d+){2,}/g;
+  let versionMatch: RegExpExecArray | null;
+  while ((versionMatch = versionPattern.exec(inputString)) !== null) {
+    if (!/[^\s._-]/.test(inputString.slice(0, versionMatch.index))) continue;
+    for (let i = versionMatch.index; i < versionMatch.index + versionMatch[0].length; i++) {
+      if (inputString[i] === '.') versionDots.push(i);
+    }
+  }
+  if (versionDots.length > 0) {
+    const cleanList = cleanString.split('');
+    for (const i of versionDots) cleanList[i] = '.';
+    dots.add('.');
+    cleanString = cleanList.join('');
+  }
+
   // Strip surrounding separators (except preserved dots)
   const stripChars = seps.split('').filter(c => !dots.has(c)).join('');
   cleanString = strip(cleanString, stripChars);
+
+  // A decimal version at the end of a title ("Jackass.2.5.", "M3GAN.2.0.")
+  // keeps its inner dot through the acronym rule above, but the trailing
+  // separator is just the gap to the next property — drop it. Real acronyms
+  // ("S.H.I.E.L.D.") end in a letter, so they are untouched (upstream #963).
+  if (/(?:^|[ ])\d+\.\d+\.$/.test(cleanString)) {
+    cleanString = cleanString.slice(0, -1);
+  }
 
   // Collapse multiple spaces
   cleanString = cleanString.replace(/ +/g, ' ');

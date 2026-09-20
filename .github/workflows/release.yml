@@ -34,6 +34,9 @@ jobs:
       - name: Build library
         run: npm run build
 
+      - name: Built bundle parses like src
+        run: npx vitest run test/dist-parity.test.ts
+
       - name: Build WASM (downloads pinned Javy)
         run: bash wasm/build.sh
 

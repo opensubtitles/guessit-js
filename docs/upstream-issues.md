@@ -6,6 +6,15 @@
 > fixtures, and `docs/python-parity.md` for the parity story. Newly filed
 > upstream work since this snapshot: guessit-io/guessit#961 (dead episode pass,
 > our PR guessit-io/guessit#962) and the rebulk-js 3.4.0 engine fixes.
+>
+> **Second sweep, 2026-09-19** — re-triaged every open issue and everything
+> upstream closed after the port (#812–#954). Four needed work here and are
+> fixed with guard fixtures: #963 (decimal sequel numbers read as dates or
+> audio channels), #964 (a source picked out of an episode title), #966 (`re:`
+> expected titles ignored separators), #944 (absolute episodes behind a dotted
+> range). Everything else already parsed correctly, several cases better than
+> Python: #875, #877, #928, #929, #937, #943, #948, #950, #953, #954. #704
+> (nuitka), #389 (Aho-Corasick) and #599 (music) stay out of scope.
 
 Triaged from <https://github.com/guessit-io/guessit/issues> (open issues) for the
 guessit-js port. Oriented toward parsing behaviour; Python-runtime/packaging

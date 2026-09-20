@@ -30,6 +30,8 @@ jobs:
           node-version: 22
       - run: npm ci
       - run: npm run build
+      - name: Built bundle parses like src
+        run: npx vitest run test/dist-parity.test.ts
       - name: CLI smoke test
         run: |
           set -e

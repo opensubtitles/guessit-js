@@ -76,6 +76,7 @@ export function audioCodec(config: Record<string, unknown>): Rebulk {
     HqConflictRule,
     AudioValidatorRule,
     AudioChannelsValidatorRule,
+    RemoveDecimalTitleChannels,
   );
 
   return rebulk;
@@ -256,6 +257,48 @@ class AudioValidatorRule extends Rule {
           continue;
         }
       }
+    }
+
+    return ret;
+  }
+}
+
+/**
+ * "Ghost.In.The.Shell.2.0.2008" and "M3GAN.2.0.2025" carry a decimal version in
+ * the title, not a stereo track (upstream #963). A channel layout that sits in
+ * title text and is immediately followed by the release year — with no audio
+ * codec glued in front of it, which is how real layouts appear ("DD5.1") — is
+ * that version number.
+ */
+class RemoveDecimalTitleChannels extends Rule {
+  static priority = 128;
+  static consequence = RemoveMatch;
+
+  enabled(context: Context): boolean {
+    return !isDisabled(context, 'audio_channels');
+  }
+
+  when(matches: Matches, _context: Context): Match[] {
+    const input: string = matches.inputString ?? '';
+    const ret: Match[] = [];
+
+    for (const channels of (matches.named('audio_channels') as Match[])) {
+      const initiator = (channels as any).initiator ?? channels;
+      if (!/^\d[\W_]\d$/.test(input.slice(initiator.start, initiator.end))) continue;
+
+      // An audio codec or profile glued in front makes it a genuine layout.
+      const prefixed = matches.range(initiator.start - 1, initiator.start,
+        (m: Match) => !m.private) as Match[];
+      if ((Array.isArray(prefixed) ? prefixed.length : prefixed ? 1 : 0)) continue;
+
+      // The year has to follow across a single separator.
+      const yearAfter = matches.range(initiator.end, initiator.end + 2,
+        (m: Match) => m.name === 'year') as Match[];
+      if (!(Array.isArray(yearAfter) ? yearAfter.length : yearAfter ? 1 : 0)) continue;
+
+      if ((channels as any).children?.length > 0) ret.push(...(channels as any).children.toArray());
+      ret.push(channels);
+      if (initiator !== channels) ret.push(initiator);
     }
 
     return ret;
