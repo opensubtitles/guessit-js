@@ -1418,6 +1418,7 @@ class RemoveTailTitle extends Rule {
   override when(matches: Matches, _context: Context): Match[] | false {
     const titleish = new Set(['year', 'title', 'alternative_title', 'episode_title', 'type']);
     const out: Match[] = [];
+    const rename: Match[] = [];
     for (const filepart of matches.markers.named('path') as Match[]) {
       const titles = (matches.range(filepart.start, filepart.end,
         (m: Match) => m.name === 'title') as Match[] | Match | undefined);
@@ -1438,10 +1439,43 @@ class RemoveTailTitle extends Rule {
       for (const t of titleArr.slice(1)) {
         const between = matches.range(primary.end, t.start,
           (m: Match) => !m.private && !!m.value && !titleish.has(m.name ?? ''), 0);
-        if (between) out.push(t);
+        if (!between) continue;
+        if (this.isSubtitle(matches, filepart, t)) rename.push(t);
+        else out.push(t);
       }
     }
-    return out.length ? out : false;
+    (this as unknown as { _toRename: Match[] })._toRename = rename;
+    return out.length || rename.length ? out : false;
+  }
+
+  /**
+   * A tail fragment worth keeping as `alternative_title` rather than dropping:
+   * the event card in "UFC.247.PPV.Jones.vs.Reyes.HDTV" names the release as
+   * much as "UFC 247" does. Dated releases are excluded — there the year is the
+   * title anchor and everything behind it is noise (RemoveTailAlternativeTitle
+   * makes the same cut).
+   */
+  private isSubtitle(matches: Matches, filepart: Match, tail: Match): boolean {
+    const years = matches.range(filepart.start, filepart.end, (m: Match) => m.name === 'year');
+    if (Array.isArray(years) ? years.length > 0 : !!years) return false;
+    const value = String(tail.value ?? '').trim();
+    // Release tags are shouted ("SPLIT SCENES", "DIRECTORS CUT"); a subtitle is
+    // written like prose. Anything without a lowercase letter stays dropped.
+    if (!/\p{Ll}/u.test(value)) return false;
+    const words = value.split(/\s+/).filter(Boolean);
+    if (words.length < 2) return false;
+    return words.every((w) => /^[\p{L}][\p{L}\p{N}'’.&-]*$/u.test(w));
+  }
+
+  then(matches: Matches, whenResponse: Match[] | false, _context: Context): void {
+    if (Array.isArray(whenResponse)) {
+      for (const match of whenResponse) matches.remove(match);
+    }
+    for (const match of (this as unknown as { _toRename: Match[] })._toRename ?? []) {
+      matches.remove(match);
+      match.name = 'alternative_title';
+      matches.append(match);
+    }
   }
 }
 

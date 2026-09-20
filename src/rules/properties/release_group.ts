@@ -57,6 +57,9 @@ export function releaseGroup(config: Record<string, unknown>) {
     }).trim();
 
     // Step 5: Normalize 'foo) [bar]' patterns → 'foo [bar]'.
+    // The trailing tracker stamp in "PUNCH[TGx]" / "lol[ettv]" stays part of the
+    // group name: Python keeps it, and the corpus pins the spelling on a dozen
+    // names (`artik[sedg]`, `sadpanda[rarbg]`, `0sec [glodls]`, …).
     return result.replace(/(.+)\)\s*\[(.+)\]/, '$1 $2').trim();
   }
 

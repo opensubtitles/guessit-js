@@ -343,9 +343,26 @@
   episode: 24
   release_group: MMZYSUB
 
+# The fight card names the release as much as the event number does — it is an
+# alternative_title, not release noise to drop
 ? "UFC.247.PPV.Jones.vs.Reyes.HDTV.x264-PUNCH[TGx]"
 : type: movie
   title: UFC 247
+  alternative_title: Jones vs Reyes
+  source: [Pay-per-view, HDTV]
+
+? Show-A (US) - Episode Title S02E09 hdtv
+: title: Show-A
+  alternative_title: Episode Title
+  season: 2
+  episode: 9
+
+# …but a shouted release tag in the same position stays dropped
+? French Maid Services - Lola At Your Service WEB-DL SPLIT SCENES MP4-RARBG
+: type: movie
+  title: French Maid Services
+  alternative_title: Lola At Your Service
+  release_group: RARBG
 
 ? 22.Jump.Street.GERMAN.DL.AC3.Dubbed.1080p.BluRay.x264-SOV
 : type: movie
