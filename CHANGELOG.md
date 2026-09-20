@@ -44,6 +44,10 @@ port still shared, plus the test-harness hole that hid one of them:
   last a null value in YAML, and those were skipped — so only the final name of
   each block ever ran. The two `absolute_episode` names above were among them.
   Suite: 1342 → 1477 tests
+- `mimetype` is emitted before `type`, as Python does. The source had always
+  had it the other way round; the broken 4.7.1 bundle happened to reorder the
+  two rules back into Python's order, so the drop-in parity job passed on a
+  bundle that was wrong about everything else
 - `wasm/build.sh` uses `wc -c` instead of GNU `stat -c%s`, so the WASM target
   builds on macOS
 

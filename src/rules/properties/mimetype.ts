@@ -47,7 +47,10 @@ export function mimetype(_config: Record<string, unknown>) {
 
 class Mimetype extends Rule {
   static override priority = POST_PROCESS;
-  static override dependency = ['Processors'];
+  // No dependency, so this sorts by registration order and lands ahead of
+  // TypeProcessor — Python emits mimetype before type, and the rule only reads
+  // the extension off the input string, never other matches.
+  static override dependency = undefined;
   static override properties = { mimetype: [null] };
 
   when(matches: Matches, _context: Context): string | null {
