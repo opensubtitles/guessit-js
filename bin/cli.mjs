@@ -8,6 +8,15 @@ import { homedir } from 'os';
 import { join } from 'path';
 import { guessit, properties as apiProperties, version } from '../dist/guessit-js.js';
 
+// Parsing cost grows with the square of the number of matches a name yields, so
+// a long synthetic string costs far more than its length suggests: 400
+// repetitions of "S01E01" take seconds where a real name takes under 3 ms. The
+// whole fixture corpus tops out at 196 characters, so these bounds only ever
+// reject something that was never a filename. --serve is the only path that
+// takes untrusted input; parsing local arguments stays unbounded.
+const MAX_FILENAME_LENGTH = 1024;
+const MAX_BATCH = 500;
+
 // Python's GuessitEncoder emits babelfish `.name` in JSON ("English",
 // "UNITED STATES") while YAML uses str() ("en", "pt-BR", "US"). Mirror both.
 const ALPHA3_TO_2 = {"eng":"en","fra":"fr","deu":"de","spa":"es","ita":"it","por":"pt","rus":"ru","jpn":"ja","zho":"zh","kor":"ko","ara":"ar","hin":"hi","tur":"tr","pol":"pl","nld":"nl","swe":"sv","dan":"da","nor":"no","fin":"fi","hun":"hu","ces":"cs","ron":"ro","ukr":"uk","heb":"he","cat":"ca","vie":"vi","tha":"th","ind":"id","mal":"ml","tel":"te","tam":"ta","bul":"bg","hrv":"hr","srp":"sr","slk":"sk","slv":"sl","ell":"el","lit":"lt","lav":"lv","est":"et","glg":"gl","eus":"eu","ben":"bn","isl":"is","mkd":"mk","bos":"bs","alb":"sq","per":"fa","msa":"ms","mon":"mn","urd":"ur","pan":"pa","guj":"gu","kan":"kn","mar":"mr","asm":"as","mya":"my","khm":"km","lao":"lo"};
@@ -383,6 +392,10 @@ if (serve) {
         });
         return;
       }
+      if (filename.length > MAX_FILENAME_LENGTH) {
+        sendJson(res, 413, { error: `filename exceeds ${MAX_FILENAME_LENGTH} characters` });
+        return;
+      }
       const opts = { ...baseOptions };
       const type = url.searchParams.get('type');
       if (type === 'movie' || type === 'episode') opts.type = type;
@@ -399,8 +412,21 @@ if (serve) {
           const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
           const opts = { ...baseOptions, ...(body.options || {}) };
           if (Array.isArray(body.filenames)) {
-            sendJson(res, 200, body.filenames.map((f) => display(guessit(String(f), opts), 'json')));
+            if (body.filenames.length > MAX_BATCH) {
+              sendJson(res, 413, { error: `Max ${MAX_BATCH} filenames per request` });
+              return;
+            }
+            const names = body.filenames.map(String);
+            if (names.some((f) => f.length > MAX_FILENAME_LENGTH)) {
+              sendJson(res, 413, { error: `filename exceeds ${MAX_FILENAME_LENGTH} characters` });
+              return;
+            }
+            sendJson(res, 200, names.map((f) => display(guessit(f, opts), 'json')));
           } else if (typeof body.filename === 'string') {
+            if (body.filename.length > MAX_FILENAME_LENGTH) {
+              sendJson(res, 413, { error: `filename exceeds ${MAX_FILENAME_LENGTH} characters` });
+              return;
+            }
             sendJson(res, 200, display(guessit(body.filename, opts), 'json'));
           } else {
             sendJson(res, 400, { error: 'Body must contain "filename" (string) or "filenames" (array)' });

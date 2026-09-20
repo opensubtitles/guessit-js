@@ -15,6 +15,14 @@ if (typeof globalThis.process === 'undefined') {
 }
 const { guessit, version } = await import('../dist/guessit-js.js');
 
+// Parsing cost grows with the square of the number of matches a name yields, so
+// a long synthetic string costs far more than its length suggests: 400
+// repetitions of "S01E01" take seconds where a real name takes under 3 ms. The
+// whole fixture corpus tops out at 196 characters, so these bounds only ever
+// reject something that was never a filename.
+const MAX_FILENAME_LENGTH = 1024;
+const MAX_BATCH = 500;
+
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -49,6 +57,9 @@ export default {
     if (request.method === 'GET') {
       const filename = url.searchParams.get('filename');
       if (!filename) return json({ error: 'Missing required parameter: filename', ...USAGE }, 400);
+      if (filename.length > MAX_FILENAME_LENGTH) {
+        return json({ error: `filename exceeds ${MAX_FILENAME_LENGTH} characters` }, 413);
+      }
       const options = {};
       const type = url.searchParams.get('type');
       if (type === 'movie' || type === 'episode') options.type = type;
@@ -82,10 +93,19 @@ export default {
       const options = body && typeof body.options === 'object' && body.options ? body.options : {};
       try {
         if (Array.isArray(body.filenames)) {
-          if (body.filenames.length > 500) return json({ error: 'Max 500 filenames per request' }, 400);
-          return json(body.filenames.map((f) => guessit(String(f), options)));
+          if (body.filenames.length > MAX_BATCH) return json({ error: `Max ${MAX_BATCH} filenames per request` }, 400);
+          const names = body.filenames.map(String);
+          if (names.some((f) => f.length > MAX_FILENAME_LENGTH)) {
+            return json({ error: `filename exceeds ${MAX_FILENAME_LENGTH} characters` }, 413);
+          }
+          return json(names.map((f) => guessit(f, options)));
         }
-        if (typeof body.filename === 'string') return json(guessit(body.filename, options));
+        if (typeof body.filename === 'string') {
+          if (body.filename.length > MAX_FILENAME_LENGTH) {
+            return json({ error: `filename exceeds ${MAX_FILENAME_LENGTH} characters` }, 413);
+          }
+          return json(guessit(body.filename, options));
+        }
         return json({ error: 'Body must contain "filename" (string) or "filenames" (array)' }, 400);
       } catch (e) {
         return json({ error: String((e && e.message) || e) }, 500);

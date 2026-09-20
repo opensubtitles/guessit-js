@@ -4,6 +4,21 @@ All notable changes to guessit-js are documented here.
 
 ## [Unreleased]
 
+**The HTTP endpoints now bound their input.** Parsing cost grows with the square
+of the number of matches a name yields — 400 repetitions of "S01E01" takes 2.3
+seconds where a real name takes under 3 ms, and doubling the input quadruples the
+time. None of the three entry points capped filename length, and `--serve` capped
+nothing at all, so a single request could occupy the event loop indefinitely;
+SECURITY.md already scopes this class of issue. `--serve`, `server.ts` and the
+Cloudflare worker now reject a filename over 1024 characters and a batch over 500
+with 413. The whole fixture corpus tops out at 196 characters, so the bound only
+ever rejects something that was never a filename, and parsing local CLI arguments
+stays unbounded. `test/serve-limits.test.ts` covers it.
+
+This bounds the exposure rather than removing it: the quadratic itself is still
+there, and a 500-name batch of 1024-character inputs is still expensive. Making
+the rules layer linear is the real fix and is not attempted here.
+
 Sports events — a promotion numbers its events, it does not run seasons:
 
 - **combat sports**: a three-digit event number was split down the middle.

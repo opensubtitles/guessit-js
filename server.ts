@@ -16,6 +16,15 @@ import { guessit, version } from './src/index.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env['PORT'] || '3847', 10);
 
+/**
+ * Parsing cost grows with the square of the number of matches a name yields, so
+ * a long synthetic string is far more expensive than its length suggests: 400
+ * repetitions of "S01E01" take seconds, while a real name takes under 3 ms. The
+ * whole fixture corpus tops out at 196 characters, so a kilobyte is generous for
+ * anything genuine and keeps an adversarial request bounded.
+ */
+const MAX_FILENAME_LENGTH = 1024;
+
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
@@ -65,6 +74,10 @@ function handleGuessitGet(url: URL, res: http.ServerResponse): void {
     sendJson(res, 400, { error: 'Missing required parameter: filename' });
     return;
   }
+  if (filename.length > MAX_FILENAME_LENGTH) {
+    sendJson(res, 413, { error: `filename exceeds ${MAX_FILENAME_LENGTH} characters` });
+    return;
+  }
 
   const options: Record<string, unknown> = {};
   const type = url.searchParams.get('type');
@@ -93,6 +106,10 @@ async function handleGuessitPost(req: http.IncomingMessage, res: http.ServerResp
 
     if (!parsed.filename || typeof parsed.filename !== 'string') {
       sendJson(res, 400, { error: 'Missing required field: filename' });
+      return;
+    }
+    if (parsed.filename.length > MAX_FILENAME_LENGTH) {
+      sendJson(res, 413, { error: `filename exceeds ${MAX_FILENAME_LENGTH} characters` });
       return;
     }
 
