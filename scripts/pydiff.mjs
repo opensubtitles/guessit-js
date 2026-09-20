@@ -47,6 +47,7 @@ const VERDICTS = [
   ['MASH.(1970)', 'fix', 'alt → label/edition/region/junk', 'codec-version "5" → drop'],
   // ---- KEEP: numeric alternative_title fixed (RemoveNumericAlternativeTitle); ----
   //      remaining diff is Python's year→season bug (JS correctly emits `year`) ----
+  ['UFC.Fight.Night.185', 'keep', 'JS better — event number is one value', 'py splits 185 into s1e85; a promotion numbers events, not seasons'],
   ['Show!.Name.2.-.10', 'keep', 'JS better — Python year→season bug', 'numeric alt dropped; py reads 2016 as season'],
   ['Show.Name.-.07.(2016)', 'keep', 'JS better — Python year→season bug', 'numeric alt dropped; py reads 2016 as season'],
   ['Show.Name.-.476-479', 'keep', 'JS better — Python year→season bug', 'numeric alt dropped; py reads 2007 as season'],

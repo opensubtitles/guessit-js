@@ -713,3 +713,78 @@
 ? Show.S01E01.720p.ID.WEBRip.AAC2.0.x264-BTW
 : title: Show
   -language:
+
+# ── combat sports and motorsport number events, they do not run seasons ──
+# A three-digit event number was split down the middle
+? UFC.300.Early.Prelims.1080p.WEB-DL.H264-GRP.mkv
+: title: UFC
+  episode: 300
+  -season:
+
+? Bellator.300.1080p.WEB-DL.H264-GRP.mkv
+: title: Bellator
+  episode: 300
+  -season:
+
+? UFC.Fight.Night.245.Prelims.1080p.WEB-DL.H264-GRP.mkv
+: title: UFC Fight Night
+  episode: 245
+  episode_title: Prelims
+  -season:
+
+# …a two-digit one already read whole and is unchanged
+? UFC.on.ESPN.62.1080p.WEB-DL.H264-GRP.mkv
+: title: UFC on ESPN
+  episode: 62
+
+# …and a promotion that really runs a numbered series keeps its SxxExx
+? UFC.Embedded.S01E05.1080p.WEB-DL.mkv
+: title: UFC Embedded
+  season: 1
+  episode: 5
+
+# The motorsport calendar counts rounds
+? Formula.1.2024.Round.22.Las.Vegas.GP.Race.1080p.F1TV.WEB-DL.mkv
+: title: Formula 1
+  year: 2024
+  episode: 22
+  episode_title: Las Vegas GP Race
+  streaming_service: F1TV
+
+? MotoGP.2024.Round.15.Japan.Race.1080p.WEB-DL.mkv
+: title: MotoGP
+  year: 2024
+  episode: 15
+  episode_title: Japan Race
+
+# …but a number in a race name belongs to the race
+? NASCAR.Cup.Series.2024.Daytona.500.1080p.WEB-DL.mkv
+: type: movie
+  title: NASCAR Cup Series
+  year: 2024
+  -season:
+  -episode:
+
+# …and "Round" outside a motorsport name is title text
+? Round.6.2021.1080p.NF.WEB-DL.mkv
+: type: movie
+  title: Round 6
+  -episode:
+
+? Round.Midnight.1986.1080p.BluRay.x264-GRP.mkv
+: type: movie
+  title: Round Midnight
+  -episode:
+
+# Sports streaming services are services, not release groups
+? Fight.2024.1080p.DAZN.WEB-DL.mkv
+: type: movie
+  title: Fight
+  streaming_service: DAZN
+  -release_group:
+
+? Event.2024.1080p.FITE.WEB-DL.mkv
+: type: movie
+  title: Event
+  streaming_service: FITE
+  -release_group:

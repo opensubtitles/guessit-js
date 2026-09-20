@@ -4,6 +4,25 @@ All notable changes to guessit-js are documented here.
 
 ## [Unreleased]
 
+Sports events — a promotion numbers its events, it does not run seasons:
+
+- **combat sports**: a three-digit event number was split down the middle.
+  `UFC.300` became season 3, `Bellator.300` the same, `UFC.Fight.Night.245`
+  became s02e45. The number is one value and now reads as the episode. Two-digit
+  numbers (`UFC.on.FOX.24`) already did and are unchanged, and a promotion that
+  really runs a numbered series keeps its marker (`UFC.Embedded.S01E05`). This
+  diverges from Python on one corpus name, `UFC.Fight.Night.185` — its fixture
+  carried a note that "E185 exceeds the default configuration of E100 being the
+  max", which is the split showing through; it is now episode 185
+- **motorsport**: `Formula.1.2024.Round.22.Las.Vegas.GP.Race` lost the round
+  entirely — "Round" fell into an alternative title and 22 vanished. The calendar
+  round is the episode. A bare number elsewhere belongs to the race, so
+  `NASCAR.Cup.Series.2024.Daytona.500` no longer reads as season 5 episode 0.
+  Scoped to a filepart opening with a series name, which keeps "Round 6" (the
+  Portuguese title of Squid Game) and "Round Midnight" out of it
+- **sports streaming services**: F1TV, DAZN, FITE and MotorTrend were being taken
+  for release groups
+
 **`allowed_languages` widened from 24 to 60.** The default whitelist was
 upstream's, and it left out Arabic, Turkish, Greek, Thai, Vietnamese, Indonesian,
 Persian, Tamil, Bengali, Urdu and two dozen more — every one of them fell into

@@ -722,6 +722,7 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "CWS",
       "CWSeed",
       "Daisuki",
+      "DAZN",
       "DC Universe",
       "DCU",
       "DDY",
@@ -754,6 +755,7 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "Esquire",
       "ETTV",
       "ETV",
+      "F1TV",
       "Facebook Watch",
       "FAM",
       "Family",
@@ -761,6 +763,7 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "Fandor",
       "FANDOR",
       "FBWatch",
+      "FITE",
       "FJR",
       "FOOD",
       "Food Network",
@@ -814,6 +817,7 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "MBCVOD",
       "MNBC",
       "Motor Trend OnDemand",
+      "MotorTrend",
       "MSNBC",
       "MTOD",
       "MTV",
@@ -1105,7 +1109,7 @@ export interface GuessItResult {
   season_count?: number;
   size?: string;
   source?: "Analog HDTV" | "Blu-ray" | "Camera" | "Digital Master" | "Digital TV" | "DVD" | "HD Camera" | "HD Telecine" | "HD Telesync" | "HD-DVD" | "HDTV" | "Laserdisc" | "Pay-per-view" | "Satellite" | "Telecine" | "Telesync" | "TV" | "Ultra HD Blu-ray" | "Ultra HDTV" | "VHS" | "Video on Demand" | "Web" | "Workprint";
-  streaming_service?: "4OD" | "9Now" | "9NOW" | "A&E" | "ABC" | "ABC Australia" | "Adult Swim" | "AE" | "AJAZ" | "Al Jazeera English" | "ALL4" | "Amazon" | "Amazon Prime" | "AMBC" | "AMC" | "America's Test Kitchen" | "AMZN" | "AMZN-CBR" | "Animal Planet" | "AnimeLab" | "ANLB" | "ANPL" | "AOL" | "AppleTV" | "APTV" | "ARD" | "AS" | "ATK" | "ATV+" | "ATVP" | "AUBC" | "BBC iPlayer" | "Binge" | "BKPL" | "Blackpills" | "BLU" | "BluTV" | "BNGE" | "BOOM" | "Boomerang" | "BRAV" | "BravoTV" | "Canal+" | "Cartoon Network" | "CBC" | "CBS" | "CC" | "CCGC" | "Channel 4" | "CHGD" | "CHRGD" | "Cinemax" | "CMAX" | "CMT" | "CN" | "CNBC" | "CNLP" | "Comedians in Cars Getting Coffee" | "Comedy Central" | "Country Music Television" | "CR" | "Crackle" | "CRAV" | "Crave" | "CRKL" | "Crunchy Roll" | "CSpan" | "CSPN" | "CTV" | "CUR" | "CuriosityStream" | "CW" | "CWS" | "CWSeed" | "Daisuki" | "DC Universe" | "DCU" | "DDY" | "Deadhouse Films" | "DF" | "DHF" | "Digiturk Diledigin Yerde" | "DISC" | "Discovery" | "Discovery Plus" | "Disney" | "Disney+" | "DIY" | "DIY Network" | "Doc Club" | "DOCC" | "DPlay" | "DPLY" | "DramaFever" | "DSCP" | "DSKI" | "DSNP" | "DSNY" | "E!" | "El Trece" | "ePix" | "EPIX" | "ESPN" | "ESQ" | "Esquire" | "ETTV" | "ETV" | "Facebook Watch" | "FAM" | "Family" | "Family Jr" | "Fandor" | "FANDOR" | "FBWatch" | "FJR" | "FOOD" | "Food Network" | "Fox" | "FOX" | "Fox Premium" | "FOXP" | "Foxtel" | "FP" | "FREE" | "Freeform" | "FXTL" | "FYI" | "FYI Network" | "Gaga" | "GagaOOLala" | "GC" | "GLBL" | "GLOB" | "Global" | "GloboSat Play" | "Hallmark" | "HBO" | "HBO Go" | "HBO Max" | "HGTV" | "HIST" | "History" | "HLMK" | "HMAX" | "hoichoi" | "HoiChoi" | "Hulu" | "HULU" | "ID" | "IFC" | "iflix" | "IFX" | "INA" | "Investigation Discovery" | "iP" | "iQIYI" | "iT" | "iTunes" | "ITV" | "KNOW" | "Knowledge Network" | "LIFE" | "Lifetime" | "MBC" | "MBCVOD" | "MNBC" | "Motor Trend OnDemand" | "MSNBC" | "MTOD" | "MTV" | "MUBI" | "NATG" | "National Audiovisual Institute" | "National Film Board" | "National Geographic" | "NBA" | "NBA TV" | "NBC" | "Netflix" | "NF" | "NFB" | "NFL" | "NFL Now" | "NFLN" | "NHL GameCenter" | "NICK" | "NICKAPP" | "Nickelodeon" | "Norsk Rikskringkasting" | "NRK" | "ODK" | "OnDemandKorea" | "Oprah Winfrey Network" | "Opto" | "OPTO" | "OWN" | "Paramount+" | "ParamountPlus" | "PBS" | "PBS Kids" | "PBSK" | "PCOK" | "Peacock" | "Playstation Network" | "PLUZ" | "Pluzz" | "PMNP" | "PMT+" | "PMTP" | "POGO" | "PokerGO" | "PSN" | "Rakuten TV" | "RED" | "RKTN" | "ROKU" | "RTE" | "RTE One" | "RUUTU" | "SBS" | "SCI" | "Science Channel" | "SeeSo" | "SESO" | "SHMI" | "SHO" | "Shomi" | "Showtime" | "SNET" | "Sony" | "SONY" | "SPIK" | "Spike" | "Spike TV" | "SPKE" | "Sportsnet" | "Sprout" | "SPRT" | "Stan" | "STAN" | "Starz" | "STZ" | "Sveriges Television" | "SVT" | "SwearNet" | "SWER" | "Syfy" | "SYFY" | "TBS" | "TFou" | "TFOU" | "The CW" | "The Roku Channel" | "TLC" | "TUBI" | "TubiTV" | "TV Land" | "TV3" | "TV3 Ireland" | "TV4" | "TV4 Sweeden" | "TVING" | "TVL" | "TVNZ" | "UFC" | "UFC Fight Pass" | "UKTV" | "UNIV" | "Univision" | "USA Network" | "USAN" | "Velocity" | "VH1" | "VICE" | "Viceland" | "Viki" | "VIKI" | "Vimeo" | "VLCT" | "VMEO" | "VRV" | "W Network" | "WatchMe" | "WME" | "WNET" | "WWE Network" | "WWEN" | "XBOX" | "Xbox Video" | "Yahoo" | "YHOO" | "YouTube Red" | "ZDF";
+  streaming_service?: "4OD" | "9Now" | "9NOW" | "A&E" | "ABC" | "ABC Australia" | "Adult Swim" | "AE" | "AJAZ" | "Al Jazeera English" | "ALL4" | "Amazon" | "Amazon Prime" | "AMBC" | "AMC" | "America's Test Kitchen" | "AMZN" | "AMZN-CBR" | "Animal Planet" | "AnimeLab" | "ANLB" | "ANPL" | "AOL" | "AppleTV" | "APTV" | "ARD" | "AS" | "ATK" | "ATV+" | "ATVP" | "AUBC" | "BBC iPlayer" | "Binge" | "BKPL" | "Blackpills" | "BLU" | "BluTV" | "BNGE" | "BOOM" | "Boomerang" | "BRAV" | "BravoTV" | "Canal+" | "Cartoon Network" | "CBC" | "CBS" | "CC" | "CCGC" | "Channel 4" | "CHGD" | "CHRGD" | "Cinemax" | "CMAX" | "CMT" | "CN" | "CNBC" | "CNLP" | "Comedians in Cars Getting Coffee" | "Comedy Central" | "Country Music Television" | "CR" | "Crackle" | "CRAV" | "Crave" | "CRKL" | "Crunchy Roll" | "CSpan" | "CSPN" | "CTV" | "CUR" | "CuriosityStream" | "CW" | "CWS" | "CWSeed" | "Daisuki" | "DAZN" | "DC Universe" | "DCU" | "DDY" | "Deadhouse Films" | "DF" | "DHF" | "Digiturk Diledigin Yerde" | "DISC" | "Discovery" | "Discovery Plus" | "Disney" | "Disney+" | "DIY" | "DIY Network" | "Doc Club" | "DOCC" | "DPlay" | "DPLY" | "DramaFever" | "DSCP" | "DSKI" | "DSNP" | "DSNY" | "E!" | "El Trece" | "ePix" | "EPIX" | "ESPN" | "ESQ" | "Esquire" | "ETTV" | "ETV" | "F1TV" | "Facebook Watch" | "FAM" | "Family" | "Family Jr" | "Fandor" | "FANDOR" | "FBWatch" | "FITE" | "FJR" | "FOOD" | "Food Network" | "Fox" | "FOX" | "Fox Premium" | "FOXP" | "Foxtel" | "FP" | "FREE" | "Freeform" | "FXTL" | "FYI" | "FYI Network" | "Gaga" | "GagaOOLala" | "GC" | "GLBL" | "GLOB" | "Global" | "GloboSat Play" | "Hallmark" | "HBO" | "HBO Go" | "HBO Max" | "HGTV" | "HIST" | "History" | "HLMK" | "HMAX" | "hoichoi" | "HoiChoi" | "Hulu" | "HULU" | "ID" | "IFC" | "iflix" | "IFX" | "INA" | "Investigation Discovery" | "iP" | "iQIYI" | "iT" | "iTunes" | "ITV" | "KNOW" | "Knowledge Network" | "LIFE" | "Lifetime" | "MBC" | "MBCVOD" | "MNBC" | "Motor Trend OnDemand" | "MotorTrend" | "MSNBC" | "MTOD" | "MTV" | "MUBI" | "NATG" | "National Audiovisual Institute" | "National Film Board" | "National Geographic" | "NBA" | "NBA TV" | "NBC" | "Netflix" | "NF" | "NFB" | "NFL" | "NFL Now" | "NFLN" | "NHL GameCenter" | "NICK" | "NICKAPP" | "Nickelodeon" | "Norsk Rikskringkasting" | "NRK" | "ODK" | "OnDemandKorea" | "Oprah Winfrey Network" | "Opto" | "OPTO" | "OWN" | "Paramount+" | "ParamountPlus" | "PBS" | "PBS Kids" | "PBSK" | "PCOK" | "Peacock" | "Playstation Network" | "PLUZ" | "Pluzz" | "PMNP" | "PMT+" | "PMTP" | "POGO" | "PokerGO" | "PSN" | "Rakuten TV" | "RED" | "RKTN" | "ROKU" | "RTE" | "RTE One" | "RUUTU" | "SBS" | "SCI" | "Science Channel" | "SeeSo" | "SESO" | "SHMI" | "SHO" | "Shomi" | "Showtime" | "SNET" | "Sony" | "SONY" | "SPIK" | "Spike" | "Spike TV" | "SPKE" | "Sportsnet" | "Sprout" | "SPRT" | "Stan" | "STAN" | "Starz" | "STZ" | "Sveriges Television" | "SVT" | "SwearNet" | "SWER" | "Syfy" | "SYFY" | "TBS" | "TFou" | "TFOU" | "The CW" | "The Roku Channel" | "TLC" | "TUBI" | "TubiTV" | "TV Land" | "TV3" | "TV3 Ireland" | "TV4" | "TV4 Sweeden" | "TVING" | "TVL" | "TVNZ" | "UFC" | "UFC Fight Pass" | "UKTV" | "UNIV" | "Univision" | "USA Network" | "USAN" | "Velocity" | "VH1" | "VICE" | "Viceland" | "Viki" | "VIKI" | "Vimeo" | "VLCT" | "VMEO" | "VRV" | "W Network" | "WatchMe" | "WME" | "WNET" | "WWE Network" | "WWEN" | "XBOX" | "Xbox Video" | "Yahoo" | "YHOO" | "YouTube Red" | "ZDF";
   subtitle_language?: string | GuessitLanguage | (string | GuessitLanguage)[];
   title?: string;
   type?: "episode" | "movie";

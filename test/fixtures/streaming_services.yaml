@@ -2309,9 +2309,12 @@
 
 ? UFC.Fight.Night.185.Prelims.FP.WEB-DL.H264-SHREDDiE
 : title: UFC Fight Night
-  # NOTE: E185 exceeds the default configuration of E100 being the max.
-  season: 1
-  episode: 85
+  # 185 is the event number, one value. Python splits it into season 1 episode 85
+  # (its own note here called out that E185 exceeds the E100 maximum); a
+  # promotion numbers its events rather than running seasons, so the pair is
+  # collapsed back. "UFC on FOX 24" below already read this way.
+  episode: 185
+  -season:
   episode_title: Prelims
   streaming_service: UFC Fight Pass
   source: Web

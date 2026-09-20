@@ -805,6 +805,8 @@ export function episodes(config: EpisodesConfig): Rebulk {
   // Add rules for validation and cleanup
   rebulk.rules(
     EventNumberAsTitleRule,
+    SportsEventNumberIsOneNumber,
+    MotorsportRoundIsEpisode,
     EpisodeWordBeforeYearAsTitle,
     RemoveGroupSuffixSeason,
     AnimeTrailingEpisodeRule,
@@ -906,6 +908,119 @@ class EventNumberAsTitleRule extends Rule {
       }
     }
     return toRemove.length ? toRemove : false;
+  }
+}
+
+/**
+ * Combat sports number their events, they do not run seasons. A three-digit
+ * event number was being split down the middle: "UFC Fight Night 185" became
+ * season 1 episode 85, "UFC 300" became season 3, "Bellator 300" the same. The
+ * number is one value — the event — so the pair collapses back into a single
+ * episode ("UFC on FOX 24" already read that way and is unchanged).
+ *
+ * A promotion that really does run a numbered series states it with an SxxExx
+ * ("UFC.Embedded.S01E05") and is left alone.
+ */
+const FIGHT_PROMOTIONS =
+  /^(?:ufc|bellator|pfl|rizin|ksw|glory|invicta[\W_]?fc|cage[\W_]?warriors|one[\W_]?(?:championship|fc))(?:[\W_]|$)/i;
+
+class SportsEventNumberIsOneNumber extends Rule {
+  static override priority = 60;
+  override priority = 60;
+  override consequence = [RemoveMatch, AppendMatch];
+
+  when(matches: any, _context: any): any {
+    const input: string = matches.inputString ?? '';
+    const toRemove: any[] = [];
+    const toAppend: any[] = [];
+    for (const filepart of (matches.markers.named('path') as any[]) ?? []) {
+      if (!FIGHT_PROMOTIONS.test(input.slice(filepart.start, filepart.end))) continue;
+
+      // An explicit marker means the promotion really is running a series.
+      const strong = matches.range(filepart.start, filepart.end, (m: any) =>
+        !m.private && (m.name === 'date' || m.tags?.includes('SxxExx')), 0);
+      if (strong) continue;
+
+      const isWeak = (m: any) => m.tags?.includes('weak-episode') ||
+        ['weak_episode', 'weak_duplicate'].includes(m.initiator?.name);
+      const seasons = (matches.range(filepart.start, filepart.end,
+        (m: any) => !m.private && m.name === 'season' && isWeak(m)) as any[]) ?? [];
+
+      for (const season of seasons) {
+        const init = season.initiator ?? season;
+        const raw = String(init.raw ?? '').trim();
+        if (!/^\d{3,4}$/.test(raw)) continue;
+        for (const c of [season, init, ...(init.children ?? [])]) {
+          if (!toRemove.includes(c)) toRemove.push(c);
+        }
+        toAppend.push(new Match(init.start, init.end, {
+          name: 'episode',
+          value: parseInt(raw, 10),
+          inputString: input,
+        }));
+      }
+    }
+    return (toRemove.length || toAppend.length) ? [toRemove, toAppend] : false;
+  }
+}
+
+/**
+ * Motorsport numbers its calendar by round: "Formula 1 2024 Round 22 Las Vegas
+ * GP Race" is round 22 of the season, which is the episode. The round word was
+ * being dropped into an alternative title and its number lost entirely.
+ *
+ * Bare numbers elsewhere in the name belong to the race, not the calendar —
+ * "NASCAR Cup Series 2024 Daytona 500" was read as season 5 episode 0 — so any
+ * weak number that is not the round rejoins the title. Scoped to a filepart that
+ * opens with a series name, which is what keeps "Round 6" (the Portuguese title
+ * of Squid Game) and "Round Midnight" out of it.
+ */
+const MOTORSPORT_SERIES =
+  /^(?:formula[\W_]?(?:1|e|one)|f1|motogp|moto2|moto3|nascar|indycar|wrc|wec|dtm|supercars|superbike|wsbk)(?:[\W_]|$)/i;
+
+class MotorsportRoundIsEpisode extends Rule {
+  static override priority = 60;
+  override priority = 60;
+  override consequence = [RemoveMatch, AppendMatch];
+
+  when(matches: any, _context: any): any {
+    const input: string = matches.inputString ?? '';
+    const toRemove: any[] = [];
+    const toAppend: any[] = [];
+    for (const filepart of (matches.markers.named('path') as any[]) ?? []) {
+      const text = input.slice(filepart.start, filepart.end);
+      if (!MOTORSPORT_SERIES.test(text)) continue;
+
+      // "2016x03" and friends are a real marker — the name already says which round.
+      const strong = matches.range(filepart.start, filepart.end, (m: any) =>
+        !m.private && (m.name === 'date' || m.tags?.includes('SxxExx')), 0);
+      if (strong) continue;
+
+      const round = /(?:^|[\W_])round[\W_]?(\d{1,2})(?=[\W_]|$)/i.exec(text);
+
+      const isWeak = (m: any) => m.tags?.includes('weak-episode') ||
+        ['weak_episode', 'weak_duplicate'].includes(m.initiator?.name);
+      for (const w of (matches.range(filepart.start, filepart.end, (m: any) =>
+        !m.private && (m.name === 'season' || m.name === 'episode') && isWeak(m)) as any[]) ?? []) {
+        const init = w.initiator ?? w;
+        for (const c of [w, init, ...(init.children ?? [])]) {
+          if (!toRemove.includes(c)) toRemove.push(c);
+        }
+      }
+
+      if (round) {
+        // Span the marker word as well as the digits, so "Round" itself does not
+        // survive as a leftover hole and become part of the episode title.
+        const wordStart = filepart.start + round.index + round[0].search(/round/i);
+        const end = filepart.start + round.index + round[0].length;
+        toAppend.push(new Match(wordStart, end, {
+          name: 'episode',
+          value: parseInt(round[1], 10),
+          inputString: input,
+        }));
+      }
+    }
+    return (toRemove.length || toAppend.length) ? [toRemove, toAppend] : false;
   }
 }
 
