@@ -1,0 +1,79 @@
+
+
+# Cases from upstream guessit's own test suite (guessit/test/rules/language.yml)
+# that this port did not carry. Imported 2026-11-10 from guessit 4.5.1.
+
+# Multiple input strings having same expected results can be chained.
+# Use - marker to check inputs that should not match results.
+? +English
+? .ENG.
+: language: English
+
+? +French
+: language: French
+
+? ST.FR
+: subtitle_language: French
+
+? +ENG.-.sub.FR
+? ENG.-.FR Sub
+? +ENG.-.SubFR
+? +ENG.-.FRSUB
+? +ENG.-.FRSUBS
+? +ENG.-.FR-SUBS
+: language: English
+  subtitle_language: French
+
+? "{Fr-Eng}.St{Fr-Eng}"
+? "Le.Prestige[x264.{Fr-Eng}.St{Fr-Eng}.Chaps].mkv"
+: language: [French, English]
+  subtitle_language: [French, English]
+
+? +ENG.-.sub.SWE
+? ENG.-.SWE Sub
+? +ENG.-.SubSWE
+? +ENG.-.SWESUB
+? +ENG.-.sub.SV
+? ENG.-.SV Sub
+? +ENG.-.SubSV
+? +ENG.-.SVSUB
+: language: English
+  subtitle_language: Swedish
+
+? The English Patient (1996)
+: title: The English Patient
+  -language: english
+
+? French.Kiss.1995.1080p
+: title: French Kiss
+  -language: french
+
+# --- #668: a language glued to a subtitle extension is kept even if it is a common word ---
+# ".no.srt" -> Norwegian subtitle (was dropped by RemoveInvalidLanguages as the common word "no")
+
+? Show.S01E01.DBRETAiL.no.mkv
+: -subtitle_language: Norwegian
+  -language: Norwegian
+
+# but a Title-Case token before a subtitle extension is the last title word, not a language
+# ("Dr.No.srt" = the film *Dr. No*, not Norwegian subtitles)
+
+? Dr.No.srt
+: title: Dr No
+  -subtitle_language: Norwegian
+
+? Garfield.It.srt
+: title: Garfield It
+  -subtitle_language: it
+
+# regression anchor (#668): a lowercase language code before a subtitle extension is kept
+
+? Show.no.Way.Home.2021.1080p.mkv
+: title: Show no Way Home
+  -language: Norwegian
+  -subtitle_language: Norwegian
+
+# anchor: a real (non-common-word) language is unaffected by the filter
+
+? Show.S01E01.German.1080p.WEB-DL.mkv
+: language: German

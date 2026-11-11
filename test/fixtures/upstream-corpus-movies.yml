@@ -1,0 +1,26 @@
+# Cases from upstream guessit's own test suite (guessit/test/movies.yml)
+# that this port did not carry. Imported 2026-11-10 from guessit 4.5.1.
+? __default__
+: type: movie
+
+? Jackass.3.5.2011.Unrated.720p.BluRay.DD5.1.x264-EbP
+: options: -t movie
+  title: Jackass 3.5
+  year: 2011
+  edition: Unrated
+  screen_size: 720p
+  source: Blu-ray
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  video_codec: H.264
+  release_group: EbP
+  type: movie
+
+? Movie.AAC2.0.2008
+: title: Movie
+  audio_codec: AAC
+  audio_channels: '2.0'
+  year: 2008
+  type: movie
+
+# The same holds in a space-separated name, where the dot can only be the decimal point.

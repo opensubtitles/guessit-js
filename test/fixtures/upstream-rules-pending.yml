@@ -1,0 +1,441 @@
+# Cases from upstream guessit's own rule-level test suite (guessit/test/rules/*.yml)
+# that this port does not satisfy yet. Imported 2026-11-10 from guessit 4.5.1 and
+# quarantined here: this file is NOT in FIXTURE_FILES, so it does not run. Work
+# through it by moving blocks back into the matching upstream-rules-*.yml file.
+# Buckets are summarised in docs/upstream-issues.md.
+
+# from upstream-corpus-episodes.yml
+? '[Golumpa] Star Blazers 2202 - 22 (a.k.a. Yamato 2022) whatever'
+: release_group: Golumpa
+  title: Star Blazers 2202
+  episode: 22
+  year: 2022
+  season: 2022
+  episode_title: whatever
+  type: episode
+
+# from upstream-corpus-episodes.yml
+? '[SubsPlease] Fairy Tail - 100 Years Quest - 05 (1080p)'
+: release_group: SubsPlease
+  title: Fairy Tail
+  alternative_title: 100 Years Quest
+  episode: 5
+  screen_size: 1080p
+  type: episode
+
+# An absolute episode number in parentheses must not double-count the episode (#875)
+
+# from upstream-corpus-episodes.yml
+? '[Hatsuyuki] Dragon Ball Kai (2014) - 002 (100) test'
+: release_group: Hatsuyuki
+  title: Dragon Ball Kai
+  year: 2014
+  season: 2014
+  episode: 2
+  episode_title: test
+  type: episode
+
+# from upstream-corpus-episodes.yml
+? '[Deep] Tegami Bachi (REVERSE) - Letter Bee - 29 (04) test'
+: release_group: Deep
+  title: Tegami Bachi
+  episode_title: Letter Bee - 29
+  episode: 4
+  type: episode
+
+# "Season N - EE" is season N, episode EE, not a season range N..EE (#875)
+
+# from upstream-corpus-episodes.yml
+? Show 12 - 24
+: title: Show
+  episode: [12, 24]
+
+# A spaced western box-set range ("Season 1 - 5") must stay a season list: the "N - EE"
+# reinterpretation is restricted to anime-signalled releases, since this convention clashes
+# with the anime "Season N - EE" = season N episode EE reading (#920)
+
+# from upstream-corpus-episodes.yml
+? Mr.Robot.S01E01.eps1.0_hellofriend.mov.1080p.BluRay.DD5.1.x264-SA89.mkv
+: title: Mr Robot
+  season: 1
+  episode: 1
+  episode_title: eps1.0 hellofriend
+  release_group: SA89
+
+# A YYYY-YYYY year range is a single year range, bracketed or not (#988)
+
+# from upstream-corpus-movies.yml
+? The.Taking.of.Pelham.1.2.3.2009.1080p.BluRay.DTS.x264-EbP
+: options: -t movie
+  title: The Taking of Pelham 1.2.3
+  year: 2009
+  screen_size: 1080p
+  source: Blu-ray
+  audio_codec: DTS
+  video_codec: H.264
+  release_group: EbP
+  type: movie
+  -date: 2009-03-02
+
+# A bare 1.0/2.0 in the title zone (before the year) numbers the title, it is not a channel layout.
+
+# from upstream-corpus-movies.yml
+? Evangelion.1.0.You.Are.Not.Alone.2007.1080p.BluRay.x264-GRP
+: year: 2007
+  screen_size: 1080p
+  source: Blu-ray
+  video_codec: H.264
+  release_group: GRP
+  type: movie
+  -audio_channels: '1.0'
+
+# A channel layout glued to its codec stays a channel layout, even before the year.
+
+# from upstream-corpus-movies.yml
+? Movie.AAC.2.0.2008
+: title: Movie
+  audio_codec: AAC
+  audio_channels: '2.0'
+  year: 2008
+  type: movie
+
+# The same holds in a space-separated name, where the dot can only be the decimal point.
+
+# from upstream-corpus-movies.yml
+? M3GAN 2.0 (2025).mkv
+: title: M3GAN 2.0
+  year: 2025
+  type: movie
+  -audio_channels: '2.0'
+
+# from upstream-corpus-movies.yml
+? Ghost in the Shell 2.0 (2008)/Ghost in the Shell 2.0 (2008).mkv
+: title: Ghost in the Shell 2.0
+  year: 2008
+  type: movie
+  -audio_channels: '2.0'
+
+# A YYYY-YYYY year range is a single year range, bracketed or not (#988)
+
+# from upstream-corpus-streaming_services.yml
+? Some.Show.S01E01.1080p.ADN.WEB-DL.AAC2.0.H.264-GRP.mkv
+: title: Some Show
+  streaming_service: Anime Digital Network
+
+# from upstream-corpus-streaming_services.yml
+? Some.Show.S01E01.1080p.MY5.WEB-DL.AAC2.0.H.264-GRP.mkv
+: title: Some Show
+  streaming_service: Channel 5
+
+# "Max" (HBO Max rebrand) is matched only as the uppercase scene tag MAX, so a title
+# like "Mad Max" is unaffected.
+
+# from upstream-corpus-streaming_services.yml
+? Some.Show.S01E01.1080p.MAX.WEB-DL.DDP5.1.H.264-GRP.mkv
+: title: Some Show
+  streaming_service: Max
+
+# from upstream-corpus-streaming_services.yml
+? Some.Show.S01E01.1080p.NOW.WEB-DL.DDP5.1.H.264-GRP.mkv
+: title: Some Show
+  streaming_service: NowTV
+
+# from upstream-rules-audio_codec.yml
+? +2.0
+: audio_channels: '2.0'
+
+# from upstream-rules-audio_codec.yml
+? +1.0
+: audio_channels: '1.0'
+
+# from upstream-rules-audio_codec.yml
+? -51
+: audio_channels: '5.1'
+
+# from upstream-rules-common_words.yml
+? may
+: title: may
+
+# from upstream-rules-common_words.yml
+? ice
+: title: ice
+
+# from upstream-rules-common_words.yml
+? mal
+: title: mal
+
+# from upstream-rules-common_words.yml
+? est
+: title: est
+
+# from upstream-rules-common_words.yml
+? mon
+: title: mon
+
+# from upstream-rules-common_words.yml
+? mar
+: title: mar
+
+# from upstream-rules-common_words.yml
+? ben
+: title: ben
+
+# from upstream-rules-common_words.yml
+? sr
+: title: sr
+
+# from upstream-rules-common_words.yml
+? sub
+: title: sub
+
+# from upstream-rules-date.yml
+? 1919
+: !!map {}
+
+# from upstream-rules-date.yml
+? 2029
+: year: 2029
+
+# from upstream-rules-date.yml
+? (1920)
+: year: 1920
+
+# from upstream-rules-date.yml
+? 2012
+: year: 2012
+
+# from upstream-rules-date.yml
+? Something.2.5.2007
+: title: Something
+  date: 2007-05-02
+  type: episode
+
+# from upstream-rules-episodes.yml
+? Some Dummy Directory/Season 02/Some Series-E01-Episode title.mkv
+? Some Dummy Directory/S02 Some Series/E01-Episode title.mkv
+: title: Some Series
+  episode_title: Episode title
+  season: 2
+  episode: 1
+
+# from upstream-rules-episodes.yml
+? Some Dummy Directory/Season 02/Some Series-E01.mkv
+: title: Some Series
+  season: 2
+  episode: 1
+
+# from upstream-rules-episodes.yml
+? Some Series S01 02 03
+: title: Some Series
+  season: [1, 2, 3]
+
+# from upstream-rules-episodes.yml
+? Some Series E01 02 03
+: title: Some Series
+  episode: [1, 2, 3]
+
+# from upstream-rules-episodes.yml
+? Some Series E01 02 04
+: title: Some Series
+  episode: [1, 2, 4]
+
+# from upstream-rules-episodes.yml
+? Something 1 x 2-FlexGet
+: options: -t episode
+  title: Something
+  season: 1
+  episode: 2
+  episode_title: FlexGet
+
+# from upstream-rules-episodes.yml
+? Show.Name.Season.4.Episodes.1-12
+: episode:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
+  - 12
+  season: 4
+  title: Show Name
+  type: episode
+
+# from upstream-rules-language.yml
+? +SubFrench
+? +SubFr
+? +STFr
+: subtitle_language: French
+
+# from upstream-rules-language.yml
+? Show.S01E01.DBRETAiL.no.srt
+: subtitle_language: Norwegian
+  episode_title: DBRETAiL
+
+# but the same common-word code before a video extension is still filtered out
+
+# from upstream-rules-language.yml
+? Show.S01E01.Some.Title.it.srt
+: subtitle_language: Italian
+  episode_title: Some Title
+
+# anchor (#668 boundary): the common-word filter still suppresses a stray language code mid-name
+# in a video file — only a subtitle extension (or a non-common code) keeps it
+
+# from upstream-rules-other.yml
+? -Complete
+: other: Complete
+
+# from upstream-rules-other.yml
+? -The complete movie
+: other: Complete
+
+# from upstream-rules-other.yml
+? +The complete movie
+: title: The complete movie
+
+# from upstream-rules-other.yml
+? HDR10P
+: other: HDR10+
+
+# from upstream-rules-part.yml
+? Filename Part Trois.mkv
+# Cases from upstream guessit's own test suite (guessit/test/rules/part.yml)
+# that this port did not carry. Imported 2026-11-10 from guessit 4.5.1.
+
+# Multiple input strings having same expected results can be chained.
+# Use - marker to check inputs that should not match results.
+: title: Filename
+  part: 3
+
+# from upstream-rules-release_group.yml
+? Test.S01E01-FooBar-Group
+: options: -G group -G xxxx
+  episode: 1
+  episode_title: FooBar
+  release_group: Group
+  season: 1
+  title: Test
+  type: episode
+
+# from upstream-rules-release_group.yml
+? Test.S01E01-FooBar-Group
+: options: -G re:gr.?up -G xxxx
+  episode: 1
+  episode_title: FooBar
+  release_group: Group
+  season: 1
+  title: Test
+  type: episode
+
+# from upstream-rules-screen_size.yml
+? +480x360i
+: screen_size: 360i
+  aspect_ratio: 1.333
+
+# from upstream-rules-screen_size.yml
+? +492x368p
+: screen_size:
+  aspect_ratio: 1.337
+
+# from upstream-rules-screen_size.yml
+? -500x480
+: screen_size: 480p
+
+# from upstream-rules-screen_size.yml
+? +500x480
+? +500 x 480
+? +500 * 480
+? +500x480p
+? +500X480i
+: screen_size: 500x480
+  aspect_ratio: 1.042
+
+# from upstream-rules-screen_size.yml
+? +852x480i
+: screen_size: 480i
+
+# from upstream-rules-screen_size.yml
+? -500x576
+: screen_size: 576p
+
+# from upstream-rules-screen_size.yml
+? +500x576
+: screen_size: 500x576
+  aspect_ratio: 0.868
+
+# from upstream-rules-screen_size.yml
+? -500x720
+: screen_size: 720p
+
+# from upstream-rules-screen_size.yml
+? +500x720
+: screen_size: 500x720
+  aspect_ratio: 0.694
+
+# from upstream-rules-screen_size.yml
+? -500x900
+: screen_size: 900p
+
+# from upstream-rules-screen_size.yml
+? +500x900
+? +500x900p
+? +500x900i
+: screen_size: 500x900
+  aspect_ratio: 0.556
+
+# from upstream-rules-screen_size.yml
+? -500x1080
+: screen_size: 1080p
+
+# from upstream-rules-screen_size.yml
+? +500x1080
+: screen_size: 500x1080
+  aspect_ratio: 0.463
+
+# from upstream-rules-screen_size.yml
+? +500x2160
+: screen_size: 500x2160
+  aspect_ratio: 0.231
+
+# from upstream-rules-screen_size.yml
+? +500x4320
+: screen_size: 500x4320
+  aspect_ratio: 0.116
+
+# from upstream-rules-screen_size.yml
+? Test.File.400p
+: options:
+    advanced_config:
+      screen_size:
+        progressive: ["400"]
+  screen_size: 400p
+
+# from upstream-rules-screen_size.yml
+? Test.File2.400p
+: options:
+    advanced_config:
+      screen_size:
+        progressive: ["400"]
+  screen_size: 400p
+
+# from upstream-rules-source.yml
+? +Cam
+: source: Camera
+  -other: Rip
+
+# from upstream-rules-source.yml
+? +CamRip
+? +Cam_Rip
+? -Cam
+: source: Camera
+  other: Rip
+
+# from upstream-rules-source.yml
+? UHD HQ 8bit Bluray
+: source: Ultra HD Blu-ray

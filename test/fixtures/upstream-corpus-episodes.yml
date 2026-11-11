@@ -1,0 +1,71 @@
+# Cases from upstream guessit's own test suite (guessit/test/episodes.yml)
+# that this port did not carry. Imported 2026-11-10 from guessit 4.5.1.
+? __default__
+: type: episode
+
+? 1923.S01E01.mkv
+: title: '1923'
+  season: 1
+  episode: 1
+  container: mkv
+  type: episode
+
+? 1923.S02E04.1080p.mkv
+: title: '1923'
+  season: 2
+  episode: 4
+  screen_size: 1080p
+  container: mkv
+  type: episode
+
+? 1969.S01E01.mkv
+: title: '1969'
+  season: 1
+  episode: 1
+  container: mkv
+  type: episode
+
+? Movies/1923 (2022)/Season 1/1923.S01E01.mkv
+: title: '1923'
+  year: 2022
+  season: 1
+  episode: 1
+  container: mkv
+  type: episode
+
+? 1923.Foo.S01E01.mkv
+: title: Foo
+  year: 1923
+  season: 1
+  episode: 1
+  container: mkv
+  type: episode
+
+? '[Hatsuyuki-Kaitou]_Fairy_Tail_2_-_52_(227)_test'
+: release_group: Hatsuyuki-Kaitou
+  title: Fairy Tail 2
+  episode: 52
+  episode_title: test
+  type: episode
+
+? Coupling Season 1 - 4 Complete DVDRip - x264 - MKV by RiddlerA
+: title: Coupling
+  season: [1, 2, 3, 4]
+  other: [Complete, Rip]
+  source: DVD
+  video_codec: H.264
+  container: mkv
+  release_group: RiddlerA
+  type: episode
+
+# A bracketed "[S01-07]" season range must not be reinterpreted as season+episode:
+# only a parenthesized range right after a bare absolute episode number is (#875)
+
+? Kaiju.No.8.S01E04.Fortitude.9.8.1080p.BluRay.AAC2.0.x264-VALKYRiE.mkv
+: title: Kaiju No 8
+  season: 1
+  episode: 4
+  episode_title: Fortitude 9.8
+  audio_codec: AAC
+  audio_channels: '2.0'
+  release_group: VALKYRiE

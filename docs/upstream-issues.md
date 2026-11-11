@@ -62,6 +62,36 @@
 > (a duplicate of #966) already parsed correctly. Guard fixtures for all of them
 > are in `test/fixtures/upstream-open-issues.yml`.
 
+**Upstream's rule-level test suite, imported 2026-11-10.** The port mirrored
+upstream's four corpus files (`movies.yml`, `episodes.yml`, `various.yml`,
+`streaming_services.yaml`, `enable_disable_properties.yml`) but never the 19
+per-rule files under `guessit/test/rules/`. Upstream's corpus is 2394 entries
+against the 1516 names carried here, and the 977-case difference is now imported:
+`test/fixtures/upstream-corpus-*.yml` (new entries in the files already mirrored)
+and `test/fixtures/upstream-rules-*.yml` (the per-rule files). 897 of them passed
+on arrival.
+
+The 80 that did not are parked in `test/fixtures/upstream-rules-pending.yml`,
+which is deliberately absent from `FIXTURE_FILES` so the suite stays green while
+the gap stays visible. Work through it by moving blocks back into the matching
+`upstream-rules-*.yml`. Buckets, largest first:
+
+| Count | Bucket |
+|---|---|
+| 17 | `WxH` screen sizes: no `aspect_ratio` for `500x480`-style values, and the interlaced/progressive suffix is read off the wrong side (`852x480i` → `852p`) |
+| 9 | `common_words`: short words that must stay titles (`may`, `ice`, `mal`, `est`, `mon`, `mar`, `ben`, `sr`, `sub`) are taken as languages or properties |
+| 7 | episode rules: a title from the filepart carrying the episode, bare season/episode lists (`Some Series S01 02 03`), `Season.4.Episodes.1-12` |
+| 6 | the #985 divergences already documented above, plus `eps1.0 hellofriend` losing its dot |
+| 5 | dates: a bare four-digit year alone in the name (`2012`, `(1920)`) is a year here only with other context |
+| 5 | decimal titles keep their dots upstream (`M3GAN 2.0`, `Evangelion.1.0`, `The.Taking.of.Pelham.1.2.3`) — this port normalises the separator |
+| 4 | `other`: `HDR10P`, and `The complete movie` where `Complete` is a property, not title text |
+| 4 | streaming services not known here: ADN, MY5, MAX, NOW |
+| 3 | sources: a bare `Cam`, and `UHD BluRay` → Ultra HD Blu-ray in one shape |
+| 3 | subtitle prefixes: `SubFrench`, `SubFr`, `STFr` |
+| 3 | audio codecs from bare channel digits |
+| 2 | `release_group` vs `episode_title` on `Test.S01E01-FooBar-Group` |
+| 1 | `Part Trois` (French ordinal) |
+
 **Rebuilding the cross-parser corpus.** `scripts/cross-parser-check.mts` reads a
 joined corpus from `$XP_CASES` (default `xp-cases.json`). Build it from upstream
 with no clone: fetch `guessit/test/cross_parser/baseline.json` plus

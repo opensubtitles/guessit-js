@@ -1,0 +1,7 @@
+# Cases from upstream guessit's own test suite (guessit/test/rules/cd.yml)
+# that this port did not carry. Imported 2026-11-10 from guessit 4.5.1.
+
+? Some.Title-DVDRIP-x264-CDP
+: cd: !!null
+  release_group: CDP
+  video_codec: H.264

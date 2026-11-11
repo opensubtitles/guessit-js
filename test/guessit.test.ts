@@ -173,10 +173,15 @@ function loadFixtures(filename: string): FixtureEntry[] {
 
     // In Python guessit fixtures, a leading '-' on the filename means this is a
     // NEGATED test: all listed expected values should be MISSING or DIFFERENT.
+    // The rule-level files mark the positive half of such a block with '+', which
+    // carries no meaning beyond "this one must match" — strip it, or the marker
+    // becomes part of the input and "+360p" stops being a resolution.
     let negated = false;
     if (input.startsWith('-')) {
       input = input.slice(1);
       negated = true;
+    } else if (input.startsWith('+')) {
+      input = input.slice(1);
     }
 
     const expected = rawExpected;
@@ -276,6 +281,28 @@ const FIXTURE_FILES = [
   'upstream-new-enable_disable_properties.yml',
   'upstream-pending.yml',
   'upstream-open-issues.yml',
+  'upstream-corpus-episodes.yml',
+  'upstream-corpus-movies.yml',
+  'upstream-corpus-streaming_services.yml',
+  'upstream-rules-audio_codec.yml',
+  'upstream-rules-cd.yml',
+  'upstream-rules-common_words.yml',
+  'upstream-rules-country.yml',
+  'upstream-rules-date.yml',
+  'upstream-rules-edition.yml',
+  'upstream-rules-episodes.yml',
+  'upstream-rules-film.yml',
+  'upstream-rules-language.yml',
+  'upstream-rules-other.yml',
+  'upstream-rules-part.yml',
+  'upstream-rules-processors.yml',
+  'upstream-rules-release_group.yml',
+  'upstream-rules-screen_size.yml',
+  'upstream-rules-size.yml',
+  'upstream-rules-source.yml',
+  'upstream-rules-title.yml',
+  'upstream-rules-video_codec.yml',
+  'upstream-rules-website.yml',
 ];
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
