@@ -5,17 +5,18 @@ Extract metadata (title, year, season, episode, codec, language, etc.) from medi
 [![npm version](https://img.shields.io/npm/v/guessit-js.svg)](https://www.npmjs.com/package/guessit-js)
 [![Tests](https://github.com/opensubtitles/guessit-js/actions/workflows/ci.yml/badge.svg)](https://github.com/opensubtitles/guessit-js/actions/workflows/ci.yml)
 [![License: LGPL-3.0](https://img.shields.io/badge/License-LGPL--3.0-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
-[![Python guessit compat](https://img.shields.io/badge/guessit_compat-100%25_(1342%2F1342)-brightgreen)](https://github.com/guessit-io/guessit)
+[![Python guessit compat](https://img.shields.io/badge/guessit_compat-100%25_(1373%2F1373)-brightgreen)](https://github.com/guessit-io/guessit)
 [![Coverage](https://img.shields.io/badge/coverage-97%25-brightgreen)](https://github.com/opensubtitles/guessit-js/actions/workflows/ci.yml)
 
 **[Live Demo](https://opensubtitles.github.io/guessit-js)** · **[API Docs](https://opensubtitles.github.io/guessit-js/docs)** · **[npm](https://www.npmjs.com/package/guessit-js)**
 
 ## Features
 
-- **100% compatibility** with Python guessit 4.4.0 (1342/1342 fixtures passing, including Python's own grown 4.x corpus) — and **more correct**: ships fixes for 32 historical upstream bugs, Python's still-open #875 and #877, and 112 of the 276 cross-parser cases Python admits failing (see [Differences from Python](#differences-from-python-guessit))
-- **3.5x faster** than Python (6.87ms vs 23.86ms per parse)
+- **100% compatibility** with Python guessit's own corpus (1373/1373 fixtures, tracking upstream 4.5.1) — and **more correct**: ships fixes for 32 historical upstream bugs, Python's still-open #877, and 114 of the 276 cross-parser cases Python admits failing (see [Differences from Python](#differences-from-python-guessit))
+- **~3.5x faster** than Python per parse ([numbers](#performance))
 - **50 properties** detected: title, year, season, episode, resolution, codec, language, and more — with a [machine-readable schema](#output-schema)
-- **Single dependency** ([rebulk-js](https://www.npmjs.com/package/rebulk-js))
+- **Batch parsing**: `guessitMany()` in-process, or one POST for up to 100 names
+- **Zero runtime dependencies** ([rebulk-js](https://www.npmjs.com/package/rebulk-js) is bundled at build time)
 - **Dual format**: ESM and CommonJS
 - **TypeScript**: full, precise type definitions (typed `GuessItResult`, enum'd value fields)
 - **WASM**: runs in any WASI-compatible runtime, **bit-identical to the JS build**
@@ -84,6 +85,28 @@ guessit('X2.2003.720p.DSNP.WEB-DL.DDP5.1.H.264-EVO.mkv');
 // { title: 'X2', year: 2003, screen_size: '720p',
 //   streaming_service: 'Disney+', source: 'Web', ... }
 ```
+
+### Batch
+
+`guessitMany()` parses a list in one pass. `guessit()` re-parses the options and
+re-merges them with the whole config on every call — more work than matching a
+short name — so hoisting that out of the loop is the point. Each entry carries
+the `input_string` plus either a `result` or the `error` that name produced, so
+one unparseable name cannot abort the rest, and entries can be correlated without
+relying on array position.
+
+```typescript
+import { guessitMany } from 'guessit-js';
+
+guessitMany(['A.2020.1080p.mkv', 'B.S01E02.mkv'], { type: 'episode' });
+// [
+//   { input_string: 'A.2020.1080p.mkv', result: { title: 'A', year: 2020, ... } },
+//   { input_string: 'B.S01E02.mkv',     result: { title: 'B', season: 1, ... } }
+// ]
+```
+
+In-process there is no cap — pass the whole library. The 100-name cap applies
+only to the HTTP surfaces, where it bounds one request's shape.
 
 ### CommonJS
 
@@ -159,7 +182,7 @@ curl -X POST https://guessit.opensubtitles.com/api/guessit \
 > production, self-host (`npx guessit-js --serve`, one command) or better,
 > call the library in-process (~1.5 ms per parse, no HTTP at all).
 
-Runs on Cloudflare Workers at the edge, CORS enabled, batch up to 500
+Runs on Cloudflare Workers at the edge, CORS enabled, batch up to 100
 filenames per POST, redeployed automatically with every release.
 
 **Self-hosted** — no install needed beyond the package itself:
@@ -175,6 +198,20 @@ curl -X POST http://localhost:3847/api/guessit \
 CLI parsing flags become server defaults: `guessit-js --serve -t episode -L en`.
 The repo also ships a fuller dev server (`npm start`) with the demo page,
 Swagger UI at `/docs`, and static WASM serving.
+
+**Batch contract**, identical on all three HTTP surfaces (hosted worker,
+`--serve`, `npm start`):
+
+| | |
+|---|---|
+| Request | `POST /api/guessit` with `{"filenames": [...], "options": {...}}` |
+| Response | one entry per name, in request order, each `{input_string, result}` or `{input_string, error}` |
+| Limits | 100 names per request, 1024 characters per name, 1 MiB body |
+| Errors | `400` for a malformed body, `413` for any limit exceeded |
+
+A name that fails to parse becomes an `error` entry — the request still answers
+`200`. The caps bound the shape of one request, not throughput: for 10k names,
+send 100 requests, or skip HTTP and call `guessitMany()` in-process.
 
 ## WASM
 
@@ -197,12 +234,15 @@ is corrected. Highlights:
 - **Cases the released Python 4.4.0 still gets wrong** (each verified against the
   real Python CLI; the [demo](https://opensubtitles.github.io/guessit-js) shows
   live side-by-sides): `X2.2003…` (Python: `bonus: 2`, no title), Python's
-  still-open [#875](https://github.com/guessit-io/guessit/issues/875) and
+  [#875](https://github.com/guessit-io/guessit/issues/875) (fixed upstream in
+  4.5.1, years after it was fixed here) and still-open
   [#877](https://github.com/guessit-io/guessit/issues/877) (`Season 3 - 11`,
   anchored weak episodes, `0x539` ids), Python's dead
   `RemoveLessSpecificSeasonEpisode("episode")` pass
-  ([#961](https://github.com/guessit-io/guessit/issues/961), our fix submitted as
-  [#962](https://github.com/guessit-io/guessit/pull/962)), and **112 of the 276
+  ([#961](https://github.com/guessit-io/guessit/issues/961) — diagnosed from this
+  port in [#962](https://github.com/guessit-io/guessit/pull/962), fixed upstream
+  by rebulk 6.0.2 plus [#982](https://github.com/guessit-io/guessit/pull/982),
+  which carries this port's specificity guard), and **114 of the 276
   cross-parser cases Python's own test data admits failing** — fullwidth CJK
   bracket groups, UFC event numbers, anime compound dash titles, fully-bracketed
   titles, and more.

@@ -21,7 +21,9 @@ const { guessit, version } = await import('../dist/guessit-js.js');
 // whole fixture corpus tops out at 196 characters, so these bounds only ever
 // reject something that was never a filename.
 const MAX_FILENAME_LENGTH = 1024;
-const MAX_BATCH = 500;
+// 100 names is the documented batch contract across every HTTP surface, and on
+// the free Workers tier it also keeps one request inside the CPU budget.
+const MAX_BATCH = 100;
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',

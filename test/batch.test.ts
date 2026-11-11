@@ -124,7 +124,7 @@ describe('server.ts batch POST', () => {
   });
 
   it('rejects a batch beyond the count limit', async () => {
-    const res = await post({ filenames: Array(501).fill('Movie.2020.mkv') });
+    const res = await post({ filenames: Array(101).fill('Movie.2020.mkv') });
     expect(res.status).toBe(413);
   });
 
@@ -143,9 +143,9 @@ describe('server.ts batch POST', () => {
     expect(res.status).toBe(400);
   });
 
-  it('accepts a full 500-name batch', async () => {
-    const res = await post({ filenames: Array.from({ length: 500 }, (_, i) => `Show.S01E${i % 20 + 1}.1080p.mkv`) });
+  it('accepts a full 100-name batch', async () => {
+    const res = await post({ filenames: Array.from({ length: 100 }, (_, i) => `Show.S01E${i % 20 + 1}.1080p.mkv`) });
     expect(res.status).toBe(200);
-    expect(await res.json()).toHaveLength(500);
+    expect(await res.json()).toHaveLength(100);
   });
 });

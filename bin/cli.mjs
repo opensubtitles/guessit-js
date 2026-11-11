@@ -15,7 +15,10 @@ import { guessit, properties as apiProperties, version } from '../dist/guessit-j
 // reject something that was never a filename. --serve is the only path that
 // takes untrusted input; parsing local arguments stays unbounded.
 const MAX_FILENAME_LENGTH = 1024;
-const MAX_BATCH = 500;
+// 100 names is the documented batch contract across every HTTP surface. It is a
+// request-shape bound, not a throughput one: a caller with 10k names sends 100
+// requests, or skips HTTP and calls guessitMany() in-process, which is unbounded.
+const MAX_BATCH = 100;
 
 // Python's GuessitEncoder emits babelfish `.name` in JSON ("English",
 // "UNITED STATES") while YAML uses str() ("en", "pt-BR", "US"). Mirror both.

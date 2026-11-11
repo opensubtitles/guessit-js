@@ -73,7 +73,7 @@ describe.skipIf(!hasDist)('serve input limits', () => {
     const res = await fetch(BASE, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ filenames: Array(501).fill('Movie.2020.mkv') }),
+      body: JSON.stringify({ filenames: Array(101).fill('Movie.2020.mkv') }),
     });
     expect(res.status).toBe(413);
   });

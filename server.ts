@@ -25,8 +25,12 @@ const PORT = parseInt(process.env['PORT'] || '3847', 10);
  */
 const MAX_FILENAME_LENGTH = 1024;
 
-/** Filenames accepted per batch POST — same cap as `--serve` and the Cloudflare worker. */
-const MAX_BATCH = 500;
+/**
+ * Filenames accepted per batch POST — same cap as `--serve` and the Cloudflare
+ * worker. A request-shape bound, not a throughput one: 10k names means 100
+ * requests, or `guessitMany()` in-process, which is unbounded.
+ */
+const MAX_BATCH = 100;
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -57,7 +61,7 @@ function readBody(req: http.IncomingMessage): Promise<string> {
     const chunks: Buffer[] = [];
     let size = 0;
     // A full batch is MAX_BATCH names of up to MAX_FILENAME_LENGTH each, so the
-    // ceiling has to clear 500 KB; 1 MiB matches the `--serve` CLI server.
+    // ceiling has to clear 100 KB; 1 MiB matches the `--serve` CLI server.
     const MAX_BODY = 1024 * 1024;
     req.on('data', (chunk: Buffer) => {
       size += chunk.length;

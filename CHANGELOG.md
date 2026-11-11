@@ -38,9 +38,17 @@ re-parses the options and re-merges them with the whole config on every call,
 which costs more than matching a short name does; the batch entry point hoists
 that out of the loop. Each entry carries the `input_string` plus either a
 `result` or the `error` that name produced, so one unparseable name cannot abort
-the rest. `POST /api/guessit` takes the same shape via `{"filenames": [...]}`
-(max 500 per request, each up to 1024 characters) and the body cap is now 1 MiB
-to clear a full batch.
+the rest. `POST /api/guessit` takes the same shape via `{"filenames": [...]}`.
+
+Batch is now a documented part of the API rather than an undocumented extra, and
+its contract is identical on all three HTTP surfaces (hosted worker, `--serve`,
+`npm start`): 100 names per request, 1024 characters per name, 1 MiB body, every
+limit answered with 413, one entry per name in request order. The previous cap
+was 500; 100 keeps one request inside the free Workers CPU budget and is enough
+for the request-shape bound to be the only thing it is — throughput comes from
+sending more requests, or from `guessitMany()` in-process, which has no cap. The
+OpenAPI spec now carries the batch request shape, the entry schema, the 413
+response and a batch example.
 
 **Broadcast/DVR timestamps are dates, not episode numbers** (the sub-case filed
 in upstream guessit-io/guessit#875 on 2026-09-11).
