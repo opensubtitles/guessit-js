@@ -1169,3 +1169,98 @@
 : type: episode
   season: 1
   episode: 5
+
+# ── AV1/AV2: the AOMedia codecs, which Python does not know at all ──
+# Unsupported, the "V1" read as a version marker and split the token:
+# "Show.Name.Season.2.AV1.1080p" came back as episode_title "A" plus version 1.
+? Movie.2024.1080p.WEB-DL.AV1.Opus-GRP.mkv
+: type: movie
+  title: Movie
+  video_codec: AV1
+  release_group: GRP
+  -version:
+
+? Movie.2024.2160p.AV1.10bit.mkv
+: type: movie
+  video_codec: AV1
+  color_depth: 10-bit
+
+? Show.Name.Season.2.AV1.1080p
+: type: episode
+  title: Show Name
+  season: 2
+  video_codec: AV1
+  -episode_title:
+  -version:
+
+? Movie.2024.1080p.AV2.mkv
+: type: movie
+  video_codec: AV2
+
+# guard: a real version marker is still a version
+? Show.S01E01.1080p.x264.v2.mkv
+: type: episode
+  version: 2
+  video_codec: H.264
+
+# ── a blacklisted common word is not a language, undetermined or not ──
+# A directory named "sub" — the commonest folder name in a subtitle library —
+# reported subtitle_language "und", because the `common` tag was only applied to
+# determinate matches. "subs" is not blacklisted and still reports und, which is
+# what Python does for each of these.
+? sub/folder/Title Only
+: type: movie
+  title: Title Only
+  -subtitle_language:
+
+? Movie.2024.1080p/sub/Movie.srt
+: type: movie
+  title: Movie
+  -subtitle_language:
+
+? Movie.2024.sub.1080p.mkv
+: type: movie
+  title: Movie
+  -subtitle_language:
+
+? subs/Movie.2024.1080p.mkv
+: type: movie
+  title: Movie
+  subtitle_language: und
+
+# guard: an affix with a real language still resolves it
+? Movie.2024.1080p.French.sub.mkv
+: type: movie
+  title: Movie
+  subtitle_language: fr
+
+# ── excluding a property must not turn its text into another property ──
+# The removed match reopened its span as a hole, so the excluded value came back
+# as the episode title.
+? Hotel.Hell.S01E01.720p.DD5.1.448kbps-ALANiS
+: options: --exclude audio_bit_rate
+  type: episode
+  title: Hotel Hell
+  release_group: ALANiS
+  -audio_bit_rate:
+  -episode_title:
+
+? House.of.Cards.2013.S02E03.1080p.Netflix.WEBRip.DD5.1.x264-NTb.mkv
+: options: --exclude streaming_service
+  type: episode
+  title: House of Cards
+  release_group: NTb
+  -streaming_service:
+  -episode_title:
+
+# guard: without the exclusion both properties are reported as usual
+? Hotel.Hell.S01E01.720p.DD5.1.448kbps-ALANiS
+: type: episode
+  audio_bit_rate: 448Kbps
+  release_group: ALANiS
+
+? House.of.Cards.2013.S02E03.1080p.Netflix.WEBRip.DD5.1.x264-NTb.mkv
+: type: episode
+  streaming_service: Netflix
+  release_group: NTb
+

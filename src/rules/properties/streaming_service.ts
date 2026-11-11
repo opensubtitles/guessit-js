@@ -7,15 +7,36 @@ import { seps, dash , sepsPattern } from '../common/index.js';
 import { sepsBefore, sepsAfter } from '../common/validators.js';
 
 export function streamingService(config: Record<string, unknown>) {
-  const rebulk = new Rebulk({ disabled: (context) => isDisabled(context, 'streaming_service') });
+  // Deliberately not disabled when the property is excluded: the patterns keep
+  // matching so the text stays claimed, and PrivatiseExcludedStreamingService hides
+  // the matches from the result. Switching the whole builder off instead left the
+  // service name as an open hole, and "Netflix" of
+  // "House.of.Cards.2013.S02E03.1080p.Netflix.WEBRip…" came back as the episode
+  // title under `--exclude streaming_service`. Excluding a property must not turn
+  // its text into a different one.
+  const rebulk = new Rebulk();
   rebulk.stringDefaults({ ignoreCase: true }).regexDefaults({ flags: 'i', abbreviations: [dash] });
   rebulk.defaults({ name: 'streaming_service', tags: ['source-prefix'] });
 
   loadConfigPatterns(rebulk, config);
 
-  rebulk.rules(ValidateStreamingService);
+  rebulk.rules(ValidateStreamingService, PrivatiseExcludedStreamingService);
 
   return rebulk;
+}
+
+class PrivatiseExcludedStreamingService extends Rule {
+  static priority = 127;
+  static consequence = [];
+
+  when(matches: any, context: Record<string, unknown>): Match[] | false {
+    if (!isDisabled(context, 'streaming_service')) return false;
+    const services = (matches.named('streaming_service') as Match[]) ?? [];
+    for (const service of services) {
+      (service as unknown as { private: boolean }).private = true;
+    }
+    return false;
+  }
 }
 
 class ValidateStreamingService extends Rule {

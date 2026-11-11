@@ -1028,6 +1028,8 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
     "array": false,
     "scalar": true,
     "enum": [
+      "AV1",
+      "AV2",
       "DivX",
       "DVDivX",
       "H.263",
@@ -1136,7 +1138,7 @@ export interface GuessItResult {
   version?: number;
   video_api?: "DXVA";
   video_bit_rate?: string;
-  video_codec?: "DivX" | "DVDivX" | "H.263" | "H.264" | "H.265" | "MPEG-2" | "RealVideo" | "VC-1" | "VP7" | "VP8" | "VP80" | "VP9" | "Xvid" | "XviD";
+  video_codec?: "AV1" | "AV2" | "DivX" | "DVDivX" | "H.263" | "H.264" | "H.265" | "MPEG-2" | "RealVideo" | "VC-1" | "VP7" | "VP8" | "VP80" | "VP9" | "Xvid" | "XviD";
   video_profile?: "Advanced Video Codec High Definition" | "Baseline" | "BP" | "EP" | "Extended" | "HEVC" | "High" | "High 10" | "High 4:2:2" | "High 4:4:4 Predictive" | "High Efficiency Video Coding" | "HiP" | "HP" | "Main" | "MP" | "SC" | "Scalable Video Coding" | "SVC" | "XP" | ("Advanced Video Codec High Definition" | "Baseline" | "BP" | "EP" | "Extended" | "HEVC" | "High" | "High 10" | "High 4:2:2" | "High 4:4:4 Predictive" | "High Efficiency Video Coding" | "HiP" | "HP" | "Main" | "MP" | "SC" | "Scalable Video Coding" | "SVC" | "XP")[];
   website?: string;
   year?: number;

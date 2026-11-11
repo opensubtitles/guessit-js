@@ -37,7 +37,14 @@ class BitRateTypeRule extends Rule {
     const toRemove = [];
 
     if (isDisabled(context, 'audio_bit_rate')) {
-      toRemove.push(...matches.named('audio_bit_rate'));
+      // Excluding a property must not turn its text into a different one. Removing
+      // the match reopens the span as a hole, and "448kbps" of
+      // "Hotel.Hell.S01E01.720p.DD5.1.448kbps-ALANiS" came back as the episode
+      // title under `--exclude audio_bit_rate`. Marking it private keeps the text
+      // claimed and keeps it out of the result, which is what Python reports.
+      for (const match of matches.named('audio_bit_rate')) {
+        (match as unknown as { private: boolean }).private = true;
+      }
     } else {
       const videoBitRateDisabled = isDisabled(context, 'video_bit_rate');
       for (const match of matches.named('audio_bit_rate')) {

@@ -1296,6 +1296,8 @@
     "video_codec": {
       "type": "string",
       "enum": [
+        "AV1",
+        "AV2",
         "DivX",
         "DVDivX",
         "H.263",

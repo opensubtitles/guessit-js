@@ -33,6 +33,13 @@ export function videoCodec(config: Record<string, unknown>): Rebulk {
   rebulk.regex('[hx]-?263', { value: 'H.263' });
   rebulk.regex('[hx]-?264', '(?:MPEG-?4)?AVC(?:HD)?', { value: 'H.264' });
   rebulk.regex('[hx]-?265', 'HEVC', { value: 'H.265' });
+  // AV1 and its successor AV2, the royalty-free AOMedia codecs. Python has no entry
+  // for either, so a name carrying one came back with no video_codec at all — and
+  // worse, the "V1" read as a version marker, which split the token and left
+  // `version: 1` behind ("Show.Name.Season.2.AV1.1080p" became episode_title "A").
+  // AV1 is what YouTube, Netflix and most 2023-and-later encodes ship.
+  rebulk.regex('AV-?1', { value: 'AV1' });
+  rebulk.regex('AV-?2', { value: 'AV2' });
   rebulk.regex('(?<video_codec>hevc)(?<color_depth>10)', {
     value: { video_codec: 'H.265', color_depth: '10-bit' },
     tags: ['video-codec-suffix'],

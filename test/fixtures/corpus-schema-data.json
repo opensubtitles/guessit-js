@@ -2614,6 +2614,8 @@
    "Xvid"
   ],
   "codeValues": [
+   "AV1",
+   "AV2",
    "DivX",
    "H.263",
    "H.264",

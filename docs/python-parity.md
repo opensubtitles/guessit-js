@@ -4,26 +4,26 @@ Every name in the fixture corpus run through both parsers and compared field
 by field. Regenerate with `scripts/python-diff.mts` (usage in its header);
 languages compare as alpha3, since Python's encoder writes their English names.
 
-- **2241 of 2490 inputs identical** (90.0%)
-- **249 differ**: 137 pinned — a fixture of ours asserts the differing field itself,
-  39 in `test/fixtures/upstream-rules-pending.yml` (tracked backlog),
-  71 untested — the name is in our corpus but the differing field is not asserted,
+- **2247 of 2490 inputs identical** (90.2%)
+- **243 differ**: 137 pinned — a fixture of ours asserts the differing field itself,
+  38 in `test/fixtures/upstream-rules-pending.yml` (tracked backlog),
+  66 untested — the name is in our corpus but the differing field is not asserted,
   2 unexamined — the name is not in our corpus at all
 
 Differing fields, most frequent first:
 
 | Field | Inputs |
 |---|---|
-| `title` | 95 |
+| `title` | 94 |
 | `episode` | 55 |
 | `season` | 45 |
-| `episode_title` | 44 |
+| `episode_title` | 41 |
 | `release_group` | 40 |
 | `type` | 29 |
 | `alternative_title` | 29 |
-| `subtitle_language` | 22 |
 | `language` | 20 |
 | `mimetype` | 19 |
+| `subtitle_language` | 19 |
 | `other` | 18 |
 | `year` | 13 |
 | `source` | 12 |
@@ -33,19 +33,19 @@ Differing fields, most frequent first:
 | `edition` | 4 |
 | `bonus` | 3 |
 | `absolute_episode` | 3 |
+| `video_codec` | 3 |
 | `country` | 3 |
 | `streaming_service` | 3 |
 | `screen_size` | 2 |
-| `version` | 2 |
-| `video_codec` | 2 |
 | `volume` | 2 |
 | `proper_count` | 2 |
 | `episode_details` | 2 |
 | `audio_channels` | 2 |
 | `part` | 1 |
+| `version` | 1 |
 | `website` | 1 |
 
-## Untested (71)
+## Untested (66)
 
 The name is in our corpus, but no fixture asserts the field that differs — so the JS value here is incidental, not a decision. These are where a real divergence could be hiding.
 
@@ -149,15 +149,6 @@ The name is in our corpus, but no fixture asserts the field that differs — so 
 `HD-Cam.rip`
   - `mimetype`: python `"audio/vnd.rip"` · js `undefined`
 
-`Hotel.Hell.S01E01.720p.DD5.1.448kbps-ALANiS`
-  - `episode_title`: python `undefined` · js `"448kbps"`
-
-`House.of.Cards.2013.S02E03.1080p.Netflix.WEBRip.DD5.1.x264-NTb.mkv`
-  - `episode_title`: python `undefined` · js `"Netflix"`
-
-`House.of.Cards.2013.S02E03.1080p.NF.WEBRip.DD5.1.x264-NTb.mkv`
-  - `episode_title`: python `undefined` · js `"NF"`
-
 `Its.A.Wonderful.Life.1946.Colorized.720p.BRRip.999MB.MkvCage.com`
   - `mimetype`: python `"application/x-msdownload"` · js `undefined`
 
@@ -226,8 +217,8 @@ The name is in our corpus, but no fixture asserts the field that differs — so 
   - `episode_title`: python `undefined` · js `"233"`
 
 `Show.Name.Season.2.AV1.1080p`
-  - `episode_title`: python `"AV1"` · js `"A"`
-  - `version`: python `undefined` · js `1`
+  - `episode_title`: python `"AV1"` · js `undefined`
+  - `video_codec`: python `undefined` · js `"AV1"`
 
 `Some.Title.XViD-by.Artik[SEDG].avi`
   - `alternative_title`: python `undefined` · js `["by Artik","SEDG"]`
@@ -249,12 +240,6 @@ The name is in our corpus, but no fixture asserts the field that differs — so 
 
 `Studio 60 Сезон 5 1080p`
   - `episode`: python `60` · js `undefined`
-
-`sub/folder/Title Only`
-  - `subtitle_language`: python `undefined` · js `"und"`
-
-`sub/folder/Title XViD 720p Only`
-  - `subtitle_language`: python `undefined` · js `"und"`
 
 `ts`
   - `mimetype`: python `undefined` · js `"video/mp2t"`
@@ -292,7 +277,7 @@ No fixture of ours covers these and they are not in the backlog file. Each needs
 `Dark.Net.S01E06.720p.HDTV.x264-BATV Dark.Net.2015.720p.HDTV.x264-BATV`
   - `episode_title`: python `undefined` · js `"BATV Dark Net"`
 
-## Tracked backlog (39)
+## Tracked backlog (38)
 
 Parked in `test/fixtures/upstream-rules-pending.yml`, which is deliberately absent from `FIXTURE_FILES`. See `docs/upstream-issues.md` for the gap/divergence split.
 
@@ -428,10 +413,6 @@ Parked in `test/fixtures/upstream-rules-pending.yml`, which is deliberately abse
 `STFr`
   - `subtitle_language`: python `"fra"` · js `undefined`
   - `title`: python `undefined` · js `"STFr"`
-
-`sub`
-  - `title`: python `"sub"` · js `undefined`
-  - `subtitle_language`: python `undefined` · js `"und"`
 
 `SubFr`
   - `subtitle_language`: python `"fra"` · js `undefined`

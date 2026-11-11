@@ -198,6 +198,20 @@ class LanguageFinder {
     const name = match.propertyName;
 
     if (match.lang.equals(UNDETERMINED)) {
+      // An undetermined match carries the `common` tag too when its word is on the
+      // blacklist, so RemoveCommonWordsLanguageRule can drop it. Without the tag a
+      // bare affix always survived: a directory named "sub" — the commonest folder
+      // name in a subtitle library — reported subtitle_language "und", as did the
+      // "sub" of "Movie.2024.sub.1080p.mkv". "subs" is not blacklisted and still
+      // reports und, which is what Python does for each of them.
+      // Against the raw text, not the value: an affix-only match carries the literal
+      // value "und", so the word it came from has to be read back out of the input.
+      // Python's RemoveInvalidLanguages tests `match.raw.lower() in common_words`.
+      const undTags = ['weak-language'];
+      const raw = (word.inputString ?? '').slice(start, end).toLowerCase();
+      if (this.commonWords.has(raw) || this.commonWords.has(word.value.toLowerCase())) {
+        undTags.push('common');
+      }
       return [
         start,
         end,
@@ -205,7 +219,7 @@ class LanguageFinder {
           name,
           value: word.value.toLowerCase(),
           formatter: (s: string) => new Language('und'),
-          tags: ['weak-language'],
+          tags: undTags,
         },
       ];
     }
