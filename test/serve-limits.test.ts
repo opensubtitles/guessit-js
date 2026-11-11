@@ -87,4 +87,22 @@ describe.skipIf(!hasDist)('serve input limits', () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toHaveLength(2);
   });
+
+  // The documented batch contract is one entry per name carrying the input_string
+  // and either a result or an error — identical on all three HTTP surfaces. This
+  // server returned bare result objects instead, and only the limits were pinned,
+  // so the divergence went unnoticed until the response was read by hand.
+  it('answers a batch with the documented entry shape', async () => {
+    const names = ['Movie.2020.1080p.mkv', 'Breaking.Bad.S01E02.720p.mkv'];
+    const res = await fetch(BASE, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ filenames: names }),
+    });
+    expect(res.status).toBe(200);
+    const entries = (await res.json()) as Array<{ input_string: string; result?: Record<string, unknown> }>;
+    expect(entries.map((e) => e.input_string)).toEqual(names);
+    expect(entries[0].result).toMatchObject({ title: 'Movie', year: 2020 });
+    expect(entries[1].result).toMatchObject({ title: 'Breaking Bad', season: 1, episode: 2 });
+  });
 });

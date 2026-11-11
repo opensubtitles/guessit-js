@@ -13,7 +13,7 @@
 if (typeof globalThis.process === 'undefined') {
   globalThis.process = { env: {} };
 }
-const { guessit, version } = await import('../dist/guessit-js.js');
+const { guessit, guessitMany, version } = await import('../dist/guessit-js.js');
 
 // Parsing cost grows with the square of the number of matches a name yields, so
 // a long synthetic string costs far more than its length suggests: 400
@@ -95,12 +95,19 @@ export default {
       const options = body && typeof body.options === 'object' && body.options ? body.options : {};
       try {
         if (Array.isArray(body.filenames)) {
-          if (body.filenames.length > MAX_BATCH) return json({ error: `Max ${MAX_BATCH} filenames per request` }, 400);
+          // One entry per name, each {input_string, result} or {input_string, error},
+          // answered in request order — the same contract as server.ts and --serve.
+          // guessitMany parses the options once for the batch and isolates a failing
+          // name instead of taking the request down with it. Over-limit is 413, as
+          // the single-filename path and the other two surfaces already answered.
+          if (body.filenames.length > MAX_BATCH) {
+            return json({ error: `Max ${MAX_BATCH} filenames per request` }, 413);
+          }
           const names = body.filenames.map(String);
           if (names.some((f) => f.length > MAX_FILENAME_LENGTH)) {
             return json({ error: `filename exceeds ${MAX_FILENAME_LENGTH} characters` }, 413);
           }
-          return json(names.map((f) => guessit(f, options)));
+          return json(guessitMany(names, options));
         }
         if (typeof body.filename === 'string') {
           if (body.filename.length > MAX_FILENAME_LENGTH) {

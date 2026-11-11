@@ -6,7 +6,7 @@
 import { readFileSync, existsSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
-import { guessit, properties as apiProperties, version } from '../dist/guessit-js.js';
+import { guessit, guessitMany, properties as apiProperties, version } from '../dist/guessit-js.js';
 
 // Parsing cost grows with the square of the number of matches a name yields, so
 // a long synthetic string costs far more than its length suggests: 400
@@ -424,7 +424,14 @@ if (serve) {
               sendJson(res, 413, { error: `filename exceeds ${MAX_FILENAME_LENGTH} characters` });
               return;
             }
-            sendJson(res, 200, names.map((f) => display(guessit(f, opts), 'json')));
+            // One entry per name, each {input_string, result} or {input_string, error} —
+            // the documented contract, shared with server.ts and the Cloudflare worker.
+            // guessitMany parses the options once and isolates a name that throws.
+            sendJson(res, 200, guessitMany(names, opts).map((entry) => (
+              'result' in entry
+                ? { input_string: entry.input_string, result: display(entry.result, 'json') }
+                : entry
+            )));
           } else if (typeof body.filename === 'string') {
             if (body.filename.length > MAX_FILENAME_LENGTH) {
               sendJson(res, 413, { error: `filename exceeds ${MAX_FILENAME_LENGTH} characters` });
