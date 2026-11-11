@@ -51,7 +51,10 @@ jobs:
           # pin also keeps the demo's side-by-side honest: this is the version the
           # README and the parity report compare against.
           python -m venv /tmp/guessit-venv
-          /tmp/guessit-venv/bin/pip install --quiet "guessit==4.5.1"
+          # six: guessit 4.5.1 on PyPI ships a jsonutils.py that imports it without
+          # declaring the dependency, so a clean install cannot import GuessitEncoder.
+          # Reproduced in a bare venv locally; the fix is in their git, not the release.
+          /tmp/guessit-venv/bin/pip install --quiet "guessit==4.5.1" six
           /tmp/guessit-venv/bin/python -c "import guessit; from guessit.jsonutils import GuessitEncoder; print('python guessit', guessit.__version__)"
           /tmp/guessit-venv/bin/python scripts/python-compare.py
 
