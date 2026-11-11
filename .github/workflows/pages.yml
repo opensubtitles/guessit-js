@@ -51,7 +51,7 @@ jobs:
           python -c "import guessit; print('python guessit', guessit.__version__)"
           python scripts/python-compare.py
 
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
 
       - uses: actions/upload-pages-artifact@v3
         with:
