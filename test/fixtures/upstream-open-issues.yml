@@ -865,3 +865,53 @@
   title: Avatar La Voie de l'eau
   source: HD Camera
   language: fr
+
+# ── #977: an asterisk inside a title is title text, at every position ──
+# Python splits on the first `*` and keeps the rest ("M*A*S H" with an episode
+# marker, "M A*S*H" without), so one show yields two mangled titles. Here `*` is
+# never a separator, so the title is the same in both shapes.
+? M*A*S*H.S01E01.mkv
+: type: episode
+  title: M*A*S*H
+  season: 1
+  episode: 1
+
+? M*A*S*H.mkv
+: type: movie
+  title: M*A*S*H
+
+? a*b*c*d.mkv
+: type: movie
+  title: a*b*c*d
+
+# guard: two asterisks behave like three, which is where Python diverges
+? a*b*c.mkv
+: type: movie
+  title: a*b*c
+
+# guard: the dotted spelling is unaffected and matches Python
+? M.A.S.H.S01E01.mkv
+: type: episode
+  title: M.A.S.H.
+  season: 1
+  episode: 1
+
+# ── #982 (upstream, merged): equally complete SxxExx fileparts ──
+# The specificity guard upstream took from our #962. The filename wins unless the
+# parent filepart carries more properties.
+? Show.S02E03/Show.S01E09.mkv
+: title: Show
+  season: 1
+  episode: 9
+
+? Show.S02E03/Show.S01.E14.mkv
+: title: Show
+  season: 1
+  episode: 14
+
+# guard: season and episode come from the same filepart, never S01E16 from both
+? Show S01E02/Show.S03E16.sample.mkv
+: title: Show
+  season: 3
+  episode: 16
+  other: Sample

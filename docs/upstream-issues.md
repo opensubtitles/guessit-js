@@ -7,6 +7,24 @@
 > upstream work since this snapshot: guessit-io/guessit#961 (dead episode pass,
 > our PR guessit-io/guessit#962) and the rebulk-js 3.4.0 engine fixes.
 >
+> **#961/#962 resolved upstream, 2026-11-10.** Toilal confirmed the diagnosis,
+> declined the per-subclass workaround and fixed the root cause in rebulk
+> instead (Toilal/rebulk#92 → rebulk 6.0.2, where instance-registered rules
+> compare by identity). guessit#982 integrates it along with the specificity
+> guard from our #962, which it credits and supersedes; #961 is closed and #962
+> is closed with it. All five of #982's new equally-complete-filepart cases pass
+> here unchanged — that guard originated in this port.
+>
+> We carried the same engine defect. The rebulk-js 3.4.0 note claimed every
+> instance of a duplicated rule class executes, but only `toposortRules` had been
+> fixed — `Rules.extend` still deduped by class, so differently-parameterized
+> instances died one step earlier (verified on 3.4.0: two instances in, one
+> effective rule out, only the first fired). Fixed in rebulk-js 3.5.0 with
+> parameter-aware equality rather than upstream's identity rule, so the default
+> `ConflictSolver`/`PrivateRemover` (31 each, interchangeable) still collapse to
+> one. No guessit-js behaviour depended on it; effective rules stayed 137 of 197
+> registered.
+>
 > **Second sweep, 2026-09-19** — re-triaged every open issue and everything
 > upstream closed after the port (#812–#954). Four needed work here and are
 > fixed with guard fixtures: #963 (decimal sequel numbers read as dates or

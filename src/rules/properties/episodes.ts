@@ -823,7 +823,6 @@ export function episodes(config: EpisodesConfig): Rebulk {
     AbsoluteEpisodeInGroupRule,
     RemoveInvalidSeasonRule,
     RemoveInvalidEpisodeRule,
-    RemoveUndeterminedLanguagesRule,
   );
 
   return rebulk;
@@ -1708,20 +1707,6 @@ class RemoveWeakDuplicateRule extends Rule {
     }
 
     return toRemove.length > 0 ? toRemove : false;
-  }
-}
-
-/**
- * Remove undetermined languages (placeholder)
- */
-class RemoveUndeterminedLanguagesRule extends Rule {
-  consequence = RemoveMatch;
-  static override priority = 32;
-  override priority = 32;
-
-  when(matches: any, context: any): any {
-    // Placeholder implementation
-    return false;
   }
 }
 

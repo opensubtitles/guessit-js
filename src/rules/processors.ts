@@ -243,8 +243,11 @@ export class RemoveLessSpecificSeasonEpisode extends RemoveAmbiguous {
   }
 }
 
-// rebulk-js (unlike Python rebulk) rejects two rule instances of the same class in one
-// priority group, so the season/episode passes need distinct classes.
+// Two named passes rather than two instances of the base class. Rule dedup compared by
+// class alone until rebulk-js 3.5.0, which silently dropped the second registration and
+// left the episode pass dead — the same trap Python guessit is still in (Toilal/rebulk#92,
+// guessit-io/guessit#961). Dedup is parameter-aware now, so distinct classes are no longer
+// required; they stay because a named pass is what shows up in rule traces and dependencies.
 export class RemoveLessSpecificSeason extends RemoveLessSpecificSeasonEpisode {
   constructor() { super('season'); }
 }

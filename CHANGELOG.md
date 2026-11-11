@@ -4,6 +4,35 @@ All notable changes to guessit-js are documented here.
 
 ## [Unreleased]
 
+**Every pass of a twice-registered rule class runs** (rebulk-js 3.5.0). Rule
+dedup compared instances by class alone, so a rule class registered twice with
+different constructor arguments lost an instance when rebulks were merged — the
+defect that silently disabled Python guessit's
+`RemoveLessSpecificSeasonEpisode("episode")` pass (upstream
+guessit-io/guessit#961, Toilal/rebulk#92). The rebulk-js 3.4.0 note claimed
+every instance already executed, but only the toposort half had shipped;
+`Rules.extend` still dropped them one step earlier. Equality is parameter-aware
+now, so interchangeable instances — notably the default
+`ConflictSolver`/`PrivateRemover` that every Rebulk registers, 31 of each here —
+still collapse to one. No parsing changed: the season and episode passes were
+already separate classes precisely because of this trap, so what this removes is
+the requirement for that workaround. The dead placeholder
+`RemoveUndeterminedLanguagesRule` in the episode rules (its `when` always
+returned false, shadowed by the real one in the language rules) is gone.
+
+Upstream landed the same fix from the other side on 2026-11-10: rebulk 6.0.2
+compares instance-registered rules by identity, and guessit#982 integrates it
+together with the specificity guard this port contributed in #962 — which it
+credits and supersedes. All five of its new equally-complete-filepart cases
+already pass here.
+
+**Asterisks in a title stay in the title** (upstream guessit-io/guessit#977,
+filed 2026-11-08). Already correct here and now pinned: Python splits on the
+first `*` and keeps the others, so `M*A*S*H.S01E01.mkv` gives title `M*A*S H`
+while `M*A*S*H.mkv` gives `M A*S*H` — one show, two mangled titles depending on
+whether an episode marker follows. This port never treats `*` as a separator, so
+both read `M*A*S*H`.
+
 **`guessitMany()` parses a list of names in one options pass.** `guessit()`
 re-parses the options and re-merges them with the whole config on every call,
 which costs more than matching a short name does; the batch entry point hoists
