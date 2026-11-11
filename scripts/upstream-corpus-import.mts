@@ -8,7 +8,7 @@
 //   2. SP=<dir> npx tsx scripts/upstream-corpus-import.mts   (writes $SP/missing.json too)
 //   3. Wire the new files into FIXTURE_FILES in test/guessit.test.ts and run the suite.
 //   4. SP=<dir> npx tsx scripts/upstream-corpus-quarantine.mts to park what fails.
-import { readFileSync, readdirSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import yaml from 'js-yaml';
 
@@ -59,6 +59,13 @@ for (const [file, missNames] of Object.entries(missing)) {
   const target = `test/fixtures/upstream-${stem.startsWith('rules__') ? 'rules-' + stem.slice(7) : 'corpus-' + stem}.yml`;
   const header = `# Cases from upstream guessit's own test suite (guessit/test/${file.replace(/^rules__/, 'rules/').replace('__', '/')})\n`
     + `# that this port did not carry. Imported 2026-11-10 from guessit 4.5.1.\n`;
+  // Never overwrite: these files get curated after import — failing cases are split
+  // out into the pending file and restored one bucket at a time — and a rerun that
+  // rewrote them from scratch would silently undo all of it.
+  if (existsSync(target) && !process.env['FORCE_OVERWRITE']) {
+    console.log(`${target}: exists, skipped (${kept.length} blocks would be written; FORCE_OVERWRITE=1 to replace)`);
+    continue;
+  }
   writeFileSync(target, header + (defaultBlock ? defaultBlock + '\n\n' : '\n') + kept.join('\n\n') + '\n');
   console.log(`${target}: ${kept.length} blocks`);
   written++;

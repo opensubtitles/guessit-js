@@ -61,3 +61,6 @@
 : title: Something
   date: 2007-05-02
   type: episode
+
+? 1919
+: !!map {}

@@ -4,24 +4,23 @@ Every name in the fixture corpus run through both parsers and compared field
 by field. Regenerate with `scripts/python-diff.mts` (usage in its header);
 languages compare as alpha3, since Python's encoder writes their English names.
 
-- **2209 of 2490 inputs identical** (88.7%)
-- **281 differ**: 159 pinned — a fixture of ours asserts the differing field itself,
-  45 in `test/fixtures/upstream-rules-pending.yml` (tracked backlog),
-  75 untested — the name is in our corpus but the differing field is not asserted,
+- **2241 of 2490 inputs identical** (90.0%)
+- **249 differ**: 137 pinned — a fixture of ours asserts the differing field itself,
+  39 in `test/fixtures/upstream-rules-pending.yml` (tracked backlog),
+  71 untested — the name is in our corpus but the differing field is not asserted,
   2 unexamined — the name is not in our corpus at all
 
 Differing fields, most frequent first:
 
 | Field | Inputs |
 |---|---|
-| `title` | 101 |
+| `title` | 95 |
 | `episode` | 55 |
-| `episode_title` | 47 |
 | `season` | 45 |
+| `episode_title` | 44 |
 | `release_group` | 40 |
 | `type` | 29 |
 | `alternative_title` | 29 |
-| `country` | 28 |
 | `subtitle_language` | 22 |
 | `language` | 20 |
 | `mimetype` | 19 |
@@ -34,18 +33,19 @@ Differing fields, most frequent first:
 | `edition` | 4 |
 | `bonus` | 3 |
 | `absolute_episode` | 3 |
+| `country` | 3 |
 | `streaming_service` | 3 |
-| `audio_channels` | 3 |
 | `screen_size` | 2 |
 | `version` | 2 |
 | `video_codec` | 2 |
 | `volume` | 2 |
 | `proper_count` | 2 |
 | `episode_details` | 2 |
+| `audio_channels` | 2 |
 | `part` | 1 |
 | `website` | 1 |
 
-## Untested (75)
+## Untested (71)
 
 The name is in our corpus, but no fixture asserts the field that differs — so the JS value here is incidental, not a decision. These are where a real divergence could be hiding.
 
@@ -77,6 +77,10 @@ The name is in our corpus, but no fixture asserts the field that differs — so 
   - `season`: python `10` · js `undefined`
   - `episode`: python `80` · js `1080`
 
+`1919`
+  - `year`: python `1919` · js `undefined`
+  - `title`: python `undefined` · js `"1919"`
+
 `2015.01.31`
   - `season`: python `2015` · js `undefined`
   - `episode`: python `1` · js `undefined`
@@ -89,12 +93,6 @@ The name is in our corpus, but no fixture asserts the field that differs — so 
 `2160`
   - `season`: python `21` · js `undefined`
   - `episode`: python `60` · js `2160`
-
-`4.3gb`
-  - `title`: python `"4.3gb"` · js `"4 3gb"`
-
-`5.1`
-  - `title`: python `"5.1"` · js `"5 1"`
 
 `555.S01.1080p.VMEO.WEBRip.AAC2.0.x264-BTN`
   - `absolute_episode`: python `555` · js `undefined`
@@ -176,9 +174,6 @@ The name is in our corpus, but no fixture asserts the field that differs — so 
   - `episode_title`: python `"USA Race BTSportHD"` · js `"Race BTSportHD"`
   - `country`: python `undefined` · js `"US"`
 
-`Movies/1923 (2022)/Season 1/1923.S01E01.mkv`
-  - `episode_title`: python `undefined` · js `"Movies"`
-
 `Movies/Bunker Palace Hôtel (Enki Bilal) (1989)/Enki Bilal - Bunker Palace Hotel (Fr Vhs Rip).avi`
   - `release_group`: python `"Enki Bilal"` · js `undefined`
   - `alternative_title`: python `"Bunker Palace Hotel"` · js `"Enki Bilal"`
@@ -198,7 +193,7 @@ The name is in our corpus, but no fixture asserts the field that differs — so 
   - `alternative_title`: python `"Starting Life in Another World"` · js `undefined`
 
 `S01D02.3-5-GROUP`
-  - `title`: python `"GROUP"` · js `"S01D02 3-5-GROUP"`
+  - `title`: python `"GROUP"` · js `"S01D02.3-5-GROUP"`
 
 `Series/Duckman/Duckman - 101 (01) - 20021107 - I, Duckman.avi`
   - `absolute_episode`: python `undefined` · js `1`
@@ -273,12 +268,6 @@ The name is in our corpus, but no fixture asserts the field that differs — so 
 `VHS.RIP`
   - `mimetype`: python `"audio/vnd.rip"` · js `undefined`
 
-`wawa.co.uk`
-  - `country`: python `"UNITED KINGDOM"` · js `"GB"`
-
-`wawa.uk`
-  - `country`: python `"UNITED KINGDOM"` · js `"GB"`
-
 `x265`
   - `bonus`: python `265` · js `undefined`
   - `type`: python `"episode"` · js `"movie"`
@@ -303,7 +292,7 @@ No fixture of ours covers these and they are not in the backlog file. Each needs
 `Dark.Net.S01E06.720p.HDTV.x264-BATV Dark.Net.2015.720p.HDTV.x264-BATV`
   - `episode_title`: python `undefined` · js `"BATV Dark Net"`
 
-## Tracked backlog (45)
+## Tracked backlog (39)
 
 Parked in `test/fixtures/upstream-rules-pending.yml`, which is deliberately absent from `FIXTURE_FILES`. See `docs/upstream-issues.md` for the gap/divergence split.
 
@@ -324,10 +313,6 @@ Parked in `test/fixtures/upstream-rules-pending.yml`, which is deliberately abse
 `[SubsPlease] Fairy Tail - 100 Years Quest - 05 (1080p)`
   - `title`: python `"Fairy Tail"` · js `"Fairy Tail - 100 Years Quest"`
   - `alternative_title`: python `"100 Years Quest"` · js `undefined`
-
-`1919`
-  - `year`: python `1919` · js `undefined`
-  - `title`: python `undefined` · js `"1919"`
 
 `2012`
   - `year`: python `2012` · js `undefined`
@@ -363,19 +348,9 @@ Parked in `test/fixtures/upstream-rules-pending.yml`, which is deliberately abse
   - `title`: python `"est"` · js `undefined`
   - `language`: python `undefined` · js `"est"`
 
-`Evangelion.1.0.You.Are.Not.Alone.2007.1080p.BluRay.x264-GRP`
-  - `title`: python `"Evangelion 1 0 You Are Not Alone"` · js `"Evangelion"`
-  - `audio_channels`: python `undefined` · js `"1.0"`
-
-`Ghost in the Shell 2.0 (2008)/Ghost in the Shell 2.0 (2008).mkv`
-  - `title`: python `"Ghost in the Shell 2.0"` · js `"Ghost in the Shell 2 0"`
-
 `ice`
   - `title`: python `"ice"` · js `undefined`
   - `language`: python `undefined` · js `"isl"`
-
-`M3GAN 2.0 (2025).mkv`
-  - `title`: python `"M3GAN 2.0"` · js `"M3GAN 2 0"`
 
 `mal`
   - `title`: python `"mal"` · js `undefined`
@@ -395,9 +370,6 @@ Parked in `test/fixtures/upstream-rules-pending.yml`, which is deliberately abse
 
 `Movie.AAC.2.0.2008`
   - `audio_channels`: python `"2.0"` · js `undefined`
-
-`Mr.Robot.S01E01.eps1.0_hellofriend.mov.1080p.BluRay.DD5.1.x264-SA89.mkv`
-  - `episode_title`: python `"eps1.0 hellofriend"` · js `"eps1 0 hellofriend"`
 
 `Show 12 - 24`
   - `title`: python `"Show"` · js `"Show 12"`
@@ -474,14 +446,11 @@ Parked in `test/fixtures/upstream-rules-pending.yml`, which is deliberately abse
   - `type`: python `"movie"` · js `"episode"`
   - `other`: python `undefined` · js `"Complete"`
 
-`The.Taking.of.Pelham.1.2.3.2009.1080p.BluRay.DTS.x264-EbP`
-  - `title`: python `"The Taking of Pelham 1.2.3"` · js `"The Taking of Pelham 1.2.3."`
-
 `UHD HQ 8bit Bluray`
   - `other`: python `"High Quality"` · js `["Ultra HD","High Quality"]`
   - `source`: python `"Ultra HD Blu-ray"` · js `"Blu-ray"`
 
-## Pinned — deliberate (159)
+## Pinned — deliberate (137)
 
 A fixture of ours asserts the JS value and passes, so the difference is a decision this port has already made and tests. Grounds are in `CHANGELOG.md` and `docs/upstream-issues.md`.
 
@@ -558,7 +527,7 @@ A fixture of ours asserts the JS value and passes, so the difference is a decisi
   - `title`: python `undefined` · js `"Keroro"`
 
 `[KTXP][Fate][24][GB][1080P].mp4`
-  - `country`: python `"UNITED KINGDOM"` · js `undefined`
+  - `country`: python `"GB"` · js `undefined`
   - `title`: python `undefined` · js `"Fate"`
 
 `[Mobile Suit Gundam Seed Destiny HD REMASTER][07][Big5][720p][AVC_AAC].mp4`
@@ -599,7 +568,7 @@ A fixture of ours asserts the JS value and passes, so the difference is a decisi
   - `alternative_title`: python `"【MMZYSUB】★【Golden"` · js `undefined`
   - `title`: python `"Time】"` · js `"Golden Time"`
   - `release_group`: python `"24（END）"` · js `"MMZYSUB"`
-  - `country`: python `"UNITED KINGDOM"` · js `undefined`
+  - `country`: python `"GB"` · js `undefined`
   - `type`: python `"movie"` · js `"episode"`
   - `episode`: python `undefined` · js `24`
   - `other`: python `undefined` · js `"Complete"`
@@ -650,12 +619,6 @@ A fixture of ours asserts the JS value and passes, so the difference is a decisi
   - `season`: python `78` · js `undefined`
   - `type`: python `"episode"` · js `"movie"`
 
-`au`
-  - `country`: python `"AUSTRALIA"` · js `"AU"`
-
-`Au.HDTV.8x01.Le.fleuve.mkv`
-  - `country`: python `"AUSTRALIA"` · js `"AU"`
-
 `Avatar La Voie de l'eau.FRENCH.CAMHD.H264.AAC`
   - `release_group`: python `"CAMHD"` · js `undefined`
   - `mimetype`: python `"audio/x-aac"` · js `"audio/aac"`
@@ -687,9 +650,6 @@ A fixture of ours asserts the JS value and passes, so the difference is a decisi
 
 `BRRip.2160p.UHD`
   - `other`: python `["Reencoded","Rip"]` · js `["Reencoded","Rip","Ultra HD"]`
-
-`c:\Temp\postprocessing\Marvels.Agents.of.S.H.I.E.L.D.s01e02.0.8.4.720p.WEB.DL.mkv`
-  - `episode_title`: python `"0.8.4"` · js `"0.8.4."`
 
 `clny.3x11m720p.es.mkv`
   - `title`: python `"clny 3x11m720p"` · js `"clny"`
@@ -752,9 +712,6 @@ A fixture of ours asserts the JS value and passes, so the difference is a decisi
   - `release_group`: python `"DAZN"` · js `undefined`
   - `streaming_service`: python `undefined` · js `"DAZN"`
 
-`FlexGet.US.S2013E14.Title.Here.720p.HDTV.AAC5.1.x264-NOGRP`
-  - `country`: python `"UNITED STATES"` · js `"US"`
-
 `Foo.2.2`
   - `title`: python `"Foo 2"` · js `"Foo"`
   - `episode_title`: python `"2"` · js `undefined`
@@ -787,9 +744,6 @@ A fixture of ours asserts the JS value and passes, so the difference is a decisi
   - `season`: python `24` · js `2`
   - `episode`: python `undefined` · js `24`
 
-`Hells.Kitchen.US.S17E08.1080p.HEVC.x265-MeGusta-Obfuscated/c48db7d2aeb040e8a920a9fd6effcbf4.mkv`
-  - `country`: python `"UNITED STATES"` · js `"US"`
-
 `House MD Season 7 Complete MKV`
   - `title`: python `"House"` · js `"House MD"`
   - `other`: python `["Mic Dubbed","Complete"]` · js `"Complete"`
@@ -797,9 +751,6 @@ A fixture of ours asserts the JS value and passes, so the difference is a decisi
 `How I Met Your Mother Season 1, 2, 3, 4, 5, & 6 + Extras DVDRip`
   - `season`: python `[1,2,3,4,5]` · js `[1,2,3,4,5,6]`
   - `episode_title`: python `"& 6"` · js `undefined`
-
-`It.Ends.With.[Us].2019.1080p.mkv`
-  - `country`: python `"UNITED STATES"` · js `"US"`
 
 `Jackass.2.5.2007.DVDRip.x264.AC3-DEEP`
   - `title`: python `"Jackass"` · js `"Jackass 2.5"`
@@ -944,12 +895,6 @@ A fixture of ours asserts the JS value and passes, so the difference is a decisi
 `Reizen.Waes.S03.FLEMISH.1080p.HDTV.MP2.H.264-NOGRP/Reizen.Waes.S03E05.China.PART1.FLEMISH.1080p.HDTV.MP2.H.264-NOGRP.mkv`
   - `language`: python `"nld"` · js `"nld-BE"`
 
-`Shameless.in.[Us].S01E01.mkv`
-  - `country`: python `"UNITED STATES"` · js `"US"`
-
-`Shark Tank (AU) - S02E01 - HDTV-720p.mkv`
-  - `country`: python `"AUSTRALIA"` · js `"AU"`
-
 `Shes the one_2013(camrip)__TOPSIDER`
   - `release_group`: python `"camrip"` · js `"TOPSIDER"`
   - `alternative_title`: python `"TOPSIDER"` · js `undefined`
@@ -975,7 +920,6 @@ A fixture of ours asserts the JS value and passes, so the difference is a decisi
   - `date`: python `undefined` · js `"2025-07-18"`
 
 `Show-A (US) - Episode Title S02E09 hdtv`
-  - `country`: python `"UNITED STATES"` · js `"US"`
   - `alternative_title`: python `undefined` · js `"Episode Title"`
 
 `Show.Name.1089.1080p.WEB-DL.H.264-VARYG.mkv`
@@ -1003,18 +947,11 @@ A fixture of ours asserts the JS value and passes, so the difference is a decisi
 `Show.Name.S06E05.1080p.WEBRip.Legendas.PT-BR`
   - `subtitle_language`: python `"por"` · js `"por-BR"`
 
-`Show.Name.US.S12E20.Nice.Title.720p.CW.WEBRip.AAC2.0.x264-monkee`
-  - `country`: python `"UNITED STATES"` · js `"US"`
-
-`Show.Name.US.S12E20.Nice.Title.720p.TheCW.WEBRip.AAC2.0.x264-monkee`
-  - `country`: python `"UNITED STATES"` · js `"US"`
-
 `Show.S01E01.1080p.pt-BR.mkv`
   - `language`: python `"por"` · js `"por-BR"`
 
 `Skins Season S01-S07 COMPLETE UK Soundtrack 720p WEB-DL`
   - `title`: python `"Skins Season"` · js `"Skins"`
-  - `country`: python `"UNITED KINGDOM"` · js `"GB"`
 
 `Solar.Opposites.S06E05.The.Family.Memories.Vhs.Mix.Tape.1080p.WEBRip.10bit.EAC3.5.1.x265-iVy.mkv`
   - `episode_title`: python `"The Family Memories"` · js `"The Family Memories Vhs Mix Tape"`
@@ -1057,9 +994,6 @@ A fixture of ours asserts the JS value and passes, so the difference is a decisi
   - `episode`: python `[3,4,5]` · js `3`
   - `episode_title`: python `"1"` · js `"4-5-1"`
 
-`Teen.Mom.UK.S01E01.Life.as.a.Teen.Mum.1080p.MTV.WEB-DL.AAC2.0.x264-BTW`
-  - `country`: python `"UNITED KINGDOM"` · js `"GB"`
-
 `TEST.2015.1080p.HC.WEBRip.x264.AAC2.0-ABC`
   - `other`: python `"Rip"` · js `["Hardcoded Subtitles","Rip"]`
 
@@ -1079,24 +1013,6 @@ A fixture of ours asserts the JS value and passes, so the difference is a decisi
   - `type`: python `"movie"` · js `"episode"`
   - `season`: python `undefined` · js `1`
   - `episode`: python `undefined` · js `1`
-
-`The.Office.(US).1x03.Health.Care.HDTV.XviD-LOL.avi`
-  - `country`: python `"UNITED STATES"` · js `"US"`
-
-`The.Office.US.1x03.mkv`
-  - `country`: python `"UNITED STATES"` · js `"US"`
-
-`The.Office.US.2005-2013.Complete.Series.720p`
-  - `country`: python `"UNITED STATES"` · js `"US"`
-
-`The.Stranger.1946.US.(Kino.Classics).Bluray.1080p.LPCM.DD-2.0.x264-Grym@BTNET`
-  - `country`: python `"UNITED STATES"` · js `"US"`
-
-`The.Voice.UK.S03E12.HDTV.x264-C4TV`
-  - `country`: python `"UNITED KINGDOM"` · js `"GB"`
-
-`this.is.title.US`
-  - `country`: python `"UNITED STATES"` · js `"US"`
 
 `Thor Love and Thunder (2022) Hindi HQCAM x264 AAC.mkv`
   - `release_group`: python `"HQCAM"` · js `undefined`
@@ -1121,18 +1037,6 @@ A fixture of ours asserts the JS value and passes, so the difference is a decisi
   - `season`: python `2` · js `undefined`
   - `episode`: python `45` · js `245`
 
-`US.2019.1080p.mkv`
-  - `country`: python `"UNITED STATES"` · js `"US"`
-
-`US.Presidential.Debates.2015.10.28.Third.Republican.Debate.720p.CNBC.WEBRip.AAC2.0.H.264-monkee`
-  - `country`: python `"UNITED STATES"` · js `"US"`
-
-`Us.this.is.title`
-  - `country`: python `"UNITED STATES"` · js `"US"`
-
-`Videos/Office1080/The Office  (US)  (2005) Season 2 S02 + Extras  (1080p AMZN WEB-DL x265 HEVC 10bit AAC 2.0 LION)/The Office  (US)  (2005) - S02E12 - The Injury  (1080p AMZN WEB-DL x265 LION).mkv`
-  - `country`: python `"UNITED STATES"` · js `"US"`
-
 `W2Test.123.HDTV.XViD-FlexGet`
   - `episode`: python `123` · js `23`
   - `season`: python `undefined` · js `1`
@@ -1140,9 +1044,6 @@ A fixture of ours asserts the JS value and passes, so the difference is a decisi
 `Watchmen.2009.Ultimate.Cut.1080p.BluRay.x264-GRP.mkv`
   - `alternative_title`: python `"Ultimate Cut"` · js `undefined`
   - `edition`: python `undefined` · js `"Ultimate Cut"`
-
-`Whose Line is it anyway/Season 01/Whose.Line.is.it.Anyway.US.S13E01.720p.WEB.x264-TBS.mkv`
-  - `country`: python `"UNITED STATES"` · js `"US"`
 
 `X2.2003.720p.DSNP.WEB-DL.DDP5.1.H.264-EVO.mkv`
   - `bonus`: python `2` · js `undefined`

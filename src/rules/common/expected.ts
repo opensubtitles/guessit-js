@@ -3,6 +3,7 @@
  */
 import type { Context } from 'rebulk-js';
 import type { MatchOptions } from 'rebulk-js';
+import { seps } from './index.js';
 
 /**
  * Build a functional pattern function that finds expected titles/groups in the string.
@@ -55,9 +56,20 @@ export function buildExpectedFunction(optionName: string) {
           }
         }
       }
+      // Python matches a plain expected title against a copy of the input whose
+      // separators are all spaces, and returns the value from *that* string — so
+      // the title reads "11 22 63" even though the file says "11.22.63". Without
+      // carrying the value across, the raw span is formatted instead, and cleanup
+      // now preserves a dotted number, which would spell it "11.22.63". A `re:`
+      // pattern keeps matching the raw input, exactly as upstream does.
+      const normalise = (text: string) =>
+        [...text].map((c) => (seps.includes(c) ? ' ' : c)).join('');
       let m: RegExpExecArray | null;
       while ((m = pattern.exec(inputString)) !== null) {
-        results.push([m.index, m.index + m[0].length, {}]);
+        const options: Partial<MatchOptions> = title.startsWith('re:')
+          ? {}
+          : { value: normalise(m[0]) };
+        results.push([m.index, m.index + m[0].length, options]);
         // Prevent infinite loop on zero-length matches
         if (m[0].length === 0) break;
       }

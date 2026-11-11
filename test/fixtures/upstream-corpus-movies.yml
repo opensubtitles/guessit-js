@@ -24,3 +24,42 @@
   type: movie
 
 # The same holds in a space-separated name, where the dot can only be the decimal point.
+
+? The.Taking.of.Pelham.1.2.3.2009.1080p.BluRay.DTS.x264-EbP
+: options: -t movie
+  title: The Taking of Pelham 1.2.3
+  year: 2009
+  screen_size: 1080p
+  source: Blu-ray
+  audio_codec: DTS
+  video_codec: H.264
+  release_group: EbP
+  type: movie
+  -date: 2009-03-02
+
+# A bare 1.0/2.0 in the title zone (before the year) numbers the title, it is not a channel layout.
+
+? Evangelion.1.0.You.Are.Not.Alone.2007.1080p.BluRay.x264-GRP
+: year: 2007
+  screen_size: 1080p
+  source: Blu-ray
+  video_codec: H.264
+  release_group: GRP
+  type: movie
+  -audio_channels: '1.0'
+
+# A channel layout glued to its codec stays a channel layout, even before the year.
+
+? M3GAN 2.0 (2025).mkv
+: title: M3GAN 2.0
+  year: 2025
+  type: movie
+  -audio_channels: '2.0'
+
+? Ghost in the Shell 2.0 (2008)/Ghost in the Shell 2.0 (2008).mkv
+: title: Ghost in the Shell 2.0
+  year: 2008
+  type: movie
+  -audio_channels: '2.0'
+
+# A YYYY-YYYY year range is a single year range, bracketed or not (#988)

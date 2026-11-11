@@ -4145,11 +4145,13 @@
   container: mkv
   type: episode
 
+# upstream dropped the trailing dot here when it taught cleanup that a separator
+# after a digit ends a number rather than an abbreviation ("M3GAN.2.0.")
 ? c:\Temp\postprocessing\Marvels.Agents.of.S.H.I.E.L.D.s01e02.0.8.4.720p.WEB.DL.mkv
 : title: Marvels Agents of S.H.I.E.L.D.
   season: 1
   episode: 2
-  episode_title: 0.8.4.
+  episode_title: 0.8.4
   screen_size: 720p
   source: Web
   container: mkv

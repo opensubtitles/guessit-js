@@ -71,7 +71,7 @@ against the 1516 names carried here, and the 977-case difference is now imported
 and `test/fixtures/upstream-rules-*.yml` (the per-rule files). 897 of them passed
 on arrival.
 
-The 80 that did not were triaged: 29 are fixed and now run, and 51 are parked in
+The 80 that did not were triaged: 41 are fixed and now run, and 39 are parked in
 `test/fixtures/upstream-rules-pending.yml`, which is deliberately absent from
 `FIXTURE_FILES` so the suite stays green while the gap stays visible. Work
 through it by moving blocks back into the matching `upstream-rules-*.yml`.
@@ -85,6 +85,7 @@ Fixed in this sweep:
 | 1 | `HDR10P` as a spelling of HDR10+. |
 | 1 | `Part Trois`. The part rule carried its own English-only copy of the word numerals; it now shares the table the formatter reads, so every French numeral works. |
 | 6 | Harness, not parser: a leading `+` on a fixture name is a marker, not input; a null expectation asserts nothing (upstream's harness skips those keys); and `options` may be a mapping rather than a CLI string, which is how `advanced_config` is reached. |
+| 6 | Decimal numbers in a title keep their dot (`M3GAN 2.0`, `Ghost in the Shell 2.0`, `eps1.0 hellofriend`), and a decimal is no longer eaten as an audio channel layout, which had truncated `Evangelion.1.0.You.Are.Not.Alone` to "Evangelion". |
 
 Still pending, largest first:
 
@@ -93,7 +94,6 @@ Still pending, largest first:
 | 9 | short codes that stay titles upstream (`may`, `ice`, `mal`, `est`, `mon`, `mar`, `ben`, `sr`, `sub`) | divergence — upstream allows 23 languages, this port 60, so these resolve here. A rule dropping a whole-filepart language also breaks bare `pt`/`English`/`French`, which upstream expects to be languages. |
 | 7 | episode rules: title from the filepart carrying the episode, bare space-separated lists (`Some Series S01 02 03`), `Season.4.Episodes.1-12` | gap |
 | 6 | the #985 divergences above, plus `eps1.0 hellofriend` losing its dot | mixed |
-| 5 | decimal titles keep their dots upstream (`M3GAN 2.0`, `Evangelion.1.0`, `The.Taking.of.Pelham.1.2.3`) | gap |
 | 5 | a bare four-digit year alone in the name (`2012`, `(1920)`) | divergence — a lone number stays a title here, which is what #976 asks for; `Something.2.5.2007` is the unpadded `D.M.YYYY` date this port rejects on purpose (#963) |
 | 3 | bare `Cam` with nothing else in the name, and `UHD HQ 8bit Bluray` merging into Ultra HD Blu-ray across intervening tokens | gap, low value |
 | 3 | subtitle prefixes `SubFrench`, `SubFr`, `STFr` | gap |

@@ -689,7 +689,7 @@
   audio_codec: DTS-HD
   audio_profile: Master Audio
   source: Blu-ray
-  other: 3D
+  other: [3D, Half Side By Side]
   release_group: ABC
   screen_size: 1080p
   title: TEST
@@ -702,7 +702,7 @@
   audio_codec: DTS-HD
   audio_profile: Master Audio
   source: Blu-ray
-  other: 3D
+  other: [3D, Half Over Under]
   release_group: ABC
   screen_size: 1080p
   title: TEST
@@ -718,7 +718,7 @@
   - Dolby Atmos
   audio_profile: Master Audio
   source: Blu-ray
-  other: 3D
+  other: [3D, Half Over Under]
   release_group: ABC
   screen_size: 1080p
   title: TEST
@@ -734,7 +734,7 @@
   - Dolby Atmos
   audio_profile: Master Audio
   source: Blu-ray
-  other: 3D
+  other: [3D, Half Side By Side]
   release_group: ABC
   screen_size: 1080p
   title: TEST

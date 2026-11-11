@@ -184,14 +184,18 @@
         "1.0": [
           "1ch",
           "mono",
-          "re:(1[\\W_]0(?:ch)?)(?=[^\\d]|$)"
+          {
+            "regex": "(1[\\W_]0(?:ch)?)(?=[^\\d]|$)",
+            "tags": "title-word"
+          }
         ],
         "2.0": [
           "2ch",
           "stereo",
           {
             "regex": "(2[\\W_]0(?:ch)?)(?=[^\\d]|$)",
-            "children": true
+            "children": true,
+            "tags": "title-word"
           },
           {
             "string": "20",

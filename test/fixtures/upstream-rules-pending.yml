@@ -54,43 +54,6 @@
 # reinterpretation is restricted to anime-signalled releases, since this convention clashes
 # with the anime "Season N - EE" = season N episode EE reading (#920)
 
-# from upstream-corpus-episodes.yml
-? Mr.Robot.S01E01.eps1.0_hellofriend.mov.1080p.BluRay.DD5.1.x264-SA89.mkv
-: title: Mr Robot
-  season: 1
-  episode: 1
-  episode_title: eps1.0 hellofriend
-  release_group: SA89
-
-# A YYYY-YYYY year range is a single year range, bracketed or not (#988)
-
-# from upstream-corpus-movies.yml
-? The.Taking.of.Pelham.1.2.3.2009.1080p.BluRay.DTS.x264-EbP
-: options: -t movie
-  title: The Taking of Pelham 1.2.3
-  year: 2009
-  screen_size: 1080p
-  source: Blu-ray
-  audio_codec: DTS
-  video_codec: H.264
-  release_group: EbP
-  type: movie
-  -date: 2009-03-02
-
-# A bare 1.0/2.0 in the title zone (before the year) numbers the title, it is not a channel layout.
-
-# from upstream-corpus-movies.yml
-? Evangelion.1.0.You.Are.Not.Alone.2007.1080p.BluRay.x264-GRP
-: year: 2007
-  screen_size: 1080p
-  source: Blu-ray
-  video_codec: H.264
-  release_group: GRP
-  type: movie
-  -audio_channels: '1.0'
-
-# A channel layout glued to its codec stays a channel layout, even before the year.
-
 # from upstream-corpus-movies.yml
 ? Movie.AAC.2.0.2008
 : title: Movie
@@ -100,22 +63,6 @@
   type: movie
 
 # The same holds in a space-separated name, where the dot can only be the decimal point.
-
-# from upstream-corpus-movies.yml
-? M3GAN 2.0 (2025).mkv
-: title: M3GAN 2.0
-  year: 2025
-  type: movie
-  -audio_channels: '2.0'
-
-# from upstream-corpus-movies.yml
-? Ghost in the Shell 2.0 (2008)/Ghost in the Shell 2.0 (2008).mkv
-: title: Ghost in the Shell 2.0
-  year: 2008
-  type: movie
-  -audio_channels: '2.0'
-
-# A YYYY-YYYY year range is a single year range, bracketed or not (#988)
 
 # from upstream-rules-audio_codec.yml
 ? +2.0
@@ -128,10 +75,6 @@
 # from upstream-rules-audio_codec.yml
 ? -51
 : audio_channels: '5.1'
-
-# from upstream-rules-date.yml
-? 1919
-: !!map {}
 
 # from upstream-rules-date.yml
 ? 2029

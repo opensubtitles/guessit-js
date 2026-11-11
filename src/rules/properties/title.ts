@@ -549,8 +549,15 @@ abstract class TitleBaseRule extends Rule {
             (fpMatches[0] as any).parent.end === filepart.end)
         )
       ) {
-        // This filepart contains only a season match — the NEXT one (less informative) is the series name
-        return fileparts[index + 1] ?? null;
+        // This filepart contains only a season match, so the series name is the
+        // directory in front of it — in PATH order, not the next-least-informative
+        // filepart. Information order put the library root there for
+        // "TV Shows/24 (2001)/Season 1/24.S01E01.mkv", which made "TV Shows" the
+        // series name and the real title an episode_title. A season directory with
+        // nothing in front of it has no series-name filepart at all.
+        const byPath = [...fileparts].sort((a, b) => a.start - b.start);
+        const at = byPath.indexOf(filepart);
+        return at > 0 ? byPath[at - 1] : null;
       }
     }
     return null;
@@ -654,10 +661,30 @@ abstract class TitleBaseRule extends Rule {
       ),
     );
 
+    // The filename is always a title candidate; only directories can be library roots.
+    const filenameFilepart = [...sortedFileparts].sort((a, b) => a.start - b.start).pop();
+
     // Process sorted fileparts — stop at first filepart that yields titles
     for (const filepart of sortedFileparts) {
       yearFileparts.delete(filepart); // Track which year fileparts are processed
       if (!this.filepartFilter(filepart)) continue;
+
+      // A directory holding nothing at all is a library root — "Movies", "TV Shows",
+      // "Videos". Once the series name is known from another filepart, the only thing
+      // such a directory can contribute is a title renamed to episode_title below,
+      // which is how "Movies/1923 (2022)/Season 1/1923.S01E01.mkv" came back with
+      // episode_title "Movies". It showed only for a numerically titled show, because
+      // any other title satisfies the loop before the root is reached — and the shape
+      // is the standard Plex/Jellyfin layout, so "1923", "24" and "9-1-1" libraries
+      // all hit it.
+      if (
+        serieNameMatch &&
+        filepart !== serieNameFilepart &&
+        filepart !== filenameFilepart &&
+        !hasmatch(matches.range(filepart.start, filepart.end, (m: Match) => !m.private, 0))
+      ) {
+        continue;
+      }
 
       const result = this.checkTitlesInFilepart(filepart, matches, context);
       if (result.toAppend.length > 0 || result.toRemove.length > 0) {
@@ -952,6 +979,7 @@ class TitleWordAtTitlePosition extends Rule {
 
   override when(matches: Matches, _context: Context): Match[] | false {
     const toRemove: Match[] = [];
+    const inp: string = (matches as any).inputString ?? '';
     const tagged = (matches as any).tagged('title-word') as Match[] ?? [];
     for (const candidate of Array.isArray(tagged) ? tagged : [tagged]) {
       if (!candidate || candidate.private) continue;
@@ -960,6 +988,16 @@ class TitleWordAtTitlePosition extends Rule {
       const anchor = matches.range(filepart.start, filepart.end,
         (m: Match) => !m.private && ['year', 'season', 'episode', 'date'].includes(m.name ?? ''), 0) as Match | undefined;
       if (!anchor || candidate.start >= anchor.start) continue;
+      // A value glued to another property — only separators between them — continues
+      // that property's run rather than the title, so it stays the property even in
+      // the title zone: the "2.0" of "Movie.AAC2.0.2008" is the channel layout of the
+      // AAC codec, while the bare "2.0" of "M3GAN.2.0.2025" is the sequel number.
+      const previous = ((matches.range(filepart.start, candidate.start,
+        (m: Match) => !m.private && !(m.tags ?? []).includes('title-word')) as Match[]) ?? [])
+        .sort((a, b) => a.end - b.end).pop();
+      if (previous && [...inp.slice(previous.end, candidate.start)].every((c: string) => seps.includes(c))) {
+        continue;
+      }
       toRemove.push(candidate);
     }
     return toRemove.length ? toRemove : false;

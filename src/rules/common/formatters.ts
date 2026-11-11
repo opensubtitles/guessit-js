@@ -75,6 +75,10 @@ export function cleanup(inputString: string): string {
 
     const replaceIndices: number[] = [];
     for (const pi of potentialIndices) {
+      // A trailing separator after a digit ends a number ("M3GAN.2.0." -> "M3GAN 2.0");
+      // it is not the closing dot of an abbreviation ("S.H.I.E.L.D.").
+      if (/\d/.test(inputString[pi - 1] ?? '')
+          && !strip(inputString.slice(pi + 1), seps)) continue;
       if (potentialIndices.includes(pi - 2) || potentialIndices.includes(pi + 2)) {
         replaceIndices.push(pi);
       }
@@ -87,6 +91,25 @@ export function cleanup(inputString: string): string {
       }
       cleanString = cleanList.join('');
     }
+  }
+
+  // A dotted number that touches no other dot is a decimal inside a name separated
+  // by something else ("M3GAN 2.0 (2025)" -> "M3GAN 2.0"), not a run of dot
+  // separators ("Evangelion.1.0.You.Are" -> "Evangelion 1 0 You Are", where the dots
+  // around it are the name's separators). Mirrors Python's cleanup().
+  const decimalDots: number[] = [];
+  const decimalPattern = /(?<![\d.])\d+(?:\.\d+)+(?![\d.])/g;
+  let decimalMatch: RegExpExecArray | null;
+  while ((decimalMatch = decimalPattern.exec(inputString)) !== null) {
+    for (let i = decimalMatch.index; i < decimalMatch.index + decimalMatch[0].length; i++) {
+      if (inputString[i] === '.') decimalDots.push(i);
+    }
+  }
+  if (decimalDots.length > 0) {
+    const cleanList = cleanString.split('');
+    for (const i of decimalDots) cleanList[i] = '.';
+    dots.add('.');
+    cleanString = cleanList.join('');
   }
 
   // A dotted version run trailing a title is one token ("Evangelion.3.0.1.11").
