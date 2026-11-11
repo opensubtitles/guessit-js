@@ -788,3 +788,80 @@
   title: Event
   streaming_service: FITE
   -release_group:
+
+# ── #875 comment: a broadcast/DVR underscore stamp is a date, not episodes ──
+? Example.Show.-.Saison.19.-.Requested.Episode.Title_Channel.5_2025_07_18_21_00.mp4
+: title: Example Show
+  season: 19
+  date: 2025-07-18
+  -episode:
+  -year:
+
+# underscore now separates date parts like every other separator does
+? Show_2025_07_18.mp4
+: title: Show
+  date: 2025-07-18
+  -year:
+
+# guard: a zero-padded day-first stamp still reads as that date
+? Show.10.11.2008.mkv
+: title: Show
+  date: 2008-11-10
+
+# guard: the clock tail is only absorbed when every group is a real time
+? Show_2025_07_18_31_99.mkv
+: title: Show
+  date: 2025-07-18
+
+# ── #877 B2: a parenthesised localized title leaves the lead bracket as title ──
+? "[Juuni.Kokki]-(Les.12.Royaumes)-[Ep.24]-[x264+OGG].mkv"
+: title: Juuni Kokki
+  alternative_title: Les 12 Royaumes
+  episode: 24
+
+# guard: a real fansub group keeps the bracket when the title is unbracketed
+? "[Golumpa] Star Blazers 2202 - 22 (Uchuu Senkan Yamato 2202) [FuniDub 1080p x264 AAC].mkv"
+: release_group: Golumpa
+  episode: 22
+
+# ── #968: a language abbreviation at title position stays in the title ──
+? Spa Weekend 2026 1080p WEB-DL HEVC x265 5.1 BONE.mkv
+: type: movie
+  title: Spa Weekend
+  year: 2026
+  -language:
+
+# ── cross-parser: a property filling a bracket group glued to the token before ──
+# EnlargeGroupMatches moves `start` onto the bracket, so the separator check used
+# to read the character in front of it and throw the match away.
+? Shes the one_2013(camrip)__TOPSIDER
+: type: movie
+  title: Shes the one
+  year: 2013
+  source: Camera
+  other: Rip
+
+? Movie abc(BluRay) x264-GRP
+: type: movie
+  title: Movie abc
+  source: Blu-ray
+  release_group: GRP
+
+? Movie abc(AAC) x264
+: type: movie
+  title: Movie abc
+  audio_codec: AAC
+
+# guard: the same name with the bracket separated is unchanged
+? Movie abc (BluRay) x264-GRP
+: type: movie
+  title: Movie abc
+  source: Blu-ray
+  release_group: GRP
+
+# ── cross-parser: an HD camera release writes the marker either way round ──
+? Avatar La Voie de l'eau.FRENCH.CAMHD.H264.AAC
+: type: movie
+  title: Avatar La Voie de l'eau
+  source: HD Camera
+  language: fr

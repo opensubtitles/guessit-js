@@ -15,6 +15,15 @@
 > range). Everything else already parsed correctly, several cases better than
 > Python: #875, #877, #928, #929, #937, #943, #948, #950, #953, #954. #704
 > (nuitka), #389 (Aho-Corasick) and #599 (music) stay out of scope.
+>
+> **Third sweep, 2026-09-27 — last issue checked: #968.** Every open issue
+> re-read down to #273, plus every comment filed since the second sweep. Two
+> needed work: the new sub-case in the #875 thread (Mika3578, 2026-09-11 —
+> broadcast/DVR underscore stamps) and the last open #877 B2 name
+> (`[Juuni.Kokki]-(Les.12.Royaumes)-[Ep.24]`, which the earlier "11 of 12" count
+> missed). #968 (`Spa Weekend` read as Spanish), #961 and the #949 comment
+> (a duplicate of #966) already parsed correctly. Guard fixtures for all of them
+> are in `test/fixtures/upstream-open-issues.yml`.
 
 Triaged from <https://github.com/guessit-io/guessit/issues> (open issues) for the
 guessit-js port. Oriented toward parsing behaviour; Python-runtime/packaging

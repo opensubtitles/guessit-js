@@ -45,8 +45,8 @@ export function source(config: Record<string, unknown>): Rebulk {
   rebulk.regex(...buildSourcePattern(['CAM'], '', optional(ripSuffix)),
     { value: { source: 'Camera', other: 'Rip' } });
 
-  // HD Camera
-  rebulk.regex(...buildSourcePattern(['HD-?CAM'], '', optional(ripSuffix)),
+  // HD Camera — written either way round ("HDCAM", "CAMHD"; cross-parser corpus)
+  rebulk.regex(...buildSourcePattern(['HD-?CAM', 'CAM-?HD'], '', optional(ripSuffix)),
     { value: { source: 'HD Camera', other: 'Rip' } });
 
   // HQCAM and S-Print/SPrint (Indian cam-release conventions) are cameras too

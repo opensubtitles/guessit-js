@@ -129,9 +129,13 @@ class RemoveDecimalVersionDate extends Rule {
     const ret: Match[] = [];
 
     for (const dateMatch of (matches.named('date') as Match[])) {
+      // Dot-joined only: a version run is written "3.0.1.11", while an
+      // underscore stamp ("…Channel.5_2025_07_18…") is a genuine date whose
+      // leading digit belongs to the token before it.
+      if (!/^\d+(?:\.\d+)+$/.test(input.slice(dateMatch.start, dateMatch.end))) continue;
       const prevChar = input[dateMatch.start - 1];
       const prevDigit = input[dateMatch.start - 2];
-      if (prevChar && prevDigit && /[.\-_/ ]/.test(prevChar) && /\d/.test(prevDigit)) {
+      if (prevChar === '.' && prevDigit && /\d/.test(prevDigit)) {
         const claimed = matches.range(dateMatch.start - 2, dateMatch.start - 1,
           (m: Match) => !m.private) as Match[];
         if (!(Array.isArray(claimed) ? claimed.length : claimed ? 1 : 0)) {
@@ -141,6 +145,64 @@ class RemoveDecimalVersionDate extends Rule {
     }
 
     return ret;
+  }
+}
+
+/**
+ * Grow a broadcast/DVR date over its clock tail: in
+ * "…Title_Channel.5_2025_07_18_21_00.mp4" (upstream #875, Mika3578) the
+ * "_21_00" is the recording time, and left in a hole its digits are read as
+ * episode numbers. Only a full "YYYY<sep>MM<sep>DD" stamp followed by two or
+ * three two-digit groups on the same separator qualifies, and each group has to
+ * be a valid hour/minute/second.
+ */
+class AbsorbBroadcastClockSuffix extends Rule {
+  static override priority = 128;
+  override consequence = RemoveMatch;
+
+  override enabled(context: Context): boolean {
+    return !isDisabled(context, 'date');
+  }
+
+  override when(matches: Matches, _context: Context): Array<[Match, number, Match[]]> | false {
+    const input: string = matches.inputString ?? '';
+    const ret: Array<[Match, number, Match[]]> = [];
+
+    for (const dateMatch of (matches.named('date') as Match[])) {
+      const stamp = /^\d{4}([-/ ._])\d{1,2}\1\d{1,2}$/.exec(
+        input.slice(dateMatch.start, dateMatch.end));
+      if (!stamp) continue;
+
+      const sep = stamp[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const tail = new RegExp(`^((?:${sep}\\d{2}){2,3})(?!\\d)`)
+        .exec(input.slice(dateMatch.end));
+      if (!tail) continue;
+
+      const units = tail[1].split(stamp[1]).filter(Boolean).map((u) => parseInt(u, 10));
+      const limits = [23, 59, 59];
+      if (units.some((u, i) => u > limits[i])) continue;
+
+      const newEnd = dateMatch.end + tail[1].length;
+      const claimed = (matches.range(dateMatch.end, newEnd,
+        (m: Match) => !m.private) as Match[]) ?? [];
+      ret.push([dateMatch, newEnd, Array.isArray(claimed) ? claimed : [claimed]]);
+    }
+
+    return ret.length ? ret : false;
+  }
+
+  override then(matches: any, whenResponse: Array<[Match, number, Match[]]>, _context: Context): void {
+    for (const [dateMatch, newEnd, claimed] of whenResponse) {
+      for (const stale of claimed) {
+        const initiator = (stale as any).initiator ?? stale;
+        for (const child of ((initiator as any).children?.toArray?.() ?? [])) matches.remove(child);
+        matches.remove(initiator);
+        matches.remove(stale);
+      }
+      matches.remove(dateMatch);
+      dateMatch.end = newEnd;
+      matches.append(dateMatch);
+    }
   }
 }
 
@@ -207,7 +269,7 @@ export function date(config: Record<string, unknown>): Rebulk {
         : '__default__',
   });
 
-  rebulk.rules(RemoveDecimalVersionDate, KeepMarkedYearInFilepart, RemoveGroupedYearWithSxxExx, new AbsorbWeekdayPrefix((config['weekday_words'] as string[]) ?? []));
+  rebulk.rules(RemoveDecimalVersionDate, AbsorbBroadcastClockSuffix, KeepMarkedYearInFilepart, RemoveGroupedYearWithSxxExx, new AbsorbWeekdayPrefix((config['weekday_words'] as string[]) ?? []));
   return rebulk;
 }
 

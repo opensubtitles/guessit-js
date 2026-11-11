@@ -2,16 +2,22 @@
  * Date utilities — port of guessit/rules/common/date.py
  */
 
-const DSEP = '[-/ .]';
-const DSEP_BIS = '[-/ .x]';
+// Underscore joins the parts of a broadcast/DVR timestamp
+// ("…_2025_07_18_21_00.mp4", upstream #875) just like the separators Python
+// lists; without it those digits fall through to the episode rules.
+const DSEP = '[-/ ._]';
+const DSEP_BIS = '[-/ ._x]';
 
+// Four-digit-year shapes come first: in a DVR stamp the two-digit-year regexps
+// would otherwise claim an interior window ("…07_18_21…" as 2021-07-18) before
+// the real "2025_07_18" is ever tried.
 const DATE_REGEXPS: RegExp[] = [
   new RegExp(`${DSEP}((\\d{8}))${DSEP}`, 'i'),
   new RegExp(`${DSEP}((\\d{6}))${DSEP}`, 'i'),
-  new RegExp(`(?:^|[^\\d])((\\d{2})${DSEP}(\\d{1,2})${DSEP}(\\d{1,2}))(?:$|[^\\d])`, 'i'),
-  new RegExp(`(?:^|[^\\d])((\\d{1,2})${DSEP}(\\d{1,2})${DSEP}(\\d{2}))(?:$|[^\\d])`, 'i'),
   new RegExp(`(?:^|[^\\d])((\\d{4})${DSEP_BIS}(\\d{1,2})${DSEP}(\\d{1,2}))(?:$|[^\\d])`, 'i'),
   new RegExp(`(?:^|[^\\d])((\\d{1,2})${DSEP}(\\d{1,2})${DSEP_BIS}(\\d{4}))(?:$|[^\\d])`, 'i'),
+  new RegExp(`(?:^|[^\\d])((\\d{2})${DSEP}(\\d{1,2})${DSEP}(\\d{1,2}))(?:$|[^\\d])`, 'i'),
+  new RegExp(`(?:^|[^\\d])((\\d{1,2})${DSEP}(\\d{1,2})${DSEP}(\\d{2}))(?:$|[^\\d])`, 'i'),
   new RegExp(`(?:^|[^\\d])((\\d{1,2}(?:st|nd|rd|th)?${DSEP}(?:[a-z]{3,10})${DSEP}\\d{4}))(?:$|[^\\d])`, 'i'),
   // Month-name first: "July 30 2021", "Jul.30.2021"
   new RegExp(`(?:^|[^a-z\\d])(([a-z]{3,10})${DSEP}\\d{1,2}(?:st|nd|rd|th)?${DSEP}\\d{4})(?:$|[^\\d])`, 'i'),
@@ -52,7 +58,7 @@ function tryParseDate(
   dayFirst?: boolean,
 ): Date | undefined {
   // Normalize the match string: replace separators with '-'
-  const normalized = match.replace(/[-/ .x]/g, '-');
+  const normalized = match.replace(/[-/ ._x]/g, '-');
   const parts = normalized.split('-').filter(Boolean);
 
   const yearFirstOpts = yearFirst !== undefined ? [yearFirst] : [false, true];

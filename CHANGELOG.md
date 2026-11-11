@@ -4,6 +4,59 @@ All notable changes to guessit-js are documented here.
 
 ## [Unreleased]
 
+**Broadcast/DVR timestamps are dates, not episode numbers** (the sub-case filed
+in upstream guessit-io/guessit#875 on 2026-09-11).
+`…Requested.Episode.Title_Channel.5_2025_07_18_21_00.mp4` gave `episode: [7, 0]`
+and `year: 2025` with no date at all. Two things were wrong. Underscore was
+missing from the date separators — Python's list is `[-/ .]`, so a stamp written
+with underscores never reached the date parser and its digits fell through to the
+episode rules; `Show_2025_07_18` now parses like `Show.2025.07.18` always did.
+And the four-digit-year regexps are tried before the two-digit-year ones, because
+otherwise the interior window `07_18_21` is claimed as 2021-07-18 before the real
+`2025_07_18` gets a turn. The `_HH_MM` clock tail is then absorbed into the date
+span, so its digits are not left in a hole to be read as episodes — only behind a
+full `YYYY<sep>MM<sep>DD` stamp, and only when every trailing group is a valid
+hour, minute and second. The name now reads as season 19 with date 2025-07-18 and
+no episode, which is what the report asks for. Under a forced `type=episode` the
+lenient rules still take `Channel.5` as episode 5 (upstream #627 treats that
+leniency as by design); Python returns `[5, 7, 18, 21, 0]` there.
+
+**A parenthesised localized title no longer costs the real one** (the last open
+#877 B2 name). `[Juuni.Kokki]-(Les.12.Royaumes)-[Ep.24]-[x264+OGG].mkv` gave
+title "Les 12 Royaumes" with the show name taken for a fansub group. A
+parenthesis never holds a group name, so when the only title of a bracketed
+episode name sits inside one, the leading bracket is the title and the
+parenthetical is the alternative title. An unbracketed title keeps the bracket as
+the group, so `[Golumpa] Star Blazers 2202 - 22 (Uchuu Senkan Yamato 2202)` is
+unchanged. The earlier "11 of 12 #877 cases" count had missed this name.
+
+Third upstream triage sweep (2026-09-27), last issue checked #968: every open
+issue re-read plus every comment since the second sweep. #968 (`Spa Weekend`
+read as Spanish), #961 and the #949 comment (a duplicate of #966) already parsed
+correctly and now carry guard fixtures.
+
+**A property filling a bracket group glued to the token before it is no longer
+thrown away.** `EnlargeGroupMatches` grows a match that fills a whole `(…)` or
+`[…]` over the brackets, which moves `start` onto the bracket and leaves
+`rawStart` on the content. `sepsBefore`/`sepsAfter` read `start`, so they were
+inspecting the character in *front* of the bracket: `Movie abc(BluRay)` looked
+glued to "abc" and lost its source, `abc(AAC)` lost its audio codec, and
+`Shes the one_2013(camrip)` lost the camera source and handed "camrip" to the
+release group. The bracket is itself the delimiter, so an enlarged edge now counts
+as separated — fixed in the validators, so every property that uses them benefits
+at once. Before `EnlargeGroupMatches` runs the raw and span edges coincide, so
+pattern-time validation is unchanged. Python has the same blind spot; that last
+name is in upstream's own cross-parser baseline.
+
+An HD camera release writes the marker either way round — `CAMHD` joins `HDCAM`.
+
+Measured against upstream's cross-parser baseline (the 276 names Python guessit
+admits failing versus anitomy/ptt/ptn/go-ptn/thcolin): 114 pass, up from 113. Of
+the 162 remaining, ~21 are source-taxonomy disagreements where this port is the
+more precise one (`UHD BluRay` → Ultra HD Blu-ray, `PDTV` → Digital TV, `HDCAM`
+→ HD Camera) and ~12 are multi-track audio where returning every codec is
+correct and the other parser returns one.
+
 **The HTTP endpoints now bound their input.** Parsing cost grows with the square
 of the number of matches a name yields — 400 repetitions of "S01E01" takes 2.3
 seconds where a real name takes under 3 ms, and doubling the input quadruples the

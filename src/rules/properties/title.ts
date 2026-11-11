@@ -1089,6 +1089,62 @@ class PreBracketJunkTitle extends Rule {
 }
 
 /**
+ * "[Juuni.Kokki]-(Les.12.Royaumes)-[Ep.24]…" (upstream #877 B2) has no
+ * unbracketed run either, but a localized title in parentheses stands in for one
+ * and the leading [bracket] is then read as the fansub group. A parenthesis
+ * never holds a group name, so when the ONLY title of a bracketed episode name
+ * sits inside one, the leading bracket is the show title and the parenthetical
+ * is its alternative title.
+ */
+class ParentheticalTitleYieldsToLeadBracket extends Rule {
+  static override priority = POST_PROCESS;
+  override priority = POST_PROCESS;
+  override consequence = [RemoveMatch, AppendMatch];
+
+  override when(matches: Matches, context: Context): any {
+    if (isDisabled(context, 'title')) return false;
+    const input: string = (matches as any).inputString ?? '';
+    const toRemove: Match[] = [];
+    const toAppend: Match[] = [];
+
+    for (const filepart of matches.markers.named('path') as Match[]) {
+      const titles = (matches.range(filepart.start, filepart.end,
+        (m: Match) => m.name === 'title') as Match[]) ?? [];
+      if (titles.length !== 1) continue;
+
+      const inParens = matches.markers.atMatch(titles[0],
+        (m: Match) => m.name === 'group' && input[m.start] === '(', 0) as Match | undefined;
+      if (!inParens) continue;
+
+      const hasEpisodeish = ((matches.range(filepart.start, filepart.end,
+        (m: Match) => m.name === 'episode' || m.name === 'season') as Match[]) ?? []).length > 0;
+      if (!hasEpisodeish) continue;
+
+      const rg = matches.range(filepart.start, inParens.start,
+        (m: Match) => m.name === 'release_group', 0) as Match | undefined;
+      if (!rg) continue;
+      const leadBracket = matches.markers.atMatch(rg,
+        (m: Match) => m.name === 'group' && input[m.start] === '[' && m.start === filepart.start,
+        0) as Match | undefined;
+      if (!leadBracket) continue;
+
+      const showTitle = cleanup(input.slice(rg.start, rg.end));
+      if (!/[\p{L}]/u.test(showTitle)) continue;
+
+      toRemove.push(rg, titles[0]);
+      toAppend.push(new Match(rg.start, rg.end, {
+        name: 'title', value: showTitle, inputString: input,
+      }));
+      toAppend.push(new Match(titles[0].start, titles[0].end, {
+        name: 'alternative_title', value: titles[0].value, inputString: input,
+      }));
+    }
+
+    return (toRemove.length || toAppend.length) ? [toRemove, toAppend] : false;
+  }
+}
+
+/**
  * Fully-bracketed fansub names have no unbracketed run to use as a title
  * ("[FuktLogik][Sayonara_Zetsubou_Sensei][01][DVDRip]", upstream #877 B2): the
  * first bracket whose content is plain words (not a claimed release group, not a
@@ -1484,7 +1540,7 @@ export function title(config: Record<string, unknown>): Rebulk {
     disabled: (context: Context) => isDisabled(context, 'title'),
   });
 
-  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, WordNumeralPartAtTitlePosition, BonusAtTitlePositionRule, LanguageWordInAnimeTitle, SplitOriginalScriptTitle, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle, BracketedTitleFallback, PreBracketJunkTitle, TrimSeasonWordFromTitle);
+  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, WordNumeralPartAtTitlePosition, BonusAtTitlePositionRule, LanguageWordInAnimeTitle, SplitOriginalScriptTitle, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle, BracketedTitleFallback, PreBracketJunkTitle, ParentheticalTitleYieldsToLeadBracket, TrimSeasonWordFromTitle);
 
   // Expected title functional pattern
   const expectedTitle = buildExpectedFunction('expected_title');
