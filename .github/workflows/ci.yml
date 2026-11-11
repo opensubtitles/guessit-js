@@ -41,7 +41,7 @@ jobs:
           node bin/cli.mjs -a -j 'Movie.2020.mkv' | grep -q '"raw": "2020"'
           node bin/cli.mjs -p | grep -qx title
           node bin/cli.mjs --nope 2>/dev/null && exit 1 || test $? = 2
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Drop-in parity vs Python guessit CLI

@@ -38,7 +38,7 @@ jobs:
       - name: Refresh Pages assets (copies wasm into public/)
         run: npm run build:pages
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
