@@ -75,13 +75,15 @@ export function releaseGroup(config: Record<string, unknown>) {
     disabled: (context) => !context?.['expected_group'],
   });
 
+  const scene = new SceneReleaseGroup(cleanGroupname);
   return rebulk.rules(
     new DashSeparatedReleaseGroup(cleanGroupname),
-    new SceneReleaseGroup(cleanGroupname),
+    scene,
     AnimeReleaseGroup,
     new TrailingTokenAfterEpisodeAsReleaseGroup(cleanGroupname),
     NumericPrefixedGroupRule,
-    RemoveSeasonPackReleaseGroup
+    RemoveSeasonPackReleaseGroup,
+    new ReclaimTrailingSceneGroup(cleanGroupname, (m) => scene.isPreviousMatch(m))
   );
 }
 
@@ -584,6 +586,74 @@ class NumericPrefixedGroupRule extends Rule {
       const inner = raw.indexOf('[');
       toAppend.push(new Match(rg.start + inner + 1, rg.end - 1, {
         name: 'release_group', value: m[2], inputString: input,
+      }));
+    }
+    return (toRemove.length || toAppend.length) ? [toRemove, toAppend] : false;
+  }
+}
+
+/**
+ * Reclaim a trailing scene group that the title position stole.
+ *
+ * When the title position holds a property rather than words — a year-titled show
+ * such as "1923 S02E01 1080p WEB H264-SuccessfulCrab" — TitleFromPosition has no
+ * title slot left and takes the trailing group name as a second title instead. That
+ * hides it from SceneReleaseGroup, which sees the tail already claimed, and the
+ * year is only promoted to title afterwards (PropertyAtTitlePositionAsTitle), so the
+ * group name ended up dropped by RemoveTailTitle and lost. "1883 ..." (below the
+ * year floor) and the dotted spelling of the same name kept their group.
+ *
+ * Keyed on that extra *title* rather than on a trailing hole: a hole this late is
+ * usually the residue of a consumed marker word ("Sub", "Cap", "ep"), which is why
+ * a hole-based reclaim invented 34 release groups Python does not report. A title is
+ * only there because the title rules put it there.
+ */
+class ReclaimTrailingSceneGroup extends Rule {
+  // Just above POST_PROCESS, so the tail title is still present: RemoveTailTitle
+  // drops it at POST_PROCESS itself.
+  static override priority = POST_PROCESS + 1;
+  override priority = POST_PROCESS + 1;
+  static consequence = [RemoveMatch, AppendMatch];
+  static properties = { release_group: [null] };
+
+  valueFormatter: (s: string) => string;
+  private isPreviousMatch: (match: Match) => boolean;
+
+  constructor(valueFormatter: (s: string) => string, isPreviousMatch: (match: Match) => boolean) {
+    super();
+    this.valueFormatter = valueFormatter;
+    this.isPreviousMatch = isPreviousMatch;
+  }
+
+  when(matches: any): [Match[], Match[]] | false {
+    const toRemove: Match[] = [];
+    const toAppend: Match[] = [];
+    const input: string = matches.inputString ?? '';
+    const sepsRe = new RegExp(`[${sepsPattern}]`, 'g');
+
+    for (const filepart of (matches.markers.named('path') as Match[])) {
+      const { start, end } = filepart;
+      const inPart = (name: string) => (matches.named(name,
+        (m: Match) => m.start >= start && m.end <= end) as Match[]) ?? [];
+      if (inPart('release_group').length) continue;
+
+      // The real title must survive: only a second, trailing title is a candidate.
+      const titles = inPart('title').sort((a, b) => a.start - b.start);
+      if (titles.length < 2) continue;
+      const tail = titles[titles.length - 1];
+      if (intCoercable(String(tail.value ?? '').replace(sepsRe, ''))) continue;
+
+      const previous = matches.previous(tail,
+        (m: Match) => m.start >= start && (!m.private || this.isPreviousMatch(m)), 0) as Match | undefined;
+      if (!previous || !this.isPreviousMatch(previous)) continue;
+      if (input.slice(previous.end, tail.start).replace(sepsRe, '')) continue;
+
+      toRemove.push(tail);
+      toAppend.push(new Match(tail.start, tail.end, {
+        name: 'release_group',
+        value: this.valueFormatter(String(tail.value ?? '')),
+        inputString: input,
+        tags: ['scene'],
       }));
     }
     return (toRemove.length || toAppend.length) ? [toRemove, toAppend] : false;

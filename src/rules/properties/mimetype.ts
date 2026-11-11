@@ -28,15 +28,28 @@ const MIMETYPE_MAP: Record<string, string> = {
   'zip': 'application/zip',
   'rar': 'application/x-rar-compressed',
   'pdf': 'application/pdf',
-  // .srt subtitles are plain text (matches Python's text/plain).
-  'srt': 'text/plain',
-  // MPEG transport stream (Blu-ray/DVD/broadcast). video/mp2t is the correct
-  // IANA type — Python's mimetypes returns a bogus "text/vnd.trolltech.linguist"
-  // for .ts, so here we intentionally diverge to the *correct* value.
+  // The rest mirror what Python's mimetypes module reports for the same
+  // extension (measured against guessit 4.5.1 on Python 3.13), so a caller
+  // switching between the two parsers sees one answer. Extensions where Python
+  // has no entry at all (wmv, mpeg, ogm, flv, mp3, flac…) keep the correct type
+  // here rather than reporting nothing to match a gap in its table.
+  'srt': 'application/x-subrip',
+  'vtt': 'text/vtt',
+  'nfo': 'text/x-nfo',
   'ts': 'video/mp2t',
-  // Disc image and torrent — both correct and match Python.
+  'mk3d': 'video/x-matroska',
   'iso': 'application/x-iso9660-image',
   'torrent': 'application/x-bittorrent',
+  'nzb': 'application/x-nzb',
+  '7z': 'application/x-7z-compressed',
+  'ace': 'application/x-ace-compressed',
+  'tar': 'application/x-tar',
+  'tgz': 'application/x-tar',
+  'cbr': 'application/x-cbr',
+  'cbz': 'application/x-cbr',
+  'cb7': 'application/x-cbr',
+  'bmp': 'image/bmp',
+  'webp': 'image/webp',
 };
 
 export function mimetype(_config: Record<string, unknown>) {

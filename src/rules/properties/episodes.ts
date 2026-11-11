@@ -820,6 +820,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
     WeakConflictSolverRule,
     RemoveWeakDuplicateRule,
     RemoveWeakIfSxxExxRule,
+    RemoveWeakInsideTitleRule,
     AbsoluteEpisodeInGroupRule,
     RemoveInvalidSeasonRule,
     RemoveInvalidEpisodeRule,
@@ -1905,6 +1906,43 @@ class AbsoluteEpisodeInGroupRule extends Rule {
       match.name = 'absolute_episode';
       matches.append(match);
     }
+  }
+}
+
+/**
+ * A weak number that the finished title covers is title text, not an episode.
+ *
+ * "60.Minutes.2008.12.14" keeps the title "60 Minutes" — the title rules already
+ * treat a leading weak number as transparent when a year, date or SxxExx is in the
+ * filepart — but nothing dropped the weak match itself, so the same two characters
+ * came back as both the title's first word and `episode: 60`. A year in the part
+ * was handled; a date was not. Python reports no episode for either.
+ *
+ * Only weak readings qualify: an explicit marker ("Episodio 13") is numbered on
+ * purpose, and a SxxExx match never sits inside a title.
+ */
+class RemoveWeakInsideTitleRule extends Rule {
+  // -2048 is POST_PROCESS: titles must be final before this reads them.
+  static override priority = -2048;
+  override priority = -2048;
+  override consequence = RemoveMatch;
+
+  when(matches: any, _context: any): any {
+    const titles = ((matches.named('title') as any[]) ?? []).filter((t: any) => !t.private);
+    if (!titles.length) return false;
+    const isWeak = (m: any) => !!(m.tags?.includes('weak-episode') || m.tags?.includes('weak-duplicate')
+      || ['weak_episode', 'weak_duplicate'].includes(m.initiator?.name));
+    const toRemove: any[] = [];
+    for (const name of ['episode', 'season']) {
+      for (const m of ((matches.named(name) as any[]) ?? [])) {
+        if (m.private || !isWeak(m) || m.tags?.includes('SxxExx')) continue;
+        if (!titles.some((t: any) => m.start >= t.start && m.end <= t.end)) continue;
+        for (const c of [m, ...(m.initiator === m ? (m.children ?? []) : [])]) {
+          if (!toRemove.includes(c)) toRemove.push(c);
+        }
+      }
+    }
+    return toRemove.length ? toRemove : false;
   }
 }
 

@@ -15,19 +15,24 @@ export function imdb(_config: Record<string, unknown>): Rebulk {
   rebulk.regexDefaults({ flags: 'i' });
   rebulk.defaults({ validator: sepsSurround });
 
-  rebulk.regex('tt\\d{7,8}', {
-    name: 'imdb_id',
+  // The Plex/Jellyfin spelling carries a prefix — "{imdb-tt1234567}" — which has to
+  // be part of the match, or the bare "imdb" is left over and reads as a title.
+  rebulk.regex('(?:imdb(?:id)?[-=]?)?(?<imdb_id>tt\\d{7,8})', {
+    name: 'imdb_id', privateParent: true, children: true,
     formatter: (value: string) => value.toLowerCase(),
   } as any);
 
   // TMDb / TVDb ids in Plex/Jellyfin-style naming: {tmdb-12345}, [tvdbid-12345],
   // tmdb=12345, etc. Capture the numeric id.
+  // privateParent, not private_parent: the engine reads camelCase, so the
+  // snake_case spelling was silently ignored and the "tmdb-" prefix stayed
+  // unclaimed — long enough to be picked up as an alternative_title "tmdb".
   rebulk.regex('tmdb(?:id)?[-=]?(?<tmdb_id>\\d{1,9})', {
-    name: 'tmdb_id', private_parent: true, children: true,
+    name: 'tmdb_id', privateParent: true, children: true,
     formatter: (value: string) => parseInt(value, 10),
   } as any);
   rebulk.regex('tvdb(?:id)?[-=]?(?<tvdb_id>\\d{1,9})', {
-    name: 'tvdb_id', private_parent: true, children: true,
+    name: 'tvdb_id', privateParent: true, children: true,
     formatter: (value: string) => parseInt(value, 10),
   } as any);
 
