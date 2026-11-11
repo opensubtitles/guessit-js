@@ -29,6 +29,16 @@ export class GuessItException extends Error {
 }
 
 
+/**
+ * One entry of a `guessitMany` batch. A string that parses yields `result`; a
+ * string that throws yields `error` instead, so a single bad name cannot abort
+ * the rest of the batch. `input_string` is always the string as it was passed in,
+ * which lets callers correlate entries without relying on array position.
+ */
+export type GuessItBatchEntry =
+  | { input_string: string; result: GuessItResult }
+  | { input_string: string; error: string };
+
 export class GuessItApi {
   private _rebulk: Rebulk | null = null;
   private _config: Record<string, unknown> | null = null;
@@ -85,48 +95,7 @@ export class GuessItApi {
 
   guessit(string: string, options?: RawOptions): GuessItResult {
     try {
-      const parsedOptions = parseOptions(options, true);
-      const config = this.configure(parsedOptions, undefined, false, false);
-      const mergedOptions = mergeOptions(config, parsedOptions);
-
-      if (!this._rebulk) {
-        throw new Error('Rebulk not initialized');
-      }
-
-      const matches = this._rebulk.matches(string, mergedOptions);
-      const matchesDict = matches.toDict(
-        !!(mergedOptions['advanced'] as boolean),
-        !!(mergedOptions['singleValue'] as boolean) || !!(mergedOptions['single_value'] as boolean),
-        !!(mergedOptions['enforceList'] as boolean) || !!(mergedOptions['enforce_list'] as boolean),
-      );
-
-      // Convert Map → plain object so callers can do result[key]
-      const result: GuessItResult = Object.fromEntries(matchesDict);
-
-      // Dedup language / subtitle_language VALUES at render time. Python never
-      // lists the same language twice (e.g. "VFF+VFQ" -> a single fra, two "eng"
-      // tags -> one). We dedup here rather than removing matches, because those
-      // duplicate matches are load-bearing — they suppress their text from
-      // adjacent title/episode_title holes. Distinct languages are preserved.
-      for (const key of ['language', 'subtitle_language']) {
-        const v = result[key];
-        if (!Array.isArray(v)) continue;
-        const seen = new Set<string>();
-        const deduped = v.filter((lang) => {
-          const id = lang && typeof lang === 'object' && 'alpha3' in lang
-            ? `${(lang as any).alpha3}:${(lang as any).country ?? ''}`
-            : String(lang);
-          if (seen.has(id)) return false;
-          seen.add(id);
-          return true;
-        });
-        result[key] = deduped.length === 1 ? deduped[0] : deduped;
-      }
-      if (mergedOptions['outputInputString'] || mergedOptions['output_input_string']) {
-        result['input_string'] = matches.inputString;
-      }
-
-      return result;
+      return this._guess(string, this._prepare(options));
     } catch (err) {
       if (err instanceof GuessItException) throw err;
       throw new GuessItException(
@@ -135,6 +104,73 @@ export class GuessItApi {
         err,
       );
     }
+  }
+
+  /**
+   * Parse many strings in one pass.
+   *
+   * `guessit()` re-parses the options and re-merges them with the whole config on
+   * every call — work that costs more than matching a short name does. Hoisting it
+   * out of the loop is the reason this method exists; the rules never write to the
+   * merged options, so one object is safe to share across the batch.
+   */
+  guessitMany(strings: string[], options?: RawOptions): GuessItBatchEntry[] {
+    const mergedOptions = this._prepare(options);
+    return strings.map((string) => {
+      try {
+        return { input_string: string, result: this._guess(string, mergedOptions) };
+      } catch (err) {
+        return { input_string: string, error: err instanceof Error ? err.message : String(err) };
+      }
+    });
+  }
+
+  /** Options → config-merged options, ready to hand to rebulk as its context. */
+  private _prepare(options?: RawOptions): Record<string, unknown> {
+    const parsedOptions = parseOptions(options, true);
+    const config = this.configure(parsedOptions, undefined, false, false);
+    return mergeOptions(config, parsedOptions);
+  }
+
+  private _guess(string: string, mergedOptions: Record<string, unknown>): GuessItResult {
+    if (!this._rebulk) {
+      throw new Error('Rebulk not initialized');
+    }
+
+    const matches = this._rebulk.matches(string, mergedOptions);
+    const matchesDict = matches.toDict(
+      !!(mergedOptions['advanced'] as boolean),
+      !!(mergedOptions['singleValue'] as boolean) || !!(mergedOptions['single_value'] as boolean),
+      !!(mergedOptions['enforceList'] as boolean) || !!(mergedOptions['enforce_list'] as boolean),
+    );
+
+    // Convert Map → plain object so callers can do result[key]
+    const result: GuessItResult = Object.fromEntries(matchesDict);
+
+    // Dedup language / subtitle_language VALUES at render time. Python never
+    // lists the same language twice (e.g. "VFF+VFQ" -> a single fra, two "eng"
+    // tags -> one). We dedup here rather than removing matches, because those
+    // duplicate matches are load-bearing — they suppress their text from
+    // adjacent title/episode_title holes. Distinct languages are preserved.
+    for (const key of ['language', 'subtitle_language']) {
+      const v = result[key];
+      if (!Array.isArray(v)) continue;
+      const seen = new Set<string>();
+      const deduped = v.filter((lang) => {
+        const id = lang && typeof lang === 'object' && 'alpha3' in lang
+          ? `${(lang as any).alpha3}:${(lang as any).country ?? ''}`
+          : String(lang);
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
+      result[key] = deduped.length === 1 ? deduped[0] : deduped;
+    }
+    if (mergedOptions['outputInputString'] || mergedOptions['output_input_string']) {
+      result['input_string'] = matches.inputString;
+    }
+
+    return result;
   }
 
   properties(options?: RawOptions): Record<string, unknown[]> {
@@ -203,6 +239,14 @@ export const defaultApi = new GuessItApi();
  */
 export function guessit(string: string, options?: RawOptions): GuessItResult {
   return defaultApi.guessit(string, options);
+}
+
+/**
+ * Guess metadata for many filenames or release names with one options pass.
+ * Each entry carries either a `result` or the `error` that string produced.
+ */
+export function guessitMany(strings: string[], options?: RawOptions): GuessItBatchEntry[] {
+  return defaultApi.guessitMany(strings, options);
 }
 
 /**

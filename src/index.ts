@@ -8,7 +8,8 @@
  * // => { title: 'The Dark Knight', year: 2008, screen_size: '1080p', source: 'Blu-ray', video_codec: 'H.264', release_group: 'GROUP', container: 'mkv', mimetype: 'video/x-matroska', type: 'movie' }
  */
 
-export { guessit, properties, configure, reset, defaultApi, GuessItApi, GuessItException } from './api.js';
+export { guessit, guessitMany, properties, configure, reset, defaultApi, GuessItApi, GuessItException } from './api.js';
+export type { GuessItBatchEntry } from './api.js';
 export { GUESSIT_SCHEMA } from './schema.js';
 export type { GuessItResult, GuessitLanguage, PropertySchema } from './schema.js';
 export { parseOptions, loadConfig, mergeOptions } from './options.js';

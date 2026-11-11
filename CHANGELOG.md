@@ -4,6 +4,15 @@ All notable changes to guessit-js are documented here.
 
 ## [Unreleased]
 
+**`guessitMany()` parses a list of names in one options pass.** `guessit()`
+re-parses the options and re-merges them with the whole config on every call,
+which costs more than matching a short name does; the batch entry point hoists
+that out of the loop. Each entry carries the `input_string` plus either a
+`result` or the `error` that name produced, so one unparseable name cannot abort
+the rest. `POST /api/guessit` takes the same shape via `{"filenames": [...]}`
+(max 500 per request, each up to 1024 characters) and the body cap is now 1 MiB
+to clear a full batch.
+
 **Broadcast/DVR timestamps are dates, not episode numbers** (the sub-case filed
 in upstream guessit-io/guessit#875 on 2026-09-11).
 `…Requested.Episode.Title_Channel.5_2025_07_18_21_00.mp4` gave `episode: [7, 0]`

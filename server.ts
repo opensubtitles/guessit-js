@@ -11,7 +11,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { guessit, version } from './src/index.js';
+import { guessit, guessitMany, version } from './src/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env['PORT'] || '3847', 10);
@@ -24,6 +24,9 @@ const PORT = parseInt(process.env['PORT'] || '3847', 10);
  * anything genuine and keeps an adversarial request bounded.
  */
 const MAX_FILENAME_LENGTH = 1024;
+
+/** Filenames accepted per batch POST — same cap as `--serve` and the Cloudflare worker. */
+const MAX_BATCH = 500;
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -53,7 +56,9 @@ function readBody(req: http.IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     let size = 0;
-    const MAX_BODY = 1024 * 64; // 64 KB limit
+    // A full batch is MAX_BATCH names of up to MAX_FILENAME_LENGTH each, so the
+    // ceiling has to clear 500 KB; 1 MiB matches the `--serve` CLI server.
+    const MAX_BODY = 1024 * 1024;
     req.on('data', (chunk: Buffer) => {
       size += chunk.length;
       if (size > MAX_BODY) {
@@ -96,7 +101,7 @@ function handleGuessitGet(url: URL, res: http.ServerResponse): void {
 async function handleGuessitPost(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
   try {
     const body = await readBody(req);
-    let parsed: { filename?: string; options?: Record<string, unknown> };
+    let parsed: { filename?: string; filenames?: unknown; options?: Record<string, unknown> };
     try {
       parsed = JSON.parse(body);
     } catch {
@@ -104,8 +109,29 @@ async function handleGuessitPost(req: http.IncomingMessage, res: http.ServerResp
       return;
     }
 
+    // Batch form: {"filenames": [...]} returns one entry per name, in order.
+    // guessitMany isolates failures, so one unparseable name yields an `error`
+    // entry rather than failing the whole request.
+    if (parsed.filenames !== undefined) {
+      if (!Array.isArray(parsed.filenames)) {
+        sendJson(res, 400, { error: 'Field "filenames" must be an array of strings' });
+        return;
+      }
+      if (parsed.filenames.length > MAX_BATCH) {
+        sendJson(res, 413, { error: `Max ${MAX_BATCH} filenames per request` });
+        return;
+      }
+      const names = parsed.filenames.map(String);
+      if (names.some((name) => name.length > MAX_FILENAME_LENGTH)) {
+        sendJson(res, 413, { error: `filename exceeds ${MAX_FILENAME_LENGTH} characters` });
+        return;
+      }
+      sendJson(res, 200, guessitMany(names, parsed.options ?? {}));
+      return;
+    }
+
     if (!parsed.filename || typeof parsed.filename !== 'string') {
-      sendJson(res, 400, { error: 'Missing required field: filename' });
+      sendJson(res, 400, { error: 'Body must contain "filename" (string) or "filenames" (array)' });
       return;
     }
     if (parsed.filename.length > MAX_FILENAME_LENGTH) {
@@ -116,6 +142,10 @@ async function handleGuessitPost(req: http.IncomingMessage, res: http.ServerResp
     const result = guessit(parsed.filename, parsed.options ?? {});
     sendJson(res, 200, result);
   } catch (err) {
+    if (err instanceof Error && err.message === 'Body too large') {
+      sendJson(res, 413, { error: 'Request body too large' });
+      return;
+    }
     sendJson(res, 500, { error: 'Failed to parse filename', detail: String(err) });
   }
 }
@@ -229,4 +259,5 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`guessit-js server running at http://localhost:${PORT}`);
   console.log(`API endpoint: http://localhost:${PORT}/api/guessit?filename=...`);
+  console.log(`Batch:        POST /api/guessit {"filenames": ["...", "..."]} (max ${MAX_BATCH})`);
 });
