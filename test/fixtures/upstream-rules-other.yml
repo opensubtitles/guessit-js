@@ -192,3 +192,6 @@
 ? ReRip5
 : other: Proper
   proper_count: 5
+
+? HDR10P
+: other: HDR10+

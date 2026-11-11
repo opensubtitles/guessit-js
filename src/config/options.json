@@ -1321,7 +1321,7 @@
           "tags": "uhdbluray-neighbor"
         },
         "HDR10+": {
-          "regex": "HDR-?10-?(?:\\+|Plus)",
+          "regex": "HDR-?10-?(?:\\+|Plus|P)",
           "tags": "uhdbluray-neighbor"
         },
         "HDR10": {
@@ -1560,6 +1560,7 @@
       "America's Test Kitchen": "ATK",
       "Animal Planet": "ANPL",
       "AnimeLab": "ANLB",
+      "Anime Digital Network": "ADN",
       "AOL": "AOL",
       "AppleTV": [
         "ATVP",
@@ -1590,6 +1591,7 @@
         "ALL4",
         "4OD"
       ],
+      "Channel 5": "MY5",
       "CHRGD": "CHGD",
       "Cinemax": "CMAX",
       "Country Music Television": "CMT",
@@ -1669,6 +1671,10 @@
       "ITV": "ITV",
       "Knowledge Network": "KNOW",
       "Lifetime": "LIFE",
+      "Max": {
+        "pattern": "MAX",
+        "ignore_case": false
+      },
       "Motor Trend OnDemand": "MTOD",
       "MBC": [
         "MBC",
@@ -1695,6 +1701,10 @@
       "NFL": "NFL",
       "NFL Now": "NFLN",
       "NHL GameCenter": "GC",
+      "NowTV": {
+        "pattern": "NOW",
+        "ignore_case": false
+      },
       "Nickelodeon": [
         "NICK",
         "Nickelodeon",

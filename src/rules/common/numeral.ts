@@ -23,6 +23,17 @@ const WORD_NUMERALS: Record<string, number> = {
   'seize': 16, 'dix-sept': 17, 'dix-huit': 18, 'dix-neuf': 19, 'vingt': 20,
 };
 
+/**
+ * Alternation over every known word numeral, longest first so "dix-sept" is not cut
+ * short by "dix". Built from the same table `parseWord` reads, so a pattern can
+ * never drift from what the formatter accepts — the part rule carried its own
+ * English-only copy and so missed "Part Trois".
+ */
+export const wordNumeralPattern: string = Object.keys(WORD_NUMERALS)
+  .sort((a, b) => b.length - a.length)
+  .map((w) => w.replace(/[-]/g, '\\-'))
+  .join('|');
+
 export function parseRoman(s: string): number | undefined {
   const upper = s.toUpperCase();
   let result = 0;

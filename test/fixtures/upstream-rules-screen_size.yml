@@ -233,3 +233,77 @@
       screen_size:
         progressive: ["400"]
   screen_size: 720p
+
+? +480x360i
+: screen_size: 360i
+  aspect_ratio: 1.333
+
+? +492x368p
+: screen_size:
+  aspect_ratio: 1.337
+
+? -500x480
+: screen_size: 480p
+
+? +500x480
+? +500 x 480
+? +500 * 480
+? +500x480p
+? +500X480i
+: screen_size: 500x480
+  aspect_ratio: 1.042
+
+? +852x480i
+: screen_size: 480i
+
+? -500x576
+: screen_size: 576p
+
+? +500x576
+: screen_size: 500x576
+  aspect_ratio: 0.868
+
+? -500x720
+: screen_size: 720p
+
+? +500x720
+: screen_size: 500x720
+  aspect_ratio: 0.694
+
+? -500x900
+: screen_size: 900p
+
+? +500x900
+? +500x900p
+? +500x900i
+: screen_size: 500x900
+  aspect_ratio: 0.556
+
+? -500x1080
+: screen_size: 1080p
+
+? +500x1080
+: screen_size: 500x1080
+  aspect_ratio: 0.463
+
+? +500x2160
+: screen_size: 500x2160
+  aspect_ratio: 0.231
+
+? +500x4320
+: screen_size: 500x4320
+  aspect_ratio: 0.116
+
+? Test.File.400p
+: options:
+    advanced_config:
+      screen_size:
+        progressive: ["400"]
+  screen_size: 400p
+
+? Test.File2.400p
+: options:
+    advanced_config:
+      screen_size:
+        progressive: ["400"]
+  screen_size: 400p

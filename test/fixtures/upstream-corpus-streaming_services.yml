@@ -25,3 +25,22 @@
 ? The.Red.Sea.Diving.Resort.2019.1080p.NF.WEBRip.x264-GRP.mkv
 : title: The Red Sea Diving Resort
   -streaming_service: YouTube Red
+
+? Some.Show.S01E01.1080p.ADN.WEB-DL.AAC2.0.H.264-GRP.mkv
+: title: Some Show
+  streaming_service: Anime Digital Network
+
+? Some.Show.S01E01.1080p.MY5.WEB-DL.AAC2.0.H.264-GRP.mkv
+: title: Some Show
+  streaming_service: Channel 5
+
+# "Max" (HBO Max rebrand) is matched only as the uppercase scene tag MAX, so a title
+# like "Mad Max" is unaffected.
+
+? Some.Show.S01E01.1080p.MAX.WEB-DL.DDP5.1.H.264-GRP.mkv
+: title: Some Show
+  streaming_service: Max
+
+? Some.Show.S01E01.1080p.NOW.WEB-DL.DDP5.1.H.264-GRP.mkv
+: title: Some Show
+  streaming_service: NowTV

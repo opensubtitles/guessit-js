@@ -151,9 +151,17 @@ function loadFixtures(filename: string): FixtureEntry[] {
     // In Python guessit fixtures, 'options' is CLI-style options passed to guessit(), not expected output.
     let options: Record<string, unknown> | undefined;
     if ('options' in rawExpected) {
-      const cliStr = rawExpected['options'] as string;
+      const rawOptions = rawExpected['options'];
       delete (rawExpected as any)['options'];
-      options = parseCliOptions(String(cliStr ?? ''));
+      if (rawOptions && typeof rawOptions === 'object') {
+        // A few fixtures pass options as a mapping rather than a CLI string, to reach
+        // settings the CLI has no flag for (`advanced_config.screen_size.progressive`).
+        const opts = rawOptions as Record<string, unknown>;
+        options = { ...opts };
+        if ('advanced_config' in opts) options['advancedConfig'] = opts['advanced_config'];
+      } else {
+        options = parseCliOptions(String(rawOptions ?? ''));
+      }
     }
 
     // Parse optional embedded options from key: "filename.mkv [options]"
@@ -351,11 +359,14 @@ for (const fixtureFile of FIXTURE_FILES) {
             continue;
           }
 
+          // A null expectation ("screen_size:" with no value) asserts nothing at all,
+          // which is what upstream's own harness does with it — check_expected skips
+          // every key whose expected value is None. Treating it as "must be absent"
+          // invented failures the fixture never claimed.
+          if (expectedValue === null || expectedValue === undefined) continue;
+
           if (!(key in result)) {
-            // Key missing from result — only fail if expected is non-null
-            if (expectedValue !== null && expectedValue !== undefined) {
-              expect(result).toHaveProperty(key);
-            }
+            expect(result).toHaveProperty(key);
             continue;
           }
 

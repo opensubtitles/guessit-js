@@ -117,29 +117,6 @@
 
 # A YYYY-YYYY year range is a single year range, bracketed or not (#988)
 
-# from upstream-corpus-streaming_services.yml
-? Some.Show.S01E01.1080p.ADN.WEB-DL.AAC2.0.H.264-GRP.mkv
-: title: Some Show
-  streaming_service: Anime Digital Network
-
-# from upstream-corpus-streaming_services.yml
-? Some.Show.S01E01.1080p.MY5.WEB-DL.AAC2.0.H.264-GRP.mkv
-: title: Some Show
-  streaming_service: Channel 5
-
-# "Max" (HBO Max rebrand) is matched only as the uppercase scene tag MAX, so a title
-# like "Mad Max" is unaffected.
-
-# from upstream-corpus-streaming_services.yml
-? Some.Show.S01E01.1080p.MAX.WEB-DL.DDP5.1.H.264-GRP.mkv
-: title: Some Show
-  streaming_service: Max
-
-# from upstream-corpus-streaming_services.yml
-? Some.Show.S01E01.1080p.NOW.WEB-DL.DDP5.1.H.264-GRP.mkv
-: title: Some Show
-  streaming_service: NowTV
-
 # from upstream-rules-audio_codec.yml
 ? +2.0
 : audio_channels: '2.0'
@@ -151,42 +128,6 @@
 # from upstream-rules-audio_codec.yml
 ? -51
 : audio_channels: '5.1'
-
-# from upstream-rules-common_words.yml
-? may
-: title: may
-
-# from upstream-rules-common_words.yml
-? ice
-: title: ice
-
-# from upstream-rules-common_words.yml
-? mal
-: title: mal
-
-# from upstream-rules-common_words.yml
-? est
-: title: est
-
-# from upstream-rules-common_words.yml
-? mon
-: title: mon
-
-# from upstream-rules-common_words.yml
-? mar
-: title: mar
-
-# from upstream-rules-common_words.yml
-? ben
-: title: ben
-
-# from upstream-rules-common_words.yml
-? sr
-: title: sr
-
-# from upstream-rules-common_words.yml
-? sub
-: title: sub
 
 # from upstream-rules-date.yml
 ? 1919
@@ -299,20 +240,6 @@
 ? +The complete movie
 : title: The complete movie
 
-# from upstream-rules-other.yml
-? HDR10P
-: other: HDR10+
-
-# from upstream-rules-part.yml
-? Filename Part Trois.mkv
-# Cases from upstream guessit's own test suite (guessit/test/rules/part.yml)
-# that this port did not carry. Imported 2026-11-10 from guessit 4.5.1.
-
-# Multiple input strings having same expected results can be chained.
-# Use - marker to check inputs that should not match results.
-: title: Filename
-  part: 3
-
 # from upstream-rules-release_group.yml
 ? Test.S01E01-FooBar-Group
 : options: -G group -G xxxx
@@ -333,97 +260,6 @@
   title: Test
   type: episode
 
-# from upstream-rules-screen_size.yml
-? +480x360i
-: screen_size: 360i
-  aspect_ratio: 1.333
-
-# from upstream-rules-screen_size.yml
-? +492x368p
-: screen_size:
-  aspect_ratio: 1.337
-
-# from upstream-rules-screen_size.yml
-? -500x480
-: screen_size: 480p
-
-# from upstream-rules-screen_size.yml
-? +500x480
-? +500 x 480
-? +500 * 480
-? +500x480p
-? +500X480i
-: screen_size: 500x480
-  aspect_ratio: 1.042
-
-# from upstream-rules-screen_size.yml
-? +852x480i
-: screen_size: 480i
-
-# from upstream-rules-screen_size.yml
-? -500x576
-: screen_size: 576p
-
-# from upstream-rules-screen_size.yml
-? +500x576
-: screen_size: 500x576
-  aspect_ratio: 0.868
-
-# from upstream-rules-screen_size.yml
-? -500x720
-: screen_size: 720p
-
-# from upstream-rules-screen_size.yml
-? +500x720
-: screen_size: 500x720
-  aspect_ratio: 0.694
-
-# from upstream-rules-screen_size.yml
-? -500x900
-: screen_size: 900p
-
-# from upstream-rules-screen_size.yml
-? +500x900
-? +500x900p
-? +500x900i
-: screen_size: 500x900
-  aspect_ratio: 0.556
-
-# from upstream-rules-screen_size.yml
-? -500x1080
-: screen_size: 1080p
-
-# from upstream-rules-screen_size.yml
-? +500x1080
-: screen_size: 500x1080
-  aspect_ratio: 0.463
-
-# from upstream-rules-screen_size.yml
-? +500x2160
-: screen_size: 500x2160
-  aspect_ratio: 0.231
-
-# from upstream-rules-screen_size.yml
-? +500x4320
-: screen_size: 500x4320
-  aspect_ratio: 0.116
-
-# from upstream-rules-screen_size.yml
-? Test.File.400p
-: options:
-    advanced_config:
-      screen_size:
-        progressive: ["400"]
-  screen_size: 400p
-
-# from upstream-rules-screen_size.yml
-? Test.File2.400p
-: options:
-    advanced_config:
-      screen_size:
-        progressive: ["400"]
-  screen_size: 400p
-
 # from upstream-rules-source.yml
 ? +Cam
 : source: Camera
@@ -439,3 +275,46 @@
 # from upstream-rules-source.yml
 ? UHD HQ 8bit Bluray
 : source: Ultra HD Blu-ray
+
+# NOTE: the nine below depend on upstream's narrower allowed_languages (23
+# entries). This port ships 60, so these short codes — 'sr', plus the
+# bibliographic ISO 639-2 'may', 'ice', 'mal', 'est', 'mon', 'mar', 'ben' — do
+# resolve to languages here. Divergence by design, not a gap to close: a rule
+# that drops a whole-filepart language also breaks bare 'pt', 'English' and
+# 'French', which upstream expects to be languages.
+
+# from upstream-rules-common_words.yml
+? may
+: title: may
+
+# from upstream-rules-common_words.yml
+? ice
+: title: ice
+
+# from upstream-rules-common_words.yml
+? mal
+: title: mal
+
+# from upstream-rules-common_words.yml
+? est
+: title: est
+
+# from upstream-rules-common_words.yml
+? mon
+: title: mon
+
+# from upstream-rules-common_words.yml
+? mar
+: title: mar
+
+# from upstream-rules-common_words.yml
+? ben
+: title: ben
+
+# from upstream-rules-common_words.yml
+? sr
+: title: sr
+
+# from upstream-rules-common_words.yml
+? sub
+: title: sub

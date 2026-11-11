@@ -110,11 +110,13 @@ class PostProcessScreenSize extends Rule {
         //   "Hp"   / "Hi"   → height H, scan type p/i
         //   "H"              → height H only (defaults to 'p')
         const raw = String(match.raw ?? '');
-        // Full WxH form (both dimensions present), allow optional separators around x/*
-        const rxWxH = /^(\d{3,4})\s*[xX*×]\s*(\d{3,4})(?:up)?$/i;
+        // Full WxH form (both dimensions present), allow optional separators around
+        // x/* and a trailing scan type: "500x480p" is 500 by 480 progressive, not
+        // height 500 — reading it as the latter dropped the real height entirely.
+        const rxWxH = /^(\d{3,4})\s*[xX*×]\s*(\d{3,4})\s*([ip])?(?:up)?$/i;
         const mWxH = rxWxH.exec(raw);
         if (mWxH) {
-          values = { width: mWxH[1], height: mWxH[2], scan_type: undefined };
+          values = { width: mWxH[1], height: mWxH[2], scan_type: mWxH[3] };
         } else {
           // Height-only or height+scan_type form (strip any trailing separator chars)
           const rxH = /^(\d{3,4})([ip])?/i;
@@ -144,8 +146,11 @@ class PostProcessScreenSize extends Rule {
         (match as unknown as { value: unknown }).value = `${width}x${height}`;
       }
 
-      // Add aspect_ratio when width is present and within valid range
-      if (!isDisabled(context, 'aspect_ratio') && width && this.minAr < calculatedAr && calculatedAr < this.maxAr) {
+      // A measured aspect ratio is reported whenever both dimensions are known. The
+      // min/max window decides whether the canonical "<height>p" notation applies,
+      // not whether the ratio is worth reporting — gating on it hid the ratio of
+      // exactly the unusual resolutions it is most informative for ("500x900").
+      if (!isDisabled(context, 'aspect_ratio') && width) {
         const arMatch = new Match(match.start, match.end, {
           name: 'aspect_ratio',
           value: Math.round(calculatedAr * 1000) / 1000,

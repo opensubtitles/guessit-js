@@ -2,7 +2,7 @@ import { Rebulk } from 'rebulk-js';
 import { dash } from '../common/index.js';
 import { isDisabled } from '../common/pattern.js';
 import { sepsSurround, intCoercable, and_ } from '../common/validators.js';
-import { parseNumber } from '../common/numeral.js';
+import { parseNumber, wordNumeralPattern } from '../common/numeral.js';
 import { buildOrPattern } from '../../reutils.js';
 
 export function part(config: Record<string, unknown>) {
@@ -14,11 +14,8 @@ export function part(config: Record<string, unknown>) {
   });
 
   const prefixes = config['prefixes'] as string[];
-  const wordNumerals = [
-    'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
-    'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty',
-  ];
-  const numeral = `(?:\\d+|[ivxlcdm]+|${wordNumerals.join('|')})`;
+  // Every word numeral the formatter understands, French included ("Part Trois").
+  const numeral = `(?:\\d+|[ivxlcdm]+|${wordNumeralPattern})`;
 
   function validateRoman(match: any) {
     if (intCoercable(match.raw)) {
