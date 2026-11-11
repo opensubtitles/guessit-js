@@ -47,7 +47,13 @@ jobs:
       - name: Drop-in parity vs Python guessit CLI
         run: |
           set -e
-          pip install --quiet guessit pyyaml
+          # six: guessit imports six.text_type in jsonutils.py — in the release and in
+          # upstream's git — without declaring it, and guessit.__main__ imports
+          # jsonutils, so on a clean install the Python CLI dies before parsing
+          # anything and every diff below "fails" against an empty side. Pinned so the
+          # comparison is against the version the docs cite.
+          pip install --quiet "guessit==4.5.1" six pyyaml
+          guessit --version | head -1
           for fmt in "" "-j" "-y" "-s"; do
             for f in 'Movie.2020.1080p.mkv' 'B.S01E02 en.mkv' 'Dune.2021.2160p.WEB-DL.DDP5.1.Atmos.mkv'; do
               diff <(guessit $fmt "$f") <(node bin/cli.mjs $fmt "$f") \
