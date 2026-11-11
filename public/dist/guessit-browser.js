@@ -16073,7 +16073,7 @@ options=${JSON.stringify(options)}
   __name(reset, "reset");
 
   // package.json
-  var version = "4.9.0";
+  var version = "4.9.1";
 
   // src/index.ts
   var version2 = version;

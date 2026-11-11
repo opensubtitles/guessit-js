@@ -2,6 +2,21 @@
 
 All notable changes to guessit-js are documented here.
 
+## [4.9.1]
+
+**The batch contract now holds on all three HTTP surfaces.** 4.9.0 documented the
+batch response as one entry per name carrying `input_string` plus either `result`
+or `error`, "identical on all three HTTP surfaces" — and only `server.ts` did
+that. The Cloudflare worker and the CLI's `--serve` both answered a bare array of
+result objects, mapped one name at a time through `guessit()`: a different shape,
+no way to correlate entries except by position, no per-name error isolation (one
+unparseable name returned 500 for the whole request), and the worker answered 400
+instead of 413 when the count limit was exceeded. Both call `guessitMany()` now.
+
+Found by reading the hosted API's response by hand after releasing 4.9.0. The
+tests pinned status codes and array lengths, which both shapes satisfy; a test on
+the `--serve` surface asserts the entry shape itself now.
+
 ## [4.9.0]
 
 Upstream shipped guessit 4.5.0 and 4.5.1 on 2026-11-10 and closed six issues;
