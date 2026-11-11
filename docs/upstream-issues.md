@@ -93,8 +93,9 @@ Still pending, largest first:
 |---|---|---|
 | 9 | short codes that stay titles upstream (`may`, `ice`, `mal`, `est`, `mon`, `mar`, `ben`, `sr`, `sub`) | divergence — upstream allows 23 languages, this port 60, so these resolve here. A rule dropping a whole-filepart language also breaks bare `pt`/`English`/`French`, which upstream expects to be languages. |
 | 7 | episode rules: title from the filepart carrying the episode, bare space-separated lists (`Some Series S01 02 03`), `Season.4.Episodes.1-12` | gap |
-| 6 | the #985 divergences above, plus `eps1.0 hellofriend` losing its dot | mixed |
-| 5 | a bare four-digit year alone in the name (`2012`, `(1920)`) | divergence — a lone number stays a title here, which is what #976 asks for; `Something.2.5.2007` is the unpadded `D.M.YYYY` date this port rejects on purpose (#963) |
+| 5 | the #985 divergences above | divergence |
+| 4 | a bare four-digit year alone in the name (`2012`, `(1920)`) | divergence — a lone number stays a title here, which is what #976 asks for; `Something.2.5.2007` is the unpadded `D.M.YYYY` date this port rejects on purpose (#963) |
+| 1 | `The.Taking.of.Pelham.1.2.3` under a forced type | gap, low value |
 | 3 | bare `Cam` with nothing else in the name, and `UHD HQ 8bit Bluray` merging into Ultra HD Blu-ray across intervening tokens | gap, low value |
 | 3 | subtitle prefixes `SubFrench`, `SubFr`, `STFr` | gap |
 | 3 | audio channels from a bare `1.0` / `2.0` / `51` with nothing else in the name | gap, low value |
