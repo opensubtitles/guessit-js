@@ -896,6 +896,203 @@
   season: 1
   episode: 1
 
+# ── #985 (upstream, merged): the anime readings are anime-only ──
+# "Season N - EE" as season+episode and "(S4-24)" as an annotation are anime
+# conventions that collide with western box sets. Gated on an anime signal and on
+# the parenthesis-after-an-absolute-number shape, so a plain range stays a range.
+? The Wire Season 1 - 5 1080p BluRay
+: type: episode
+  title: The Wire
+  season: [1, 2, 3, 4, 5]
+
+? Once Upon a Time [S01-07] (2011-2017) WEB-DLRip by Generalfilm
+: type: episode
+  title: Once Upon a Time
+  season: [1, 2, 3, 4, 5, 6, 7]
+  year: [2011, 2017]
+
+# guard: the anime shapes still read as season + episode
+? "[SCY] Attack on Titan Season 3 - 11 (BD 1080p Hi10 FLAC) [1FA13150].mkv"
+: type: episode
+  season: 3
+  episode: 11
+
+? "[Erai-raws] Granblue Fantasy The Animation Season 2 - 08 [1080p][Multiple Subtitle].mkv"
+: type: episode
+  season: 2
+  episode: 8
+  subtitle_language: mul
+
+# A fansub group id is hex, and a bare two-letter token after a language code is
+# not a country: "0x539" scored as the integer 1337 and lost the group, "HR-GZ"
+# read as Croatian spoken in the nonexistent country GZ and ate the group name.
+? "[HR] Boku no Hero Academia 87 (S4-24) [1080p HEVC Multi-Subs] HR-GZ"
+: type: episode
+  season: 4
+  episode: 24
+  subtitle_language: mul
+  release_group: GZ
+  other: High Resolution
+
+? "[0x539] Somali and the Forest Spirit - S01E01 (WEB 1080p test)"
+: type: episode
+  title: Somali and the Forest Spirit
+  season: 1
+  episode: 1
+  release_group: '0x539'
+
+? Show.S01E01.1080p-HR-GZ
+: type: episode
+  release_group: GZ
+  -language:
+  -subtitle_language:
+
+# guard: a real IETF tag keeps its country
+? Show.S01E01.1080p.pt-BR.mkv
+: type: episode
+  language: pt-BR
+
+# ── #988: a YYYY-YYYY span is one year range, bracketed or not ──
+# Each year used to be matched alone and arbitrated by KeepMarkedYearInFilepart,
+# which released the first one to the title — so the bracketed spelling happened
+# to give [start, end] while the bare one gave "Show 2005" plus year 2013. The
+# range is never expanded to the years between: it is a span of airing dates.
+? The.Office.US.2005-2013.Complete.Series.720p
+: type: episode
+  title: The Office
+  country: US
+  year: [2005, 2013]
+  other: Complete
+
+? Show 2011-2017 S01E01
+: type: episode
+  title: Show
+  year: [2011, 2017]
+  season: 1
+  episode: 1
+
+? Show.S01-S07.2011-2017.1080p
+: type: episode
+  title: Show
+  year: [2011, 2017]
+  season: [1, 2, 3, 4, 5, 6, 7]
+
+? Friends (1994-2004) Complete Series 1080p
+: type: episode
+  title: Friends
+  year: [1994, 2004]
+  other: Complete
+
+? Breaking Bad [2008-2013] S01-S05 1080p
+: type: episode
+  title: Breaking Bad
+  year: [2008, 2013]
+  season: [1, 2, 3, 4, 5]
+
+? /Show (2011-2017)/Season 1/Show S01E01.mkv
+: type: episode
+  title: Show
+  year: [2011, 2017]
+  season: 1
+  episode: 1
+
+? Movie 1994-2004 1080p
+: type: movie
+  title: Movie
+  year: [1994, 2004]
+
+? Show 2005 - 2013 Complete
+: type: movie
+  title: Show
+  year: [2005, 2013]
+  other: Complete
+
+? Show (2011 to 2017) Complete
+: type: movie
+  title: Show
+  year: [2011, 2017]
+  other: Complete
+
+? Show 2005–2013 Complete
+: type: movie
+  title: Show
+  year: [2005, 2013]
+  other: Complete
+
+? Trilogy (1999-2003) 1080p
+: type: movie
+  title: Trilogy
+  year: [1999, 2003]
+
+? Show 2005-2013 2020 1080p
+: type: movie
+  title: Show
+  year: [2005, 2013]
+
+# not a range: a reversed pair, or two unrelated years
+? Show (2013-2005) Complete
+: type: movie
+  title: Show
+  year: [2013, 2005]
+
+? Film (2010) (2015 Remaster) 1080p
+: type: movie
+  title: Film
+  year: [2010, 2015]
+
+? Movie.1999.2005.Remastered.1080p
+: type: movie
+  title: Movie 1999
+  year: 2005
+
+# ── #978: a plain sidecar extension is a container, not the release group ──
+# Unknown extensions were left glued to the trailing scene group ("NINJA.strm")
+# or became the group outright, replacing the real one. `.strm` is how Kodi,
+# Emby and Jellyfin libraries name every streamed episode, so this hit every
+# scan there. Upstream's #979 added strm and vtt; txt and url are named in the
+# issue and fail the same way, so they are here too.
+? "[Erai-raws] Show Name - 02 [720p][Multi].strm"
+: type: episode
+  title: Show Name
+  episode: 2
+  screen_size: 720p
+  release_group: Erai-raws
+  container: strm
+
+? Show.Name.S01E02.1080p-NINJA.strm
+: type: episode
+  title: Show Name
+  season: 1
+  episode: 2
+  release_group: NINJA
+  container: strm
+
+? Show.Name.S01E02.1080p-NINJA.vtt
+: type: episode
+  release_group: NINJA
+  container: vtt
+
+? Show.Name.S01E02.1080p-NINJA.txt
+: type: episode
+  release_group: NINJA
+  container: txt
+
+? Show.Name.S01E02.1080p-NINJA.url
+: type: episode
+  release_group: NINJA
+  container: url
+
+# guard: the extensions that already worked are unchanged
+? "[Erai-raws] Show Name - 02 [720p][Multi].srt"
+: type: episode
+  release_group: Erai-raws
+  container: srt
+
+? Show.Name.S01E02.1080p-NINJA.srt
+: type: episode
+  release_group: NINJA
+  container: srt
+
 # ── #982 (upstream, merged): equally complete SxxExx fileparts ──
 # The specificity guard upstream took from our #962. The filename wins unless the
 # parent filepart carries more properties.
@@ -909,9 +1106,66 @@
   season: 1
   episode: 14
 
-# guard: season and episode come from the same filepart, never S01E16 from both
+# ── #983: a season-pack directory never overrides the file it holds ──
+# RemoveAmbiguous keeps the filepart with the most properties and only then the
+# rightmost, so one extra token on the directory ("Complete", or a stray word read
+# as episode_title) was enough to replace the file's own episode with the pack's
+# whole range. Between equally complete SxxExx fileparts the filename now wins.
+? Show.S01E01-E10.Complete/Show.S01E05.mkv
+: type: episode
+  season: 1
+  episode: 5
+
+? Show.S01E01-E10.Pack/Show.S01E05.mkv
+: type: episode
+  season: 1
+  episode: 5
+
+? Show.S01E01.Pack/Show.S01E05.mkv
+: type: episode
+  season: 1
+  episode: 5
+  -episode: 1
+
+? Show.S01E01-E10.Complete.720p.WEB-DL/Show.S01E05.720p.WEB-DL.mkv
+: type: episode
+  season: 1
+  episode: 5
+  other: Complete
+
+# The exception: a companion file names nothing real, so a sample or proof clip
+# defers to the single-episode directory holding it — but not to a pack, which is
+# not a single episode either.
 ? Show S01E02/Show.S03E16.sample.mkv
-: title: Show
-  season: 3
-  episode: 16
+: type: episode
+  season: 1
+  episode: 2
   other: Sample
+  -season: 3
+  -episode: 16
+
+? Show.S02E03.720p/Show.S01E01.proof.jpg
+: type: episode
+  season: 2
+  episode: 3
+  other: Proof
+  -episode: 1
+
+# the sample directory alone marks the companion file when the file's own Sample
+# token is not kept
+? Westworld.S02E03.720p.WEB-DL/sample/sample-westworld.s01e01.mkv
+: type: episode
+  title: Westworld
+  season: 2
+  episode: 3
+  -season: 1
+
+? Show.S01E01-E10.Complete.720p/Show.S01E05.sample.mkv
+: type: episode
+  season: 1
+  episode: 5
+
+? Show.S01E01-E10.Complete.720p/Sample/Show.S01E05.sample.mkv
+: type: episode
+  season: 1
+  episode: 5

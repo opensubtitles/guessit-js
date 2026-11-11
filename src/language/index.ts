@@ -8,6 +8,7 @@ import {
   NAME_MAP,
   OPENSUBTITLES_MAP,
   GUESSIT_SYNONYMS,
+  COUNTRY_ALPHA2,
   type LanguageData,
 } from './data.js';
 
@@ -206,9 +207,11 @@ export class Language {
     if (parts.length >= 1) {
       const byAlpha2 = this.fromAlpha2(parts[0]);
       if (byAlpha2 && parts.length >= 2) {
-        // IETF country/region subtags are 2 letters (ISO 3166-1 alpha-2).
+        // IETF country/region subtags are 2 letters (ISO 3166-1 alpha-2) and must be
+        // real ones: any two letters used to pass, so "HR-GZ" read as Croatian in the
+        // nonexistent country GZ instead of leaving GZ to the release group.
         // If the second part is 3+ letters it's likely a language code, not a country.
-        if (parts[1].length === 2) {
+        if (parts[1].length === 2 && COUNTRY_ALPHA2.has(parts[1].toUpperCase())) {
           byAlpha2.country = parts[1].toUpperCase();
         } else if (parts[1].length === 4 && /^[a-z]{4}$/.test(parts[1])) {
           // A four-letter subtag is an ISO 15924 script: "zh-Hans" and "zh-Hant"

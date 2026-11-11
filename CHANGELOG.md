@@ -4,6 +4,63 @@ All notable changes to guessit-js are documented here.
 
 ## [Unreleased]
 
+**A `YYYY-YYYY` span is one year range, bracketed or not** (upstream
+guessit-io/guessit#988). Each year was matched on its own and arbitrated by
+`KeepMarkedYearInFilepart`, which releases the first year to the title — so
+`Movie 1994-2004 1080p` came back as title "Movie 1994" with year 2004, while the
+bracketed spelling happened to keep both. A range is now matched as a unit and the
+two years are kept or dropped together: `-`, `~`, `–` and `to` all separate it,
+both years must be plausible, and the pair must run forward, so `(2013-2005)`
+stays two unrelated years. The range is never expanded to the years between — it
+is a span of airing dates, and a show on hiatus would collect years it never
+aired.
+
+Three things fell out of that work. `EnlargeGroupMatches` grows a match that
+fills a bracket group over the brackets, and it adjusted the raw offsets as if
+they were relative, which ate a character from any match that already carried
+them — the second year of a bracketed `(1994-2004)` parsed as 200.
+`RemoveGroupedYearWithSxxExx` measured the group against a single year, so a
+group holding nothing but a range looked like text around a year and the year was
+dropped. And `intCoercable` used `Number()`, which reads JS numeric literals that
+Python's `int()` rejects: `0x539` scored as the integer 1337, so a fansub group id
+in brackets was discarded as a number instead of becoming the release group.
+
+**A season-pack directory no longer overrides the file it holds** (upstream
+guessit-io/guessit#983). `RemoveAmbiguous` keeps the filepart carrying the most
+properties and only then prefers the rightmost, so a single extra token on the
+directory — `Complete`, or a stray word read as `episode_title` — replaced the
+file's own episode with the pack's whole range:
+`Show.S01E01-E10.Complete/Show.S01E05.mkv` returned episodes 1 through 10 instead
+of 5. Between equally complete `SxxExx` fileparts the filename now wins. The
+exception is a companion file: a sample or proof clip names nothing real, so it
+still defers to the single-episode directory holding it, but not to a pack, which
+is not a single episode either.
+
+**A plain sidecar extension is a container, not the release group** (upstream
+guessit-io/guessit#978). `.strm` — how Kodi, Emby and Jellyfin name every
+streamed episode — along with `.vtt`, `.txt` and `.url`, was not a known
+extension, so it either replaced the real release group
+(`[Erai-raws] … .strm` → `strm`) or stayed glued to a trailing scene group
+(`…-NINJA.strm`). All four are containers now; upstream added the first two.
+
+**The anime-only readings are gated on an anime signal** (upstream
+guessit-io/guessit#985). "Season N - EE" meaning season N episode EE collides
+with the equally common western box set, so `The Wire Season 1 - 5 1080p BluRay`
+lost seasons 2 through 5. A compact `S4-24` is the annotation of an absolute
+episode number only in round parentheses right after one — a bracketed
+`[S01-07]` is a season pack, and `Once Upon a Time [S01-07]` likewise kept only
+season 1. Both readings now require their evidence.
+
+Also from that name: a two-letter token after a language code had to be a real
+ISO 3166-1 country. Any two letters passed, so the release group `HR-GZ` parsed
+as Croatian spoken in the nonexistent country GZ and took the group name with it.
+
+Still divergent from #985 by design, now recorded in `docs/upstream-issues.md`:
+an anime compound dash title stays whole (`Fairy Tail - 100 Years Quest` is the
+show's name, not a title plus an alternative title), a year does not become a
+season, and `Show 12 - 24` reads as title "Show 12" plus episode 24 rather than a
+two-episode list.
+
 **Every pass of a twice-registered rule class runs** (rebulk-js 3.5.0). Rule
 dedup compared instances by class alone, so a rule class registered twice with
 different constructor arguments lost an instance when rebulks were merged — the

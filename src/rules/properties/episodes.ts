@@ -1194,6 +1194,59 @@ class PreferAnchoredWeakEpisodeRule extends Rule {
 }
 
 /**
+ * Anime signals, mirroring Python's WeakConflictSolver.is_anime: a version or crc32
+ * tag, a screen_size quoted inside a bracket group, or a bracket group holding only
+ * the release group's name. Several readings are anime-only conventions and must not
+ * fire on western releases that look similar.
+ */
+export function isAnime(matches: any): boolean {
+  if ((matches.named('version') as any[])?.length > 0) return true;
+  if ((matches.named('crc32') as any[])?.length > 0) return true;
+  const groups = matches.markers?.named('group') || [];
+  const groupArr: any[] = Array.isArray(groups) ? groups : groups ? [groups] : [];
+  for (const group of groupArr) {
+    // screen_size inside a group marker
+    const screenSizeInGroup = matches.range?.(group.start, group.end, (m: any) =>
+      m.name === 'screen_size',
+    );
+    const hasScreenSize = Array.isArray(screenSizeInGroup)
+      ? screenSizeInGroup.length > 0
+      : !!screenSizeInGroup;
+    if (hasScreenSize) return true;
+    // Empty bracket group with non-numeric text (likely anime release group)
+    const innerMatches = matches.range?.(group.start, group.end,
+      (m: any) => !m.private && !m.tags?.includes('weak-language')) || [];
+    const innerArr: any[] = Array.isArray(innerMatches) ? innerMatches : innerMatches ? [innerMatches] : [];
+    const nonRG = innerArr.filter((m: any) => m.name !== 'release_group');
+    if (nonRG.length === 0) {
+      const groupText = (matches.inputString ?? '').slice(group.start + 1, group.end - 1).trim();
+      if (groupText && !/^\d+$/.test(groupText)) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Whether a season chain fills a round-parenthesis group that directly follows a bare
+ * absolute episode number — "87 (S4-24)", where 24 is the per-season number annotating
+ * the absolute count. A square-bracketed "[S01-07]" is a season pack, and a
+ * parenthesized range with nothing in front of it has nothing to annotate.
+ */
+function isAbsoluteNumberAnnotation(matches: any, init: any): boolean {
+  const group = matches.markers.atMatch(init, (m: any) => m.name === 'group', 0);
+  // EnlargeGroupMatches has already grown the chain over the brackets by this
+  // priority, so a bracket-wrapped chain reads as the group's own span.
+  if (!group || group.start !== init.start || group.end !== init.end) return false;
+  const groupRaw = String(group.raw ?? '');
+  if (!groupRaw.startsWith('(') || !groupRaw.endsWith(')')) return false;
+  // The absolute count sits directly in front. Upstream can look for its
+  // `weak-episode` match; here the anime absolute-episode rule only claims that
+  // number later (priority -64, long after this one), so the bare digits are read
+  // from the input instead — which is all the convention is: "87 (S4-24)".
+  return /(?:^|[\s._-])\d{1,4}[\s._]*$/.test((matches.inputString ?? '').slice(0, group.start));
+}
+
+/**
  * "Season N - EE": an anime convention where the space-padded dash joins the season
  * word to the EPISODE number, not a season range (upstream #875): "Attack on Titan
  * Season 3 - 11" → season 3, episode 11. A glued dash ("Season 1-3") or an explicit
@@ -1220,11 +1273,13 @@ class SeasonWordDashedEpisodeRule extends Rule {
       if (!marker) continue;
       const markerRaw = String(marker.raw ?? '');
       const isWordMarker = /^[a-zà-ÿа-я]{3,}$/i.test(markerRaw);
-      // A compact "S4-24" confined to a bracket group is season 4 + episode 24
-      // (upstream #875): brackets quote metadata, and a season RANGE would use
-      // the S-prefix on both sides ("S01-S05").
-      const inBracket = !!matches.markers.atMatch(season, (m: any) => m.name === 'group', 0);
-      if (!isWordMarker && !(markerRaw.toLowerCase() === 's' && inBracket)) continue;
+      // A compact "(S4-24)" in round parentheses right after a bare absolute episode
+      // number is season 4 + episode 24 (upstream #875): the 24 annotates the absolute
+      // count in front of it. A square-bracketed "[S01-07]" or a parenthesized range
+      // with nothing before it is a genuine season pack, so it stays a range.
+      const parenthesizedAnnotation = markerRaw.toLowerCase() === 's'
+        && isAbsoluteNumberAnnotation(matches, init);
+      if (!isWordMarker && !parenthesizedAnnotation) continue;
       if (isWordMarker && /s$/i.test(markerRaw)) continue; // "Seasons" — plural means a real range
       const nums = children.filter((c: any) => c.name === 'season');
       if (nums.length !== 2) continue;
@@ -1233,6 +1288,9 @@ class SeasonWordDashedEpisodeRule extends Rule {
       // word markers need the space-padded dash ("Season 3 - 11"); a glued
       // "Season 1-3" is a range. Bracketed "S4-24" is glued by convention.
       if (isWordMarker && (input[sep.start - 1] !== ' ' || input[sep.end] !== ' ')) continue;
+      // The padded-dash reading is anime-only: it collides with the equally common
+      // western box set ("The Wire Season 1 - 5", upstream #920), which is a range.
+      if (isWordMarker && !isAnime(matches)) continue;
       const filepart = matches.markers.atMatch(season, (m: any) => m.name === 'path', 0);
       if (filepart) {
         const complete = matches.range(filepart.start, filepart.end,
@@ -1726,37 +1784,10 @@ class WeakConflictSolverRule extends Rule {
     return context?.type !== 'movie';
   }
 
-  private isAnime(matches: any): boolean {
-    if ((matches.named('version') as any[])?.length > 0) return true;
-    if ((matches.named('crc32') as any[])?.length > 0) return true;
-    const groups = matches.markers?.named('group') || [];
-    const groupArr: any[] = Array.isArray(groups) ? groups : groups ? [groups] : [];
-    for (const group of groupArr) {
-      // screen_size inside a group marker
-      const screenSizeInGroup = matches.range?.(group.start, group.end, (m: any) =>
-        m.name === 'screen_size',
-      );
-      const hasScreenSize = Array.isArray(screenSizeInGroup)
-        ? screenSizeInGroup.length > 0
-        : !!screenSizeInGroup;
-      if (hasScreenSize) return true;
-      // Empty bracket group with non-numeric text (likely anime release group)
-      const innerMatches = matches.range?.(group.start, group.end,
-        (m: any) => !m.private && !m.tags?.includes('weak-language')) || [];
-      const innerArr: any[] = Array.isArray(innerMatches) ? innerMatches : innerMatches ? [innerMatches] : [];
-      const nonRG = innerArr.filter((m: any) => m.name !== 'release_group');
-      if (nonRG.length === 0) {
-        const groupText = (matches.inputString ?? '').slice(group.start + 1, group.end - 1).trim();
-        if (groupText && !/^\d+$/.test(groupText)) return true;
-      }
-    }
-    return false;
-  }
-
   when(matches: any, _context: any): any {
     const toRemove: any[] = [];
 
-    const animeDetected = this.isAnime(matches);
+    const animeDetected = isAnime(matches);
 
     const fileparts = matches.markers?.named('path') || [];
     const filepartArr: any[] = Array.isArray(fileparts) ? fileparts : fileparts ? [fileparts] : [];

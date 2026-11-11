@@ -18,6 +18,8 @@ const SYNTHETIC = [
   'Movie.2020-GRP.cb7', 'Movie.2020.1080p.x264.r00',
   'Movie.2020-GRP.jpg', 'Movie.2020-GRP.jpeg', 'Movie.2020-GRP.png', 'Movie.2020-GRP.gif',
   'Movie.2020-GRP.bmp', 'Movie.2020-GRP.tbn', 'Movie.2020-GRP.webp',
+  'Show.S01E02-GRP.strm', 'Show.S01E02-GRP.vtt', 'Show.S01E02-GRP.txt',
+  'Show.S01E02-GRP.url', 'Show.S01E02-GRP.ass', 'Show.S01E02-GRP.sub',
   'poster.jpg', 'fanart.jpg', 'banner.jpg', 'thumb.jpg', 'thumbnail.jpg',
   'landscape.jpg', 'cover.jpg', 'clearart.png', 'clearlogo.png', 'logo.png', 'discart.png',
 ];

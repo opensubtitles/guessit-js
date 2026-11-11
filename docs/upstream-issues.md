@@ -7,6 +7,25 @@
 > upstream work since this snapshot: guessit-io/guessit#961 (dead episode pass,
 > our PR guessit-io/guessit#962) and the rebulk-js 3.4.0 engine fixes.
 >
+> **Fourth sweep, 2026-11-10 — open issues read to #977, closed issues to #988,
+> merged PRs #982 and #985.** Upstream shipped 4.5.0 and 4.5.1 the same day and
+> closed six issues; four of them reproduced here and are now fixed with guard
+> fixtures: #988 (an unbracketed `YYYY-YYYY` range leaked its first year into the
+> title), #983 (a season-pack directory overrode the episode of the file it
+> holds), #978 (`.strm`/`.vtt`/`.txt`/`.url` became or corrupted the
+> `release_group`) and the #985 anime cluster (the "Season N - EE" and `(S4-24)`
+> readings fired on western box sets; `HR-GZ` parsed as Croatian in a nonexistent
+> country; a `0x539` group id was discarded as a number). #976 (a numeric title
+> inside the year range) and all five of #982's filepart cases already passed.
+> #977 (asterisks in titles) was already correct and is pinned.
+>
+> Deliberate divergences from #985, which this port does not adopt: an anime
+> compound dash title stays whole (`Fairy Tail - 100 Years Quest` is the show's
+> name — same rule that keeps `Tower of Druaga - Sword of Uruk`), a year does not
+> become a season, and `Show 12 - 24` reads as title "Show 12" plus episode 24
+> rather than a two-episode list. Cross-parser baseline unchanged at 114 of the
+> historical 276; upstream's own baseline is now 255 cases, of which 94 pass.
+>
 > **#961/#962 resolved upstream, 2026-11-10.** Toilal confirmed the diagnosis,
 > declined the per-subclass workaround and fixed the root cause in rebulk
 > instead (Toilal/rebulk#92 → rebulk 6.0.2, where instance-registered rules
@@ -42,6 +61,15 @@
 > missed). #968 (`Spa Weekend` read as Spanish), #961 and the #949 comment
 > (a duplicate of #966) already parsed correctly. Guard fixtures for all of them
 > are in `test/fixtures/upstream-open-issues.yml`.
+
+**Rebuilding the cross-parser corpus.** `scripts/cross-parser-check.mts` reads a
+joined corpus from `$XP_CASES` (default `xp-cases.json`). Build it from upstream
+with no clone: fetch `guessit/test/cross_parser/baseline.json` plus
+`{anitomy,go-ptn,ptn,ptt,thcolin}.json`; the baseline is
+`{parser: {release_name: [failing_field, …]}}` and each parser file is
+`{entries: [{release_name, expected}]}`, so for every baseline name pick just the
+listed fields out of that parser's `expected`. Compare only those fields — the
+score counts the cases Python admits failing, not a general pass rate.
 
 Triaged from <https://github.com/guessit-io/guessit/issues> (open issues) for the
 guessit-js port. Oriented toward parsing behaviour; Python-runtime/packaging

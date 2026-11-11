@@ -24,11 +24,13 @@ export const sepsAfter = (match: Match) => enlargedEnd(match) || charsAfter(seps
 export const sepsSurround = (match: Match) => sepsBefore(match) && sepsAfter(match);
 
 export function intCoercable(string: string): boolean {
-  // Matches Python's int() behaviour: the ENTIRE string must be a valid integer.
+  // Matches Python's int() behaviour: the ENTIRE string must be a decimal integer.
   // parseInt('720p') returns 720 in JS but int('720p') raises ValueError in Python.
-  // Use Number() which returns NaN for '720p', matching Python semantics.
-  const n = Number(string.trim());
-  return Number.isInteger(n);
+  // Number() is not the equivalent either — it reads JS numeric literals, so the
+  // hex, binary, octal and exponent forms that int() rejects all came back integral:
+  // "0x539" (a fansub group id, upstream #875) scored 1337 and lost the group name.
+  // Underscore digit grouping is accepted, as int("1_000") is.
+  return /^[+-]?\d+(?:_\d+)*$/.test(string.trim());
 }
 
 export function and_(...validators: ((m: Match) => boolean)[]): (m: Match) => boolean {

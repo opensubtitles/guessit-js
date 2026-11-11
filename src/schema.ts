@@ -191,6 +191,7 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "ace",
       "arj",
       "asf",
+      "ass",
       "avi",
       "bmp",
       "bz2",
@@ -231,12 +232,17 @@ export const GUESSIT_SCHEMA: Record<string, PropertySchema> = {
       "rm",
       "srt",
       "ssa",
+      "strm",
+      "sub",
       "tar",
       "tbn",
       "tgz",
       "torrent",
       "ts",
+      "txt",
+      "url",
       "vob",
+      "vtt",
       "wav",
       "webm",
       "webp",
@@ -1084,7 +1090,7 @@ export interface GuessItResult {
   cd?: number;
   cd_count?: number;
   color_depth?: "10-bit" | "12-bit" | "8-bit";
-  container?: "3g2" | "3gp" | "3gp2" | "7z" | "ace" | "arj" | "asf" | "avi" | "bmp" | "bz2" | "cb7" | "cbr" | "cbz" | "divx" | "flv" | "gif" | "gz" | "idx" | "iso" | "jpeg" | "jpg" | "m2ts" | "m4v" | "mk2" | "mk3d" | "mka" | "mkv" | "MKV" | "mov" | "mp4" | "mp4a" | "mpeg" | "mpg" | "nfo" | "nzb" | "ogg" | "ogm" | "ogv" | "png" | "qt" | "r00" | "ra" | "ram" | "rar" | "rm" | "srt" | "ssa" | "tar" | "tbn" | "tgz" | "torrent" | "ts" | "vob" | "wav" | "webm" | "webp" | "wma" | "wmv" | "zip" | ("3g2" | "3gp" | "3gp2" | "7z" | "ace" | "arj" | "asf" | "avi" | "bmp" | "bz2" | "cb7" | "cbr" | "cbz" | "divx" | "flv" | "gif" | "gz" | "idx" | "iso" | "jpeg" | "jpg" | "m2ts" | "m4v" | "mk2" | "mk3d" | "mka" | "mkv" | "MKV" | "mov" | "mp4" | "mp4a" | "mpeg" | "mpg" | "nfo" | "nzb" | "ogg" | "ogm" | "ogv" | "png" | "qt" | "r00" | "ra" | "ram" | "rar" | "rm" | "srt" | "ssa" | "tar" | "tbn" | "tgz" | "torrent" | "ts" | "vob" | "wav" | "webm" | "webp" | "wma" | "wmv" | "zip")[];
+  container?: "3g2" | "3gp" | "3gp2" | "7z" | "ace" | "arj" | "asf" | "ass" | "avi" | "bmp" | "bz2" | "cb7" | "cbr" | "cbz" | "divx" | "flv" | "gif" | "gz" | "idx" | "iso" | "jpeg" | "jpg" | "m2ts" | "m4v" | "mk2" | "mk3d" | "mka" | "mkv" | "MKV" | "mov" | "mp4" | "mp4a" | "mpeg" | "mpg" | "nfo" | "nzb" | "ogg" | "ogm" | "ogv" | "png" | "qt" | "r00" | "ra" | "ram" | "rar" | "rm" | "srt" | "ssa" | "strm" | "sub" | "tar" | "tbn" | "tgz" | "torrent" | "ts" | "txt" | "url" | "vob" | "vtt" | "wav" | "webm" | "webp" | "wma" | "wmv" | "zip" | ("3g2" | "3gp" | "3gp2" | "7z" | "ace" | "arj" | "asf" | "ass" | "avi" | "bmp" | "bz2" | "cb7" | "cbr" | "cbz" | "divx" | "flv" | "gif" | "gz" | "idx" | "iso" | "jpeg" | "jpg" | "m2ts" | "m4v" | "mk2" | "mk3d" | "mka" | "mkv" | "MKV" | "mov" | "mp4" | "mp4a" | "mpeg" | "mpg" | "nfo" | "nzb" | "ogg" | "ogm" | "ogv" | "png" | "qt" | "r00" | "ra" | "ram" | "rar" | "rm" | "srt" | "ssa" | "strm" | "sub" | "tar" | "tbn" | "tgz" | "torrent" | "ts" | "txt" | "url" | "vob" | "vtt" | "wav" | "webm" | "webp" | "wma" | "wmv" | "zip")[];
   country?: string | GuessitLanguage;
   crc32?: string;
   date?: string | Date;

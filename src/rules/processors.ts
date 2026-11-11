@@ -49,16 +49,24 @@ export class EnlargeGroupMatches extends CustomRule {
 
   then(matches: Matches, whenResponse: unknown, _context: Context): void {
     const [starting, ending] = whenResponse as [Match[], Match[]];
+    // Growing the span over the bracket must leave the raw text alone. rawStart and
+    // rawEnd are absolute indices that *default* to start and end, so they have to be
+    // captured before the span moves and written back after: reading them afterwards
+    // returns the already-moved edge for a match that never had them set, and
+    // `rawEnd -= 1` eats a character from one that did (a chain child, e.g. the second
+    // year of a bracketed `(1994-2004)` range, which came back as "200").
     for (const match of starting) {
+      const rawStart = match.rawStart;
       matches.remove(match);
       (match as unknown as { start: number }).start -= 1;
-      (match as unknown as { rawStart: number }).rawStart += 1;
+      (match as unknown as { rawStart: number }).rawStart = rawStart;
       matches.append(match);
     }
     for (const match of ending) {
+      const rawEnd = match.rawEnd;
       matches.remove(match);
       (match as unknown as { end: number }).end += 1;
-      (match as unknown as { rawEnd: number }).rawEnd -= 1;
+      (match as unknown as { rawEnd: number }).rawEnd = rawEnd;
       matches.append(match);
     }
   }
@@ -213,32 +221,66 @@ export class RemoveAmbiguous extends Rule {
 const sxxExxWeightPredicate = (m: Match) =>
   (m.name === 'season' || m.name === 'episode') && m.tags.includes('SxxExx');
 
+const asArray = (result: unknown): Match[] =>
+  Array.isArray(result) ? (result as Match[]) : result ? [result as Match] : [];
+
+const sxxExxWeight = (matches: Matches, marker: Match): number =>
+  new Set(asArray(matches.range(marker.start, marker.end, sxxExxWeightPredicate)).map((m) => m.name)).size;
+
+/**
+ * Order fileparts for the season/episode decision: most complete SxxExx first.
+ *
+ * Between fileparts that are equally complete the filename wins over the directories
+ * holding it, so a season pack does not override the episode it contains
+ * (`Show.S01E01-E10.Complete/Show.S01E05.mkv` is episode 5, upstream #983). The one
+ * exception is a companion file — a sample or proof clip, tagged `companion-file` on
+ * the file itself or on a directory below the closest SxxExx one: it names nothing
+ * real, so it loses the tie to a single-episode directory
+ * (`Westworld.S02E03/sample/Westworld.S01E01.sample.mkv` is S02E03) but not to a
+ * multi-episode pack, which is not a single episode either.
+ */
+function seasonEpisodeFilepartsSorted(markers: Iterable<Match>, matches: Matches): Match[] {
+  const markerArr = [...markers];
+  const priorities = new Map<Match, [number, number, number]>();
+  let companionScopeStart = 0;
+  let underEpisodeDirectory = false;
+
+  markerArr.forEach((marker, index) => {
+    const weight = sxxExxWeight(matches, marker);
+    const companion = underEpisodeDirectory
+      && asArray(matches.range(companionScopeStart, marker.end, (m: Match) => m.tags.includes('companion-file'))).length > 0;
+    priorities.set(marker, [-weight, companion ? 1 : 0, -index]);
+    if (weight) {
+      companionScopeStart = marker.end;
+      const episodes = new Set(
+        asArray(matches.range(marker.start, marker.end, (m: Match) => m.name === 'episode')).map((m) => m.value),
+      );
+      underEpisodeDirectory = episodes.size <= 1;
+    }
+  });
+
+  return markerArr.sort((a, b) => {
+    const pa = priorities.get(a)!;
+    const pb = priorities.get(b)!;
+    return pa[0] - pb[0] || pa[1] - pb[1] || pa[2] - pb[2];
+  });
+}
+
 export class RemoveLessSpecificSeasonEpisode extends RemoveAmbiguous {
   constructor(name: string) {
     super(
-      // Sort fileparts most-valuable-first: a SxxExx-tagged season/episode outweighs a
-      // weaker one, so the filename's S44E03 beats a season-only or weak-number parent
+      // Most complete SxxExx first: a SxxExx-tagged season/episode outweighs a weaker
+      // one, so the filename's S44E03 beats a season-only or weak-number parent
       // directory (upstream #797/#772).
-      (markers, matches) => markerSorted(markers, matches, sxxExxWeightPredicate),
+      (markers, matches) => seasonEpisodeFilepartsSorted(markers, matches as Matches),
       (m: Match) => m.name === name,
     );
   }
 
   override when(matches: Matches, context: Record<string, unknown>): Match[] {
-    // Only decide when the SxxExx weights strictly differ. Equally-specific fileparts
-    // ("S06E01.E10" pack dir vs "S06E09" file, or a real dir vs a sample file) are
-    // left to the generic RemoveAmbiguous, whose full-property weight and rightmost
-    // preference pick the correct side for both directions.
-    const markers = matches.markers.named('path') as Match[];
-    const markerArr = Array.isArray(markers) ? markers : markers ? [markers] : [];
-    if (markerArr.length > 1) {
-      const weights = markerArr.map((marker) => {
-        const inRange = matches.range(marker.start, marker.end, sxxExxWeightPredicate) as Match[];
-        return new Set((Array.isArray(inRange) ? inRange : []).map((m) => m.name)).size;
-      });
-      const top = Math.max(...weights);
-      if (weights.filter((w) => w === top).length > 1) return [];
-    }
+    // With no SxxExx anywhere there is nothing to be more specific about; the generic
+    // RemoveAmbiguous decides on its full-property weight instead.
+    if (!matches.toArray().some(sxxExxWeightPredicate)) return [];
     return super.when(matches, context);
   }
 }

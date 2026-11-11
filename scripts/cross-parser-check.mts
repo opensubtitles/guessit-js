@@ -4,8 +4,10 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { guessit } from '../src/index.js';
 
-const SP = '/private/tmp/claude-501/-Users-brano-Documents-data-www-opensubtitles-org-public-html-github-guessit-js/d37da71b-6c4a-4670-a4af-ce5078acaee1/scratchpad';
-const cases = JSON.parse(readFileSync(SP + '/xp-cases.json', 'utf8'));
+// XP_CASES points at the joined corpus; see docs/upstream-issues.md for how to
+// rebuild it from upstream's baseline plus the per-parser fixture files.
+const XP_CASES = process.env['XP_CASES'] ?? 'xp-cases.json';
+const cases = JSON.parse(readFileSync(XP_CASES, 'utf8'));
 const norm = (v: any): any => {
   if (Array.isArray(v)) return v.map(norm);
   if (v && typeof v === 'object' && 'alpha3' in v) return String(v);
@@ -29,4 +31,4 @@ console.log(`guessit-js passes ${pass} / ${pass + fail} of the cases Python gues
 const byParser: any = {};
 for (const [p] of failures) byParser[p] = (byParser[p] ?? 0) + 1;
 console.log('remaining fails by corpus:', JSON.stringify(byParser));
-writeFileSync(SP + '/xp-failures.json', JSON.stringify(failures, null, 1));
+writeFileSync(process.env['XP_FAILURES'] ?? 'xp-failures.json', JSON.stringify(failures, null, 1));

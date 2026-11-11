@@ -8,8 +8,57 @@ import type { Context } from 'rebulk-js';
 import { dash, seps } from '../common/index.js';
 import { searchDate, validYear, validWeek } from '../common/date.js';
 import { isDisabled } from '../common/pattern.js';
-import { sepsSurround } from '../common/validators.js';
+import { and_, sepsSurround } from '../common/validators.js';
 import { buildOrPattern } from '../../reutils.js';
+
+/** Separator alternation for a year range: symbols may be padded, words must be. */
+function yearRangeSeparatorPattern(separators: string[]): string {
+  const padding = '[ ._]';
+  const words = separators.filter((s) => /^[a-z]+$/i.test(s));
+  const symbols = separators.filter((s) => !/^[a-z]+$/i.test(s));
+  const alternatives: string[] = [];
+  if (symbols.length) alternatives.push(`${padding}*${buildOrPattern(symbols, undefined, true)}${padding}*`);
+  if (words.length) alternatives.push(`${padding}+${buildOrPattern(words, undefined, true)}${padding}+`);
+  return `(?:${alternatives.join('|')})`;
+}
+
+/** A range runs forward: "(2013-2005)" is two unrelated years, not a span. */
+function isAscendingYearRange(match: Match): boolean {
+  const children = match.children ? [...match.children] : [];
+  const years = children.filter((c: Match) => c.name === 'year').map((c: Match) => Number(c.value));
+  return years.length === 2 && years[0] < years[1];
+}
+
+/**
+ * Group years into units: the two years of a range count as one, so they are kept or
+ * removed together and a range is never released to the title.
+ */
+function yearUnits(years: Match[]): Match[][] {
+  const units: Match[][] = [];
+  const ranges = new Map<Match, Match[]>();
+  for (const year of years) {
+    const chain = year.tags.includes('year-range') ? rootParent(year) : undefined;
+    if (!chain) {
+      units.push([year]);
+      continue;
+    }
+    const existing = ranges.get(chain);
+    if (existing) {
+      existing.push(year);
+    } else {
+      const unit = [year];
+      ranges.set(chain, unit);
+      units.push(unit);
+    }
+  }
+  return units;
+}
+
+function rootParent(match: Match): Match | undefined {
+  let root = match.parent;
+  while (root?.parent) root = root.parent;
+  return root;
+}
 
 /**
  * Rule to keep only the marked year in the filepart (remove others).
@@ -44,31 +93,36 @@ class KeepMarkedYearInFilepart extends Rule {
 
       if (yearsInPartArray.length <= 1) continue;
 
-      const groupYears: Match[] = [];
-      const ungroupYears: Match[] = [];
+      const units = yearUnits(yearsInPartArray);
+      if (units.length <= 1) continue;
 
-      for (const year of yearsInPartArray) {
-        const groupMarker = matches.markers.atMatch(year, (m: Match) => m.name === 'group', 0) as Match | undefined;
-        if (groupMarker) {
-          groupYears.push(year);
-        } else {
-          ungroupYears.push(year);
-        }
+      const groupUnits: Match[][] = [];
+      const ungroupUnits: Match[][] = [];
+
+      for (const unit of units) {
+        const grouped = unit.some(
+          (year) => matches.markers.atMatch(year, (m: Match) => m.name === 'group', 0) as Match | undefined,
+        );
+        (grouped ? groupUnits : ungroupUnits).push(unit);
       }
 
-      if (groupYears.length > 0 && ungroupYears.length > 0) {
+      let removed: Match[][] = [];
+      if (groupUnits.length > 0 && ungroupUnits.length > 0) {
         // Only remove ungrouped years that appear BEFORE the first grouped year
         // (they are likely part of the title). Ungrouped years after the grouped year
         // may be part of bonus_title or episode content.
-        const firstGroupStart = groupYears[0].start;
-        ret.push(...ungroupYears.filter((y: Match) => y.start < firstGroupStart));
-        ret.push(...groupYears.slice(1));
-      } else if (groupYears.length === 0) {
-        ret.push(ungroupYears[0]);
-        if (ungroupYears.length > 2) {
-          ret.push(...ungroupYears.slice(2));
-        }
+        const firstGroupStart = groupUnits[0][0].start;
+        removed = [
+          ...ungroupUnits.filter((unit) => unit[0].start < firstGroupStart),
+          ...groupUnits.slice(1),
+        ];
+      } else if (groupUnits.length === 0 && ungroupUnits[0].length > 1) {
+        // A leading range is never released to the title: both its years are the year.
+        removed = ungroupUnits.slice(1);
+      } else if (groupUnits.length === 0) {
+        removed = [ungroupUnits[0], ...ungroupUnits.slice(2)];
       }
+      for (const unit of removed) ret.push(...unit);
     }
 
     return ret;
@@ -94,9 +148,12 @@ class RemoveGroupedYearWithSxxExx extends Rule {
       const group = matches.markers.atMatch(year, (m: Match) => m.name === 'group', 0) as Match | undefined;
       if (!group) continue;
       // Only remove if the group contains significant non-year content
-      // e.g. "(the.oscars.of.1963)" has lots of text, but "(2005)" is just a year
+      // e.g. "(the.oscars.of.1963)" has lots of text, but "(2005)" is just a year.
+      // A year range fills its group with the other year and the separator, so it is
+      // measured whole — otherwise "(2011-2017)" looks like text around a year.
+      const range = year.tags.includes('year-range') ? rootParent(year) : undefined;
       const groupLen = group.end - group.start;
-      const yearLen = year.end - year.start;
+      const yearLen = range ? range.end - range.start : year.end - year.start;
       if (groupLen - yearLen > 4) {
         // Group has significant content beyond the year - it's episode title content
         ret.push(year);
@@ -225,6 +282,37 @@ export function date(config: Record<string, unknown>): Rebulk {
         : '__default__',
     validator: (m: Match) => sepsSurround(m) && validYear(m.value as number),
   });
+
+  // A YYYY<sep>YYYY range is one year value, bracketed or not (upstream #988). Without
+  // it each year was matched alone and arbitrated by KeepMarkedYearInFilepart, which
+  // released the first one to the title — so `Movie 1994-2004` came back as
+  // "Movie 1994" with year 2004, while the bracketed spelling happened to keep both.
+  // The range is never expanded to the years between: it is a span of airing dates,
+  // and a show on hiatus would collect years it never aired.
+  const yearRangeSeparators = (config['year_range_separators'] as string[] | undefined) ?? ['-', '~', 'to', '–'];
+  rebulk
+    .chain({
+      tags: ['year-range'],
+      flags: 'i',
+      children: true,
+      privateParent: true,
+      validateAll: true,
+      validator: {
+        __parent__: and_(sepsSurround, isAscendingYearRange),
+        year: (m: Match) => validYear(Number(m.value)),
+      },
+      formatter: { year: (s: string) => parseInt(s, 10) },
+      conflictSolver: (match, other) =>
+        (other.name === 'episode' || other.name === 'season')
+        && other.raw !== undefined && match.raw !== undefined
+        && other.raw.length <= match.raw.length
+          ? other
+          : '__default__',
+      disabled: (context: Context) => isDisabled(context, 'year'),
+    })
+    .defaults({ tags: ['year-range'], validator: null, privateParent: true })
+    .regex('(?<year>\\d{4})')
+    .regex(yearRangeSeparatorPattern(yearRangeSeparators) + '(?<year>\\d{4})');
 
   // Week regex
   const weekWords = config['week_words'] as string[] | undefined;
