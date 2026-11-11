@@ -44,7 +44,11 @@ jobs:
 
       - name: Generate live Python guessit comparison for the demo
         run: |
-          pip install --quiet guessit
+          # Pinned: an unpinned install resolved to guessit 3.x on the runner, whose
+          # jsonutils imports `six` and so fails outright. The pin also keeps the
+          # demo's side-by-side honest — this is the version the docs compare against.
+          pip install --quiet "guessit==4.5.1"
+          python -c "import guessit; print('python guessit', guessit.__version__)"
           python scripts/python-compare.py
 
       - uses: actions/configure-pages@v5
