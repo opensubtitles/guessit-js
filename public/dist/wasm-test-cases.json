@@ -9,8 +9,8 @@
    "video_codec": "H.264",
    "release_group": "GROUP",
    "container": "mkv",
-   "type": "movie",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "movie"
   }
  ],
  [
@@ -24,8 +24,8 @@
    "video_codec": "H.264",
    "release_group": "DEMAND",
    "container": "mkv",
-   "type": "episode",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "episode"
   }
  ],
  [
@@ -43,8 +43,8 @@
    "video_codec": "H.264",
    "release_group": "GoT",
    "container": "mkv",
-   "type": "episode",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "episode"
   }
  ],
  [
@@ -58,8 +58,8 @@
    "video_codec": "H.265",
    "release_group": "TERMiNAL",
    "container": "mkv",
-   "type": "movie",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "movie"
   }
  ],
  [
@@ -77,8 +77,8 @@
    "video_codec": "H.265",
    "release_group": "FLUX",
    "container": "mkv",
-   "type": "movie",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "movie"
   }
  ],
  [
@@ -90,8 +90,8 @@
    "screen_size": "720p",
    "audio_codec": "AAC",
    "container": "mkv",
-   "type": "episode",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "episode"
   }
  ],
  [
@@ -104,8 +104,8 @@
    "source": "Blu-ray",
    "audio_codec": "FLAC",
    "container": "mkv",
-   "type": "episode",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "episode"
   }
  ],
  [
@@ -121,8 +121,8 @@
    "video_codec": "Xvid",
    "release_group": "TOPAZ",
    "container": "avi",
-   "type": "episode",
-   "mimetype": "video/x-msvideo"
+   "mimetype": "video/x-msvideo",
+   "type": "episode"
   }
  ],
  [
@@ -134,8 +134,8 @@
    "screen_size": "720p",
    "source": "Blu-ray",
    "container": "mkv",
-   "type": "episode",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "episode"
   }
  ],
  [
@@ -147,8 +147,8 @@
    "source": "Ultra HD Blu-ray",
    "video_codec": "H.265",
    "container": "mkv",
-   "type": "movie",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "movie"
   }
  ],
  [
@@ -162,8 +162,8 @@
    "video_codec": "H.264",
    "release_group": "LOL",
    "container": "avi",
-   "type": "episode",
-   "mimetype": "video/x-msvideo"
+   "mimetype": "video/x-msvideo",
+   "type": "episode"
   }
  ],
  [
@@ -177,8 +177,8 @@
    "other": "Rip",
    "video_codec": "Xvid",
    "container": "avi",
-   "type": "movie",
-   "mimetype": "video/x-msvideo"
+   "mimetype": "video/x-msvideo",
+   "type": "movie"
   }
  ],
  [
@@ -192,8 +192,8 @@
    "video_codec": "H.264",
    "release_group": "GROUP",
    "container": "mkv",
-   "type": "movie",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "movie"
   }
  ],
  [
@@ -201,8 +201,8 @@
   {
    "title": "test",
    "container": "mkv",
-   "type": "movie",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "movie"
   }
  ],
  [
@@ -211,8 +211,8 @@
    "title": "Movie",
    "year": 2024,
    "container": "mkv",
-   "type": "movie",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "movie"
   }
  ],
  [
@@ -223,8 +223,8 @@
    "episode": 5,
    "screen_size": "720p",
    "container": "mkv",
-   "type": "episode",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "episode"
   }
  ],
  [
@@ -234,8 +234,8 @@
    "edition": "Remastered",
    "year": 2024,
    "container": "mkv",
-   "type": "movie",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "movie"
   }
  ],
  [
@@ -255,8 +255,8 @@
    "audio_codec": "Dolby Atmos",
    "release_group": "GROUP",
    "container": "mkv",
-   "type": "movie",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "movie"
   }
  ],
  [
@@ -270,8 +270,8 @@
    "video_codec": "H.264",
    "release_group": "GROUP",
    "container": "mkv",
-   "type": "movie",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "movie"
   }
  ],
  [
@@ -283,8 +283,8 @@
    "source": "Blu-ray",
    "video_codec": "H.264",
    "container": "mkv",
-   "type": "episode",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "episode"
   }
  ],
  [
@@ -294,8 +294,8 @@
    "episode": 9,
    "screen_size": "1080p",
    "container": "mkv",
-   "type": "episode",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "episode"
   }
  ],
  [
@@ -312,8 +312,8 @@
    "audio_codec": "FLAC",
    "crc32": "5D7A2C4E",
    "container": "mkv",
-   "type": "episode",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "episode"
   }
  ],
  [
@@ -322,8 +322,7 @@
    "release_group": "MMZYSUB",
    "title": "Golden Time",
    "episode": 24,
-   "episode_title": "（END）",
-   "country": "GB",
+   "other": "Complete",
    "screen_size": "720p",
    "container": "mp4",
    "type": "episode"
@@ -337,6 +336,7 @@
     "Pay-per-view",
     "HDTV"
    ],
+   "alternative_title": "Jones vs Reyes",
    "video_codec": "H.264",
    "release_group": "PUNCH[TGx]",
    "type": "movie"
@@ -350,8 +350,8 @@
    "episode": 4,
    "screen_size": "480p",
    "container": "mkv",
-   "type": "episode",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "episode"
   }
  ],
  [
@@ -363,12 +363,10 @@
    "source": "DVD",
    "other": "Rip",
    "video_codec": "H.264",
-   "container": [
-    "ogg",
-    "avi"
-   ],
-   "type": "episode",
-   "mimetype": "video/x-msvideo"
+   "audio_codec": "Vorbis",
+   "container": "avi",
+   "mimetype": "video/x-msvideo",
+   "type": "episode"
   }
  ],
  [
@@ -379,8 +377,8 @@
    "screen_size": "2160p",
    "source": "Web",
    "container": "mkv",
-   "type": "movie",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "movie"
   }
  ],
  [
@@ -395,8 +393,8 @@
    ],
    "screen_size": "720p",
    "container": "mkv",
-   "type": "episode",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "episode"
   }
  ],
  [
@@ -409,20 +407,20 @@
    },
    "screen_size": "1080p",
    "container": "mkv",
-   "type": "movie",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "movie"
   }
  ],
  [
   "4.3.2.1.2010.720p.BluRay.mkv",
   {
-   "title": "4.3.",
-   "date": "2010-01-02T00:00:00.000Z",
+   "title": "4.3.2.1",
+   "year": 2010,
    "screen_size": "720p",
    "source": "Blu-ray",
    "container": "mkv",
-   "type": "episode",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "movie"
   }
  ],
  [
@@ -439,8 +437,8 @@
    "video_codec": "H.265",
    "release_group": "Silence",
    "container": "mkv",
-   "type": "episode",
-   "mimetype": "video/x-matroska"
+   "mimetype": "video/x-matroska",
+   "type": "episode"
   }
  ]
 ]

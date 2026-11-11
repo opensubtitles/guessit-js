@@ -2,7 +2,14 @@
 
 All notable changes to guessit-js are documented here.
 
-## [Unreleased]
+## [4.9.0]
+
+Upstream shipped guessit 4.5.0 and 4.5.1 on 2026-11-10 and closed six issues;
+this release tracks that, imports upstream's own per-rule test suite (977 cases
+this port had never carried) and closes the differences that import exposed.
+Parity is now measured against a live Python guessit 4.5.1 rather than a 3.8.0
+snapshot: 2247 of 2490 corpus inputs come back identical, and every remaining
+difference carries a verdict in `docs/python-parity.md`.
 
 **A `YYYY-YYYY` span is one year range, bracketed or not** (upstream
 guessit-io/guessit#988). Each year was matched on its own and arbitrated by

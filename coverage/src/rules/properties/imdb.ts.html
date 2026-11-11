@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>35/35</span>
+                <span class='fraction'>40/40</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>35/35</span>
+                <span class='fraction'>40/40</span>
             </div>
         
             
@@ -98,7 +98,12 @@
 <a name='L33'></a><a href='#L33'>33</a>
 <a name='L34'></a><a href='#L34'>34</a>
 <a name='L35'></a><a href='#L35'>35</a>
-<a name='L36'></a><a href='#L36'>36</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -111,28 +116,33 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * imdb_id property — extracts an IMDb id (e.g. tt1234567) from the filename.
  *
@@ -150,19 +160,24 @@ export function imdb(_config: Record&lt;string, unknown&gt;): Rebulk {
   rebulk.regexDefaults({ flags: 'i' });
   rebulk.defaults({ validator: sepsSurround });
 &nbsp;
-  rebulk.regex('tt\\d{7,8}', {
-    name: 'imdb_id',
+  // The Plex/Jellyfin spelling carries a prefix — "{imdb-tt1234567}" — which has to
+  // be part of the match, or the bare "imdb" is left over and reads as a title.
+  rebulk.regex('(?:imdb(?:id)?[-=]?)?(?&lt;imdb_id&gt;tt\\d{7,8})', {
+    name: 'imdb_id', privateParent: true, children: true,
     formatter: (value: string) =&gt; value.toLowerCase(),
   } as any);
 &nbsp;
   // TMDb / TVDb ids in Plex/Jellyfin-style naming: {tmdb-12345}, [tvdbid-12345],
   // tmdb=12345, etc. Capture the numeric id.
+  // privateParent, not private_parent: the engine reads camelCase, so the
+  // snake_case spelling was silently ignored and the "tmdb-" prefix stayed
+  // unclaimed — long enough to be picked up as an alternative_title "tmdb".
   rebulk.regex('tmdb(?:id)?[-=]?(?&lt;tmdb_id&gt;\\d{1,9})', {
-    name: 'tmdb_id', private_parent: true, children: true,
+    name: 'tmdb_id', privateParent: true, children: true,
     formatter: (value: string) =&gt; parseInt(value, 10),
   } as any);
   rebulk.regex('tvdb(?:id)?[-=]?(?&lt;tvdb_id&gt;\\d{1,9})', {
-    name: 'tvdb_id', private_parent: true, children: true,
+    name: 'tvdb_id', privateParent: true, children: true,
     formatter: (value: string) =&gt; parseInt(value, 10),
   } as any);
 &nbsp;
@@ -175,7 +190,7 @@ export function imdb(_config: Record&lt;string, unknown&gt;): Rebulk {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-08-12T18:04:26.522Z
+                at 2026-11-11T05:31:58.896Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

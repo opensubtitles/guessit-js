@@ -5,9 +5,9 @@ by field. Regenerate with `scripts/python-diff.mts` (usage in its header);
 languages compare as alpha3, since Python's encoder writes their English names.
 
 - **2247 of 2490 inputs identical** (90.2%)
-- **243 differ**: 137 pinned — a fixture of ours asserts the differing field itself,
+- **243 differ**: 138 pinned — a fixture of ours asserts the differing field itself,
   38 in `test/fixtures/upstream-rules-pending.yml` (tracked backlog),
-  66 untested — the name is in our corpus but the differing field is not asserted,
+  65 untested — the name is in our corpus but the differing field is not asserted,
   2 unexamined — the name is not in our corpus at all
 
 Differing fields, most frequent first:
@@ -45,7 +45,7 @@ Differing fields, most frequent first:
 | `version` | 1 |
 | `website` | 1 |
 
-## Untested (66)
+## Untested (65)
 
 The name is in our corpus, but no fixture asserts the field that differs — so the JS value here is incidental, not a decision. These are where a real divergence could be hiding.
 
@@ -215,10 +215,6 @@ The name is in our corpus, but no fixture asserts the field that differs — so 
 
 `Show.Name.s10e15(233).480p.BDRip-AVC.Ukr.hurtom`
   - `episode_title`: python `undefined` · js `"233"`
-
-`Show.Name.Season.2.AV1.1080p`
-  - `episode_title`: python `"AV1"` · js `undefined`
-  - `video_codec`: python `undefined` · js `"AV1"`
 
 `Some.Title.XViD-by.Artik[SEDG].avi`
   - `alternative_title`: python `undefined` · js `["by Artik","SEDG"]`
@@ -431,7 +427,7 @@ Parked in `test/fixtures/upstream-rules-pending.yml`, which is deliberately abse
   - `other`: python `"High Quality"` · js `["Ultra HD","High Quality"]`
   - `source`: python `"Ultra HD Blu-ray"` · js `"Blu-ray"`
 
-## Pinned — deliberate (137)
+## Pinned — deliberate (138)
 
 A fixture of ours asserts the JS value and passes, so the difference is a decision this port has already made and tests. Grounds are in `CHANGELOG.md` and `docs/upstream-issues.md`.
 
@@ -927,6 +923,10 @@ A fixture of ours asserts the JS value and passes, so the difference is a decisi
 
 `Show.Name.S06E05.1080p.WEBRip.Legendas.PT-BR`
   - `subtitle_language`: python `"por"` · js `"por-BR"`
+
+`Show.Name.Season.2.AV1.1080p`
+  - `episode_title`: python `"AV1"` · js `undefined`
+  - `video_codec`: python `undefined` · js `"AV1"`
 
 `Show.S01E01.1080p.pt-BR.mkv`
   - `language`: python `"por"` · js `"por-BR"`

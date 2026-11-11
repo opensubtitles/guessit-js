@@ -2,7 +2,7 @@
 
 > **Historical snapshot (last full triage: v4.3.x, 2026-06/08).** Everything
 > fixable listed here has since shipped; see `CHANGELOG.md` for the release
-> trail (v4.3.0–v4.5.2), `test/fixtures/upstream-open-issues.yml` for the guard
+> trail (v4.3.0 onward), `test/fixtures/upstream-open-issues.yml` for the guard
 > fixtures, and `docs/python-parity.md` for the parity story. Newly filed
 > upstream work since this snapshot: guessit-io/guessit#961 (dead episode pass,
 > our PR guessit-io/guessit#962) and the rebulk-js 3.4.0 engine fixes.

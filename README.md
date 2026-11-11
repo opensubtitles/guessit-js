@@ -5,15 +5,15 @@ Extract metadata (title, year, season, episode, codec, language, etc.) from medi
 [![npm version](https://img.shields.io/npm/v/guessit-js.svg)](https://www.npmjs.com/package/guessit-js)
 [![Tests](https://github.com/opensubtitles/guessit-js/actions/workflows/ci.yml/badge.svg)](https://github.com/opensubtitles/guessit-js/actions/workflows/ci.yml)
 [![License: LGPL-3.0](https://img.shields.io/badge/License-LGPL--3.0-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
-[![Python guessit compat](https://img.shields.io/badge/guessit_compat-100%25_(1373%2F1373)-brightgreen)](https://github.com/guessit-io/guessit)
+[![Python corpus](https://img.shields.io/badge/python_corpus-2191%2F2229-brightgreen)](https://github.com/guessit-io/guessit)
 [![Coverage](https://img.shields.io/badge/coverage-97%25-brightgreen)](https://github.com/opensubtitles/guessit-js/actions/workflows/ci.yml)
 
 **[Live Demo](https://opensubtitles.github.io/guessit-js)** · **[API Docs](https://opensubtitles.github.io/guessit-js/docs)** · **[npm](https://www.npmjs.com/package/guessit-js)**
 
 ## Features
 
-- **100% compatibility** with Python guessit's own corpus (1373/1373 fixtures, tracking upstream 4.5.1) — and **more correct**: ships fixes for 32 historical upstream bugs, Python's still-open #877, and 114 of the 276 cross-parser cases Python admits failing (see [Differences from Python](#differences-from-python-guessit))
-- **~3.5x faster** than Python per parse ([numbers](#performance))
+- **Runs 2191 of the 2229 cases in Python guessit's own test suite** (upstream 4.5.1, its corpus *and* its per-rule files) — and is **more correct**: fixes for 32 historical upstream bugs, Python's still-open #877, and 114 of the 276 cross-parser cases Python admits failing (see [Differences from Python](#differences-from-python-guessit))
+- **~2x faster** than Python per parse ([measured](#performance))
 - **50 properties** detected: title, year, season, episode, resolution, codec, language, and more — with a [machine-readable schema](#output-schema)
 - **Batch parsing**: `guessitMany()` in-process, or one POST for up to 100 names
 - **Zero runtime dependencies** ([rebulk-js](https://www.npmjs.com/package/rebulk-js) is bundled at build time)
@@ -227,11 +227,13 @@ The WASM build is **bit-identical to the JS build** across the entire test corpu
 
 ## Differences from Python guessit
 
-guessit-js is a faithful port (1342/1342 fixtures, tracking Python 4.4.0), but it is
-**not bug-for-bug identical** — where Python has a genuine parsing bug, guessit-js
-is corrected. Highlights:
+guessit-js is a faithful port (tracking Python 4.5.1), but it is **not
+bug-for-bug identical** — where Python has a genuine parsing bug, guessit-js is
+corrected. Run against a live Python guessit 4.5.1 over all 2490 corpus inputs,
+**2247 (90.2%) come back identical**; every remaining difference is listed, with a
+verdict, in [`docs/python-parity.md`](docs/python-parity.md). Highlights:
 
-- **Cases the released Python 4.4.0 still gets wrong** (each verified against the
+- **Cases the released Python 4.5.1 still gets wrong** (each verified against the
   real Python CLI; the [demo](https://opensubtitles.github.io/guessit-js) shows
   live side-by-sides): `X2.2003…` (Python: `bonus: 2`, no title), Python's
   [#875](https://github.com/guessit-io/guessit/issues/875) (fixed upstream in
@@ -255,7 +257,7 @@ is corrected. Highlights:
   enum'd value fields, `properties()` mirroring Python's API, and a JSON Schema
   (draft-07) of the output — none of which Python provides as machine-readable
   artifacts.
-- **No Python runtime:** zero runtime dependencies, ESM + CJS + WASM, ~3.5x faster.
+- **No Python runtime:** zero runtime dependencies, ESM + CJS + WASM, ~2x faster.
 - **Intentional divergences** (cases where guessit-js is *more* correct than
   Python) are catalogued per-example in [`docs/python-parity.md`](docs/python-parity.md).
 
@@ -271,19 +273,24 @@ is corrected. Highlights:
   ([#690](https://github.com/guessit-io/guessit/issues/690)/[#696](https://github.com/guessit-io/guessit/issues/696)/[#747](https://github.com/guessit-io/guessit/issues/747)):
   e.g. `Re ZERO …- Season 2 - 15`, romaji + `(English title)` — no unambiguous
   correct parse.
-- **12 debatable cases** vs Python (neither clearly right) are listed under
-  "② NEUTRAL" in [`docs/python-parity.md`](docs/python-parity.md).
+- **Differences that are nobody's bug** — a bare `2012` read as a title here and a
+  year there, Python's 23 allowed languages against this port's 60 — are listed
+  with a verdict each in [`docs/python-parity.md`](docs/python-parity.md), and the
+  38 upstream cases this port does not satisfy yet are parked in
+  `test/fixtures/upstream-rules-pending.yml`.
 
 ## Performance
 
-Warm per-parse, measured on one machine (absolute numbers are hardware-dependent —
-the [live demo](https://opensubtitles.github.io/guessit-js) times it in your browser):
+Warm per-parse. The Node and Python numbers below come from one run of the same
+400 corpus names through each parser on the same machine (Apple silicon, Node 20,
+Python 3.11, guessit 4.5.1), best of three passes after a warm-up — absolute
+numbers are hardware-dependent, and the [live
+demo](https://opensubtitles.github.io/guessit-js) times it in your browser:
 
 | Runtime | ms/parse | Notes |
 |---------|----------|-------|
-| **Browser (V8)** | ~2–3 ms | fastest; JIT-compiled |
-| **Node.js 22 (V8)** | ~4.4 ms | **~3.5× faster than Python** (same machine) — recommended for servers/CLI |
-| **Python 3.8** | ~15.5 ms | reference |
+| **Node.js 20 (V8)** | ~1.7 ms | **~2× faster than Python guessit** on identical input — recommended for servers/CLI |
+| **Python guessit 4.5.1** | ~3.5 ms | reference, same 400 names |
 | **WASM (QuickJS/Javy)** | ~35 ms warm · ~150 ms cold | for portability, **not** speed (see below) |
 
 **About the WASM build.** It exists so you can run guessit in environments without
