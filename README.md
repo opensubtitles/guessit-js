@@ -30,8 +30,12 @@ npm install guessit-js
 ## CLI
 
 **Drop-in replacement** for the Python `guessit` command — same flags, same
-output formats (verified against the real Python CLI in CI). Installs both
-`guessit-js` and `guessit` binaries:
+output formats, byte-compared against the real Python CLI in CI on every push.
+The one field excluded from that comparison is `mimetype`: Python reads it from
+the operating system's MIME table, so the same `.mkv` is `video/matroska` on a
+GitHub runner and `video/x-matroska` on macOS, while this port returns the
+conventional `x-` spelling everywhere. Installs both `guessit-js` and `guessit`
+binaries:
 
 ```bash
 npx guessit-js "The.Dark.Knight.2008.1080p.BluRay.x264-GROUP.mkv"
