@@ -134,7 +134,7 @@ Python↔JS parity gap is resolved (parity FIX 0).
 
 **Cross-ref (UPDATED 2026-06-02):** the biggest validated cluster was **title-token
 collision** — a title word/letter consumed as country/language/edition/source/other,
-the same root cause as the Python↔JS parity gap tracked by `scripts/pydiff.mjs`.
+the same root cause as the Python↔JS parity gap tracked by `scripts/python-diff.mts`.
 **That gap is now closed: parity is FIX 0** (`docs/python-parity.md`) — every genuine
 JS-worse-than-Python case (spurious episode_title/alternative_title fragments,
 title-absorbs-junk lists, dup-language, GROUP→episode_title, phantom languages,
@@ -253,7 +253,7 @@ remain open and are individually marginal/risky.
   fragments behind a recognised property in the release tail; keep things
   contiguous with the title/year. Rules live in title.ts / episode_title.ts /
   language.ts / release_group.ts. See the `python-parity` memory for the full list.
-  Parity is now FIX 0; validate against `scripts/pydiff.mjs` after any change.
+  Parity is now FIX 0; validate against `scripts/python-diff.mts` after any change.
 - **Hyphenated-title split (#634, #640) — FIXED 2026-06-02.** A `-` inside a title
   was made a release-group boundary when a trailing `[eztv]`/`[ettv]` group was
   present (`grown-ish…[eztv]` → title "ish"). Fixed by rejecting a

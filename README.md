@@ -14,7 +14,7 @@ Extract metadata (title, year, season, episode, codec, language, etc.) from medi
 
 - **Runs 2191 of the 2229 cases in Python guessit's own test suite** (upstream 4.5.1, its corpus *and* its per-rule files) — and is **more correct**: fixes for 32 historical upstream bugs, Python's still-open #877, and 114 of the 276 cross-parser cases Python admits failing (see [Differences from Python](#differences-from-python-guessit))
 - **~2x faster** than Python per parse ([measured](#performance))
-- **50 properties** detected: title, year, season, episode, resolution, codec, language, and more — with a [machine-readable schema](#output-schema)
+- **56 properties** detected: title, year, season, episode, resolution, codec, language, ids, and more — with a [machine-readable schema](#output-schema)
 - **Batch parsing**: `guessitMany()` in-process, or one POST for up to 100 names
 - **Zero runtime dependencies** ([rebulk-js](https://www.npmjs.com/package/rebulk-js) is bundled at build time)
 - **Dual format**: ESM and CommonJS
@@ -137,16 +137,19 @@ import { version } from 'guessit-js';  // package version string
 
 ## Detected Properties
 
+All 56, the same set `properties()` advertises:
+
 | Category | Properties |
 |----------|-----------|
-| **Title** | `title`, `alternative_title`, `episode_title` |
-| **Episode** | `season`, `episode`, `episode_details`, `episode_count`, `season_count`, `absolute_episode`, `disc`, `part` |
-| **Date** | `year`, `date` |
-| **Video** | `screen_size`, `aspect_ratio`, `frame_rate`, `video_codec`, `video_profile`, `color_depth` |
+| **Title** | `title`, `alternative_title`, `episode_title`, `film_title`, `bonus_title` |
+| **Episode** | `season`, `episode`, `episode_details`, `episode_count`, `season_count`, `episode_format`, `absolute_episode`, `credits_number`, `disc`, `part`, `version`, `cd`, `cd_count` |
+| **Date** | `year`, `date`, `week` |
+| **Video** | `screen_size`, `aspect_ratio`, `frame_rate`, `video_codec`, `video_profile`, `video_api`, `video_bit_rate`, `color_depth` |
 | **Audio** | `audio_codec`, `audio_profile`, `audio_channels`, `audio_bit_rate` |
-| **Source** | `source`, `streaming_service` |
-| **Release** | `release_group`, `edition`, `other`, `proper_count` |
-| **File** | `container` (video / subtitle / archive / image / nfo / torrent / nzb), `mimetype`, `size`, `crc32`, `uuid` |
+| **Source** | `source`, `streaming_service`, `website` |
+| **Release** | `release_group`, `edition`, `other`, `proper_count`, `film`, `bonus`, `volume`, `another` |
+| **Ids** | `imdb_id`, `tmdb_id`, `tvdb_id`, `uuid`, `crc32` |
+| **File** | `container` (video / subtitle / archive / image / nfo / torrent / nzb), `mimetype`, `size` |
 | **Metadata** | `language`, `subtitle_language`, `country`, `type` |
 
 ### Output schema
@@ -159,7 +162,7 @@ import { guessit, properties, GUESSIT_SCHEMA, type GuessItResult } from 'guessit
 const r: GuessItResult = guessit('The.Dark.Knight.2008.1080p.BluRay.x264-GRP.mkv');
 r.source;  // typed as the closed enum: "Blu-ray" | "Web" | "HDTV" | …
 
-properties();        // { source: ["Blu-ray", "Web", …], type: ["episode","movie"], … } for all 50 properties
+properties();        // { source: ["Blu-ray", "Web", …], type: ["episode","movie"], … } for all 56 properties
 GUESSIT_SCHEMA.source.enum;  // the allowed values, programmatically
 ```
 

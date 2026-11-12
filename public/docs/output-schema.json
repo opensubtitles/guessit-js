@@ -305,6 +305,8 @@
             "tgz",
             "torrent",
             "ts",
+            "Ts",
+            "TS",
             "txt",
             "url",
             "vob",
@@ -377,6 +379,8 @@
               "tgz",
               "torrent",
               "ts",
+              "Ts",
+              "TS",
               "txt",
               "url",
               "vob",
@@ -396,6 +400,9 @@
       "$ref": "#/definitions/Language"
     },
     "crc32": {
+      "type": "string"
+    },
+    "credits_number": {
       "type": "string"
     },
     "date": {
@@ -538,7 +545,17 @@
       ]
     },
     "episode_title": {
-      "type": "string"
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
     },
     "film": {
       "type": "number"
@@ -547,6 +564,9 @@
       "type": "string"
     },
     "frame_rate": {
+      "type": "string"
+    },
+    "imdb_id": {
       "type": "string"
     },
     "language": {
@@ -575,6 +595,10 @@
         "application/x-subrip",
         "application/x-tar",
         "application/zip",
+        "audio/aac",
+        "audio/flac",
+        "audio/mpeg",
+        "audio/ogg",
         "image/bmp",
         "image/gif",
         "image/jpeg",
@@ -611,6 +635,7 @@
             "CONVERT",
             "Converted",
             "Cover",
+            "Creditless",
             "Dirfix",
             "Disc Art",
             "DOCU",
@@ -620,6 +645,7 @@
             "Dual",
             "Dual Audio",
             "East Coast Feed",
+            "Ending Credits",
             "Extras",
             "Fan Subtitled",
             "Fanart",
@@ -669,6 +695,7 @@
             "Obfuscated",
             "Ona",
             "Open Matte",
+            "Opening Credits",
             "Original Animated Video",
             "Original Animation DVD",
             "Original Aspect Ratio",
@@ -747,6 +774,7 @@
               "CONVERT",
               "Converted",
               "Cover",
+              "Creditless",
               "Dirfix",
               "Disc Art",
               "DOCU",
@@ -756,6 +784,7 @@
               "Dual",
               "Dual Audio",
               "East Coast Feed",
+              "Ending Credits",
               "Extras",
               "Fan Subtitled",
               "Fanart",
@@ -805,6 +834,7 @@
               "Obfuscated",
               "Ona",
               "Open Matte",
+              "Opening Credits",
               "Original Animated Video",
               "Original Animation DVD",
               "Original Aspect Ratio",
@@ -888,17 +918,50 @@
       "enum": [
         "1080i",
         "1080p",
+        "1094x576",
+        "1198x900",
+        "1368x720",
+        "1438x1080",
         "1440p",
         "1444x866",
+        "1710x900",
+        "2050x1080",
         "2160p",
+        "250x360",
+        "2878x2160",
+        "360i",
         "360p",
         "368p",
+        "4100x2160",
+        "4320p",
+        "450x360",
+        "480i",
         "480p",
+        "490x368",
         "4k",
+        "500x1080",
+        "500x2160",
+        "500x4320",
+        "500x480",
+        "500x576",
+        "500x720",
+        "500x900",
+        "540i",
         "540p",
+        "5758x2160",
+        "576i",
         "576p",
+        "638x480",
+        "684x360",
+        "700x368",
         "720p",
         "720x432",
+        "766x576",
+        "8198x2160",
+        "900i",
+        "900p",
+        "920x480",
+        "950x720",
         "960x544"
       ]
     },
@@ -922,31 +985,66 @@
       "type": "string"
     },
     "source": {
-      "type": "string",
-      "enum": [
-        "Analog HDTV",
-        "Blu-ray",
-        "Camera",
-        "Digital Master",
-        "Digital TV",
-        "DVD",
-        "HD Camera",
-        "HD Telecine",
-        "HD Telesync",
-        "HD-DVD",
-        "HDTV",
-        "Laserdisc",
-        "Pay-per-view",
-        "Satellite",
-        "Telecine",
-        "Telesync",
-        "TV",
-        "Ultra HD Blu-ray",
-        "Ultra HDTV",
-        "VHS",
-        "Video on Demand",
-        "Web",
-        "Workprint"
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "Analog HDTV",
+            "Blu-ray",
+            "Camera",
+            "Digital Master",
+            "Digital TV",
+            "DVD",
+            "HD Camera",
+            "HD Telecine",
+            "HD Telesync",
+            "HD-DVD",
+            "HDTV",
+            "Laserdisc",
+            "Pay-per-view",
+            "Satellite",
+            "Telecine",
+            "Telesync",
+            "TV",
+            "Ultra HD Blu-ray",
+            "Ultra HDTV",
+            "VHS",
+            "Video on Demand",
+            "Web",
+            "Workprint"
+          ]
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "Analog HDTV",
+              "Blu-ray",
+              "Camera",
+              "Digital Master",
+              "Digital TV",
+              "DVD",
+              "HD Camera",
+              "HD Telecine",
+              "HD Telesync",
+              "HD-DVD",
+              "HDTV",
+              "Laserdisc",
+              "Pay-per-view",
+              "Satellite",
+              "Telecine",
+              "Telesync",
+              "TV",
+              "Ultra HD Blu-ray",
+              "Ultra HDTV",
+              "VHS",
+              "Video on Demand",
+              "Web",
+              "Workprint"
+            ]
+          }
+        }
       ]
     },
     "streaming_service": {
@@ -1269,7 +1367,23 @@
       ]
     },
     "title": {
-      "type": "string"
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "tmdb_id": {
+      "type": "number"
+    },
+    "tvdb_id": {
+      "type": "number"
     },
     "type": {
       "type": "string",
@@ -1369,11 +1483,37 @@
         }
       ]
     },
+    "volume": {
+      "oneOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      ]
+    },
     "website": {
       "type": "string"
     },
-    "year": {
+    "week": {
       "type": "number"
+    },
+    "year": {
+      "oneOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      ]
     }
   },
   "additionalProperties": true

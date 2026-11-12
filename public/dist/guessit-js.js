@@ -14998,6 +14998,8 @@ var GUESSIT_SCHEMA = {
       "tgz",
       "torrent",
       "ts",
+      "Ts",
+      "TS",
       "txt",
       "url",
       "vob",
@@ -15018,6 +15020,13 @@ var GUESSIT_SCHEMA = {
     "scalar": true
   },
   "crc32": {
+    "type": [
+      "string"
+    ],
+    "array": false,
+    "scalar": true
+  },
+  "credits_number": {
     "type": [
       "string"
     ],
@@ -15117,7 +15126,7 @@ var GUESSIT_SCHEMA = {
     "type": [
       "string"
     ],
-    "array": false,
+    "array": true,
     "scalar": true
   },
   "film": {
@@ -15135,6 +15144,13 @@ var GUESSIT_SCHEMA = {
     "scalar": true
   },
   "frame_rate": {
+    "type": [
+      "string"
+    ],
+    "array": false,
+    "scalar": true
+  },
+  "imdb_id": {
     "type": [
       "string"
     ],
@@ -15165,6 +15181,10 @@ var GUESSIT_SCHEMA = {
       "application/x-subrip",
       "application/x-tar",
       "application/zip",
+      "audio/aac",
+      "audio/flac",
+      "audio/mpeg",
+      "audio/ogg",
       "image/bmp",
       "image/gif",
       "image/jpeg",
@@ -15203,6 +15223,7 @@ var GUESSIT_SCHEMA = {
       "CONVERT",
       "Converted",
       "Cover",
+      "Creditless",
       "Dirfix",
       "Disc Art",
       "DOCU",
@@ -15212,6 +15233,7 @@ var GUESSIT_SCHEMA = {
       "Dual",
       "Dual Audio",
       "East Coast Feed",
+      "Ending Credits",
       "Extras",
       "Fan Subtitled",
       "Fanart",
@@ -15261,6 +15283,7 @@ var GUESSIT_SCHEMA = {
       "Obfuscated",
       "Ona",
       "Open Matte",
+      "Opening Credits",
       "Original Animated Video",
       "Original Animation DVD",
       "Original Aspect Ratio",
@@ -15347,17 +15370,50 @@ var GUESSIT_SCHEMA = {
     "enum": [
       "1080i",
       "1080p",
+      "1094x576",
+      "1198x900",
+      "1368x720",
+      "1438x1080",
       "1440p",
       "1444x866",
+      "1710x900",
+      "2050x1080",
       "2160p",
+      "250x360",
+      "2878x2160",
+      "360i",
       "360p",
       "368p",
+      "4100x2160",
+      "4320p",
+      "450x360",
+      "480i",
       "480p",
+      "490x368",
       "4k",
+      "500x1080",
+      "500x2160",
+      "500x4320",
+      "500x480",
+      "500x576",
+      "500x720",
+      "500x900",
+      "540i",
       "540p",
+      "5758x2160",
+      "576i",
       "576p",
+      "638x480",
+      "684x360",
+      "700x368",
       "720p",
       "720x432",
+      "766x576",
+      "8198x2160",
+      "900i",
+      "900p",
+      "920x480",
+      "950x720",
       "960x544"
     ]
   },
@@ -15386,7 +15442,7 @@ var GUESSIT_SCHEMA = {
     "type": [
       "string"
     ],
-    "array": false,
+    "array": true,
     "scalar": true,
     "enum": [
       "Analog HDTV",
@@ -15735,6 +15791,20 @@ var GUESSIT_SCHEMA = {
     "type": [
       "string"
     ],
+    "array": true,
+    "scalar": true
+  },
+  "tmdb_id": {
+    "type": [
+      "number"
+    ],
+    "array": false,
+    "scalar": true
+  },
+  "tvdb_id": {
+    "type": [
+      "number"
+    ],
     "array": false,
     "scalar": true
   },
@@ -15833,9 +15903,23 @@ var GUESSIT_SCHEMA = {
       "XP"
     ]
   },
+  "volume": {
+    "type": [
+      "number"
+    ],
+    "array": true,
+    "scalar": true
+  },
   "website": {
     "type": [
       "string"
+    ],
+    "array": false,
+    "scalar": true
+  },
+  "week": {
+    "type": [
+      "number"
     ],
     "array": false,
     "scalar": true
@@ -15844,7 +15928,7 @@ var GUESSIT_SCHEMA = {
     "type": [
       "number"
     ],
-    "array": false,
+    "array": true,
     "scalar": true
   }
 };
@@ -16036,7 +16120,7 @@ function reset() {
 __name(reset, "reset");
 
 // package.json
-var version = "4.9.1";
+var version = "4.10.0";
 
 // src/index.ts
 var version2 = version;

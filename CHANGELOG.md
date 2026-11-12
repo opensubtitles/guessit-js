@@ -2,6 +2,33 @@
 
 All notable changes to guessit-js are documented here.
 
+## [4.10.0]
+
+**Six properties were missing from the published schema and TypeScript types.**
+`credits_number`, `imdb_id`, `tmdb_id`, `tvdb_id`, `volume` and `week` are all
+emitted by the parser and advertised by `properties()`, but the schema generator
+derives its inventory by walking a corpus — and that corpus was
+`test/fixtures/python-reference.json`, a **guessit 3.8.0** snapshot of 1009
+inputs that never triggered any of them. So `GUESSIT_SCHEMA`, `GuessItResult` and
+`docs/output-schema.json` advertised 50 properties where the parser has 56, and a
+caller reading `result.imdb_id` got a type error for a field that works.
+
+The snapshot is regenerated against guessit 4.5.1 over the whole fixture corpus
+(2281 inputs, up from 1009) by the new `scripts/python-reference.py`. Enum
+coverage grew with it: `source` gains Digital Master and Ultra HDTV, `other` gains
+the HDR, VR and stereo flags, `container` the sidecar extensions, `screen_size`
+the `WxH` forms, `mimetype` its full table.
+
+No parsing changed — 2247 of 2490 inputs still match Python 4.5.1 and the
+cross-parser score is still 114 of 276. The README's property table lists all 56
+now, rather than the 38 it happened to mention.
+
+`scripts/pydiff.mjs` is retired. It compared against that same frozen snapshot
+with a weaker normaliser — no language or country canonicalisation — so against
+4.5.1 it reported 448 differences where `scripts/python-diff.mts` reports 243,
+nearly all of the excess being `English` vs `eng` and `UNITED KINGDOM` vs `GB`.
+One comparison path, the one that runs a live Python and canonicalises first.
+
 ## [4.9.1]
 
 **The batch contract now holds on all three HTTP surfaces.** 4.9.0 documented the
