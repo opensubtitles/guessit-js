@@ -11,7 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18, 20, 22]
+        # vitest 5 / vite 8 need Node >= 22.12 to run the suite. Older Node
+        # versions that `engines` still allows are covered by the runtime job.
+        node-version: [22, 24]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v7
@@ -20,6 +22,32 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npx vitest run --exclude 'test/wasm-full.test.ts'
+
+  # The published library and CLI still support Node >= 18 (package.json
+  # engines). Build once on 22, then run the built artifacts on older Node
+  # with no dev tooling involved.
+  runtime:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Built library + CLI work on Node ${{ matrix.node-version }}
+        run: |
+          set -e
+          node --version
+          node -e "import('./dist/guessit-js.js').then(m => { const r = m.guessit('The.Matrix.1999.1080p.BluRay.x264.mkv'); if (r.title !== 'The Matrix' || r.year !== 1999) { console.error(r); process.exit(1); } })"
+          node -e "const m = require('./dist/guessit-js.cjs'); const r = m.guessit('Show.S01E02.720p.mkv'); if (r.season !== 1 || r.episode !== 2) { console.error(r); process.exit(1); }"
+          test "$(node bin/cli.mjs -P title 'The.Matrix.1999.mkv')" = "The Matrix"
 
   cli:
     runs-on: ubuntu-latest

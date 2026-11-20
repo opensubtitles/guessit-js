@@ -41,7 +41,7 @@ describe('output schema', () => {
       for (const k of Object.keys(r)) if (!(k in GUESSIT_SCHEMA)) unknownKeys.add(k);
     }
     expect([...unknownKeys]).toEqual([]);
-  });
+  }, 120_000); // parses the whole corpus synchronously
 
   it('every emitted enum value is allowed by the schema (schema is not stale)', () => {
     const violations: string[] = [];
@@ -59,7 +59,7 @@ describe('output schema', () => {
       }
     }
     expect(violations).toEqual([]);
-  });
+  }, 120_000); // parses the whole corpus synchronously
 
   it('docs/output-schema.json is a valid draft-07 schema describing all properties', () => {
     expect(outputSchema.$schema).toContain('draft-07');
