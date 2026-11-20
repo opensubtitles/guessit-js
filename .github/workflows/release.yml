@@ -62,3 +62,37 @@ jobs:
             --title "$GITHUB_REF_NAME" \
             --generate-notes \
             wasm/guessit.wasm wasm/guessit.wasm.gz
+
+  # Separate job so a problem here never blocks the main guessit-js release.
+  # One-time setup: @opensubtitles/guessit-wasm must exist on npm (first publish
+  # by hand) with this repo + release.yml configured as its Trusted Publisher.
+  publish-wasm:
+    needs: release
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/guessit-wasm
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Update npm (OIDC trusted publishing needs npm >= 11.5)
+        run: npm install -g npm@latest
+
+      - name: Fetch the release's tested WASM binaries
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download "$GITHUB_REF_NAME" --pattern 'guessit.wasm*' --dir .
+
+      - name: Version = guessit-js tag
+        run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version
+
+      - name: Smoke test the Node helper
+        run: node -e "import('./index.js').then(async m => { const r = await m.guessit('The.Matrix.1999.1080p.BluRay.x264.mkv'); if (r.title !== 'The Matrix' || r.year !== 1999) { console.error(r); process.exit(1); } console.log(r); })"
+
+      - name: Publish to npm (trusted publishing + provenance)
+        run: npm publish --provenance --access public
