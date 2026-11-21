@@ -1,0 +1,25 @@
+{
+  "name": "@opensubtitles/guessit-wasm",
+  "version": "0.0.0-dev",
+  "description": "guessit-js compiled to a standalone WASI WebAssembly module (Javy/QuickJS) — parse media filenames from any WASI runtime",
+  "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": { "types": "./index.d.ts", "default": "./index.js" },
+    "./guessit.wasm": "./guessit.wasm",
+    "./guessit.wasm.gz": "./guessit.wasm.gz",
+    "./package.json": "./package.json"
+  },
+  "files": ["index.js", "index.d.ts", "guessit.wasm", "guessit.wasm.gz", "README.md"],
+  "engines": { "node": ">=18" },
+  "keywords": ["guessit", "wasm", "wasi", "webassembly", "filename", "parser", "media", "metadata"],
+  "license": "LGPL-3.0",
+  "homepage": "https://github.com/opensubtitles/guessit-js/tree/main/packages/guessit-wasm#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/opensubtitles/guessit-js.git",
+    "directory": "packages/guessit-wasm"
+  },
+  "bugs": { "url": "https://github.com/opensubtitles/guessit-js/issues" }
+}

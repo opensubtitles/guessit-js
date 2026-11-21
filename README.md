@@ -230,7 +230,13 @@ echo '{"filename":"Movie.2024.1080p.mkv"}' | wasmtime wasm/guessit.wasm
 ```
 
 The WASM build is **bit-identical to the JS build** across the entire test corpus
-(1035/1035, including accented titles) — verified by `test/wasm-full.test.ts`.
+(1035/1035, including accented titles) — verified by `test/wasm-full.test.ts`
+(skipped locally until you've built the module and installed wasmtime).
+
+Prebuilt binaries ship with every [GitHub release](https://github.com/opensubtitles/guessit-js/releases)
+and as the npm package [`@opensubtitles/guessit-wasm`](packages/guessit-wasm)
+(`guessit.wasm` + a small `node:wasi` helper). Binaries are never committed to git.
+`wasm/build.sh` downloads Javy pinned by version **and** sha256.
 
 ## Differences from Python guessit
 

@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { exec } from 'child_process';
@@ -72,7 +72,16 @@ for (const f of FIXTURE_FILES) {
   } catch {}
 }
 
-test(`WASM vs JS: all ${allCases.length} fixtures`, async () => {
+// The WASM binary is a build artifact (`bash wasm/build.sh`), not committed, and
+// wasmtime is an external tool. Skip locally when either is missing; on CI
+// (where the release/ci workflows build both) a missing artifact must fail.
+const WASM_READY = existsSync(WASM_PATH) && existsSync(WASMTIME);
+const SKIP_WASM = !WASM_READY && !process.env.CI;
+if (SKIP_WASM) {
+  console.warn('[wasm-full] skipped: run `bash wasm/build.sh` and install wasmtime to enable');
+}
+
+test.skipIf(SKIP_WASM)(`WASM vs JS: all ${allCases.length} fixtures`, async () => {
   let pass = 0, fail = 0, error = 0;
   const failures: string[] = [];
 

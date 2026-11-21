@@ -4,21 +4,40 @@ cd "$(dirname "$0")/.."
 
 echo "=== Building guessit-js WASM ==="
 
-# Step 0: Ensure Javy is available (downloaded on demand — never committed, see issue #1)
+# Step 0: Ensure Javy is available (downloaded on demand — never committed, see issue #1).
+# The download is pinned by version AND sha256 (values from Javy's published
+# .sha256 release assets). Overriding JAVY_VERSION requires JAVY_SHA256 too.
 JAVY="${JAVY:-tools/javy}"
-JAVY_VERSION="${JAVY_VERSION:-v9.1.0}"
+JAVY_PINNED_VERSION=v9.1.0
+JAVY_VERSION="${JAVY_VERSION:-$JAVY_PINNED_VERSION}"
 if [ ! -x "$JAVY" ]; then
   echo "0. Downloading Javy $JAVY_VERSION..."
   case "$(uname -s)-$(uname -m)" in
-    Linux-x86_64)  JAVY_ASSET="javy-x86_64-linux-$JAVY_VERSION.gz" ;;
-    Linux-aarch64) JAVY_ASSET="javy-arm-linux-$JAVY_VERSION.gz" ;;
-    Darwin-arm64)  JAVY_ASSET="javy-arm-macos-$JAVY_VERSION.gz" ;;
-    Darwin-x86_64) JAVY_ASSET="javy-x86_64-macos-$JAVY_VERSION.gz" ;;
+    Linux-x86_64)  JAVY_PLATFORM=x86_64-linux; PINNED_SHA=a68b122d48eb3dfc1b801d4e14c39271fde3638243d3272d206e376ac9189e39 ;;
+    Linux-aarch64) JAVY_PLATFORM=arm-linux;    PINNED_SHA=826962f0e82354cf97d6e928ea36777872bbae76c626e326948e0367c4b55cb5 ;;
+    Darwin-arm64)  JAVY_PLATFORM=arm-macos;    PINNED_SHA=99e9ec6a8e8c98e119d137c08a921d2443d3b873c675a5571e1800f4451e6294 ;;
+    Darwin-x86_64) JAVY_PLATFORM=x86_64-macos; PINNED_SHA=6eed2927575dc2b3fb5a1563eee1ce0874e6da91c9cec39a728c9377a8cc7b5a ;;
     *) echo "Unsupported platform: $(uname -s)-$(uname -m)"; exit 1 ;;
   esac
+  if [ -n "$JAVY_SHA256" ]; then
+    EXPECTED_SHA="$JAVY_SHA256"
+  elif [ "$JAVY_VERSION" = "$JAVY_PINNED_VERSION" ]; then
+    EXPECTED_SHA="$PINNED_SHA"
+  else
+    echo "JAVY_VERSION=$JAVY_VERSION is not the pinned $JAVY_PINNED_VERSION: set JAVY_SHA256 for it."; exit 1
+  fi
+  JAVY_ASSET="javy-$JAVY_PLATFORM-$JAVY_VERSION.gz"
   mkdir -p "$(dirname "$JAVY")"
-  curl -fsSL "https://github.com/bytecodealliance/javy/releases/download/$JAVY_VERSION/$JAVY_ASSET" \
-    | gunzip > "$JAVY"
+  TMP_GZ="$(mktemp)"
+  trap 'rm -f "$TMP_GZ"' EXIT
+  curl -fsSL "https://github.com/bytecodealliance/javy/releases/download/$JAVY_VERSION/$JAVY_ASSET" -o "$TMP_GZ"
+  if command -v sha256sum >/dev/null; then ACTUAL_SHA=$(sha256sum "$TMP_GZ" | cut -d' ' -f1)
+  else ACTUAL_SHA=$(shasum -a 256 "$TMP_GZ" | cut -d' ' -f1); fi
+  if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+    echo "Javy checksum mismatch for $JAVY_ASSET"; echo "  expected $EXPECTED_SHA"; echo "  actual   $ACTUAL_SHA"; exit 1
+  fi
+  echo "   sha256 verified: $ACTUAL_SHA"
+  gunzip -c "$TMP_GZ" > "$JAVY"
   chmod +x "$JAVY"
 fi
 # Javy >= v3 uses `build`; older versions use `compile`
