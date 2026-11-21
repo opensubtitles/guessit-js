@@ -2,6 +2,49 @@
 
 All notable changes to guessit-js are documented here.
 
+## [4.11.0]
+
+**Real production filenames now parse better than Python guessit 4.5.4.**
+About 26,000 distinct names from opensubtitles traffic were replayed against
+4.10.0 and Python guessit 4.5.4. On the names where the two guessit-js versions
+disagree, 4.11.0 matches Python more often in every field consumers read; where
+Python itself is wrong, guessit-js is right on purpose. No JSON shape changed.
+
+Upstream fixes ported, each with upstream's own tests: 4.5.2 numbered
+`expected_title` (already held, now pinned), 4.5.3 every dot of a leading
+abbreviation (`S.W.A.T`), 4.5.4 a number ending the title before NCOP/NCED
+(`Mob Psycho 100 - NCED01`) and `VOF`/`VF2` as French, and the unreleased
+develop fix #1007, `castellano` as Spanish rather than Catalan.
+
+Real-traffic patterns now handled:
+
+- IMDb listings: `Show Episode #1.16` → season 1, episode 16;
+  `"Series" Episode Title` → title plus episode_title; `"Series" 1.3` → S1E3.
+- IPTV playlists: `en ★ show - s01e02 - …`, `nl ▎ …`, `ar-kh - …` → language
+  plus a clean title; `s01e04 - nf - show (2025) (us) - s01e04 - ep` → title,
+  year, country, episode title and the streaming service.
+- A repeated `show - s05e01 - show - s05e01` no longer duplicates the show into
+  alternative_title or episode_title; dashed episode titles stay whole.
+- `NF.WEB` / `AMZN.WEB` → streaming service; `svt_av1` is no longer SVT;
+  `HR-HDTV` is no longer Croatian; `(gb)` is the country GB.
+- Fewer false languages from short codes (`Kaizoku-dan`, `Ben 10`,
+  `of ice and men`) while `Danish`, `Tamil`, `Malayalam` are still found.
+- Port bugs: `formula 51` read as 5.1 audio, `stcv537` / `av2039656` read as a
+  version, `-[YTS.` giving release group `[YTS`.
+
+Every deliberate difference from Python is a case in
+`test/fixtures/better-than-python.yml`; `scripts/check-better-than-python.py`
+runs them through a live Python and fails when Python starts to agree.
+
+The demo page groups its examples into "same as Python", "same answer,
+different notation" and "Python guessit gets these wrong", each with the live
+Python side-by-side, now against guessit 4.5.4. Its footer links the project on
+GitHub.
+
+Not re-measured in this release: the "2191 of 2229 upstream test cases" and
+python-parity figures still describe the 4.5.1 run; all upstream fixtures in the
+suite pass. Suite 2671.
+
 ## [4.10.0]
 
 **Six properties were missing from the published schema and TypeScript types.**
