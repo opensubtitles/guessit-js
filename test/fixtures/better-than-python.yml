@@ -52,3 +52,22 @@
 : title: some movie
   language: nl
   container: strm
+
+# --- languages beyond Python's default allowed_languages ----------------------
+# python: no language (Danish is not in Python's default allowed_languages)
+? Some.Movie.2020.Danish.1080p.WEB.H264-GRP
+: title: Some Movie
+  year: 2020
+  language: da
+
+# python: no language
+? Some Movie (2021) Tamil HD DVD Print 700MB.mkv
+: title: Some Movie
+  year: 2021
+  language: ta
+
+# python: no language
+? some movie (2016) malayalam hdrip
+: title: some movie
+  year: 2016
+  language: ml

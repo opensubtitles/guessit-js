@@ -78,6 +78,12 @@ class LanguageWord {
   }
 }
 
+/** Python guessit's default allowed_languages (options.json, 4.5.4). */
+const PYTHON_DEFAULT_LANGUAGES = new Set([
+  'ca', 'cs', 'de', 'en', 'es', 'fr', 'he', 'hi', 'hu', 'it', 'ja', 'ko', 'mul', 'nl', 'no',
+  'pl', 'pt', 'ro', 'ru', 'sv', 'te', 'uk', 'und',
+]);
+
 interface LanguageMatch {
   propertyName: 'language' | 'subtitle_language';
   word: LanguageWord;
@@ -432,6 +438,8 @@ class LanguageFinder {
   ): LanguageMatch | undefined {
     const lang = this.parseLanguage(word.value.toLowerCase());
 
+    if (lang && !this.strongEnough(key, word, lang)) return undefined;
+
     if (lang) {
       return {
         propertyName: key,
@@ -441,6 +449,29 @@ class LanguageFinder {
     }
 
     return undefined;
+  }
+
+  /**
+   * guessit-js allows more languages than Python guessit (Danish, Tamil, Arabic, …). For
+   * those extra languages a bare 2/3-letter code in free text is far more often a word
+   * ("Kaizoku-dan", "Ben 10", "of ice and men", "cerebro del mal", "dear chi") than a
+   * language tag, so only strong forms count: the full name ("Danish", "Tamil"), or a
+   * code right before a subtitle extension ("Movie.da.srt"). Python's own default
+   * languages keep their usual detection.
+   */
+  private strongEnough(key: 'language' | 'subtitle_language', word: LanguageWord, lang: Language): boolean {
+    const alpha2 = (lang.getAlpha2() ?? '').toLowerCase();
+    if (!alpha2 || PYTHON_DEFAULT_LANGUAGES.has(alpha2)) return true;
+    const raw = word.value.trim();
+    if (raw.length > 3) return true;
+    // enclosed tag: "[tr] channel", "title |tr|", "(th)"
+    const pre = word.inputString[word.start - 1] ?? '';
+    const post = word.inputString[word.end] ?? '';
+    if ('[(|'.includes(pre) && pre !== '' && '])|'.includes(post) && post !== '') return true;
+    const after = word.inputString.slice(word.end).toLowerCase();
+    const ext = /^[.\s_-]*\.?([a-z0-9]{2,4})$/.exec(after)?.[1];
+    if (ext && SubtitleExtensionRule.SUBTITLE_EXTENSIONS.has(ext)) return true;
+    return key === 'subtitle_language' && raw.length === 2;
   }
 
   /**

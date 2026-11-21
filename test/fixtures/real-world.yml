@@ -28,3 +28,29 @@
 ? 'pl: some channel hd'
 : title: some channel
   language: pl
+
+# a bare 2/3-letter code of a language outside Python's default set is a word, not a language
+? Kaizoku-dan S01E01
+: title: Kaizoku-dan
+  -language: da
+
+? Ben 10 S01E01
+: title: Ben 10
+  -language: bn
+
+? of ice and men S01E01
+: title: of ice and men
+  -language: is
+
+? cerebro del mal 1958
+: title: cerebro del mal
+  -language: ml
+
+? dear chi
+: title: dear chi
+  -language: zh
+
+# …but an enclosed code is a tag
+? '[tr] some channel 1 hd'
+: language: tr
+  title: some channel 1
