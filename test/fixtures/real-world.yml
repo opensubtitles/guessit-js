@@ -54,3 +54,18 @@
 ? '[tr] some channel 1 hd'
 : language: tr
   title: some channel 1
+
+# "HR-HDTV" is a High Resolution HDTV source, not Croatian in an "Hdtv" script
+? Some.Show.S05E04.Chi_Eng.HR-HDTV.AAC.1024X576.x264-GRP.mkv
+: title: Some Show
+  season: 5
+  episode: 4
+  language: en
+  source: HDTV
+  other: High Resolution
+  -language: hr
+
+# a real ISO 15924 script subtag is kept
+? Some.Movie.2020.zh-Hans.srt
+: title: Some Movie
+  subtitle_language: zh-Hans
