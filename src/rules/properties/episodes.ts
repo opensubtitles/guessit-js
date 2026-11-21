@@ -776,8 +776,18 @@ export function episodes(config: EpisodesConfig): Rebulk {
     .repeater('*');
 
   // Version pattern
+  // A standalone "v2" token only (Python: seps_surround on the parent); "01v2" after an
+  // episode number is the chain above. Not "stcv537", "pv02", "(av2039656," or "-v3sp4ev3r".
   rebulk.regex(`v(?<version>\\d+)`, {
     formatter: { version: (v: string) => parseInt(v, 10) },
+    validator: {
+      version: (m: any) => {
+        const inp: string = m.inputString ?? '';
+        const before = inp[m.start - 2];
+        const after = inp[m.end];
+        return (before === undefined || seps.includes(before)) && (after === undefined || seps.includes(after));
+      },
+    },
     disabled: (context: any) => isDisabled(context, 'version'),
   });
 

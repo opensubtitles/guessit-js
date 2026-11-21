@@ -23,7 +23,10 @@ export function releaseGroup(config: Record<string, unknown>) {
 
     // Step 2: Only strip ignored_seps from ends if the string doesn't have them
     // as surrounding brackets AND doesn't contain them internally.
-    const containsIgnored = groupnameIgnoreSeps.split('').some((c) => result.includes(c));
+    // Python: any(i in string.strip(groupname_ignore_seps) …) — only INNER brackets count,
+    // so an unbalanced edge bracket ("[YTS") is stripped like Python does.
+    const inner = strip(result, groupnameIgnoreSeps);
+    const containsIgnored = groupnameIgnoreSeps.split('').some((c) => inner.includes(c));
     const startsWithIgnored = groupnameIgnoreSeps.split('').some((c) => result.startsWith(c));
     const endsWithIgnored = groupnameIgnoreSeps.split('').some((c) => result.endsWith(c));
     if (!(startsWithIgnored && endsWithIgnored) && !containsIgnored) {

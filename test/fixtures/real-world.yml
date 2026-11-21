@@ -87,3 +87,31 @@
 : season: 1
   episode: 1
   -language: de
+
+# a "v<n>" version is a standalone token, not the tail of a word
+? stcv537
+: title: stcv537
+  -version: 537
+
+? pv02.mkv
+: title: pv02
+  -version: 2
+
+? '[Group] Show - 01v2 [1080p].mkv'
+: title: Show
+  episode: 1
+  version: 2
+
+# a bare "51" is 5.1 channels only behind an audio codec
+? formula 51
+: title: formula
+  -audio_channels: '5.1'
+
+? Movie.2020.AC3.51.mkv
+: audio_codec: Dolby Digital
+  audio_channels: '5.1'
+
+# an unbalanced edge bracket is not part of the release group
+? Some.Movie.2026.1080p.WEBRip.x264.AAC5.1-[YTS.
+: title: Some Movie
+  release_group: YTS
