@@ -81,3 +81,9 @@
 ? s01e01 - nf - some show (2015) (us) - s01e01 - pilot.strm
 : title: some show
   episode_details: Pilot
+
+# a plain "<code> - " opening is not taken as an IPTV prefix
+? de - some show s01e01
+: season: 1
+  episode: 1
+  -language: de

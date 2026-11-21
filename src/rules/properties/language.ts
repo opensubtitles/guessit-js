@@ -916,6 +916,27 @@ export function language(config: LanguageConfig, commonWords: Set<string>): Rebu
     },
   );
 
+  // IPTV group prefix with a region/variant suffix: "ar-kh - <title> - s01e12 …",
+  // "ar-bdy - …", "ar-tr-d - …". The first code is the language; the suffix is a
+  // channel-group label (Khaleeji, Bedouin, …), not an ISO country, so no country.
+  rebulk.regex(
+    `^[ \\t]*(?<code>[a-z]{2})(?:-[a-z0-9]{1,4}){1,2}[ \\t]+-[ \\t]+(?=\\S)`,
+    {
+      name: 'language',
+      ignoreCase: true,
+      tags: ['iptv-prefix'],
+      children: false,
+      // "en-us - …": the region suffix is part of the prefix, not a separate country
+      conflictSolver: (_match: any, other: any) => (other.name === 'country' ? other : '__default__'),
+      validator: (m: any) => {
+        const code = /^\s*([a-z]{2})/i.exec(m.raw ?? '')?.[1]?.toLowerCase() ?? '';
+        return code !== 'uk' && !!Language.fromAlpha2(code);
+      },
+      formatter: (raw: string) => Language.fromAlpha2(/^\s*([a-z]{2})/i.exec(raw)![1].toLowerCase()),
+      disabled: (context: any) => isDisabled(context, 'language'),
+    },
+  );
+
   // Functional pattern for finding languages
   rebulk.functional(
     (input: string, context: any) => {

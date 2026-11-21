@@ -105,3 +105,19 @@
 : title: fourth show
   episode_title: a storm
   -streaming_service: vp
+
+# --- IPTV group prefix with a region/variant suffix "ar-kh - …" -----------------
+# python: title "ar-kh", no language; v4.10: language ara with country KH (Cambodia)
+? ar-kh - مسلسل - s01e12 - مسلسل - s01e12.strm
+: title: مسلسل
+  language: ar
+  season: 1
+  episode: 12
+  -country: KH
+
+# python: title "ar-bdy", alternative_title = the show
+? ar-bdy - مسلسل آخر - s01e21 - مسلسل آخر - s01e21.strm
+: title: مسلسل آخر
+  language: ar
+  season: 1
+  episode: 21
