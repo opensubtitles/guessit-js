@@ -1,2 +1,30 @@
 # Regression cases for patterns seen in production traffic (2026-11 replay).
 # Names are synthetic or sanitised — never raw log data.
+
+# IPTV prefixes that are NOT languages stay in the title
+? 'csi: some city s01e01'
+: title: 'csi: some city'
+  season: 1
+  episode: 1
+  -language: ces
+
+? law & order s01e01
+: title: law & order
+  -language: law
+
+# "UK:" in IPTV lists is the country, not Ukrainian
+? 'uk: some channel hd'
+: title: some channel
+  country: GB
+  -language: ukr
+
+# a language code inside a normal release name is untouched
+? Some.Movie.2020.en.srt
+: title: Some Movie
+  year: 2020
+  subtitle_language: en
+
+# IPTV "<lang>:" prefix (Python agrees)
+? 'pl: some channel hd'
+: title: some channel
+  language: pl

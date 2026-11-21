@@ -109,6 +109,8 @@ abstract class TitleBaseRule extends Rule {
     if (!(match.name === 'language' || match.name === 'country' || match.name === 'episode_details')) {
       return false;
     }
+    // an IPTV playlist prefix ("en ★ ") is a definite marker, never title filler
+    if (match.tags?.includes('iptv-prefix')) return false;
     const raw = match.raw ?? '';
     if (match.end - match.start > 3 && raw !== '' && raw === raw.toUpperCase() && raw !== raw.toLowerCase()) {
       return false;

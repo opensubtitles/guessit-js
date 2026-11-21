@@ -36,3 +36,19 @@
   season: 1
   episode: 4
   type: episode
+
+# --- IPTV playlist prefix "<lang> ★ …" ---------------------------------------
+# python: language eng, but title "★ some show" (the list-marker symbol leaks into the title)
+? en ★ some show - s04e06 - an episode.strm
+: title: some show
+  language: en
+  season: 4
+  episode: 6
+  episode_title: an episode
+  container: strm
+
+# python: language nld, title "▎ some movie"
+? nl ▎ some movie.strm
+: title: some movie
+  language: nl
+  container: strm

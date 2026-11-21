@@ -864,6 +864,27 @@ export function language(config: LanguageConfig, commonWords: Set<string>): Rebu
     });
   }
 
+  // IPTV playlist prefix: "en ★ Show - s01e02 - …", "nl ▎ Movie", "pl: Channel HD".
+  // A two-letter ISO 639-1 code opening the name, then a list-marker symbol. The whole
+  // prefix (code + symbol) is the language match, so the symbol stays out of the title.
+  // Python guessit 4.5.4 finds the language but leaves "★ Show" as the title. "uk" is
+  // left out (IPTV "UK:" means the country), as are words like "csi:" / "law &".
+  rebulk.regex(
+    `(?:^|(?<=[\\/]))[ \\t]*(?<code>[a-z]{2})[ \\t]*[★☆▎▌|:][ \\t]+(?=\\S)`,
+    {
+      name: 'language',
+      ignoreCase: true,
+      tags: ['iptv-prefix'],
+      children: false,
+      validator: (m: any) => {
+        const code = /([a-z]{2})/i.exec(m.raw ?? m.value ?? '')?.[1]?.toLowerCase() ?? '';
+        return code !== 'uk' && !!Language.fromAlpha2(code);
+      },
+      formatter: (raw: string) => Language.fromAlpha2(/([a-z]{2})/i.exec(raw)![1].toLowerCase()),
+      disabled: (context: any) => isDisabled(context, 'language'),
+    },
+  );
+
   // Functional pattern for finding languages
   rebulk.functional(
     (input: string, context: any) => {
