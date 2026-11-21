@@ -136,3 +136,15 @@
 : title: some show
   episode_title: the real episode
   -alternative_title: some show
+
+# --- a streaming tag right before a bare WEB source --------------------------------
+# python: no streaming_service, episode_title "NF"
+? The.Show.S11E01.NF.WEB.H265-GRP.mkv
+: title: The Show
+  streaming_service: Netflix
+  -episode_title: NF
+
+# python: no streaming_service
+? The.Show.S11E01.German.DL.EAC3.AMZN.WEB.H265-GRP.mkv
+: streaming_service: Amazon Prime
+  -episode_title: AMZN

@@ -128,3 +128,26 @@
   country: GB
   season: 1
   episode: 2
+
+# an episode title containing " - " stays whole (Python agrees)
+? some show - s05e18 - wanted - the second part.strm
+: title: some show
+  episode: 18
+  episode_title: wanted - the second part
+  -alternative_title: the second part
+
+# a lowercase language name glued to a plain word is an adjective (Python agrees)
+? some show (2001) - s27e10 - chinese-style furniture
+: episode_title: chinese-style furniture
+  -language: zh
+
+? Movie.2020.french-dubbed.mkv
+: title: Movie
+  language: fr
+
+# "ep. 18": the dot and the space both separate marker and number (Python agrees)
+? some show - ep. 18 - some title (1998 - 480p dvdrip)
+: title: some show
+  episode: 18
+  episode_title: some title
+  type: episode

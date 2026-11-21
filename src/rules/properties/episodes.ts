@@ -605,8 +605,11 @@ export function episodes(config: EpisodesConfig): Rebulk {
     },
   );
 
+  // "ep. 18" / "Ep. 05": the abbreviation dot and a space are two separators, so allow
+  // up to two between the marker word and the number (one used to be the limit, and
+  // "ep. 18" then only matched as a weak bare number that a year later voided).
   rebulk.regex(
-    `(?<![a-zA-Z\\d])` + episodeWordPattern + `@?(?<episode>\\d+)` +
+    `(?<![a-zA-Z\\d])` + episodeWordPattern + `@?@?(?<episode>\\d+)` +
       `(?:v(?<version>\\d+))?` +
       `(?:@?` + ofWordPattern + `@?(?<count>\\d+))?`,
     {
@@ -616,7 +619,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
   );
 
   rebulk.regex(
-    `(?<![a-zA-Z\\d])` + episodeWordPattern + `@?(?<episode>${numeral})` +
+    `(?<![a-zA-Z\\d])` + episodeWordPattern + `@?@?(?<episode>${numeral})` +
       `(?:v(?<version>\\d+))?` +
       `(?:@?` + ofWordPattern + `@?(?<count>\\d+))?`,
     {

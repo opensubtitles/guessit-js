@@ -84,10 +84,47 @@ export function episodeTitle(config: Record<string, unknown>) {
     RemoveHashFilepartJunk,
     RemoveTailEpisodeTitle,
     FormationRunEpisodeTitle,
-    RenameEpisodeTitleWhenMovieType
+    RenameEpisodeTitleWhenMovieType,
+    JoinDashedEpisodeTitleTail
   );
 
   return rebulk;
+}
+
+/**
+ * "show - s05e18 - wanted - bebop & rocksteady": an episode title with a " - " inside
+ * it came back cut at the dash, the tail turned into alternative_title (or a second
+ * episode_title). When nothing but separators and that one tail follow the episode
+ * title to the end of the filepart (container aside), it is all one episode title —
+ * as in Python guessit.
+ */
+class JoinDashedEpisodeTitleTail extends Rule {
+  static override priority = POST_PROCESS;
+  override priority = POST_PROCESS;
+  override consequence = [RemoveMatch, AppendMatch];
+
+  override when(matches: Matches, _context: any): any {
+    const input: string = (matches as any).inputString ?? '';
+    const toRemove: Match[] = [];
+    const toAppend: Match[] = [];
+    for (const et of (matches.named('episode_title') as Match[]) ?? []) {
+      if (toRemove.includes(et)) continue;
+      const filepart = (matches.markers as any).atMatch(et, (m: Match) => m.name === 'path', 0) as Match | undefined;
+      const fpEnd = filepart ? filepart.end : input.length;
+      const after = (matches.range(et.end, fpEnd, (m: Match) => !m.private) as Match[]) ?? [];
+      const tail = after.filter((m) => m.name !== 'container' && m.name !== 'mimetype' && m.name !== 'type');
+      if (tail.length !== 1) continue;
+      const t = tail[0];
+      if (t.name !== 'alternative_title' && t.name !== 'episode_title') continue;
+      const gap = input.slice(et.end, t.start);
+      if (!/^\s*-\s*$/.test(gap)) continue;
+      const value = cleanup(input.slice(et.start, t.end));
+      if (!value) continue;
+      toRemove.push(et, t);
+      toAppend.push(new Match(et.start, t.end, { name: 'episode_title', value, inputString: input }));
+    }
+    return toRemove.length ? [toRemove, toAppend] : false;
+  }
 }
 
 /**

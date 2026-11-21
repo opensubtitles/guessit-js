@@ -979,6 +979,12 @@ export function language(config: LanguageConfig, commonWords: Set<string>): Rebu
  * by a dash it is part of a title instead: "Shang-Chi" is a film, not Shang in
  * Chinese. The terminology codes ("zho", "deu") are unambiguous and unaffected.
  */
+/** Words after "<language>-" that confirm the language rather than form an adjective. */
+const LANGUAGE_CONFIRMING_WORDS = new Set([
+  'dub', 'dubs', 'dubbed', 'dubbing', 'sub', 'subs', 'subbed', 'subtitle', 'subtitles', 'subtitled',
+  'audio', 'version', 'dl', 'ac3', 'aac', 'dts', 'track', 'tracks', 'forced', 'sdh', 'hardsub', 'softsub',
+]);
+
 class RemoveDashGluedBibliographicCode extends Rule {
   static override priority = 32;
   override priority = 32;
@@ -1000,6 +1006,19 @@ class RemoveDashGluedBibliographicCode extends Rule {
     for (const match of (matches.named('subtitle_language') ?? []) as Match[]) {
       if (!RemoveDashGluedBibliographicCode.isBibliographicOnly(String(match.raw ?? ''))) continue;
       if (input[match.start - 1] === '-') out.push(match);
+    }
+    // A lowercase language NAME glued by a dash to an ordinary following word is a
+    // compound adjective: "chinese-style furniture", "french-born", "english-speaking".
+    // Nothing is matched on the word after the dash, so it is plain text.
+    for (const match of (matches.named('language') ?? []) as Match[]) {
+      const raw = String(match.raw ?? '');
+      if (raw.length < 4 || raw !== raw.toLowerCase() || out.includes(match)) continue;
+      if (input[match.end] !== '-') continue;
+      const word = /^-([a-z]{3,})(?![a-z])/.exec(input.slice(match.end))?.[1];
+      if (!word || LANGUAGE_CONFIRMING_WORDS.has(word)) continue;
+      const claimed = (matches.range(match.end + 1, match.end + 1 + word.length, (m: Match) => !m.private) as Match[]) ?? [];
+      if (claimed.length) continue;
+      out.push(match);
     }
     return out.length ? out : false;
   }
