@@ -571,3 +571,20 @@
   screen_size: 2160p
   release_group: FRQC
   -episode_title: MULTi VF2
+
+# upstream 4.5.2 (b1da441, #966) — number the episode behind a numbered expected_title
+? Foo.2.2
+: options: -t episode -T 'Foo 2'
+  title: Foo 2
+  episode: 2
+
+? Foo.2.2.bar
+: options: -t episode -T 're:Foo 2'
+  title: Foo 2
+  episode: 2
+  episode_title: bar
+
+? Bar.3.3.x265
+: options: -t episode -T 're:Bar 3'
+  title: Bar 3
+  episode: 3
