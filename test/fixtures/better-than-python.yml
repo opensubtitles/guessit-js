@@ -121,3 +121,18 @@
   language: ar
   season: 1
   episode: 21
+
+# --- a repeated show segment is not a second title -----------------------------
+# python: episode_title "some show" (a copy of the title); v4.10: alternative_title "some show"
+? some show - s05e01 - some show - s05e01.strm
+: title: some show
+  season: 5
+  episode: 1
+  -episode_title: some show
+  -alternative_title: some show
+
+# python: episode_title "some show" (the real episode title is lost)
+? some show - s05e01 - some show - s05e01 - the real episode.strm
+: title: some show
+  episode_title: the real episode
+  -alternative_title: some show
