@@ -72,14 +72,14 @@ console.log('✓ public/docs/output-schema.json');
     'Interstellar 2014 IMAX 2160p UHD Blu-ray Remux HDR HEVC Atmos-GROUP.mkv',
     'Movies/The Matrix (1999)/The.Matrix.1999.REMASTERED.1080p.BluRay.x264-GROUP.mkv',
     'Fargo.-.Season.1.-.720p.BluRay.x264.mkv',
-    ...JSON.parse(readFileSync(r('scripts/showcase-examples.json'), 'utf8')),
+    ...Object.values(JSON.parse(readFileSync(r('scripts/showcase-examples.json'), 'utf8'))).flat(),
     'Mission.Impossible.Dead.Reckoning.Part.One.2023.2160p.WEB-DL.mkv',
     'Show.S01E01E02E03.720p.mkv',
     'Le.Fabuleux.Destin.d.Amelie.Poulain.2001.FRENCH.1080p.mkv',
     '4.3.2.1.2010.720p.BluRay.mkv',
     'Show (2019) - S01E01 - Pilot (1080p BluRay x265 Silence).mkv',
   ];
-  const out = cases.map((filename) => [filename, guessit(filename)]);
+  const out = [...new Set(cases)].map((filename) => [filename, guessit(filename)]);
   writeFileSync(r('public/dist/wasm-test-cases.json'), JSON.stringify(out, null, 1));
   console.log(`✓ public/dist/wasm-test-cases.json (${out.length} cases, expectations from current JS build)`);
 }

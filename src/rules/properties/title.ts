@@ -109,6 +109,8 @@ abstract class TitleBaseRule extends Rule {
     if (!(match.name === 'language' || match.name === 'country' || match.name === 'episode_details')) {
       return false;
     }
+    // an IPTV playlist prefix ("en ★ ") is a definite marker, never title filler
+    if (match.tags?.includes('iptv-prefix')) return false;
     const raw = match.raw ?? '';
     if (match.end - match.start > 3 && raw !== '' && raw === raw.toUpperCase() && raw !== raw.toLowerCase()) {
       return false;
@@ -1010,6 +1012,175 @@ class TitleWordAtTitlePosition extends Rule {
 const NON_LATIN_SCRIPT_RE = /[\u0370-\u03FF\u0400-\u04FF\u0590-\u05FF\u0600-\u06FF\u0E00-\u0E7F\u3000-\u303F\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uAC00-\uD7AF\uFF00-\uFFEF]/;
 
 /**
+ * IMDb episode naming '"Series Name" Episode Title': the quoted part is the series, the
+ * rest is the episode title — '"30 Rock" Don Geiss, America and Hope', '"12 Monkeys" Hyena'.
+ * Python guessit returns the whole string as the title (or an episode number taken from
+ * inside the quotes).
+ */
+class QuotedSeriesThenEpisodeTitle extends Rule {
+  static override priority = -100;
+  override priority = -100;
+  override consequence = [RemoveMatch, AppendMatch];
+
+  override when(matches: Matches, _context: Context): any {
+    const input: string = (matches as any).inputString ?? '';
+    if (input[0] !== '"') return false;
+    const close = input.indexOf('"', 1);
+    if (close < 2) return false;
+    const title = ((matches as any).named('title') as Match[])?.[0];
+    if (!title || title.start !== 0 || title.end <= close + 1) return false;
+    if (((matches as any).named('episode_title') as Match[])?.length) return false;
+    const series = cleanup(input.slice(1, close));
+    let restStart = close + 1;
+    while (restStart < title.end && /\s/.test(input[restStart])) restStart++;
+    const rest = cleanup(input.slice(restStart, title.end));
+    if (!series || !rest) return false;
+    // '"Series" 1.3' — IMDb's season.episode with no episode word
+    const se = /^(\d{1,3})\.(\d{1,4})$/.exec(rest);
+    if (se && !((matches as any).named('episode') as Match[])?.length) {
+      const dot = restStart + se[1].length;
+      return [[title], [
+        new Match(1, close, { name: 'title', value: series, inputString: input, tags: ['imdb-quoted-series'] }),
+        new Match(restStart, dot, { name: 'season', value: parseInt(se[1], 10), inputString: input }),
+        new Match(dot + 1, title.end, { name: 'episode', value: parseInt(se[2], 10), inputString: input }),
+      ]];
+    }
+    return [[title], [
+      new Match(1, close, { name: 'title', value: series, inputString: input, tags: ['imdb-quoted-series'] }),
+      new Match(restStart, title.end, { name: 'episode_title', value: rest, inputString: input }),
+    ]];
+  }
+}
+
+/**
+ * A number opening the name is the episode, not part of the title, when
+ *  - it is list numbering: "20. termites plus two", "115. summer cooler", or
+ *  - it repeats an explicit episode found later: "20 winter sonata episode 20 last".
+ * A plain leading number stays in the title ("50 First Dates", "12 Angry Men"),
+ * where Python guessit wrongly drops it.
+ */
+class LeadingNumberIsEpisode extends Rule {
+  static override priority = -100;
+  override priority = -100;
+  override consequence = [RemoveMatch, AppendMatch];
+
+  override when(matches: Matches, _context: Context): any {
+    const input: string = (matches as any).inputString ?? '';
+    for (const title of ((matches as any).named('title') as Match[]) ?? []) {
+      const fp = (matches as any).markers.atMatch(title, (m: Match) => m.name === 'path', 0) as Match | undefined;
+      const fpStart = fp ? fp.start : 0;
+      if (title.start !== fpStart) continue;
+      const raw = input.slice(title.start, title.end);
+      const list = /^(\d{1,3})\.[ ]+(?=\S)/.exec(raw);
+      const plain = /^(\d{1,3})[ ]+(?=\S)/.exec(raw);
+      const m = list ?? plain;
+      if (!m) continue;
+      const n = parseInt(m[1], 10);
+      const episodes = ((matches as any).named('episode', (e: Match) => !e.private) as Match[]) ?? [];
+      // only an episode-WORD number repeats it ("… episode 20"); an SxxExx code does not
+      // ("12.Monkeys.S01E12" is the show 12 Monkeys)
+      const repeats = episodes.some((e) => e.value === n && e.start >= title.end && !e.tags?.includes('SxxExx'));
+      if (!list && !repeats) continue;
+      if (list && episodes.length && !repeats) continue;
+      const rest = cleanup(raw.slice(m[0].length));
+      if (!rest) continue;
+      const toAppend: Match[] = [new Match(title.start + m[0].length, title.end, { name: 'title', value: rest, inputString: input })];
+      if (!episodes.length) {
+        toAppend.push(new Match(title.start, title.start + m[1].length, { name: 'episode', value: n, inputString: input, tags: ['list-number'] }));
+      }
+      return [[title], toAppend];
+    }
+    return false;
+  }
+}
+
+/**
+ * IPTV episode layout with the episode code first (≈2 % of real traffic):
+ *   "s01e04 - nf - some show (2025) (us) - s01e04 - the episode title.strm"
+ *   "s01e02 - 4k-a+ - other show - s01e02.strm"
+ * <code> - <provider tag> - <show [(year)] [(cc)]> - <same code> [- <episode title>].
+ * The show segment is the title, the tail the episode title; a provider tag that
+ * clearly names a service becomes streaming_service, any other tag is dropped.
+ * Python guessit 4.5.4 returns the provider tag ("nf", "vp") as the title.
+ */
+const IPTV_PROVIDERS: Record<string, string> = {
+  'nf': 'Netflix', 'amz': 'Amazon Prime', 'a+': 'AppleTV', 'p+': 'Paramount+', 'max': 'Max', 'd+': 'Disney+',
+};
+const KEEP_IN_IPTV_LAYOUT = new Set([
+  'year', 'country', 'season', 'episode', 'language', 'subtitle_language', 'screen_size', 'episode_details',
+  'other', 'video_codec', 'audio_codec', 'source', 'container',
+]);
+class IptvLeadingEpisodeLayout extends Rule {
+  /** "nf", "4k-a+", "nf-do", "vp": known, short, or shaped like a provider code — not a show word. */
+  static isProviderTag(tag: string): boolean {
+    const t = tag.toLowerCase();
+    if (!/^[a-z0-9+]{1,4}(?:-[a-z0-9+]{1,4})?$/.test(t)) return false;
+    return t.split('-').some((p) => p in IPTV_PROVIDERS) || t.length <= 3 || /[+-]/.test(t);
+  }
+
+  static override priority = POST_PROCESS;
+  override priority = POST_PROCESS;
+  override consequence = [RemoveMatch, AppendMatch];
+
+  override when(matches: Matches, _context: Context): any {
+    const input: string = (matches as any).inputString ?? '';
+    const fileparts = ((matches as any).markers.named('path') as Match[]) ?? [];
+    const fp = fileparts[fileparts.length - 1];
+    const start = fp ? fp.start : 0;
+    const end = fp ? fp.end : input.length;
+    const part = input.slice(start, end);
+    // the provider tag is optional: "s01e08 - some show - s01e08 - chapter eight.strm"
+    // tag: "nf", "4k-a+", "nf-do"; tolerate a one-sided space around its dash ("nl -show", "nl- show")
+    let m = /^(s\d{1,2}e\d{1,3})[ ]+-[ ]+([a-z0-9+]{1,4}(?:-[a-z0-9+]{1,4})?)(?:[ ]+-[ ]*|[ ]*-[ ]+)(.+?)[ ]+-[ ]+\1(?=[ .]|$)(?:[ ]+-[ ]+(.+?))?(?:\.[a-z0-9]{2,4})?$/i.exec(part);
+    if (m && !IptvLeadingEpisodeLayout.isProviderTag(m[2])) m = null;
+    if (!m) {
+      const n = /^(s\d{1,2}e\d{1,3})[ ]+-[ ]+(.+?)[ ]+-[ ]+\1(?=[ .]|$)(?:[ ]+-[ ]+(.+?))?(?:\.[a-z0-9]{2,4})?$/i.exec(part);
+      if (!n) return false;
+      m = [n[0], n[1], '', n[2], n[3]] as unknown as RegExpExecArray;
+    }
+    const tag = m[2];
+    const showStart = start + m[0].indexOf(m[3], m[1].length + (tag ? tag.length + 3 : 2));
+    // trailing "(2025)" / "(us)" groups stay with year / country
+    const core = m[3].replace(/(?:\s*(?:\([^()]*\)|\b(?:4k|uhd|hd|fhd)\b))+\s*$/i, '');
+    if (!core.trim()) return false;
+    const showEnd = showStart + core.length;
+    const tagStart = tag ? start + m[0].indexOf(tag, m[1].length) : showStart;
+    const toRemove: Match[] = [];
+    const toAppend: Match[] = [];
+    for (const x of ((matches as any).range(tagStart, showEnd, (mm: Match) => !mm.private) as Match[]) ?? []) {
+      if (KEEP_IN_IPTV_LAYOUT.has(x.name ?? '')) continue;
+      toRemove.push(x);
+    }
+    // "(sa)" / "(kr)" after the show is a region code, never a release group
+    const segEnd = showStart + m[3].length;
+    for (const x of ((matches as any).range(showEnd, segEnd, (mm: Match) => mm.name === 'release_group') as Match[]) ?? []) {
+      if (!toRemove.includes(x)) toRemove.push(x);
+      // "(gb)" / "(uk)" / "(au)": an allowed country, read as one (Python does)
+      const cc = String(x.value ?? '').toLowerCase();
+      const country = ({ gb: 'GB', uk: 'GB', au: 'AU', us: 'US' } as Record<string, string>)[cc];
+      if (country && !((matches as any).named('country') as Match[])?.length) {
+        toAppend.push(new Match(x.start, x.end, { name: 'country', value: country, inputString: input }));
+      }
+    }
+    for (const x of ((matches as any).named('episode_title') as Match[]) ?? []) if (!toRemove.includes(x)) toRemove.push(x);
+    for (const x of ((matches as any).named('title') as Match[]) ?? []) if (!toRemove.includes(x)) toRemove.push(x);
+    toAppend.push(new Match(showStart, showEnd, { name: 'title', value: cleanup(core), inputString: input }));
+    if (m[4] && cleanup(m[4])) {
+      const etStart = start + part.lastIndexOf(m[4]);
+      for (const x of ((matches as any).range(etStart, etStart + m[4].length, (mm: Match) => !mm.private && !['container', 'mimetype'].includes(mm.name ?? '') && !KEEP_IN_IPTV_LAYOUT.has(mm.name ?? '')) as Match[]) ?? []) {
+        if (!toRemove.includes(x)) toRemove.push(x);
+      }
+      toAppend.push(new Match(etStart, etStart + m[4].length, { name: 'episode_title', value: cleanup(m[4]), inputString: input }));
+    }
+    const service = tag ? tag.toLowerCase().split('-').map((t) => IPTV_PROVIDERS[t]).find(Boolean) : undefined;
+    if (service && !((matches as any).named('streaming_service') as Match[])?.length) {
+      toAppend.push(new Match(tagStart, tagStart + tag.length, { name: 'streaming_service', value: service, inputString: input }));
+    }
+    return [toRemove, toAppend];
+  }
+}
+
+/**
  * A title glued as "<original-language title> <romanized title>" — a leading
  * non-Latin script run in front of a Latin run — yields the Latin part as the
  * title and the original run as alternative_title (#890):
@@ -1578,7 +1749,7 @@ export function title(config: Record<string, unknown>): Rebulk {
     disabled: (context: Context) => isDisabled(context, 'title'),
   });
 
-  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, WordNumeralPartAtTitlePosition, BonusAtTitlePositionRule, LanguageWordInAnimeTitle, SplitOriginalScriptTitle, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle, BracketedTitleFallback, PreBracketJunkTitle, ParentheticalTitleYieldsToLeadBracket, TrimSeasonWordFromTitle);
+  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, WordNumeralPartAtTitlePosition, BonusAtTitlePositionRule, LanguageWordInAnimeTitle, SplitOriginalScriptTitle, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle, BracketedTitleFallback, PreBracketJunkTitle, ParentheticalTitleYieldsToLeadBracket, TrimSeasonWordFromTitle, IptvLeadingEpisodeLayout, LeadingNumberIsEpisode, QuotedSeriesThenEpisodeTitle);
 
   // Expected title functional pattern
   const expectedTitle = buildExpectedFunction('expected_title');

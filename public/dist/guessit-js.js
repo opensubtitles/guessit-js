@@ -2334,6 +2334,12 @@ function groups(config) {
         const stack = openings[endType];
         if (stack.length > 0) {
           const startIndex = stack.pop();
+          if (ch === "\u300D") {
+            const before = inputString[startIndex - 1];
+            const after = inputString[i + 1];
+            const glued = /* @__PURE__ */ __name((c) => c !== void 0 && !/[\s._\-\[\](){}【】（）+]/.test(c), "glued");
+            if (glued(after) || glued(before) && after !== void 0) continue;
+          }
           ret.push([startIndex, i + 1]);
         }
       }
@@ -3356,7 +3362,8 @@ function potentialBefore(i, inputString) {
 }
 __name(potentialBefore, "potentialBefore");
 function potentialAfter(i, inputString) {
-  return i + 2 >= inputString.length || inputString[i + 2] === inputString[i] && !seps.includes(inputString[i + 1]);
+  return i + 2 >= inputString.length || // upstream 4.5.3 (9d5a412): any separator after the next char, not only the same one
+  seps.includes(inputString[i + 2]) && !seps.includes(inputString[i + 1]);
 }
 __name(potentialAfter, "potentialAfter");
 function cleanup(inputString) {
@@ -3381,7 +3388,8 @@ function cleanup(inputString) {
     const replaceIndices = [];
     for (const pi of potentialIndices) {
       if (/\d/.test(inputString[pi - 1] ?? "") && !strip(inputString.slice(pi + 1), seps)) continue;
-      if (potentialIndices.includes(pi - 2) || potentialIndices.includes(pi + 2)) {
+      const ch = inputString[pi];
+      if ([pi - 2, pi + 2].some((nb) => potentialIndices.includes(nb) && inputString[nb] === ch)) {
         replaceIndices.push(pi);
       }
     }
@@ -3887,6 +3895,10 @@ function episodes(config) {
     { tags: ["SxxExx"], disabled: isSeasonEpisodeDisabled }
   );
   rebulk.regex(
+    buildOrPattern(episodeWords, "episodeMarker") + `[\\s._-]*#[\\s._-]*(?<season>\\d{1,3})\\.(?<episode>\\d{1,4})(?!\\d|\\.\\d)`,
+    { tags: ["SxxExx", "imdb-episode"], disabled: isSeasonEpisodeDisabled }
+  );
+  rebulk.regex(
     // The season half may not be the tail of an episode range: "s16e03-04.313"
     // must leave "04" to the SxxExx chain and "313" to the absolute-episode
     // range behind it, instead of reading "04.313" as season 4 (upstream #944).
@@ -3904,13 +3916,13 @@ function episodes(config) {
     }
   );
   rebulk.regex(
-    `(?<![a-zA-Z\\d])` + episodeWordPattern + `@?(?<episode>\\d+)(?:v(?<version>\\d+))?(?:@?` + ofWordPattern + `@?(?<count>\\d+))?`,
+    `(?<![a-zA-Z\\d])` + episodeWordPattern + `@?@?(?<episode>\\d+)(?:v(?<version>\\d+))?(?:@?` + ofWordPattern + `@?(?<count>\\d+))?`,
     {
       disabled: /* @__PURE__ */ __name((context) => context?.type === "episode" || isDisabled(context, "episode"), "disabled")
     }
   );
   rebulk.regex(
-    `(?<![a-zA-Z\\d])` + episodeWordPattern + `@?(?<episode>${numeral})(?:v(?<version>\\d+))?(?:@?` + ofWordPattern + `@?(?<count>\\d+))?`,
+    `(?<![a-zA-Z\\d])` + episodeWordPattern + `@?@?(?<episode>${numeral})(?:v(?<version>\\d+))?(?:@?` + ofWordPattern + `@?(?<count>\\d+))?`,
     {
       validator: { episode: validateRoman },
       formatter: { episode: parseNumber },
@@ -3985,6 +3997,14 @@ function episodes(config) {
   }).repeater("*");
   rebulk.regex(`v(?<version>\\d+)`, {
     formatter: { version: /* @__PURE__ */ __name((v) => parseInt(v, 10), "version") },
+    validator: {
+      version: /* @__PURE__ */ __name((m) => {
+        const inp = m.inputString ?? "";
+        const before = inp[m.start - 2];
+        const after = inp[m.end];
+        return (before === void 0 || seps.includes(before) || /\d/.test(before)) && (after === void 0 || seps.includes(after));
+      }, "version")
+    },
     disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "version"), "disabled")
   });
   rebulk.regex(
@@ -4027,7 +4047,9 @@ function episodes(config) {
     RemoveWeakInsideTitleRule,
     AbsoluteEpisodeInGroupRule,
     RemoveInvalidSeasonRule,
-    RemoveInvalidEpisodeRule
+    RemoveInvalidEpisodeRule,
+    EpisodeEndingTitleBeforeCreditsRule,
+    QuotedNumberIsTitleRule
   );
   return rebulk;
 }
@@ -4274,6 +4296,7 @@ var _AnimeTrailingEpisodeRule = class _AnimeTrailingEpisodeRule extends Rule {
       const m = /^(.*[^\W\d_])[\s._-]+(\d{1,3})$/.exec(input.slice(title2.start, title2.end));
       if (!m) continue;
       const numStart = title2.start + m[1].length + (m[0].length - m[1].length - m[2].length);
+      if (endsTitleBeforeCredits(matches, { start: numStart, end: title2.end })) continue;
       toRemove.push(title2);
       const newTitle = new Match(title2.start, title2.start + m[1].length, {
         name: "title",
@@ -4759,6 +4782,74 @@ var _RemoveInvalidEpisodeRule = class _RemoveInvalidEpisodeRule extends Rule {
 __name(_RemoveInvalidEpisodeRule, "RemoveInvalidEpisodeRule");
 _RemoveInvalidEpisodeRule.priority = 64;
 var RemoveInvalidEpisodeRule = _RemoveInvalidEpisodeRule;
+var _EpisodeEndingTitleBeforeCreditsRule = class _EpisodeEndingTitleBeforeCreditsRule extends Rule {
+  constructor() {
+    super(...arguments);
+    this.consequence = RemoveMatch;
+    this.priority = 64;
+  }
+  when(matches, _context) {
+    const toRemove = [];
+    for (const episode of matches.named?.("episode", (m) => !m.private) || []) {
+      if (typeof episode.value !== "number") continue;
+      if (!episode.tags?.some((t) => t.startsWith("weak"))) continue;
+      if (!endsTitleBeforeCredits(matches, episode)) continue;
+      if (episode.initiator && episode.initiator !== episode) {
+        toRemove.push(episode.initiator, ...episode.initiator.children || []);
+      } else {
+        toRemove.push(episode);
+      }
+    }
+    return toRemove.length > 0 ? toRemove : false;
+  }
+};
+__name(_EpisodeEndingTitleBeforeCreditsRule, "EpisodeEndingTitleBeforeCreditsRule");
+_EpisodeEndingTitleBeforeCreditsRule.priority = 64;
+var EpisodeEndingTitleBeforeCreditsRule = _EpisodeEndingTitleBeforeCreditsRule;
+function endsTitleBeforeCredits(matches, span) {
+  const input = matches.inputString ?? span.inputString ?? "";
+  const credits = (matches.range?.(span.end, input.length, (m) => m.name === "other" && (m.value === "Opening Credits" || m.value === "Ending Credits")) ?? []).sort((a, b) => a.start - b.start)[0];
+  if (!credits) return false;
+  const gap = input.slice(span.end, credits.start);
+  if (strip2(gap, seps) || !gap.includes("-")) return false;
+  const filepart = (matches.markers?.range?.(0, span.start + 1, (mk) => mk.name === "path") ?? []).filter((mk) => mk.start <= span.start && mk.end >= span.end)[0];
+  const sepsNoDash = seps.replace("-", "");
+  let before = input.slice(filepart ? filepart.start : 0, span.start);
+  let end = before.length;
+  while (end > 0 && sepsNoDash.includes(before[end - 1])) end--;
+  return !before.slice(0, end).endsWith("-");
+}
+__name(endsTitleBeforeCredits, "endsTitleBeforeCredits");
+function strip2(s, chars) {
+  let a = 0, b = s.length;
+  while (a < b && chars.includes(s[a])) a++;
+  while (b > a && chars.includes(s[b - 1])) b--;
+  return s.slice(a, b);
+}
+__name(strip2, "strip");
+var _QuotedNumberIsTitleRule = class _QuotedNumberIsTitleRule extends Rule {
+  constructor() {
+    super(...arguments);
+    this.consequence = RemoveMatch;
+    this.priority = 64;
+  }
+  when(matches, _context) {
+    const input = matches.inputString ?? "";
+    const out = [];
+    for (const ep of matches.named?.("episode", (m) => !m.private) || []) {
+      if (!ep.tags?.some((t) => t.startsWith("weak"))) continue;
+      const close = input[0] === '"' ? input.indexOf('"', 1) : -1;
+      const inLeadingQuote = close > 0 && ep.start > 0 && ep.end <= close;
+      if (!inLeadingQuote && (input[ep.start - 1] !== '"' || input[ep.end] !== '"')) continue;
+      if (ep.initiator && ep.initiator !== ep) out.push(ep.initiator, ...ep.initiator.children || []);
+      else out.push(ep);
+    }
+    return out.length ? out : false;
+  }
+};
+__name(_QuotedNumberIsTitleRule, "QuotedNumberIsTitleRule");
+_QuotedNumberIsTitleRule.priority = 64;
+var QuotedNumberIsTitleRule = _QuotedNumberIsTitleRule;
 var _RemoveWeakDuplicateRule = class _RemoveWeakDuplicateRule extends Rule {
   constructor() {
     super(...arguments);
@@ -5234,7 +5325,7 @@ function source(config) {
     ...buildSourcePattern(["WEB-?DL", "WEB-?U?HD", "DL-?WEB", "DL(?=-?Mux)"]),
     { value: { source: "Web" } }
   );
-  rebulk.regex("(WEB)", { value: "Web", tags: "weak.source" });
+  rebulk.regex("(WEB)", { value: "Web", tags: ["weak.source", "streaming_service.suffix"] });
   rebulk.regex(
     ...buildSourcePattern(["HD-?DVD"], "", optional(ripSuffix)),
     { value: { source: "HD-DVD", other: "Rip" } }
@@ -5683,7 +5774,7 @@ function processOption(name, value) {
 }
 __name(processOption, "processOption");
 function buildEntryDecl(entry, options, value) {
-  const defaultOpts = options[Symbol.for("default")] || options["__default__"] || {};
+  const defaultOpts = options[/* @__PURE__ */ Symbol.for("default")] || options["__default__"] || {};
   const entryDecl = { ...defaultOpts };
   if (!value.startsWith("_")) {
     entryDecl["value"] = value;
@@ -5710,7 +5801,7 @@ function buildEntryDecl(entry, options, value) {
 }
 __name(buildEntryDecl, "buildEntryDecl");
 function loadPatterns(rebulk, patternType, patterns, options = {}) {
-  const defaultOpts = options[Symbol.for("default")] || options["__default__"] || {};
+  const defaultOpts = options[/* @__PURE__ */ Symbol.for("default")] || options["__default__"] || {};
   const itemOptions = { ...defaultOpts };
   const patternTypeOption = options[patternType];
   if (patternTypeOption) Object.assign(itemOptions, patternTypeOption);
@@ -5744,7 +5835,7 @@ function loadConfigPatterns(rebulk, config, options = {}) {
         const patternsEntryDecl = { ...entryDecl };
         for (const pt of PATTERN_TYPES) delete patternsEntryDecl[pt];
         const currentPatternOptions = { ...options };
-        currentPatternOptions[Symbol.for("default")] = patternsEntryDecl;
+        currentPatternOptions[/* @__PURE__ */ Symbol.for("default")] = patternsEntryDecl;
         currentPatternOptions["__default__"] = patternsEntryDecl;
         loadPatterns(rebulk, patternType, patterns, currentPatternOptions);
       }
@@ -6040,8 +6131,8 @@ var _AudioChannelsValidatorRule = class _AudioChannelsValidatorRule extends Rule
     const ret = [];
     const weakChannels = matches.named("audio_channels", (m) => m.tags.includes("weak-audio_channels")) ?? [];
     for (const channels of weakChannels) {
-      const prevCodec = matches.previous(channels, (m) => m.name === `audio_codec`);
-      if (!prevCodec) {
+      const prevCodec = matches.previous(channels, (m) => m.name === `audio_codec`, 0);
+      if (!prevCodec || Array.isArray(prevCodec) && prevCodec.length === 0) {
         ret.push(channels);
       }
     }
@@ -7024,6 +7115,7 @@ var _TitleBaseRule = class _TitleBaseRule extends Rule {
     if (!(match.name === "language" || match.name === "country" || match.name === "episode_details")) {
       return false;
     }
+    if (match.tags?.includes("iptv-prefix")) return false;
     const raw = match.raw ?? "";
     if (match.end - match.start > 3 && raw !== "" && raw === raw.toUpperCase() && raw !== raw.toLowerCase()) {
       return false;
@@ -7720,6 +7812,169 @@ __name(_TitleWordAtTitlePosition, "TitleWordAtTitlePosition");
 _TitleWordAtTitlePosition.priority = 64;
 var TitleWordAtTitlePosition = _TitleWordAtTitlePosition;
 var NON_LATIN_SCRIPT_RE = /[\u0370-\u03FF\u0400-\u04FF\u0590-\u05FF\u0600-\u06FF\u0E00-\u0E7F\u3000-\u303F\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uAC00-\uD7AF\uFF00-\uFFEF]/;
+var _QuotedSeriesThenEpisodeTitle = class _QuotedSeriesThenEpisodeTitle extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = -100;
+    this.consequence = [RemoveMatch, AppendMatch];
+  }
+  when(matches, _context) {
+    const input = matches.inputString ?? "";
+    if (input[0] !== '"') return false;
+    const close = input.indexOf('"', 1);
+    if (close < 2) return false;
+    const title2 = matches.named("title")?.[0];
+    if (!title2 || title2.start !== 0 || title2.end <= close + 1) return false;
+    if (matches.named("episode_title")?.length) return false;
+    const series = cleanup(input.slice(1, close));
+    let restStart = close + 1;
+    while (restStart < title2.end && /\s/.test(input[restStart])) restStart++;
+    const rest = cleanup(input.slice(restStart, title2.end));
+    if (!series || !rest) return false;
+    const se = /^(\d{1,3})\.(\d{1,4})$/.exec(rest);
+    if (se && !matches.named("episode")?.length) {
+      const dot = restStart + se[1].length;
+      return [[title2], [
+        new Match(1, close, { name: "title", value: series, inputString: input, tags: ["imdb-quoted-series"] }),
+        new Match(restStart, dot, { name: "season", value: parseInt(se[1], 10), inputString: input }),
+        new Match(dot + 1, title2.end, { name: "episode", value: parseInt(se[2], 10), inputString: input })
+      ]];
+    }
+    return [[title2], [
+      new Match(1, close, { name: "title", value: series, inputString: input, tags: ["imdb-quoted-series"] }),
+      new Match(restStart, title2.end, { name: "episode_title", value: rest, inputString: input })
+    ]];
+  }
+};
+__name(_QuotedSeriesThenEpisodeTitle, "QuotedSeriesThenEpisodeTitle");
+_QuotedSeriesThenEpisodeTitle.priority = -100;
+var QuotedSeriesThenEpisodeTitle = _QuotedSeriesThenEpisodeTitle;
+var _LeadingNumberIsEpisode = class _LeadingNumberIsEpisode extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = -100;
+    this.consequence = [RemoveMatch, AppendMatch];
+  }
+  when(matches, _context) {
+    const input = matches.inputString ?? "";
+    for (const title2 of matches.named("title") ?? []) {
+      const fp = matches.markers.atMatch(title2, (m2) => m2.name === "path", 0);
+      const fpStart = fp ? fp.start : 0;
+      if (title2.start !== fpStart) continue;
+      const raw = input.slice(title2.start, title2.end);
+      const list = /^(\d{1,3})\.[ ]+(?=\S)/.exec(raw);
+      const plain = /^(\d{1,3})[ ]+(?=\S)/.exec(raw);
+      const m = list ?? plain;
+      if (!m) continue;
+      const n = parseInt(m[1], 10);
+      const episodes2 = matches.named("episode", (e) => !e.private) ?? [];
+      const repeats = episodes2.some((e) => e.value === n && e.start >= title2.end && !e.tags?.includes("SxxExx"));
+      if (!list && !repeats) continue;
+      if (list && episodes2.length && !repeats) continue;
+      const rest = cleanup(raw.slice(m[0].length));
+      if (!rest) continue;
+      const toAppend = [new Match(title2.start + m[0].length, title2.end, { name: "title", value: rest, inputString: input })];
+      if (!episodes2.length) {
+        toAppend.push(new Match(title2.start, title2.start + m[1].length, { name: "episode", value: n, inputString: input, tags: ["list-number"] }));
+      }
+      return [[title2], toAppend];
+    }
+    return false;
+  }
+};
+__name(_LeadingNumberIsEpisode, "LeadingNumberIsEpisode");
+_LeadingNumberIsEpisode.priority = -100;
+var LeadingNumberIsEpisode = _LeadingNumberIsEpisode;
+var IPTV_PROVIDERS = {
+  "nf": "Netflix",
+  "amz": "Amazon Prime",
+  "a+": "AppleTV",
+  "p+": "Paramount+",
+  "max": "Max",
+  "d+": "Disney+"
+};
+var KEEP_IN_IPTV_LAYOUT = /* @__PURE__ */ new Set([
+  "year",
+  "country",
+  "season",
+  "episode",
+  "language",
+  "subtitle_language",
+  "screen_size",
+  "episode_details",
+  "other",
+  "video_codec",
+  "audio_codec",
+  "source",
+  "container"
+]);
+var _IptvLeadingEpisodeLayout = class _IptvLeadingEpisodeLayout extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = POST_PROCESS;
+    this.consequence = [RemoveMatch, AppendMatch];
+  }
+  /** "nf", "4k-a+", "nf-do", "vp": known, short, or shaped like a provider code — not a show word. */
+  static isProviderTag(tag) {
+    const t = tag.toLowerCase();
+    if (!/^[a-z0-9+]{1,4}(?:-[a-z0-9+]{1,4})?$/.test(t)) return false;
+    return t.split("-").some((p) => p in IPTV_PROVIDERS) || t.length <= 3 || /[+-]/.test(t);
+  }
+  when(matches, _context) {
+    const input = matches.inputString ?? "";
+    const fileparts = matches.markers.named("path") ?? [];
+    const fp = fileparts[fileparts.length - 1];
+    const start = fp ? fp.start : 0;
+    const end = fp ? fp.end : input.length;
+    const part2 = input.slice(start, end);
+    let m = /^(s\d{1,2}e\d{1,3})[ ]+-[ ]+([a-z0-9+]{1,4}(?:-[a-z0-9+]{1,4})?)(?:[ ]+-[ ]*|[ ]*-[ ]+)(.+?)[ ]+-[ ]+\1(?=[ .]|$)(?:[ ]+-[ ]+(.+?))?(?:\.[a-z0-9]{2,4})?$/i.exec(part2);
+    if (m && !_IptvLeadingEpisodeLayout.isProviderTag(m[2])) m = null;
+    if (!m) {
+      const n = /^(s\d{1,2}e\d{1,3})[ ]+-[ ]+(.+?)[ ]+-[ ]+\1(?=[ .]|$)(?:[ ]+-[ ]+(.+?))?(?:\.[a-z0-9]{2,4})?$/i.exec(part2);
+      if (!n) return false;
+      m = [n[0], n[1], "", n[2], n[3]];
+    }
+    const tag = m[2];
+    const showStart = start + m[0].indexOf(m[3], m[1].length + (tag ? tag.length + 3 : 2));
+    const core = m[3].replace(/(?:\s*(?:\([^()]*\)|\b(?:4k|uhd|hd|fhd)\b))+\s*$/i, "");
+    if (!core.trim()) return false;
+    const showEnd = showStart + core.length;
+    const tagStart = tag ? start + m[0].indexOf(tag, m[1].length) : showStart;
+    const toRemove = [];
+    const toAppend = [];
+    for (const x of matches.range(tagStart, showEnd, (mm) => !mm.private) ?? []) {
+      if (KEEP_IN_IPTV_LAYOUT.has(x.name ?? "")) continue;
+      toRemove.push(x);
+    }
+    const segEnd = showStart + m[3].length;
+    for (const x of matches.range(showEnd, segEnd, (mm) => mm.name === "release_group") ?? []) {
+      if (!toRemove.includes(x)) toRemove.push(x);
+      const cc = String(x.value ?? "").toLowerCase();
+      const country2 = { gb: "GB", uk: "GB", au: "AU", us: "US" }[cc];
+      if (country2 && !matches.named("country")?.length) {
+        toAppend.push(new Match(x.start, x.end, { name: "country", value: country2, inputString: input }));
+      }
+    }
+    for (const x of matches.named("episode_title") ?? []) if (!toRemove.includes(x)) toRemove.push(x);
+    for (const x of matches.named("title") ?? []) if (!toRemove.includes(x)) toRemove.push(x);
+    toAppend.push(new Match(showStart, showEnd, { name: "title", value: cleanup(core), inputString: input }));
+    if (m[4] && cleanup(m[4])) {
+      const etStart = start + part2.lastIndexOf(m[4]);
+      for (const x of matches.range(etStart, etStart + m[4].length, (mm) => !mm.private && !["container", "mimetype"].includes(mm.name ?? "") && !KEEP_IN_IPTV_LAYOUT.has(mm.name ?? "")) ?? []) {
+        if (!toRemove.includes(x)) toRemove.push(x);
+      }
+      toAppend.push(new Match(etStart, etStart + m[4].length, { name: "episode_title", value: cleanup(m[4]), inputString: input }));
+    }
+    const service = tag ? tag.toLowerCase().split("-").map((t) => IPTV_PROVIDERS[t]).find(Boolean) : void 0;
+    if (service && !matches.named("streaming_service")?.length) {
+      toAppend.push(new Match(tagStart, tagStart + tag.length, { name: "streaming_service", value: service, inputString: input }));
+    }
+    return [toRemove, toAppend];
+  }
+};
+__name(_IptvLeadingEpisodeLayout, "IptvLeadingEpisodeLayout");
+_IptvLeadingEpisodeLayout.priority = POST_PROCESS;
+var IptvLeadingEpisodeLayout = _IptvLeadingEpisodeLayout;
 var _SplitOriginalScriptTitle = class _SplitOriginalScriptTitle extends Rule {
   constructor() {
     super(...arguments);
@@ -8273,7 +8528,7 @@ function title(config) {
   const rebulk = new Rebulk({
     disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "title"), "disabled")
   });
-  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, WordNumeralPartAtTitlePosition, BonusAtTitlePositionRule, LanguageWordInAnimeTitle, SplitOriginalScriptTitle, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle, BracketedTitleFallback, PreBracketJunkTitle, ParentheticalTitleYieldsToLeadBracket, TrimSeasonWordFromTitle);
+  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, WordNumeralPartAtTitlePosition, BonusAtTitlePositionRule, LanguageWordInAnimeTitle, SplitOriginalScriptTitle, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle, BracketedTitleFallback, PreBracketJunkTitle, ParentheticalTitleYieldsToLeadBracket, TrimSeasonWordFromTitle, IptvLeadingEpisodeLayout, LeadingNumberIsEpisode, QuotedSeriesThenEpisodeTitle);
   const expectedTitle = buildExpectedFunction("expected_title");
   rebulk.functional(expectedTitle, {
     name: "title",
@@ -8354,11 +8609,44 @@ function episodeTitle(config) {
     RemoveHashFilepartJunk,
     RemoveTailEpisodeTitle,
     FormationRunEpisodeTitle,
-    RenameEpisodeTitleWhenMovieType
+    RenameEpisodeTitleWhenMovieType,
+    JoinDashedEpisodeTitleTail
   );
   return rebulk;
 }
 __name(episodeTitle, "episodeTitle");
+var _JoinDashedEpisodeTitleTail = class _JoinDashedEpisodeTitleTail extends Rule {
+  constructor() {
+    super(...arguments);
+    this.priority = POST_PROCESS;
+    this.consequence = [RemoveMatch, AppendMatch];
+  }
+  when(matches, _context) {
+    const input = matches.inputString ?? "";
+    const toRemove = [];
+    const toAppend = [];
+    for (const et of matches.named("episode_title") ?? []) {
+      if (toRemove.includes(et)) continue;
+      const filepart = matches.markers.atMatch(et, (m) => m.name === "path", 0);
+      const fpEnd = filepart ? filepart.end : input.length;
+      const after = matches.range(et.end, fpEnd, (m) => !m.private) ?? [];
+      const tail = after.filter((m) => m.name !== "container" && m.name !== "mimetype" && m.name !== "type");
+      if (tail.length !== 1) continue;
+      const t = tail[0];
+      if (t.name !== "alternative_title" && t.name !== "episode_title") continue;
+      const gap = input.slice(et.end, t.start);
+      if (!/^\s*-\s*$/.test(gap)) continue;
+      const value = cleanup(input.slice(et.start, t.end));
+      if (!value) continue;
+      toRemove.push(et, t);
+      toAppend.push(new Match(et.start, t.end, { name: "episode_title", value, inputString: input }));
+    }
+    return toRemove.length ? [toRemove, toAppend] : false;
+  }
+};
+__name(_JoinDashedEpisodeTitleTail, "JoinDashedEpisodeTitleTail");
+_JoinDashedEpisodeTitleTail.priority = POST_PROCESS;
+var JoinDashedEpisodeTitleTail = _JoinDashedEpisodeTitleTail;
 var EPISODE_MARKER_WORDS = /* @__PURE__ */ new Set([
   "ep",
   "eps",
@@ -8410,14 +8698,14 @@ var _RemoveHashFilepartJunk = class _RemoveHashFilepartJunk extends Rule {
   }
   when(matches, _context) {
     const inp = matches.inputString ?? "";
-    const strip2 = /* @__PURE__ */ new Set(["episode_title", "version", "episode_details", "alternative_title"]);
+    const strip3 = /* @__PURE__ */ new Set(["episode_title", "version", "episode_details", "alternative_title"]);
     const out = [];
     for (const fp of matches.markers.named("path")) {
       let text = inp.slice(fp.start, fp.end);
       const cont = matches.range(fp.start, fp.end, (m) => m.name === "container", 0);
       if (cont) text = inp.slice(fp.start, cont.start);
       if (!_RemoveHashFilepartJunk.isHash(text.replace(/[.\s]+$/, ""))) continue;
-      for (const m of matches.range(fp.start, fp.end, (m2) => strip2.has(m2.name ?? ""))) {
+      for (const m of matches.range(fp.start, fp.end, (m2) => strip3.has(m2.name ?? ""))) {
         out.push(m);
       }
     }
@@ -9314,13 +9602,15 @@ var OPENSUBTITLES_MAP = buildLookupMap("opensubtitles");
 var GUESSIT_SYNONYMS = {
   // 'gre' is the ISO 639-2 bibliographic code — what .gre.srt files carry
   "ell": ["gr", "gre", "greek"],
-  "spa": ["esp", "espa\xF1ol", "espanol"],
-  "fra": ["fran\xE7ais", "vf", "vff", "vfi", "vfq"],
+  // castellano = Castilian (Spanish from Spain), not Catalan — upstream develop b9bfab4 (#1006)
+  "spa": ["esp", "espa\xF1ol", "espanol", "castellano", "espanol castellano", "espa\xF1ol castellano"],
+  // VOF (version originale française), VF2 (both French dubs) — upstream 4.5.4 4cb3ffc (#1001)
+  "fra": ["fran\xE7ais", "vf", "vff", "vfi", "vfq", "vof", "vf2"],
   "swe": ["se"],
   "por_BR": ["po", "pb", "pob", "ptbr", "br", "brazilian"],
   "deu_CH": ["swissgerman", "swiss german"],
   "nld_BE": ["flemish"],
-  "cat": ["catal\xE0", "castellano", "espanol castellano", "espa\xF1ol castellano"],
+  "cat": ["catal\xE0"],
   "ces": ["cz"],
   "ukr": ["ua"],
   // "cn" is the country, not the language, and it collides with Cartoon Network
@@ -9335,6 +9625,46 @@ var COUNTRY_ALPHA2 = new Set(
 );
 
 // src/language/index.ts
+var ISO15924_SCRIPTS = /* @__PURE__ */ new Set([
+  "arab",
+  "armn",
+  "beng",
+  "bopo",
+  "brai",
+  "cyrl",
+  "deva",
+  "ethi",
+  "geor",
+  "grek",
+  "gujr",
+  "guru",
+  "hang",
+  "hani",
+  "hans",
+  "hant",
+  "hebr",
+  "hira",
+  "hrkt",
+  "jpan",
+  "kana",
+  "khmr",
+  "knda",
+  "kore",
+  "laoo",
+  "latn",
+  "mlym",
+  "mong",
+  "mymr",
+  "orya",
+  "sinh",
+  "syrc",
+  "taml",
+  "telu",
+  "thaa",
+  "thai",
+  "tibt",
+  "zyyy"
+]);
 var _Language = class _Language {
   constructor(alpha3, country2, script) {
     this.alpha3 = alpha3;
@@ -9487,7 +9817,7 @@ var _Language = class _Language {
       if (byAlpha2 && parts.length >= 2) {
         if (parts[1].length === 2 && COUNTRY_ALPHA2.has(parts[1].toUpperCase())) {
           byAlpha2.country = parts[1].toUpperCase();
-        } else if (parts[1].length === 4 && /^[a-z]{4}$/.test(parts[1])) {
+        } else if (parts[1].length === 4 && ISO15924_SCRIPTS.has(parts[1])) {
           byAlpha2.script = parts[1].charAt(0).toUpperCase() + parts[1].slice(1);
         } else {
           return void 0;
@@ -9576,6 +9906,31 @@ var _LanguageWord = class _LanguageWord {
 };
 __name(_LanguageWord, "LanguageWord");
 var LanguageWord = _LanguageWord;
+var PYTHON_DEFAULT_LANGUAGES = /* @__PURE__ */ new Set([
+  "ca",
+  "cs",
+  "de",
+  "en",
+  "es",
+  "fr",
+  "he",
+  "hi",
+  "hu",
+  "it",
+  "ja",
+  "ko",
+  "mul",
+  "nl",
+  "no",
+  "pl",
+  "pt",
+  "ro",
+  "ru",
+  "sv",
+  "te",
+  "uk",
+  "und"
+]);
 var _LanguageFinder = class _LanguageFinder {
   constructor(context, subtitlePrefixes, subtitleSuffixes, langPrefixes, langSuffixes, weakAffixes, commonWords) {
     const allowedLanguagesArray = context?.allowed_languages || [];
@@ -9811,6 +10166,7 @@ var _LanguageFinder = class _LanguageFinder {
    */
   createLanguageMatch(key, word) {
     const lang = this.parseLanguage(word.value.toLowerCase());
+    if (lang && !this.strongEnough(key, word, lang)) return void 0;
     if (lang) {
       return {
         propertyName: key,
@@ -9819,6 +10175,27 @@ var _LanguageFinder = class _LanguageFinder {
       };
     }
     return void 0;
+  }
+  /**
+   * guessit-js allows more languages than Python guessit (Danish, Tamil, Arabic, …). For
+   * those extra languages a bare 2/3-letter code in free text is far more often a word
+   * ("Kaizoku-dan", "Ben 10", "of ice and men", "cerebro del mal", "dear chi") than a
+   * language tag, so only strong forms count: the full name ("Danish", "Tamil"), or a
+   * code right before a subtitle extension ("Movie.da.srt"). Python's own default
+   * languages keep their usual detection.
+   */
+  strongEnough(key, word, lang) {
+    const alpha2 = (lang.getAlpha2() ?? "").toLowerCase();
+    if (!alpha2 || PYTHON_DEFAULT_LANGUAGES.has(alpha2)) return true;
+    const raw = word.value.trim();
+    if (raw.length > 3) return true;
+    const pre = word.inputString[word.start - 1] ?? "";
+    const post = word.inputString[word.end] ?? "";
+    if ("[(|".includes(pre) && pre !== "" && "])|".includes(post) && post !== "") return true;
+    const after = word.inputString.slice(word.end).toLowerCase();
+    const ext = /^[.\s_-]*\.?([a-z0-9]{2,4})$/.exec(after)?.[1];
+    if (ext && SubtitleExtensionRule.SUBTITLE_EXTENSIONS.has(ext)) return true;
+    return key === "subtitle_language" && raw.length === 2;
   }
   /**
    * Parse a language word into a Language object
@@ -10177,6 +10554,38 @@ function language(config, commonWords) {
       disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "language"), "disabled")
     });
   }
+  rebulk.regex(
+    `(?:^|(?<=[\\/]))[ \\t+]*(?<code>[a-z]{2})[ \\t+]*[\u2605\u2606\u258E\u258C|:][ \\t+]+(?=[^\\s+])`,
+    {
+      name: "language",
+      ignoreCase: true,
+      tags: ["iptv-prefix"],
+      children: false,
+      validator: /* @__PURE__ */ __name((m) => {
+        const code = /([a-z]{2})/i.exec(m.raw ?? m.value ?? "")?.[1]?.toLowerCase() ?? "";
+        return code !== "uk" && !!Language.fromAlpha2(code);
+      }, "validator"),
+      formatter: /* @__PURE__ */ __name((raw) => Language.fromAlpha2(/([a-z]{2})/i.exec(raw)[1].toLowerCase()), "formatter"),
+      disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "language"), "disabled")
+    }
+  );
+  rebulk.regex(
+    `^[ \\t+]*(?<code>[a-z]{2})(?:-[a-z0-9]{1,4}){1,2}[ \\t+]+-[ \\t+]+(?=[^\\s+])`,
+    {
+      name: "language",
+      ignoreCase: true,
+      tags: ["iptv-prefix"],
+      children: false,
+      // "en-us - …": the region suffix is part of the prefix, not a separate country
+      conflictSolver: /* @__PURE__ */ __name((_match, other2) => other2.name === "country" ? other2 : "__default__", "conflictSolver"),
+      validator: /* @__PURE__ */ __name((m) => {
+        const code = /^\s*([a-z]{2})/i.exec(m.raw ?? "")?.[1]?.toLowerCase() ?? "";
+        return code !== "uk" && !!Language.fromAlpha2(code);
+      }, "validator"),
+      formatter: /* @__PURE__ */ __name((raw) => Language.fromAlpha2(/^\s*([a-z]{2})/i.exec(raw)[1].toLowerCase()), "formatter"),
+      disabled: /* @__PURE__ */ __name((context) => isDisabled(context, "language"), "disabled")
+    }
+  );
   rebulk.functional(
     (input, context) => {
       const finder = new LanguageFinder(
@@ -10209,6 +10618,30 @@ function language(config, commonWords) {
   return rebulk;
 }
 __name(language, "language");
+var LANGUAGE_CONFIRMING_WORDS = /* @__PURE__ */ new Set([
+  "dub",
+  "dubs",
+  "dubbed",
+  "dubbing",
+  "sub",
+  "subs",
+  "subbed",
+  "subtitle",
+  "subtitles",
+  "subtitled",
+  "audio",
+  "version",
+  "dl",
+  "ac3",
+  "aac",
+  "dts",
+  "track",
+  "tracks",
+  "forced",
+  "sdh",
+  "hardsub",
+  "softsub"
+]);
 var _RemoveDashGluedBibliographicCode = class _RemoveDashGluedBibliographicCode extends Rule {
   constructor() {
     super(...arguments);
@@ -10230,6 +10663,16 @@ var _RemoveDashGluedBibliographicCode = class _RemoveDashGluedBibliographicCode 
     for (const match of matches.named("subtitle_language") ?? []) {
       if (!_RemoveDashGluedBibliographicCode.isBibliographicOnly(String(match.raw ?? ""))) continue;
       if (input[match.start - 1] === "-") out.push(match);
+    }
+    for (const match of matches.named("language") ?? []) {
+      const raw = String(match.raw ?? "");
+      if (raw.length < 4 || raw !== raw.toLowerCase() || out.includes(match)) continue;
+      if (input[match.end] !== "-") continue;
+      const word = /^-([a-z]{3,})(?![a-z])/.exec(input.slice(match.end))?.[1];
+      if (!word || LANGUAGE_CONFIRMING_WORDS.has(word)) continue;
+      const claimed = matches.range(match.end + 1, match.end + 1 + word.length, (m) => !m.private) ?? [];
+      if (claimed.length) continue;
+      out.push(match);
     }
     return out.length ? out : false;
   }
@@ -10366,6 +10809,8 @@ var _RemoveEncodingTagCountry = class _RemoveEncodingTagCountry extends Rule {
       const group = matches.markers.atMatch(match, (m) => m.name === "group", 0);
       if (!group) continue;
       const inner = (matches.inputString ?? "").slice(group.start + 1, group.end - 1).trim();
+      const opener = (matches.inputString ?? "")[group.start];
+      if (opener === "(" || opener === "\uFF08") continue;
       if (/^gbk?$/i.test(inner)) out.push(match);
     }
     return out.length ? out : false;
@@ -10411,7 +10856,8 @@ function releaseGroup(config) {
   const groupnameSeps = seps.split("").filter((c) => !groupnameIgnoreSeps.includes(c)).join("");
   function cleanGroupname(str) {
     let result = strip(str, groupnameSeps);
-    const containsIgnored = groupnameIgnoreSeps.split("").some((c) => result.includes(c));
+    const inner = strip(result, groupnameIgnoreSeps);
+    const containsIgnored = groupnameIgnoreSeps.split("").some((c) => inner.includes(c));
     const startsWithIgnored = groupnameIgnoreSeps.split("").some((c) => result.startsWith(c));
     const endsWithIgnored = groupnameIgnoreSeps.split("").some((c) => result.endsWith(c));
     if (!(startsWithIgnored && endsWithIgnored) && !containsIgnored) {
@@ -10968,6 +11414,10 @@ var _ValidateStreamingService = class _ValidateStreamingService extends Rule {
     const inp = matches.inputString || "";
     for (const service of allServices) {
       const rawLen = (service.raw ?? "").length;
+      if ((service.raw ?? "").toLowerCase() === "svt" && /^[-_. ]?av-?1/i.test(inp.slice(service.end))) {
+        toRemove.push(service);
+        continue;
+      }
       if (rawLen <= 3) {
         const charAfter = inp[service.end];
         const charBefore = inp[service.start - 1];
@@ -12333,6 +12783,9 @@ var _TypeProcessor = class _TypeProcessor extends Rule {
   when(matches, context) {
     const optionType = context?.["type"];
     if (optionType) return optionType;
+    if ((matches.named("title", (m) => m.tags.includes("imdb-quoted-series")) ?? []).length) {
+      return "episode";
+    }
     const episode = matches.named("episode");
     const season = matches.named("season");
     const absoluteEpisode = matches.named("absolute_episode");
@@ -13727,14 +14180,19 @@ var options_default = {
         spa: [
           "esp",
           "espa\xF1ol",
-          "espanol"
+          "espanol",
+          "castellano",
+          "espanol castellano",
+          "espa\xF1ol castellano"
         ],
         fra: [
           "fran\xE7ais",
           "vf",
           "vff",
           "vfi",
-          "vfq"
+          "vfq",
+          "vof",
+          "vf2"
         ],
         swe: [
           "se"
@@ -13755,10 +14213,7 @@ var options_default = {
           "flemish"
         ],
         cat: [
-          "catal\xE0",
-          "castellano",
-          "espanol castellano",
-          "espa\xF1ol castellano"
+          "catal\xE0"
         ],
         ces: [
           "cz"
@@ -16045,6 +16500,21 @@ var _GuessItApi = class _GuessItApi {
         return true;
       });
       result[key] = deduped.length === 1 ? deduped[0] : deduped;
+    }
+    if (typeof result["title"] === "string") {
+      const q = /^"([^"]+)"$/.exec(result["title"]);
+      if (q && q[1].trim()) result["title"] = q[1].trim();
+    }
+    if (typeof result["title"] === "string") {
+      const key = /* @__PURE__ */ __name((v) => String(v).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(), "key");
+      const t = key(result["title"]);
+      for (const field of ["alternative_title", "episode_title"]) {
+        const v = result[field];
+        if (v === void 0) continue;
+        const kept = (Array.isArray(v) ? v : [v]).filter((x) => key(x) !== t);
+        if (kept.length === 0) delete result[field];
+        else result[field] = kept.length === 1 ? kept[0] : kept;
+      }
     }
     if (mergedOptions["outputInputString"] || mergedOptions["output_input_string"]) {
       result["input_string"] = matches.inputString;

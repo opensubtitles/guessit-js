@@ -595,3 +595,41 @@
 : title: Hellboy
   year: 2019
   release_group: NOXXUS
+
+# upstream 4.5.4 (1244783, #996) — a number ending the title before a creditless opening/ending stays in the title
+? '[DB]86_-_NCED01_(10bit_BD1080p_x265).mkv'
+: title: '86'
+  other: [Ending Credits, Creditless]
+  credits_number: '1'
+  -episode: 86
+
+? '[DB]86_-_NCOP01_(10bit_BD1080p_x265).mkv'
+: title: '86'
+  other: [Opening Credits, Creditless]
+  credits_number: '1'
+  -episode: 86
+
+? '[DB]Mob Psycho 100_-_NCED01_(10bit_BD1080p_x265).mkv'
+: title: Mob Psycho 100
+  other: [Ending Credits, Creditless]
+  credits_number: '1'
+  -episode: 100
+
+? '[SubsPlease] 86 - NCOP (1080p).mkv'
+: title: '86'
+  other: [Opening Credits, Creditless]
+  screen_size: 1080p
+  release_group: SubsPlease
+  -episode: 86
+
+? '[Group] Show - 12 - NCED (1080p).mkv'
+: title: Show
+  episode: 12
+  other: [Ending Credits, Creditless]
+
+# guard for the port above: an explicit S00E00 keeps its episode slot before a creditless marker
+? some anime - s00e00 - ncop 1c some saga (1080p).mkv
+: title: some anime
+  season: 0
+  episode: 0
+  type: episode

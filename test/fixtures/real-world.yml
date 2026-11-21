@@ -1,0 +1,203 @@
+# Regression cases for patterns seen in production traffic (2026-11 replay).
+# Names are synthetic or sanitised — never raw log data.
+
+# IPTV prefixes that are NOT languages stay in the title
+? 'csi: some city s01e01'
+: title: 'csi: some city'
+  season: 1
+  episode: 1
+  -language: ces
+
+? law & order s01e01
+: title: law & order
+  -language: law
+
+# "UK:" in IPTV lists is the country, not Ukrainian
+? 'uk: some channel hd'
+: title: some channel
+  country: GB
+  -language: ukr
+
+# a language code inside a normal release name is untouched
+? Some.Movie.2020.en.srt
+: title: Some Movie
+  year: 2020
+  subtitle_language: en
+
+# IPTV "<lang>:" prefix (Python agrees)
+? 'pl: some channel hd'
+: title: some channel
+  language: pl
+
+# a bare 2/3-letter code of a language outside Python's default set is a word, not a language
+? Kaizoku-dan S01E01
+: title: Kaizoku-dan
+  -language: da
+
+? Ben 10 S01E01
+: title: Ben 10
+  -language: bn
+
+? of ice and men S01E01
+: title: of ice and men
+  -language: is
+
+? cerebro del mal 1958
+: title: cerebro del mal
+  -language: ml
+
+? dear chi
+: title: dear chi
+  -language: zh
+
+# …but an enclosed code is a tag
+? '[tr] some channel 1 hd'
+: language: tr
+  title: some channel 1
+
+# "HR-HDTV" is a High Resolution HDTV source, not Croatian in an "Hdtv" script
+? Some.Show.S05E04.Chi_Eng.HR-HDTV.AAC.1024X576.x264-GRP.mkv
+: title: Some Show
+  season: 5
+  episode: 4
+  language: en
+  source: HDTV
+  other: High Resolution
+  -language: hr
+
+# a real ISO 15924 script subtag is kept
+? Some.Movie.2020.zh-Hans.srt
+: title: Some Movie
+  subtitle_language: zh-Hans
+
+# IPTV layout: the "nl" provider tag of Dutch/Flemish streams stays the language
+? s01e02 - nl - some show (2022) (be) - s01e02 - aflevering 2.strm
+: title: some show
+  language: nl
+  season: 1
+  episode: 2
+
+# a "pilot" episode title keeps episode_details
+? s01e01 - nf - some show (2015) (us) - s01e01 - pilot.strm
+: title: some show
+  episode_details: Pilot
+
+# a plain "<code> - " opening is not taken as an IPTV prefix
+? de - some show s01e01
+: season: 1
+  episode: 1
+  -language: de
+
+# a "v<n>" version is a standalone token, not the tail of a word
+? stcv537
+: title: stcv537
+  -version: 537
+
+? pv02.mkv
+: title: pv02
+  -version: 2
+
+? '[Group] Show - 01v2 [1080p].mkv'
+: title: Show
+  episode: 1
+  version: 2
+
+# a bare "51" is 5.1 channels only behind an audio codec
+? formula 51
+: title: formula
+  -audio_channels: '5.1'
+
+? Movie.2020.AC3.51.mkv
+: audio_codec: Dolby Digital
+  audio_channels: '5.1'
+
+# an unbalanced edge bracket is not part of the release group
+? Some.Movie.2026.1080p.WEBRip.x264.AAC5.1-[YTS.
+: title: Some Movie
+  release_group: YTS
+
+# "svt_av1" is the SVT-AV1 encoder, not Sveriges Television
+? Some Show (1995) - S01E01 - Pilot (1080p WEB-DL x264 8bit AAC 2.0 GRP).svt_av1.mkv
+: title: Some Show
+  -streaming_service: Sveriges Television
+
+# a country in round brackets after the show is the country (Python agrees);
+# only a square-bracket [GB] is the Chinese fansub encoding tag
+? some show (gb) - s01e02.strm
+: title: some show
+  country: GB
+  season: 1
+  episode: 2
+
+# an episode title containing " - " stays whole (Python agrees)
+? some show - s05e18 - wanted - the second part.strm
+: title: some show
+  episode: 18
+  episode_title: wanted - the second part
+  -alternative_title: the second part
+
+# a lowercase language name glued to a plain word is an adjective (Python agrees)
+? some show (2001) - s27e10 - chinese-style furniture
+: episode_title: chinese-style furniture
+  -language: zh
+
+? Movie.2020.french-dubbed.mkv
+: title: Movie
+  language: fr
+
+# "ep. 18": the dot and the space both separate marker and number (Python agrees)
+? some show - ep. 18 - some title (1998 - 480p dvdrip)
+: title: some show
+  episode: 18
+  episode_title: some title
+  type: episode
+
+# form-encoded IPTV prefix ("+" for spaces)
+? fr+★+some+series
+: title: some series
+  language: fr
+
+# Japanese corner quotes glued inside a title are quotation marks, not a group
+? 出会い 「星」の名を持つ少年
+: title: 出会い 「星」の名を持つ少年
+
+# list numbering opening the name is the episode (Python agrees)
+? 20. some short title [
+: title: some short title
+  episode: 20
+  type: episode
+
+# a leading number repeated by a later "episode N" is the episode
+? 20 some drama episode 20 last
+: title: some drama
+  episode: 20
+  episode_title: last
+
+# a plain leading number stays in a film title (Python drops it)
+? 50 First Dates
+: title: 50 First Dates
+  -episode: 50
+
+# …and an SxxExx code does not repeat it (12 Monkeys)
+? 12.Monkeys.S01E12.mkv
+: title: 12 Monkeys
+  season: 1
+  episode: 12
+
+# "02v4": an episode number followed by its version
+? '[Grp]some_show_hd_02v4[0e1a9238].mp4'
+: title: some show
+  episode: 2
+  version: 4
+  release_group: Grp
+
+# IPTV layout without a provider tag (Python agrees; v4.10 returned no title)
+? s01e08 - some show - s01e08 - chapter eight.strm
+: title: some show
+  episode_title: chapter eight
+
+# one-sided space around the provider-tag dash
+? s01e04 - nl- some show (2024) (be) - s01e04 - aflevering 4.strm
+: title: some show
+  language: nl
+  year: 2024

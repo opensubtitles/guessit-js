@@ -37,6 +37,11 @@ class TypeProcessor extends Rule {
     const optionType = context?.['type'] as string | undefined;
     if (optionType) return optionType;
 
+    // IMDb '"Series" Episode Title' naming is a TV episode by construction
+    if (((matches.named('title', (m: Match) => m.tags.includes('imdb-quoted-series')) as Match[]) ?? []).length) {
+      return 'episode';
+    }
+
     // Check for episode indicators
     const episode = matches.named('episode') as Match[] | Match | undefined;
     const season = matches.named('season') as Match[] | Match | undefined;

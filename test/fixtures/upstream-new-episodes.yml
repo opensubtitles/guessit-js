@@ -537,3 +537,54 @@
   season: 1
   episode: 1
   -country: GB
+
+# upstream 4.5.3 (9d5a412) — keep every dot of an abbreviation that starts the title
+? N.C.I.S - S01E01 - Yankee White.mkv
+: title: N.C.I.S
+  season: 1
+  episode: 1
+  episode_title: Yankee White
+
+? J.A.G - 1x01 - A New Life.avi
+: title: J.A.G
+  season: 1
+  episode: 1
+  episode_title: A New Life
+
+# upstream 4.5.4 (4cb3ffc, #1001)
+? Lupin.S04E07.VOF.1080p.WEB.EAC3.Atmos.5.1.H265-SUPPLY
+: title: Lupin
+  season: 4
+  episode: 7
+  language: fr
+  screen_size: 1080p
+  source: Web
+  release_group: SUPPLY
+  -episode_title: VOF
+
+? Le.Seigneur.des.anneaux.Les.Anneaux.de.pouvoir.2022.S03E01.REPACK.MULTi.VF2.2160p.DV.HDR10P.WEB.EAC3.5.1.Atmos.H265-FRQC
+: title: Le Seigneur des anneaux Les Anneaux de pouvoir
+  year: 2022
+  season: 3
+  episode: 1
+  language: [mul, fr]
+  screen_size: 2160p
+  release_group: FRQC
+  -episode_title: MULTi VF2
+
+# upstream 4.5.2 (b1da441, #966) — number the episode behind a numbered expected_title
+? Foo.2.2
+: options: -t episode -T 'Foo 2'
+  title: Foo 2
+  episode: 2
+
+? Foo.2.2.bar
+: options: -t episode -T 're:Foo 2'
+  title: Foo 2
+  episode: 2
+  episode_title: bar
+
+? Bar.3.3.x265
+: options: -t episode -T 're:Bar 3'
+  title: Bar 3
+  episode: 3

@@ -7,6 +7,18 @@
 > upstream work since this snapshot: guessit-io/guessit#961 (dead episode pass,
 > our PR guessit-io/guessit#962) and the rebulk-js 3.4.0 engine fixes.
 >
+> **Fifth sweep, 2026-11-21 — releases 4.5.2, 4.5.3, 4.5.4 and `develop` to
+> #1007.** Ported, each with upstream's own test cases
+> (`test/fixtures/upstream-new-*.yml`):
+> 4.5.2 b1da441 (numbered `expected_title`, #966 — already held, cases pinned),
+> 4.5.3 9d5a412 (every dot of a leading abbreviation: `S.W.A.T`, `N.C.I.S`),
+> 4.5.4 1244783 (number ending the title before a creditless OP/ED, #996) and
+> 4cb3ffc (`VOF` / `VF2` are French, #1001), and the unreleased develop
+> b9bfab4 (`castellano` is Spanish, not Catalan, #1006/#1007). The same day a
+> real-traffic replay against Python 4.5.4 added the cases in
+> `test/fixtures/better-than-python.yml` (where guessit-js is right and Python
+> is not) and `test/fixtures/real-world.yml`.
+>
 > **Fourth sweep, 2026-11-10 — open issues read to #977, closed issues to #988,
 > merged PRs #982 and #985.** Upstream shipped 4.5.0 and 4.5.1 the same day and
 > closed six issues; four of them reproduced here and are now fixed with guard

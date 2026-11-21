@@ -115,6 +115,10 @@ class RemoveEncodingTagCountry extends Rule {
       const group = matches.markers.atMatch(match, (m) => m.name === 'group', 0) as Match | undefined;
       if (!group) continue;
       const inner = (matches.inputString ?? '').slice(group.start + 1, group.end - 1).trim();
+      // the fansub encoding tag is a SQUARE/CJK bracket ("[GB]", "【GB】"); a round
+      // "(gb)" after a show is the country, as Python reads it ("some show (gb) - s01e02")
+      const opener = (matches.inputString ?? '')[group.start];
+      if (opener === '(' || opener === '（') continue;
       if (/^gbk?$/i.test(inner)) out.push(match);
     }
     return out.length ? out : false;

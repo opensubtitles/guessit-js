@@ -166,6 +166,29 @@ export class GuessItApi {
       });
       result[key] = deduped.length === 1 ? deduped[0] : deduped;
     }
+    // IMDb-style series names arrive wrapped in quotes ('"Fragile" Episode #1.2'). A title that
+    // is exactly one double-quoted run carries the quotes as punctuation, not as part of the
+    // name: '"Fragile"' -> 'Fragile'. Python guessit keeps them. Quotes inside a longer title
+    // ('"Magnum P.I." Day the Past Came Back') are left alone.
+    if (typeof result['title'] === 'string') {
+      const q = /^"([^"]+)"$/.exec(result['title'] as string);
+      if (q && q[1].trim()) result['title'] = q[1].trim();
+    }
+    // A repeated show segment ("show - s05e01 - show - s05e01.strm") is not a second
+    // title: drop alternative_title / episode_title values that only repeat the title
+    // (punctuation and case ignored). Python returns it as episode_title, v4.10 as
+    // alternative_title; both are noise.
+    if (typeof result['title'] === 'string') {
+      const key = (v: unknown) => String(v).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+      const t = key(result['title']);
+      for (const field of ['alternative_title', 'episode_title']) {
+        const v = result[field];
+        if (v === undefined) continue;
+        const kept = (Array.isArray(v) ? v : [v]).filter((x) => key(x) !== t);
+        if (kept.length === 0) delete result[field];
+        else result[field] = kept.length === 1 ? kept[0] : kept;
+      }
+    }
     if (mergedOptions['outputInputString'] || mergedOptions['output_input_string']) {
       result['input_string'] = matches.inputString;
     }

@@ -318,8 +318,10 @@ class AudioChannelsValidatorRule extends Rule {
     const weakChannels = (matches.named('audio_channels', (m) => m.tags.includes('weak-audio_channels')) as Match[]) ?? [];
 
     for (const channels of weakChannels) {
-      const prevCodec = matches.previous(channels, (m) => m.name === `audio_codec`);
-      if (!prevCodec) {
+      // Python: matches.previous(channels, …, 0). An empty array is truthy in JS, so the
+      // check never fired and a bare "51" ("formula 51") became 5.1 channels.
+      const prevCodec = matches.previous(channels, (m) => m.name === `audio_codec`, 0);
+      if (!prevCodec || (Array.isArray(prevCodec) && prevCodec.length === 0)) {
         ret.push(channels);
       }
     }
