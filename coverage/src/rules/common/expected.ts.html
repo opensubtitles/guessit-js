@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="../../../base.css" />
     <link rel="shortcut icon" type="image/x-icon" href="../../../favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="../../../theme.js"></script>
     <style type='text/css'>
         .coverage-summary .sorter {
             background-image: url(../../../sort-arrow-sprite.png);
@@ -19,34 +20,44 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
+        
+        <label class="theme-select quiet">
+            Theme
+            <select id="themeSelect" autocomplete="off">
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+                <option value="legacy">Legacy</option>
+            </select>
+        </label>
+
         <h1><a href="../../../index.html">All files</a> / <a href="index.html">src/rules/common</a> expected.ts</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">87.34% </span>
+                <span class="strong">76.47% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>69/79</span>
+                <span class='fraction'>26/34</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">75% </span>
+                <span class="strong">82.35% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>15/20</span>
+                <span class='fraction'>14/17</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>3/3</span>
+                <span class='fraction'>5/5</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">87.34% </span>
+                <span class="strong">82.14% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>69/79</span>
+                <span class='fraction'>23/28</span>
             </div>
         
             
@@ -61,7 +72,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line medium'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -142,85 +153,85 @@
 <a name='L77'></a><a href='#L77'>77</a>
 <a name='L78'></a><a href='#L78'>78</a>
 <a name='L79'></a><a href='#L79'>79</a>
-<a name='L80'></a><a href='#L80'>80</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">22x</span>
-<span class="cline-any cline-yes">8054x</span>
-<span class="cline-any cline-yes">8054x</span>
-<span class="cline-any cline-yes">8054x</span>
-<span class="cline-any cline-yes">8054x</span>
-<span class="cline-any cline-yes">8054x</span>
-<span class="cline-any cline-yes">8054x</span>
-<span class="cline-any cline-yes">8054x</span>
-<span class="cline-any cline-yes">8054x</span>
-<span class="cline-any cline-yes">8054x</span>
-<span class="cline-any cline-yes">8054x</span>
-<span class="cline-any cline-yes">16088x</span>
-<span class="cline-any cline-yes">16088x</span>
-<span class="cline-any cline-yes">16088x</span>
-<span class="cline-any cline-yes">16088x</span>
+<a name='L80'></a><a href='#L80'>80</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">20x</span>
+<span class="cline-any cline-yes">9563x</span>
+<span class="cline-any cline-yes">9563x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9563x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9563x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9563x</span>
+<span class="cline-any cline-yes">9563x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">19106x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-yes">16088x</span>
-<span class="cline-any cline-yes">16085x</span>
-<span class="cline-any cline-yes">16085x</span>
-<span class="cline-any cline-yes">16085x</span>
-<span class="cline-any cline-yes">16085x</span>
-<span class="cline-any cline-yes">16085x</span>
-<span class="cline-any cline-yes">16085x</span>
-<span class="cline-any cline-yes">16085x</span>
-<span class="cline-any cline-yes">16085x</span>
-<span class="cline-any cline-yes">16085x</span>
-<span class="cline-any cline-yes">16085x</span>
-<span class="cline-any cline-yes">16085x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">47754x</span>
+<span class="cline-any cline-yes">19103x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">19103x</span>
+<span class="cline-any cline-yes">19103x</span>
+<span class="cline-any cline-yes">19103x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-yes">16085x</span>
-<span class="cline-any cline-yes">16088x</span>
-<span class="cline-any cline-yes">16088x</span>
-<span class="cline-any cline-yes">16088x</span>
-<span class="cline-any cline-yes">16088x</span>
-<span class="cline-any cline-yes">16088x</span>
-<span class="cline-any cline-yes">16088x</span>
-<span class="cline-any cline-yes">16088x</span>
-<span class="cline-any cline-yes">42x</span>
-<span class="cline-any cline-yes">16088x</span>
-<span class="cline-any cline-yes">16088x</span>
-<span class="cline-any cline-yes">45x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">42x</span>
-<span class="cline-any cline-yes">45x</span>
-<span class="cline-any cline-yes">45x</span>
-<span class="cline-any cline-yes">45x</span>
-<span class="cline-any cline-yes">45x</span>
-<span class="cline-any cline-yes">16088x</span>
-<span class="cline-any cline-yes">8054x</span>
-<span class="cline-any cline-yes">8054x</span>
-<span class="cline-any cline-yes">22x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">19106x</span>
+<span class="cline-any cline-yes">348x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">19106x</span>
+<span class="cline-any cline-yes">36x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">36x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">36x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9563x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * Expected titles/groups — port of guessit/rules/common/expected.py
  */
@@ -235,7 +246,7 @@ import { seps } from './index.js';
 export function buildExpectedFunction(optionName: string) {
   return function findExpected(inputString: string, context?: Context): Array&lt;[number, number, Partial&lt;MatchOptions&gt;]&gt; {
     let expected = context?.[optionName] as string | string[] | undefined;
-    if (!expected || (Array.isArray(expected) &amp;&amp; expected.length === 0)) <span class="branch-0 cbranch-no" title="branch not covered" >return [];</span>
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!expected || (Array.isArray(expected) &amp;&amp; expected.length === 0)) <span class="cstat-no" title="statement not covered" >return [];</span>
     // Normalise to array — a single string from CLI options (-T "title") must be wrapped
     if (typeof expected === 'string') expected = [expected];
 &nbsp;
@@ -255,29 +266,29 @@ export function buildExpectedFunction(optionName: string) {
         const rawPattern = title.slice(3).replace(/ /g, '-').replace(/-/g, '[\\W_]?');
         try {
           pattern = new RegExp(rawPattern, 'gi');
-<span class="branch-0 cbranch-no" title="branch not covered" >        } catch {</span>
+        } catch {
 <span class="cstat-no" title="statement not covered" >          continue;</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
+        }
       } else {
         // Build a flexible pattern: spaces and separators in expected titles can match
         // any separator character in the input (handles "OSS 117" matching "OSS_117").
         // Escape each word individually, then join with separator class.
         const parts = title.split(/[\s._-]+/).map(p =&gt; p.replace(/[-[\]{}()*+?.,\\^$|#]/g, '\\$&amp;'));
-        if (parts.length === 0) <span class="branch-0 cbranch-no" title="branch not covered" >continue;</span>
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (parts.length === 0) <span class="cstat-no" title="statement not covered" >continue;</span>
         // Require at least one separator character (or none) between words;
         // use word boundaries to prevent partial matches inside longer words.
         const patternStr = '(?&lt;![a-zA-Z0-9])' + parts.join(`${SEP_CLASS}?`) + '(?![a-zA-Z0-9])';
         try {
           pattern = new RegExp(patternStr, 'gi');
-<span class="branch-0 cbranch-no" title="branch not covered" >        } catch {</span>
-<span class="cstat-no" title="statement not covered" >          // Fallback to literal matching if regex construction fails</span>
-<span class="cstat-no" title="statement not covered" >          const literalPat = title.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&amp;');</span>
+        } catch {
+          // Fallback to literal matching if regex construction fails
+          const literalPat = <span class="cstat-no" title="statement not covered" >title.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&amp;');</span>
 <span class="cstat-no" title="statement not covered" >          try {</span>
 <span class="cstat-no" title="statement not covered" >            pattern = new RegExp(literalPat, 'gi');</span>
-<span class="cstat-no" title="statement not covered" >          } catch {</span>
+          } catch {
 <span class="cstat-no" title="statement not covered" >            continue;</span>
-<span class="cstat-no" title="statement not covered" >          }</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
+          }
+        }
       }
       // Python matches a plain expected title against a copy of the input whose
       // separators are all spaces, and returns the value from *that* string — so
@@ -294,7 +305,7 @@ export function buildExpectedFunction(optionName: string) {
           : { value: normalise(m[0]) };
         results.push([m.index, m.index + m[0].length, options]);
         // Prevent infinite loop on zero-length matches
-        if (m[0].length === 0) <span class="branch-0 cbranch-no" title="branch not covered" >break;</span>
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (m[0].length === 0) <span class="cstat-no" title="statement not covered" >break;</span>
       }
     }
     return results;
@@ -306,8 +317,8 @@ export function buildExpectedFunction(optionName: string) {
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
-                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-11-11T05:31:58.896Z
+                <a href="https://vitest.dev/" target="_blank" rel="noopener noreferrer">Vitest</a>
+                at 2026-11-21T00:05:38.433Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
