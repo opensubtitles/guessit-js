@@ -167,8 +167,16 @@
     }
     .example-btn:hover { border-color: var(--accent); background: var(--bg-input); transform: translateY(-1px); }
     .example-btn:active { transform: translateY(0); }
+    .examples-group { margin: 26px 0 10px; }
+    .examples-group:first-of-type { margin-top: 0; }
+    .examples-group h3 { font-size: 1rem; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+    .examples-group p { color: var(--text-dim); font-size: 0.85rem; margin: 0 0 10px; }
+    .example-btn.pysame { border-left: 3px solid var(--green); }
+    .example-btn.pyformat { border-left: 3px solid var(--orange); }
     .example-btn.pyfail { border-left: 3px solid var(--red); }
     .example-btn.pyfail:hover { border-color: var(--red); border-left-color: var(--red); }
+    .pyfail-tag.same { background: rgba(74, 222, 128, 0.12); color: var(--green); }
+    .pyfail-tag.format { background: var(--orange-dim); color: var(--orange); }
     .pyfail-tag {
       display: inline-block; margin-right: 8px; padding: 0 7px;
       background: rgba(248, 113, 113, 0.12); color: var(--red);
@@ -292,8 +300,8 @@
 
 <section id="examples">
   <h2><span class="icon">&#128196;</span> Examples</h2>
-  <p style="color: var(--text-dim); margin: -12px 0 16px; font-size: 0.9rem;">Click any filename to parse it instantly. Buttons marked <span style="color:var(--red); font-weight:600;">py ✗</span> are cases the released Python guessit parses wrong — they render a live side-by-side with real Python output, regenerated from PyPI at every deploy.</p>
-  <div class="examples-grid" id="examples-list"></div>
+  <p style="color: var(--text-dim); margin: -12px 0 16px; font-size: 0.9rem;">Click any filename to parse it in your browser. Every example also shows the real output of the released Python guessit side by side, regenerated from PyPI at every deploy.</p>
+  <div id="examples-list"></div>
 </section>
 
 <section id="api">
@@ -552,25 +560,50 @@ Built with Vite. Type-checked with tsc --noEmit.</pre>
 <script src="dist/guessit-browser.js"></script>
 <script>
 (function() {
-  var EXAMPLES = [
-    'The.Dark.Knight.2008.1080p.BluRay.x264-GROUP.mkv',
-    'Game.of.Thrones.S08E06.The.Iron.Throne.1080p.AMZN.WEB-DL.DDP5.1.H.264-GoT.mkv',
-    'Dune Part Two 2024 1080p WEB-DL DD+ 5.1 Atmos H.265-FLUX.mkv',
-    'Interstellar 2014 IMAX 2160p UHD Blu-ray Remux HDR HEVC Atmos-GROUP.mkv',
-    'Cowboy.Bebop.-.23.-.Brain.Scratch.[1080p.BluRay.FLAC].mkv',
-    'Movies/The Matrix (1999)/The.Matrix.1999.REMASTERED.1080p.BluRay.x264-GROUP.mkv',
+  // Keep in sync with scripts/showcase-examples.json (test/pages.test.ts checks it).
+  var GROUPS = [
+    { key: 'same', tag: 'py =', title: 'Same as Python',
+      text: 'Everyday release names: guessit-js and Python guessit return the same answer.',
+      names: [
+      "The.Dark.Knight.2008.1080p.BluRay.x264-GROUP.mkv",
+      "Game.of.Thrones.S08E06.The.Iron.Throne.1080p.AMZN.WEB-DL.DDP5.1.H.264-GoT.mkv",
+      "Interstellar 2014 IMAX 2160p UHD Blu-ray Remux HDR HEVC Atmos-GROUP.mkv",
+      "Movie.Title.2022.2160p.WEB-DL.DV.HDR10.HEVC.DDP5.1-GRP.mkv",
+      "Cowboy.Bebop.-.23.-.Brain.Scratch.[1080p.BluRay.FLAC].mkv",
+      "Movies/The Matrix (1999)/The.Matrix.1999.REMASTERED.1080p.BluRay.x264-GROUP.mkv",
+      "Mob Psycho 100 - 09 [1080p].mkv",
+      "[SCY] Attack on Titan Season 3 - 11 (BD 1080p Hi10 FLAC) [5D7A2C4E].mkv",
+    ] },
+    { key: 'format', tag: 'py ≈', title: 'Same answer, different notation',
+      text: 'Both agree on the meaning; guessit-js writes it in a different JSON form: languages as ISO 639-3 codes ({"alpha3": "fra"}) instead of English names, countries as ISO 3166 codes ("US" instead of "UNITED STATES").',
+      names: [
+      "Amelie.2001.FRENCH.1080p.BluRay.x264-GRP.mkv",
+      "Movie.Name.2019.MULTi.VFF.1080p.BluRay.x265-GRP.mkv",
+      "Movie.2020.German.DL.1080p.BluRay.AVC.REMUX-GRP.mkv",
+      "Show.Name.S01E01.720p.HDTV.x264.ENG.SUBS.mkv",
+      "The.Office.US.S02E01.The.Dundies.720p.HDTV.x264-GRP.mkv",
+    ] },
+    { key: 'fail', tag: 'py ✗', title: 'Python guessit gets these wrong',
+      text: 'Real-world name patterns (anime groups, IMDb listings, IPTV playlists, streaming tags) that the released Python guessit misreads and guessit-js parses correctly.',
+      names: [
+      "【MMZYSUB】★【Golden Time】[24（END）][GB][720P_MP4]",
+      "UFC.247.PPV.Jones.vs.Reyes.HDTV.x264-PUNCH[TGx]",
+      "[HorribleSubs] Tower of Druaga - Sword of Uruk - 04 [480p].mkv",
+      "[FuktLogik][Sayonara_Zetsubou_Sensei][01][DVDRip][x264_ogg].avi",
+      "Some Drama Episode #1.16",
+      "\"Quoted Series\" Episode #1.2",
+      "\"Some Series\" 1.3",
+      "en ★ some show - s04e06 - an episode.strm",
+      "s01e04 - nf - some show (2025) (us) - s01e04 - the few.strm",
+      "some show - s05e01 - some show - s05e01 - the real episode.strm",
+      "Some.Movie.2020.Danish.1080p.WEB.H264-GRP",
+      "The.Show.S11E01.NF.WEB.H265-GRP.mkv",
+      "X2.2003.1080p.BluRay.x264-GRP.mkv",
+      "Some.Show.S02E03.1080p.WEB.AV1-GRP.mkv",
+      "how to rob a bank[cam]",
+    ] },
   ];
-
-  // Cases the released Python guessit parses wrong — rendered with a red marker
-  // and a live side-by-side against real Python output (see python-compare.json).
-  var SHOWCASE = [
-    'Mob Psycho 100 - 09 [1080p].mkv',
-    '[SCY] Attack on Titan Season 3 - 11 (BD 1080p Hi10 FLAC) [5D7A2C4E].mkv',
-    '【MMZYSUB】★【Golden Time】[24（END）][GB][720P_MP4]',
-    'UFC.247.PPV.Jones.vs.Reyes.HDTV.x264-PUNCH[TGx]',
-    '[HorribleSubs] Tower of Druaga - Sword of Uruk - 04 [480p].mkv',
-    '[FuktLogik][Sayonara_Zetsubou_Sensei][01][DVDRip][x264_ogg].avi',
-  ];
+  var EXAMPLES = GROUPS[0].names;
 
   var PROPERTIES = [
     'title', 'alternative_title', 'year', 'date', 'country', 'language', 'subtitle_language',
@@ -607,30 +640,43 @@ Built with Vite. Type-checked with tsc --noEmit.</pre>
     propsGrid.appendChild(d);
   });
 
-  // Populate examples
-  function addExample(ex, pyfail) {
+  // Populate examples, one block per group
+  var TAG_CLASS = { same: 'same', format: 'format', fail: '' };
+  var BTN_CLASS = { same: 'pysame', format: 'pyformat', fail: 'pyfail' };
+  function addExample(grid, ex, group) {
     var btn = document.createElement('button');
-    btn.className = 'example-btn' + (pyfail ? ' pyfail' : '');
+    btn.className = 'example-btn ' + BTN_CLASS[group.key];
     btn.textContent = ex;
-    btn.title = pyfail
-      ? 'Python guessit parses this wrong — click for the live side-by-side: ' + ex
-      : 'Click to parse: ' + ex;
-    if (pyfail) {
-      var tag = document.createElement('span');
-      tag.className = 'pyfail-tag';
-      tag.textContent = 'py ✗';
-      btn.prepend(tag);
-    }
+    btn.title = group.title + ' — click for the live side-by-side: ' + ex;
+    var tag = document.createElement('span');
+    tag.className = 'pyfail-tag ' + TAG_CLASS[group.key];
+    tag.textContent = group.tag;
+    btn.prepend(tag);
     btn.addEventListener('click', function() {
       input.value = ex;
       input.focus();
       fetchResult(ex);
       document.getElementById('demo').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
-    examplesList.appendChild(btn);
+    grid.appendChild(btn);
   }
-  EXAMPLES.forEach(function(ex) { addExample(ex, false); });
-  SHOWCASE.forEach(function(ex) { addExample(ex, true); });
+  GROUPS.forEach(function(group) {
+    var box = document.createElement('div');
+    box.className = 'examples-group';
+    var h = document.createElement('h3');
+    var tag = document.createElement('span');
+    tag.className = 'pyfail-tag ' + TAG_CLASS[group.key];
+    tag.textContent = group.tag;
+    h.appendChild(tag);
+    h.appendChild(document.createTextNode(group.title));
+    var p = document.createElement('p');
+    p.textContent = group.text;
+    var grid = document.createElement('div');
+    grid.className = 'examples-grid';
+    box.appendChild(h); box.appendChild(p); box.appendChild(grid);
+    examplesList.appendChild(box);
+    group.names.forEach(function(ex) { addExample(grid, ex, group); });
+  });
 
   var debounceTimer = null;
   input.addEventListener('input', function() {
@@ -707,16 +753,28 @@ Built with Vite. Type-checked with tsc --noEmit.</pre>
       });
   }
 
+  // Bring both sides to one notation before comparing: guessit-js languages are
+  // {"alpha3": ...} objects and dates ISO timestamps; python-compare.json carries
+  // Python's values already converted (language -> alpha3, country -> alpha2).
+  // mimetype is skipped: Python reads it from the host OS table.
   function canon(v) {
-    if (v && typeof v === 'object' && !Array.isArray(v)) return JSON.stringify(v.alpha3 || v.name || v);
+    if (Array.isArray(v)) return '[' + v.map(canon).join(',') + ']';
+    if (v instanceof Date) return JSON.stringify(v.toISOString().slice(0, 10));
+    if (v && typeof v === 'object') return JSON.stringify(v.alpha3 || v.alpha2 || v.name || v);
+    if (typeof v === 'string' && /^\d{4}-\d\d-\d\dT00:00:00(\.000)?Z$/.test(v)) return JSON.stringify(v.slice(0, 10));
     return JSON.stringify(v);
   }
+  function diffKeys(a, b) {
+    return Object.keys(a).concat(Object.keys(b)).filter(function(k, i, all) {
+      return all.indexOf(k) === i && k !== 'mimetype' && canon(a[k]) !== canon(b[k]);
+    });
+  }
 
-  function renderGrid(data, other) {
+  function renderGrid(data, differs) {
+    differs = differs || [];
     var html = '<div class="result-grid">';
     Object.keys(data).forEach(function(key) {
-      var differs = other && canon(data[key]) !== canon(other[key]);
-      html += '<div class="result-item"' + (differs ? ' style="border-color:var(--red)"' : '') + '>'
+      html += '<div class="result-item"' + (differs.indexOf(key) >= 0 ? ' style="border-color:var(--red)"' : '') + '>'
         + '<span class="result-key">' + escapeHtml(key) + '</span>'
         + formatValue(key, data[key])
         + '</div>';
@@ -731,21 +789,24 @@ Built with Vite. Type-checked with tsc --noEmit.</pre>
       return;
     }
     var py = PYCMP && filename && PYCMP.results && PYCMP.results[filename];
-    var html = renderGrid(data, py);
+    var pyc = py && PYCMP.canonical && PYCMP.canonical[filename] || py;
+    var keysDiffer = py ? diffKeys(data, pyc) : [];
+    var html = renderGrid(data, keysDiffer);
     html += '<div class="demo-timing"><span class="dot"></span> ' + Object.keys(data).length + ' properties &middot; ' + elapsed + 'ms (in-browser)</div>';
     if (py) {
-      var same = canon(data) === canon(py) || JSON.stringify(data) === JSON.stringify(py);
-      var keysDiffer = Object.keys(data).concat(Object.keys(py)).filter(function(k, i, a) {
-        return a.indexOf(k) === i && canon(data[k]) !== canon(py[k]);
-      });
+      var notation = diffKeys(data, py).filter(function(k) { return keysDiffer.indexOf(k) < 0; });
+      var verdictStyle = 'text-transform:none; letter-spacing:0; color:var(--';
+      var verdict = keysDiffer.length
+        ? '<span style="' + verdictStyle + 'red)">&mdash; differs on ' + escapeHtml(keysDiffer.join(', ')) + '</span>'
+        : notation.length
+          ? '<span style="' + verdictStyle + 'orange)">&mdash; same answer, different notation (' + escapeHtml(notation.join(', ')) + ')</span>'
+          : '<span style="' + verdictStyle + 'green)">&mdash; identical</span>';
       html += '<div style="margin-top:22px; padding-top:18px; border-top:1px dashed var(--border);">'
         + '<div style="font-size:0.8rem; font-weight:600; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px;">'
-        + 'Python guessit v' + escapeHtml(PYCMP.python_guessit_version) + ' says'
-        + (keysDiffer.length
-            ? ' <span style="color:var(--red); text-transform:none; letter-spacing:0;">&mdash; differs on ' + escapeHtml(keysDiffer.join(', ')) + '</span>'
-            : ' <span style="color:var(--green); text-transform:none; letter-spacing:0;">&mdash; identical</span>')
+        + 'Python guessit v' + escapeHtml(PYCMP.python_guessit_version) + ' says '
+        + verdict
         + '</div>'
-        + renderGrid(py, data)
+        + renderGrid(py, keysDiffer)
         + '<div style="margin-top:10px; font-size:0.72rem; color:var(--text-dim);">Real output from the released PyPI package, regenerated at every deploy.</div>'
         + '</div>';
     }

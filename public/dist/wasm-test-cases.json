@@ -288,6 +288,27 @@
   }
  ],
  [
+  "Movie.Title.2022.2160p.WEB-DL.DV.HDR10.HEVC.DDP5.1-GRP.mkv",
+  {
+   "title": "Movie Title",
+   "year": 2022,
+   "screen_size": "2160p",
+   "source": "Web",
+   "other": [
+    "Dolby Vision",
+    "HDR10"
+   ],
+   "video_codec": "H.265",
+   "video_profile": "High Efficiency Video Coding",
+   "audio_codec": "Dolby Digital Plus",
+   "audio_channels": "5.1",
+   "release_group": "GRP",
+   "container": "mkv",
+   "mimetype": "video/x-matroska",
+   "type": "movie"
+  }
+ ],
+ [
   "Mob Psycho 100 - 09 [1080p].mkv",
   {
    "title": "Mob Psycho 100",
@@ -311,6 +332,103 @@
    "color_depth": "10-bit",
    "audio_codec": "FLAC",
    "crc32": "5D7A2C4E",
+   "container": "mkv",
+   "mimetype": "video/x-matroska",
+   "type": "episode"
+  }
+ ],
+ [
+  "Amelie.2001.FRENCH.1080p.BluRay.x264-GRP.mkv",
+  {
+   "title": "Amelie",
+   "year": 2001,
+   "language": {
+    "alpha3": "fra"
+   },
+   "screen_size": "1080p",
+   "source": "Blu-ray",
+   "video_codec": "H.264",
+   "release_group": "GRP",
+   "container": "mkv",
+   "mimetype": "video/x-matroska",
+   "type": "movie"
+  }
+ ],
+ [
+  "Movie.Name.2019.MULTi.VFF.1080p.BluRay.x265-GRP.mkv",
+  {
+   "title": "Movie Name",
+   "year": 2019,
+   "language": [
+    {
+     "alpha3": "mul"
+    },
+    {
+     "alpha3": "fra"
+    }
+   ],
+   "screen_size": "1080p",
+   "source": "Blu-ray",
+   "video_codec": "H.265",
+   "release_group": "GRP",
+   "container": "mkv",
+   "mimetype": "video/x-matroska",
+   "type": "movie"
+  }
+ ],
+ [
+  "Movie.2020.German.DL.1080p.BluRay.AVC.REMUX-GRP.mkv",
+  {
+   "title": "Movie",
+   "year": 2020,
+   "language": [
+    {
+     "alpha3": "deu"
+    },
+    {
+     "alpha3": "mul"
+    }
+   ],
+   "screen_size": "1080p",
+   "source": "Blu-ray",
+   "video_codec": "H.264",
+   "video_profile": "Advanced Video Codec High Definition",
+   "other": "Remux",
+   "release_group": "GRP",
+   "container": "mkv",
+   "mimetype": "video/x-matroska",
+   "type": "movie"
+  }
+ ],
+ [
+  "Show.Name.S01E01.720p.HDTV.x264.ENG.SUBS.mkv",
+  {
+   "title": "Show Name",
+   "season": 1,
+   "episode": 1,
+   "screen_size": "720p",
+   "source": "HDTV",
+   "video_codec": "H.264",
+   "subtitle_language": {
+    "alpha3": "eng"
+   },
+   "container": "mkv",
+   "mimetype": "video/x-matroska",
+   "type": "episode"
+  }
+ ],
+ [
+  "The.Office.US.S02E01.The.Dundies.720p.HDTV.x264-GRP.mkv",
+  {
+   "title": "The Office",
+   "country": "US",
+   "season": 2,
+   "episode": 1,
+   "episode_title": "The Dundies",
+   "screen_size": "720p",
+   "source": "HDTV",
+   "video_codec": "H.264",
+   "release_group": "GRP",
    "container": "mkv",
    "mimetype": "video/x-matroska",
    "type": "episode"
@@ -367,6 +485,139 @@
    "container": "avi",
    "mimetype": "video/x-msvideo",
    "type": "episode"
+  }
+ ],
+ [
+  "Some Drama Episode #1.16",
+  {
+   "title": "Some Drama",
+   "season": 1,
+   "episode": 16,
+   "type": "episode"
+  }
+ ],
+ [
+  "\"Quoted Series\" Episode #1.2",
+  {
+   "title": "Quoted Series",
+   "season": 1,
+   "episode": 2,
+   "type": "episode"
+  }
+ ],
+ [
+  "\"Some Series\" 1.3",
+  {
+   "title": "Some Series",
+   "season": 1,
+   "episode": 3,
+   "type": "episode"
+  }
+ ],
+ [
+  "en ★ some show - s04e06 - an episode.strm",
+  {
+   "language": {
+    "alpha3": "eng"
+   },
+   "title": "some show",
+   "season": 4,
+   "episode": 6,
+   "episode_title": "an episode",
+   "container": "strm",
+   "type": "episode"
+  }
+ ],
+ [
+  "s01e04 - nf - some show (2025) (us) - s01e04 - the few.strm",
+  {
+   "season": 1,
+   "episode": 4,
+   "streaming_service": "Netflix",
+   "title": "some show",
+   "year": 2025,
+   "country": "US",
+   "episode_title": "the few",
+   "container": "strm",
+   "type": "episode"
+  }
+ ],
+ [
+  "some show - s05e01 - some show - s05e01 - the real episode.strm",
+  {
+   "title": "some show",
+   "season": 5,
+   "episode": 1,
+   "episode_title": "the real episode",
+   "container": "strm",
+   "type": "episode"
+  }
+ ],
+ [
+  "Some.Movie.2020.Danish.1080p.WEB.H264-GRP",
+  {
+   "title": "Some Movie",
+   "year": 2020,
+   "language": {
+    "alpha3": "dan"
+   },
+   "screen_size": "1080p",
+   "source": "Web",
+   "video_codec": "H.264",
+   "release_group": "GRP",
+   "type": "movie"
+  }
+ ],
+ [
+  "The.Show.S11E01.NF.WEB.H265-GRP.mkv",
+  {
+   "title": "The Show",
+   "season": 11,
+   "episode": 1,
+   "streaming_service": "Netflix",
+   "source": "Web",
+   "video_codec": "H.265",
+   "release_group": "GRP",
+   "container": "mkv",
+   "mimetype": "video/x-matroska",
+   "type": "episode"
+  }
+ ],
+ [
+  "X2.2003.1080p.BluRay.x264-GRP.mkv",
+  {
+   "title": "X2",
+   "year": 2003,
+   "screen_size": "1080p",
+   "source": "Blu-ray",
+   "video_codec": "H.264",
+   "release_group": "GRP",
+   "container": "mkv",
+   "mimetype": "video/x-matroska",
+   "type": "movie"
+  }
+ ],
+ [
+  "Some.Show.S02E03.1080p.WEB.AV1-GRP.mkv",
+  {
+   "title": "Some Show",
+   "season": 2,
+   "episode": 3,
+   "screen_size": "1080p",
+   "source": "Web",
+   "video_codec": "AV1",
+   "release_group": "GRP",
+   "container": "mkv",
+   "mimetype": "video/x-matroska",
+   "type": "episode"
+  }
+ ],
+ [
+  "how to rob a bank[cam]",
+  {
+   "title": "how to rob a bank",
+   "source": "Camera",
+   "type": "movie"
   }
  ],
  [
