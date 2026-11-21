@@ -15,6 +15,15 @@
   episode: 16
   type: episode
 
+# python: title "Some Drama", episode [1, 16], no season (with a file extension)
+? 'Some Drama Episode #1.16.mkv'
+: title: Some Drama
+  season: 1
+  episode: 16
+  container: mkv
+  type: episode
+  -episode_title: '16'
+
 # python: title "Top Show", episode 24, episode_title "3" (season read as the episode)
 ? 'Top Show Episode #24.3'
 : title: Top Show

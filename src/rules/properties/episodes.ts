@@ -583,7 +583,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
   // decimal unambiguous (no audio 5.1 / version 2.0 reading), so a single-digit episode counts.
   // Python guessit reads these as episode [1, 16] or drops the season (real traffic).
   rebulk.regex(
-    buildOrPattern(episodeWords, 'episodeMarker') + `[\\s._-]*#[\\s._-]*(?<season>\\d{1,3})\\.(?<episode>\\d{1,4})(?![\\d.])`,
+    buildOrPattern(episodeWords, 'episodeMarker') + `[\\s._-]*#[\\s._-]*(?<season>\\d{1,3})\\.(?<episode>\\d{1,4})(?!\\d|\\.\\d)`,
     { tags: ['SxxExx', 'imdb-episode'], disabled: isSeasonEpisodeDisabled },
   );
   rebulk.regex(
