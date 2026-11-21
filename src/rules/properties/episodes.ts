@@ -824,6 +824,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
     AbsoluteEpisodeInGroupRule,
     RemoveInvalidSeasonRule,
     RemoveInvalidEpisodeRule,
+    EpisodeEndingTitleBeforeCreditsRule,
   );
 
   return rebulk;
@@ -1107,6 +1108,9 @@ class AnimeTrailingEpisodeRule extends Rule {
       const m = /^(.*[^\W\d_])[\s._-]+(\d{1,3})$/.exec(input.slice(title.start, title.end));
       if (!m) continue;
       const numStart = title.start + m[1].length + (m[0].length - m[1].length - m[2].length);
+      // "Mob Psycho 100 - NCED01": the number ends the title, the credits marker holds the
+      // episode slot (upstream 4.5.4, 1244783).
+      if (endsTitleBeforeCredits(matches, { start: numStart, end: title.end })) continue;
       toRemove.push(title);
       const newTitle = new Match(title.start, title.start + m[1].length, {
         name: 'title', value: cleanup(m[1]), inputString: input,
@@ -1727,6 +1731,65 @@ class RemoveInvalidEpisodeRule extends Rule {
       !m.private && ['episodeMarker', 'episodeSeparator'].includes(m.name),
     )?.[0];
   }
+}
+
+/**
+ * Port of upstream guessit 4.5.4 (1244783, #996), from RemoveDetachedEpisodeNumber.
+ *
+ * A number glued to the title and followed by a dash then a creditless opening/ending
+ * marker ends the title ("86 - NCOP01", "Mob Psycho 100 - NCED01"): the marker holds
+ * the episode slot, so the number has no episode to number. A number behind its own
+ * dash ("Show - 12 - NCED") keeps the episode slot.
+ */
+class EpisodeEndingTitleBeforeCreditsRule extends Rule {
+  consequence = RemoveMatch;
+  static override priority = 64;
+  override priority = 64;
+
+  when(matches: any, _context: any): any {
+    const toRemove: any[] = [];
+    for (const episode of matches.named?.('episode', (m: any) => !m.private) || []) {
+      if (typeof episode.value !== 'number') continue;
+      // only a bare number detached from any episode marker ("86", "Mob Psycho 100"); an
+      // explicit S00E00 / episode word keeps its slot
+      if (!episode.tags?.some((t: string) => t.startsWith('weak'))) continue;
+      if (!endsTitleBeforeCredits(matches, episode)) continue;
+      if (episode.initiator && episode.initiator !== episode) {
+        toRemove.push(episode.initiator, ...(episode.initiator.children || []));
+      } else {
+        toRemove.push(episode);
+      }
+    }
+    return toRemove.length > 0 ? toRemove : false;
+  }
+}
+
+/**
+ * True when the number span [start, end) is glued to the title and followed by a dash and
+ * then a creditless opening/ending marker (upstream 4.5.4 _ends_title_before_credits).
+ */
+function endsTitleBeforeCredits(matches: any, span: { start: number; end: number }): boolean {
+  const input: string = matches.inputString ?? (span as any).inputString ?? '';
+  const credits = ((matches.range?.(span.end, input.length, (m: any) =>
+    m.name === 'other' && (m.value === 'Opening Credits' || m.value === 'Ending Credits')) as any[]) ?? [])
+    .sort((a: any, b: any) => a.start - b.start)[0];
+  if (!credits) return false;
+  const gap = input.slice(span.end, credits.start);
+  if (strip(gap, seps) || !gap.includes('-')) return false;
+  const filepart = ((matches.markers?.range?.(0, span.start + 1, (mk: any) => mk.name === 'path') as any[]) ?? [])
+    .filter((mk: any) => mk.start <= span.start && mk.end >= span.end)[0];
+  const sepsNoDash = seps.replace('-', '');
+  let before = input.slice(filepart ? filepart.start : 0, span.start);
+  let end = before.length;
+  while (end > 0 && sepsNoDash.includes(before[end - 1])) end--;
+  return !before.slice(0, end).endsWith('-');
+}
+
+function strip(s: string, chars: string): string {
+  let a = 0, b = s.length;
+  while (a < b && chars.includes(s[a])) a++;
+  while (b > a && chars.includes(s[b - 1])) b--;
+  return s.slice(a, b);
 }
 
 /**
