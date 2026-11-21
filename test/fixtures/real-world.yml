@@ -161,11 +161,6 @@
 ? 出会い 「星」の名を持つ少年
 : title: 出会い 「星」の名を持つ少年
 
-# a quoted number opening an IMDb-style name is the series, not an episode (Python agrees)
-? '"1670" Some Episode Name'
-: title: '"1670" Some Episode Name'
-  -episode: 1670
-
 # list numbering opening the name is the episode (Python agrees)
 ? 20. some short title [
 : title: some short title
@@ -195,3 +190,14 @@
   episode: 2
   version: 4
   release_group: Grp
+
+# IPTV layout without a provider tag (Python agrees; v4.10 returned no title)
+? s01e08 - some show - s01e08 - chapter eight.strm
+: title: some show
+  episode_title: chapter eight
+
+# one-sided space around the provider-tag dash
+? s01e04 - nl- some show (2024) (be) - s01e04 - aflevering 4.strm
+: title: some show
+  language: nl
+  year: 2024

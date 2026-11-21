@@ -1012,6 +1012,47 @@ class TitleWordAtTitlePosition extends Rule {
 const NON_LATIN_SCRIPT_RE = /[\u0370-\u03FF\u0400-\u04FF\u0590-\u05FF\u0600-\u06FF\u0E00-\u0E7F\u3000-\u303F\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uAC00-\uD7AF\uFF00-\uFFEF]/;
 
 /**
+ * IMDb episode naming '"Series Name" Episode Title': the quoted part is the series, the
+ * rest is the episode title — '"30 Rock" Don Geiss, America and Hope', '"12 Monkeys" Hyena'.
+ * Python guessit returns the whole string as the title (or an episode number taken from
+ * inside the quotes).
+ */
+class QuotedSeriesThenEpisodeTitle extends Rule {
+  static override priority = -100;
+  override priority = -100;
+  override consequence = [RemoveMatch, AppendMatch];
+
+  override when(matches: Matches, _context: Context): any {
+    const input: string = (matches as any).inputString ?? '';
+    if (input[0] !== '"') return false;
+    const close = input.indexOf('"', 1);
+    if (close < 2) return false;
+    const title = ((matches as any).named('title') as Match[])?.[0];
+    if (!title || title.start !== 0 || title.end <= close + 1) return false;
+    if (((matches as any).named('episode_title') as Match[])?.length) return false;
+    const series = cleanup(input.slice(1, close));
+    let restStart = close + 1;
+    while (restStart < title.end && /\s/.test(input[restStart])) restStart++;
+    const rest = cleanup(input.slice(restStart, title.end));
+    if (!series || !rest) return false;
+    // '"Series" 1.3' — IMDb's season.episode with no episode word
+    const se = /^(\d{1,3})\.(\d{1,4})$/.exec(rest);
+    if (se && !((matches as any).named('episode') as Match[])?.length) {
+      const dot = restStart + se[1].length;
+      return [[title], [
+        new Match(1, close, { name: 'title', value: series, inputString: input, tags: ['imdb-quoted-series'] }),
+        new Match(restStart, dot, { name: 'season', value: parseInt(se[1], 10), inputString: input }),
+        new Match(dot + 1, title.end, { name: 'episode', value: parseInt(se[2], 10), inputString: input }),
+      ]];
+    }
+    return [[title], [
+      new Match(1, close, { name: 'title', value: series, inputString: input, tags: ['imdb-quoted-series'] }),
+      new Match(restStart, title.end, { name: 'episode_title', value: rest, inputString: input }),
+    ]];
+  }
+}
+
+/**
  * A number opening the name is the episode, not part of the title, when
  *  - it is list numbering: "20. termites plus two", "115. summer cooler", or
  *  - it repeats an explicit episode found later: "20 winter sonata episode 20 last".
@@ -1070,6 +1111,13 @@ const KEEP_IN_IPTV_LAYOUT = new Set([
   'other', 'video_codec', 'audio_codec', 'source', 'container',
 ]);
 class IptvLeadingEpisodeLayout extends Rule {
+  /** "nf", "4k-a+", "nf-do", "vp": known, short, or shaped like a provider code — not a show word. */
+  static isProviderTag(tag: string): boolean {
+    const t = tag.toLowerCase();
+    if (!/^[a-z0-9+]{1,4}(?:-[a-z0-9+]{1,4})?$/.test(t)) return false;
+    return t.split('-').some((p) => p in IPTV_PROVIDERS) || t.length <= 3 || /[+-]/.test(t);
+  }
+
   static override priority = POST_PROCESS;
   override priority = POST_PROCESS;
   override consequence = [RemoveMatch, AppendMatch];
@@ -1081,16 +1129,22 @@ class IptvLeadingEpisodeLayout extends Rule {
     const start = fp ? fp.start : 0;
     const end = fp ? fp.end : input.length;
     const part = input.slice(start, end);
-    const m = /^(s\d{1,2}e\d{1,3})[ ]+-[ ]+(\S+)[ ]+-[ ]+(.+?)[ ]+-[ ]+\1(?=[ .]|$)(?:[ ]+-[ ]+(.+?))?(?:\.[a-z0-9]{2,4})?$/i.exec(part);
-    if (!m) return false;
+    // the provider tag is optional: "s01e08 - some show - s01e08 - chapter eight.strm"
+    // tag: "nf", "4k-a+", "nf-do"; tolerate a one-sided space around its dash ("nl -show", "nl- show")
+    let m = /^(s\d{1,2}e\d{1,3})[ ]+-[ ]+([a-z0-9+]{1,4}(?:-[a-z0-9+]{1,4})?)(?:[ ]+-[ ]*|[ ]*-[ ]+)(.+?)[ ]+-[ ]+\1(?=[ .]|$)(?:[ ]+-[ ]+(.+?))?(?:\.[a-z0-9]{2,4})?$/i.exec(part);
+    if (m && !IptvLeadingEpisodeLayout.isProviderTag(m[2])) m = null;
+    if (!m) {
+      const n = /^(s\d{1,2}e\d{1,3})[ ]+-[ ]+(.+?)[ ]+-[ ]+\1(?=[ .]|$)(?:[ ]+-[ ]+(.+?))?(?:\.[a-z0-9]{2,4})?$/i.exec(part);
+      if (!n) return false;
+      m = [n[0], n[1], '', n[2], n[3]] as unknown as RegExpExecArray;
+    }
     const tag = m[2];
-    if (!/^[a-z0-9+]{1,4}(?:-[a-z0-9+]{1,4})?$/i.test(tag)) return false;
-    const showStart = start + m[0].indexOf(m[3], m[1].length + 3 + tag.length);
+    const showStart = start + m[0].indexOf(m[3], m[1].length + (tag ? tag.length + 3 : 2));
     // trailing "(2025)" / "(us)" groups stay with year / country
     const core = m[3].replace(/(?:\s*(?:\([^()]*\)|\b(?:4k|uhd|hd|fhd)\b))+\s*$/i, '');
     if (!core.trim()) return false;
     const showEnd = showStart + core.length;
-    const tagStart = start + m[0].indexOf(tag, m[1].length);
+    const tagStart = tag ? start + m[0].indexOf(tag, m[1].length) : showStart;
     const toRemove: Match[] = [];
     const toAppend: Match[] = [];
     for (const x of ((matches as any).range(tagStart, showEnd, (mm: Match) => !mm.private) as Match[]) ?? []) {
@@ -1118,7 +1172,7 @@ class IptvLeadingEpisodeLayout extends Rule {
       }
       toAppend.push(new Match(etStart, etStart + m[4].length, { name: 'episode_title', value: cleanup(m[4]), inputString: input }));
     }
-    const service = tag.toLowerCase().split('-').map((t) => IPTV_PROVIDERS[t]).find(Boolean);
+    const service = tag ? tag.toLowerCase().split('-').map((t) => IPTV_PROVIDERS[t]).find(Boolean) : undefined;
     if (service && !((matches as any).named('streaming_service') as Match[])?.length) {
       toAppend.push(new Match(tagStart, tagStart + tag.length, { name: 'streaming_service', value: service, inputString: input }));
     }
@@ -1695,7 +1749,7 @@ export function title(config: Record<string, unknown>): Rebulk {
     disabled: (context: Context) => isDisabled(context, 'title'),
   });
 
-  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, WordNumeralPartAtTitlePosition, BonusAtTitlePositionRule, LanguageWordInAnimeTitle, SplitOriginalScriptTitle, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle, BracketedTitleFallback, PreBracketJunkTitle, ParentheticalTitleYieldsToLeadBracket, TrimSeasonWordFromTitle, IptvLeadingEpisodeLayout, LeadingNumberIsEpisode);
+  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, WordNumeralPartAtTitlePosition, BonusAtTitlePositionRule, LanguageWordInAnimeTitle, SplitOriginalScriptTitle, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle, BracketedTitleFallback, PreBracketJunkTitle, ParentheticalTitleYieldsToLeadBracket, TrimSeasonWordFromTitle, IptvLeadingEpisodeLayout, LeadingNumberIsEpisode, QuotedSeriesThenEpisodeTitle);
 
   // Expected title functional pattern
   const expectedTitle = buildExpectedFunction('expected_title');

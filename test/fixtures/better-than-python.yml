@@ -172,3 +172,24 @@
 : title: how to rob a bank
   source: Camera
   -release_group: cam
+
+# --- IMDb '"Series" Episode Title' ---------------------------------------------
+# python: title '"30 Show" Some Guest, Some Topic' (whole string), type movie
+? '"30 Show" Some Guest, Some Topic'
+: title: 30 Show
+  episode_title: Some Guest, Some Topic
+  type: episode
+  -episode: 30
+
+# python: title '"1670" Rise of Something' (whole string)
+? '"1670" Rise of Something'
+: title: '1670'
+  episode_title: Rise of Something
+  type: episode
+
+# python: title '"Some Series" 1.3' (whole string), no season/episode
+? '"Some Series" 1.3'
+: title: Some Series
+  season: 1
+  episode: 3
+  type: episode

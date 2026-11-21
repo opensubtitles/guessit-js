@@ -1829,7 +1829,10 @@ class QuotedNumberIsTitleRule extends Rule {
     const out: any[] = [];
     for (const ep of matches.named?.('episode', (m: any) => !m.private) || []) {
       if (!ep.tags?.some((t: string) => t.startsWith('weak'))) continue;
-      if (input[ep.start - 1] !== '"' || input[ep.end] !== '"') continue;
+      // inside a leading quoted series name ('"30 Rock" Episode Name', '"12 Monkeys" Hyena')
+      const close = input[0] === '"' ? input.indexOf('"', 1) : -1;
+      const inLeadingQuote = close > 0 && ep.start > 0 && ep.end <= close;
+      if (!inLeadingQuote && (input[ep.start - 1] !== '"' || input[ep.end] !== '"')) continue;
       if (ep.initiator && ep.initiator !== ep) out.push(ep.initiator, ...(ep.initiator.children || []));
       else out.push(ep);
     }
