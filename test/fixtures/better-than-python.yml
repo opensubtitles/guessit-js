@@ -148,3 +148,27 @@
 ? The.Show.S11E01.German.DL.EAC3.AMZN.WEB.H265-GRP.mkv
 : streaming_service: Amazon Prime
   -episode_title: AMZN
+
+# --- long-standing improvements (see README "Differences from Python") -------
+# python: bonus 2, no title
+? X2.2003.1080p.BluRay.x264-GRP.mkv
+: title: X2
+  year: 2003
+  -bonus: 2
+
+# python: no video_codec, release_group "AV1-GRP" (Python has no AV1)
+? Some.Show.S02E03.1080p.WEB.AV1-GRP.mkv
+: title: Some Show
+  video_codec: AV1
+  release_group: GRP
+
+# python: year 1917, no title (a lone number is the film's title)
+? 1917.1080p.mkv
+: title: '1917'
+  -year: 1917
+
+# python: release_group "cam"
+? how to rob a bank[cam]
+: title: how to rob a bank
+  source: Camera
+  -release_group: cam
