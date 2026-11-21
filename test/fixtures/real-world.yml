@@ -69,3 +69,15 @@
 ? Some.Movie.2020.zh-Hans.srt
 : title: Some Movie
   subtitle_language: zh-Hans
+
+# IPTV layout: the "nl" provider tag of Dutch/Flemish streams stays the language
+? s01e02 - nl - some show (2022) (be) - s01e02 - aflevering 2.strm
+: title: some show
+  language: nl
+  season: 1
+  episode: 2
+
+# a "pilot" episode title keeps episode_details
+? s01e01 - nf - some show (2015) (us) - s01e01 - pilot.strm
+: title: some show
+  episode_details: Pilot

@@ -71,3 +71,37 @@
 : title: some movie
   year: 2016
   language: ml
+
+# --- IPTV layout "<SxxEyy> - <provider> - <show> - <SxxEyy> - <episode title>" ---
+# python: title "nf", alternative_title "some show", episode_title "the few"
+? s01e04 - nf - some show (2025) (us) - s01e04 - the few.strm
+: title: some show
+  season: 1
+  episode: 4
+  episode_title: the few
+  year: 2025
+  country: US
+  streaming_service: Netflix
+  type: episode
+
+# python: title "nf", release_group "sa" (a region code), episode_title = the show
+? s01e04 - nf - other show (sa) - s01e04.strm
+: title: other show
+  season: 1
+  episode: 4
+  streaming_service: Netflix
+  -release_group: sa
+  -episode_title: other show
+
+# python: title "a" (half of "a+"); "4k" in the provider tag is the resolution
+? s01e02 - 4k-a+ - third show (2022) (us) - s01e02 - half loop.strm
+: title: third show
+  episode_title: half loop
+  screen_size: 2160p
+  streaming_service: AppleTV
+
+# python: title "vp"; an unknown provider tag is dropped
+? s01e03 - vp - fourth show - s01e03 - a storm.strm
+: title: fourth show
+  episode_title: a storm
+  -streaming_service: vp
