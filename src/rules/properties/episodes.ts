@@ -788,7 +788,9 @@ export function episodes(config: EpisodesConfig): Rebulk {
         const inp: string = m.inputString ?? '';
         const before = inp[m.start - 2];
         const after = inp[m.end];
-        return (before === undefined || seps.includes(before)) && (after === undefined || seps.includes(after));
+        // a digit before the "v" continues an episode number ("02v4", "12v2")
+        return (before === undefined || seps.includes(before) || /\d/.test(before)) &&
+          (after === undefined || seps.includes(after));
       },
     },
     disabled: (context: any) => isDisabled(context, 'version'),

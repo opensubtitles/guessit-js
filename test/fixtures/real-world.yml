@@ -188,3 +188,10 @@
 : title: 12 Monkeys
   season: 1
   episode: 12
+
+# "02v4": an episode number followed by its version
+? '[Grp]some_show_hd_02v4[0e1a9238].mp4'
+: title: some show
+  episode: 2
+  version: 4
+  release_group: Grp
