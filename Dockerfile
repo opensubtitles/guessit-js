@@ -1,5 +1,5 @@
 # Build the bundled library and CLI.
-FROM node:22-alpine AS build
+FROM node:24-alpine AS build
 
 WORKDIR /app
 
@@ -11,7 +11,7 @@ RUN npm run build
 
 
 # Minimal runtime: the CLI is dependency-free and imports the bundled library.
-FROM node:22-alpine AS runtime
+FROM node:24-alpine AS runtime
 
 WORKDIR /app
 
