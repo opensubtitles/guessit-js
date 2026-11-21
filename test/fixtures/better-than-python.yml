@@ -1,0 +1,195 @@
+# Deliberate improvements over Python guessit (reference: guessit 4.5.4).
+#
+# Every case here parses differently in Python guessit, and guessit-js is right.
+# The "# python:" line records what Python 4.5.4 returns. `scripts/check-better-than-python.py`
+# re-runs these names through Python and fails when Python has started to agree
+# (then the case belongs in the normal fixtures instead).
+#
+# Names are synthetic or sanitised versions of real-traffic patterns.
+
+# --- IMDb episode notation "Show Episode #S.E" --------------------------------
+# python: title "Some Drama", episode [1, 16], no season
+? 'Some Drama Episode #1.16'
+: title: Some Drama
+  season: 1
+  episode: 16
+  type: episode
+
+# python: title "Top Show", episode 24, episode_title "3" (season read as the episode)
+? 'Top Show Episode #24.3'
+: title: Top Show
+  season: 24
+  episode: 3
+  type: episode
+  -episode_title: '3'
+
+# python: title '"Quoted Series"', episode 1 (episode number dropped, quotes kept)
+? '"Quoted Series" Episode #1.2'
+: title: Quoted Series
+  season: 1
+  episode: 2
+  type: episode
+
+# python: title '"Os', episode [12, 1] (number inside the quoted title taken as episode)
+? '"Os 12 Signos" Episode #1.4'
+: title: Os 12 Signos
+  season: 1
+  episode: 4
+  type: episode
+
+# --- IPTV playlist prefix "<lang> ★ …" ---------------------------------------
+# python: language eng, but title "★ some show" (the list-marker symbol leaks into the title)
+? en ★ some show - s04e06 - an episode.strm
+: title: some show
+  language: en
+  season: 4
+  episode: 6
+  episode_title: an episode
+  container: strm
+
+# python: language nld, title "▎ some movie"
+? nl ▎ some movie.strm
+: title: some movie
+  language: nl
+  container: strm
+
+# --- languages beyond Python's default allowed_languages ----------------------
+# python: no language (Danish is not in Python's default allowed_languages)
+? Some.Movie.2020.Danish.1080p.WEB.H264-GRP
+: title: Some Movie
+  year: 2020
+  language: da
+
+# python: no language
+? Some Movie (2021) Tamil HD DVD Print 700MB.mkv
+: title: Some Movie
+  year: 2021
+  language: ta
+
+# python: no language
+? some movie (2016) malayalam hdrip
+: title: some movie
+  year: 2016
+  language: ml
+
+# --- IPTV layout "<SxxEyy> - <provider> - <show> - <SxxEyy> - <episode title>" ---
+# python: title "nf", alternative_title "some show", episode_title "the few"
+? s01e04 - nf - some show (2025) (us) - s01e04 - the few.strm
+: title: some show
+  season: 1
+  episode: 4
+  episode_title: the few
+  year: 2025
+  country: US
+  streaming_service: Netflix
+  type: episode
+
+# python: title "nf", release_group "sa" (a region code), episode_title = the show
+? s01e04 - nf - other show (sa) - s01e04.strm
+: title: other show
+  season: 1
+  episode: 4
+  streaming_service: Netflix
+  -release_group: sa
+  -episode_title: other show
+
+# python: title "a" (half of "a+"); "4k" in the provider tag is the resolution
+? s01e02 - 4k-a+ - third show (2022) (us) - s01e02 - half loop.strm
+: title: third show
+  episode_title: half loop
+  screen_size: 2160p
+  streaming_service: AppleTV
+
+# python: title "vp"; an unknown provider tag is dropped
+? s01e03 - vp - fourth show - s01e03 - a storm.strm
+: title: fourth show
+  episode_title: a storm
+  -streaming_service: vp
+
+# --- IPTV group prefix with a region/variant suffix "ar-kh - …" -----------------
+# python: title "ar-kh", no language; v4.10: language ara with country KH (Cambodia)
+? ar-kh - مسلسل - s01e12 - مسلسل - s01e12.strm
+: title: مسلسل
+  language: ar
+  season: 1
+  episode: 12
+  -country: KH
+
+# python: title "ar-bdy", alternative_title = the show
+? ar-bdy - مسلسل آخر - s01e21 - مسلسل آخر - s01e21.strm
+: title: مسلسل آخر
+  language: ar
+  season: 1
+  episode: 21
+
+# --- a repeated show segment is not a second title -----------------------------
+# python: episode_title "some show" (a copy of the title); v4.10: alternative_title "some show"
+? some show - s05e01 - some show - s05e01.strm
+: title: some show
+  season: 5
+  episode: 1
+  -episode_title: some show
+  -alternative_title: some show
+
+# python: episode_title "some show" (the real episode title is lost)
+? some show - s05e01 - some show - s05e01 - the real episode.strm
+: title: some show
+  episode_title: the real episode
+  -alternative_title: some show
+
+# --- a streaming tag right before a bare WEB source --------------------------------
+# python: no streaming_service, episode_title "NF"
+? The.Show.S11E01.NF.WEB.H265-GRP.mkv
+: title: The Show
+  streaming_service: Netflix
+  -episode_title: NF
+
+# python: no streaming_service
+? The.Show.S11E01.German.DL.EAC3.AMZN.WEB.H265-GRP.mkv
+: streaming_service: Amazon Prime
+  -episode_title: AMZN
+
+# --- long-standing improvements (see README "Differences from Python") -------
+# python: bonus 2, no title
+? X2.2003.1080p.BluRay.x264-GRP.mkv
+: title: X2
+  year: 2003
+  -bonus: 2
+
+# python: no video_codec, release_group "AV1-GRP" (Python has no AV1)
+? Some.Show.S02E03.1080p.WEB.AV1-GRP.mkv
+: title: Some Show
+  video_codec: AV1
+  release_group: GRP
+
+# python: year 1917, no title (a lone number is the film's title)
+? 1917.1080p.mkv
+: title: '1917'
+  -year: 1917
+
+# python: release_group "cam"
+? how to rob a bank[cam]
+: title: how to rob a bank
+  source: Camera
+  -release_group: cam
+
+# --- IMDb '"Series" Episode Title' ---------------------------------------------
+# python: title '"30 Show" Some Guest, Some Topic' (whole string), type movie
+? '"30 Show" Some Guest, Some Topic'
+: title: 30 Show
+  episode_title: Some Guest, Some Topic
+  type: episode
+  -episode: 30
+
+# python: title '"1670" Rise of Something' (whole string)
+? '"1670" Rise of Something'
+: title: '1670'
+  episode_title: Rise of Something
+  type: episode
+
+# python: title '"Some Series" 1.3' (whole string), no season/episode
+? '"Some Series" 1.3'
+: title: Some Series
+  season: 1
+  episode: 3
+  type: episode

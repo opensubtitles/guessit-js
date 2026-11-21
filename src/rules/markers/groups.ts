@@ -38,6 +38,15 @@ export function groups(config: { starting: string; ending: string }): Rebulk {
         const stack = openings[endType];
         if (stack.length > 0) {
           const startIndex = stack.pop()!;
+          // 「」 are also Japanese quotation marks: glued to text on both outer sides
+          // ("出会い 「星」の名を持つ少年" → the 「星」 is a quoted word inside the title),
+          // they are not a bracket group.
+          if (ch === '」') {
+            const before = inputString[startIndex - 1];
+            const after = inputString[i + 1];
+            const glued = (c: string | undefined) => c !== undefined && !/[\s._\-\[\](){}【】（）+]/.test(c);
+            if (glued(after) || (glued(before) && after !== undefined)) continue;
+          }
           ret.push([startIndex, i + 1]);
         }
       }

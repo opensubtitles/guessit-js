@@ -130,7 +130,10 @@ export function source(config: Record<string, unknown>): Rebulk {
     { value: { source: 'Web', other: 'Rip', another: 'Rip' } });
   rebulk.regex(...buildSourcePattern(['WEB-?DL', 'WEB-?U?HD', 'DL-?WEB', 'DL(?=-?Mux)']),
     { value: { source: 'Web' } });
-  rebulk.regex('(WEB)', { value: 'Web', tags: 'weak.source' });
+  // A bare "WEB" still closes a streaming tag: "…S11E01.NF.WEB.H265-GRP" is Netflix
+  // ("AMZN.WEB", "DSNP.WEB"). Python keeps only weak.source here and returns "NF" /
+  // "AMZN" as the episode_title.
+  rebulk.regex('(WEB)', { value: 'Web', tags: ['weak.source', 'streaming_service.suffix'] });
 
   // HD-DVD
   rebulk.regex(...buildSourcePattern(['HD-?DVD'], '', optional(ripSuffix)),

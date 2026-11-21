@@ -12,6 +12,18 @@ import {
   type LanguageData,
 } from './data.js';
 
+/**
+ * ISO 15924 script codes a release name can plausibly carry. Only a real script is a
+ * script subtag: "HR-HDTV" is the "High Resolution" HDTV source, not Croatian in an
+ * "Hdtv" script.
+ */
+const ISO15924_SCRIPTS = new Set([
+  'arab', 'armn', 'beng', 'bopo', 'brai', 'cyrl', 'deva', 'ethi', 'geor', 'grek', 'gujr',
+  'guru', 'hang', 'hani', 'hans', 'hant', 'hebr', 'hira', 'hrkt', 'jpan', 'kana', 'khmr',
+  'knda', 'kore', 'laoo', 'latn', 'mlym', 'mong', 'mymr', 'orya', 'sinh', 'syrc', 'taml',
+  'telu', 'thaa', 'thai', 'tibt', 'zyyy',
+]);
+
 export class Language {
   alpha3: string;
   country?: string;
@@ -213,7 +225,7 @@ export class Language {
         // If the second part is 3+ letters it's likely a language code, not a country.
         if (parts[1].length === 2 && COUNTRY_ALPHA2.has(parts[1].toUpperCase())) {
           byAlpha2.country = parts[1].toUpperCase();
-        } else if (parts[1].length === 4 && /^[a-z]{4}$/.test(parts[1])) {
+        } else if (parts[1].length === 4 && ISO15924_SCRIPTS.has(parts[1])) {
           // A four-letter subtag is an ISO 15924 script: "zh-Hans" and "zh-Hant"
           // are the two written forms of Chinese and are catalogued separately,
           // as are "sr-Latn" and "sr-Cyrl".

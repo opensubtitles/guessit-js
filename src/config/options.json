@@ -847,14 +847,19 @@
         "spa": [
           "esp",
           "español",
-          "espanol"
+          "espanol",
+          "castellano",
+          "espanol castellano",
+          "español castellano"
         ],
         "fra": [
           "français",
           "vf",
           "vff",
           "vfi",
-          "vfq"
+          "vfq",
+          "vof",
+          "vf2"
         ],
         "swe": [
           "se"
@@ -875,10 +880,7 @@
           "flemish"
         ],
         "cat": [
-          "català",
-          "castellano",
-          "espanol castellano",
-          "español castellano"
+          "català"
         ],
         "ces": [
           "cz"

@@ -120,13 +120,15 @@ export const OPENSUBTITLES_MAP = buildLookupMap('opensubtitles');
 export const GUESSIT_SYNONYMS: Record<string, string[]> = {
   // 'gre' is the ISO 639-2 bibliographic code — what .gre.srt files carry
   'ell': ['gr', 'gre', 'greek'],
-  'spa': ['esp', 'español', 'espanol'],
-  'fra': ['français', 'vf', 'vff', 'vfi', 'vfq'],
+  // castellano = Castilian (Spanish from Spain), not Catalan — upstream develop b9bfab4 (#1006)
+  'spa': ['esp', 'español', 'espanol', 'castellano', 'espanol castellano', 'español castellano'],
+  // VOF (version originale française), VF2 (both French dubs) — upstream 4.5.4 4cb3ffc (#1001)
+  'fra': ['français', 'vf', 'vff', 'vfi', 'vfq', 'vof', 'vf2'],
   'swe': ['se'],
   'por_BR': ['po', 'pb', 'pob', 'ptbr', 'br', 'brazilian'],
   'deu_CH': ['swissgerman', 'swiss german'],
   'nld_BE': ['flemish'],
-  'cat': ['català', 'castellano', 'espanol castellano', 'español castellano'],
+  'cat': ['català'],
   'ces': ['cz'],
   'ukr': ['ua'],
   // "cn" is the country, not the language, and it collides with Cartoon Network

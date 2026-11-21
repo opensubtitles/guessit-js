@@ -579,6 +579,13 @@ export function episodes(config: EpisodesConfig): Rebulk {
     buildOrPattern(episodeWords, 'episodeMarker') + `@?(?<season>\\d{1,2})\\.(?<episode>\\d{2,3})(?!\\d)`,
     { tags: ['SxxExx'], disabled: isSeasonEpisodeDisabled },
   );
+  // IMDb episode notation "Show Episode #1.16" / "\"Show\" Episode #2.3": the "#" makes the
+  // decimal unambiguous (no audio 5.1 / version 2.0 reading), so a single-digit episode counts.
+  // Python guessit reads these as episode [1, 16] or drops the season (real traffic).
+  rebulk.regex(
+    buildOrPattern(episodeWords, 'episodeMarker') + `[\\s._-]*#[\\s._-]*(?<season>\\d{1,3})\\.(?<episode>\\d{1,4})(?![\\d.])`,
+    { tags: ['SxxExx', 'imdb-episode'], disabled: isSeasonEpisodeDisabled },
+  );
   rebulk.regex(
     // The season half may not be the tail of an episode range: "s16e03-04.313"
     // must leave "04" to the SxxExx chain and "313" to the absolute-episode
@@ -598,8 +605,11 @@ export function episodes(config: EpisodesConfig): Rebulk {
     },
   );
 
+  // "ep. 18" / "Ep. 05": the abbreviation dot and a space are two separators, so allow
+  // up to two between the marker word and the number (one used to be the limit, and
+  // "ep. 18" then only matched as a weak bare number that a year later voided).
   rebulk.regex(
-    `(?<![a-zA-Z\\d])` + episodeWordPattern + `@?(?<episode>\\d+)` +
+    `(?<![a-zA-Z\\d])` + episodeWordPattern + `@?@?(?<episode>\\d+)` +
       `(?:v(?<version>\\d+))?` +
       `(?:@?` + ofWordPattern + `@?(?<count>\\d+))?`,
     {
@@ -609,7 +619,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
   );
 
   rebulk.regex(
-    `(?<![a-zA-Z\\d])` + episodeWordPattern + `@?(?<episode>${numeral})` +
+    `(?<![a-zA-Z\\d])` + episodeWordPattern + `@?@?(?<episode>${numeral})` +
       `(?:v(?<version>\\d+))?` +
       `(?:@?` + ofWordPattern + `@?(?<count>\\d+))?`,
     {
@@ -769,8 +779,20 @@ export function episodes(config: EpisodesConfig): Rebulk {
     .repeater('*');
 
   // Version pattern
+  // A standalone "v2" token only (Python: seps_surround on the parent); "01v2" after an
+  // episode number is the chain above. Not "stcv537", "pv02", "(av2039656," or "-v3sp4ev3r".
   rebulk.regex(`v(?<version>\\d+)`, {
     formatter: { version: (v: string) => parseInt(v, 10) },
+    validator: {
+      version: (m: any) => {
+        const inp: string = m.inputString ?? '';
+        const before = inp[m.start - 2];
+        const after = inp[m.end];
+        // a digit before the "v" continues an episode number ("02v4", "12v2")
+        return (before === undefined || seps.includes(before) || /\d/.test(before)) &&
+          (after === undefined || seps.includes(after));
+      },
+    },
     disabled: (context: any) => isDisabled(context, 'version'),
   });
 
@@ -824,6 +846,8 @@ export function episodes(config: EpisodesConfig): Rebulk {
     AbsoluteEpisodeInGroupRule,
     RemoveInvalidSeasonRule,
     RemoveInvalidEpisodeRule,
+    EpisodeEndingTitleBeforeCreditsRule,
+    QuotedNumberIsTitleRule,
   );
 
   return rebulk;
@@ -1107,6 +1131,9 @@ class AnimeTrailingEpisodeRule extends Rule {
       const m = /^(.*[^\W\d_])[\s._-]+(\d{1,3})$/.exec(input.slice(title.start, title.end));
       if (!m) continue;
       const numStart = title.start + m[1].length + (m[0].length - m[1].length - m[2].length);
+      // "Mob Psycho 100 - NCED01": the number ends the title, the credits marker holds the
+      // episode slot (upstream 4.5.4, 1244783).
+      if (endsTitleBeforeCredits(matches, { start: numStart, end: title.end })) continue;
       toRemove.push(title);
       const newTitle = new Match(title.start, title.start + m[1].length, {
         name: 'title', value: cleanup(m[1]), inputString: input,
@@ -1726,6 +1753,90 @@ class RemoveInvalidEpisodeRule extends Rule {
     return matches.previous?.(episode, (m: any) =>
       !m.private && ['episodeMarker', 'episodeSeparator'].includes(m.name),
     )?.[0];
+  }
+}
+
+/**
+ * Port of upstream guessit 4.5.4 (1244783, #996), from RemoveDetachedEpisodeNumber.
+ *
+ * A number glued to the title and followed by a dash then a creditless opening/ending
+ * marker ends the title ("86 - NCOP01", "Mob Psycho 100 - NCED01"): the marker holds
+ * the episode slot, so the number has no episode to number. A number behind its own
+ * dash ("Show - 12 - NCED") keeps the episode slot.
+ */
+class EpisodeEndingTitleBeforeCreditsRule extends Rule {
+  consequence = RemoveMatch;
+  static override priority = 64;
+  override priority = 64;
+
+  when(matches: any, _context: any): any {
+    const toRemove: any[] = [];
+    for (const episode of matches.named?.('episode', (m: any) => !m.private) || []) {
+      if (typeof episode.value !== 'number') continue;
+      // only a bare number detached from any episode marker ("86", "Mob Psycho 100"); an
+      // explicit S00E00 / episode word keeps its slot
+      if (!episode.tags?.some((t: string) => t.startsWith('weak'))) continue;
+      if (!endsTitleBeforeCredits(matches, episode)) continue;
+      if (episode.initiator && episode.initiator !== episode) {
+        toRemove.push(episode.initiator, ...(episode.initiator.children || []));
+      } else {
+        toRemove.push(episode);
+      }
+    }
+    return toRemove.length > 0 ? toRemove : false;
+  }
+}
+
+/**
+ * True when the number span [start, end) is glued to the title and followed by a dash and
+ * then a creditless opening/ending marker (upstream 4.5.4 _ends_title_before_credits).
+ */
+function endsTitleBeforeCredits(matches: any, span: { start: number; end: number }): boolean {
+  const input: string = matches.inputString ?? (span as any).inputString ?? '';
+  const credits = ((matches.range?.(span.end, input.length, (m: any) =>
+    m.name === 'other' && (m.value === 'Opening Credits' || m.value === 'Ending Credits')) as any[]) ?? [])
+    .sort((a: any, b: any) => a.start - b.start)[0];
+  if (!credits) return false;
+  const gap = input.slice(span.end, credits.start);
+  if (strip(gap, seps) || !gap.includes('-')) return false;
+  const filepart = ((matches.markers?.range?.(0, span.start + 1, (mk: any) => mk.name === 'path') as any[]) ?? [])
+    .filter((mk: any) => mk.start <= span.start && mk.end >= span.end)[0];
+  const sepsNoDash = seps.replace('-', '');
+  let before = input.slice(filepart ? filepart.start : 0, span.start);
+  let end = before.length;
+  while (end > 0 && sepsNoDash.includes(before[end - 1])) end--;
+  return !before.slice(0, end).endsWith('-');
+}
+
+function strip(s: string, chars: string): string {
+  let a = 0, b = s.length;
+  while (a < b && chars.includes(s[a])) a++;
+  while (b > a && chars.includes(s[b - 1])) b--;
+  return s.slice(a, b);
+}
+
+/**
+ * A bare number wrapped in double quotes is a quoted (IMDb-style) series name, not an
+ * episode: '"1670" Rise of the Machines', '"24" Day 6'. Python keeps it in the title.
+ */
+class QuotedNumberIsTitleRule extends Rule {
+  consequence = RemoveMatch;
+  static override priority = 64;
+  override priority = 64;
+
+  when(matches: any, _context: any): any {
+    const input: string = matches.inputString ?? '';
+    const out: any[] = [];
+    for (const ep of matches.named?.('episode', (m: any) => !m.private) || []) {
+      if (!ep.tags?.some((t: string) => t.startsWith('weak'))) continue;
+      // inside a leading quoted series name ('"30 Rock" Episode Name', '"12 Monkeys" Hyena')
+      const close = input[0] === '"' ? input.indexOf('"', 1) : -1;
+      const inLeadingQuote = close > 0 && ep.start > 0 && ep.end <= close;
+      if (!inLeadingQuote && (input[ep.start - 1] !== '"' || input[ep.end] !== '"')) continue;
+      if (ep.initiator && ep.initiator !== ep) out.push(ep.initiator, ...(ep.initiator.children || []));
+      else out.push(ep);
+    }
+    return out.length ? out : false;
   }
 }
 

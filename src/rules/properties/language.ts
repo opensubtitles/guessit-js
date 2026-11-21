@@ -78,6 +78,12 @@ class LanguageWord {
   }
 }
 
+/** Python guessit's default allowed_languages (options.json, 4.5.4). */
+const PYTHON_DEFAULT_LANGUAGES = new Set([
+  'ca', 'cs', 'de', 'en', 'es', 'fr', 'he', 'hi', 'hu', 'it', 'ja', 'ko', 'mul', 'nl', 'no',
+  'pl', 'pt', 'ro', 'ru', 'sv', 'te', 'uk', 'und',
+]);
+
 interface LanguageMatch {
   propertyName: 'language' | 'subtitle_language';
   word: LanguageWord;
@@ -432,6 +438,8 @@ class LanguageFinder {
   ): LanguageMatch | undefined {
     const lang = this.parseLanguage(word.value.toLowerCase());
 
+    if (lang && !this.strongEnough(key, word, lang)) return undefined;
+
     if (lang) {
       return {
         propertyName: key,
@@ -441,6 +449,29 @@ class LanguageFinder {
     }
 
     return undefined;
+  }
+
+  /**
+   * guessit-js allows more languages than Python guessit (Danish, Tamil, Arabic, …). For
+   * those extra languages a bare 2/3-letter code in free text is far more often a word
+   * ("Kaizoku-dan", "Ben 10", "of ice and men", "cerebro del mal", "dear chi") than a
+   * language tag, so only strong forms count: the full name ("Danish", "Tamil"), or a
+   * code right before a subtitle extension ("Movie.da.srt"). Python's own default
+   * languages keep their usual detection.
+   */
+  private strongEnough(key: 'language' | 'subtitle_language', word: LanguageWord, lang: Language): boolean {
+    const alpha2 = (lang.getAlpha2() ?? '').toLowerCase();
+    if (!alpha2 || PYTHON_DEFAULT_LANGUAGES.has(alpha2)) return true;
+    const raw = word.value.trim();
+    if (raw.length > 3) return true;
+    // enclosed tag: "[tr] channel", "title |tr|", "(th)"
+    const pre = word.inputString[word.start - 1] ?? '';
+    const post = word.inputString[word.end] ?? '';
+    if ('[(|'.includes(pre) && pre !== '' && '])|'.includes(post) && post !== '') return true;
+    const after = word.inputString.slice(word.end).toLowerCase();
+    const ext = /^[.\s_-]*\.?([a-z0-9]{2,4})$/.exec(after)?.[1];
+    if (ext && SubtitleExtensionRule.SUBTITLE_EXTENSIONS.has(ext)) return true;
+    return key === 'subtitle_language' && raw.length === 2;
   }
 
   /**
@@ -864,6 +895,48 @@ export function language(config: LanguageConfig, commonWords: Set<string>): Rebu
     });
   }
 
+  // IPTV playlist prefix: "en ★ Show - s01e02 - …", "nl ▎ Movie", "pl: Channel HD".
+  // A two-letter ISO 639-1 code opening the name, then a list-marker symbol. The whole
+  // prefix (code + symbol) is the language match, so the symbol stays out of the title.
+  // Python guessit 4.5.4 finds the language but leaves "★ Show" as the title. "uk" is
+  // left out (IPTV "UK:" means the country), as are words like "csi:" / "law &".
+  rebulk.regex(
+    `(?:^|(?<=[\\/]))[ \\t+]*(?<code>[a-z]{2})[ \\t+]*[★☆▎▌|:][ \\t+]+(?=[^\\s+])`,
+    {
+      name: 'language',
+      ignoreCase: true,
+      tags: ['iptv-prefix'],
+      children: false,
+      validator: (m: any) => {
+        const code = /([a-z]{2})/i.exec(m.raw ?? m.value ?? '')?.[1]?.toLowerCase() ?? '';
+        return code !== 'uk' && !!Language.fromAlpha2(code);
+      },
+      formatter: (raw: string) => Language.fromAlpha2(/([a-z]{2})/i.exec(raw)![1].toLowerCase()),
+      disabled: (context: any) => isDisabled(context, 'language'),
+    },
+  );
+
+  // IPTV group prefix with a region/variant suffix: "ar-kh - <title> - s01e12 …",
+  // "ar-bdy - …", "ar-tr-d - …". The first code is the language; the suffix is a
+  // channel-group label (Khaleeji, Bedouin, …), not an ISO country, so no country.
+  rebulk.regex(
+    `^[ \\t+]*(?<code>[a-z]{2})(?:-[a-z0-9]{1,4}){1,2}[ \\t+]+-[ \\t+]+(?=[^\\s+])`,
+    {
+      name: 'language',
+      ignoreCase: true,
+      tags: ['iptv-prefix'],
+      children: false,
+      // "en-us - …": the region suffix is part of the prefix, not a separate country
+      conflictSolver: (_match: any, other: any) => (other.name === 'country' ? other : '__default__'),
+      validator: (m: any) => {
+        const code = /^\s*([a-z]{2})/i.exec(m.raw ?? '')?.[1]?.toLowerCase() ?? '';
+        return code !== 'uk' && !!Language.fromAlpha2(code);
+      },
+      formatter: (raw: string) => Language.fromAlpha2(/^\s*([a-z]{2})/i.exec(raw)![1].toLowerCase()),
+      disabled: (context: any) => isDisabled(context, 'language'),
+    },
+  );
+
   // Functional pattern for finding languages
   rebulk.functional(
     (input: string, context: any) => {
@@ -906,6 +979,12 @@ export function language(config: LanguageConfig, commonWords: Set<string>): Rebu
  * by a dash it is part of a title instead: "Shang-Chi" is a film, not Shang in
  * Chinese. The terminology codes ("zho", "deu") are unambiguous and unaffected.
  */
+/** Words after "<language>-" that confirm the language rather than form an adjective. */
+const LANGUAGE_CONFIRMING_WORDS = new Set([
+  'dub', 'dubs', 'dubbed', 'dubbing', 'sub', 'subs', 'subbed', 'subtitle', 'subtitles', 'subtitled',
+  'audio', 'version', 'dl', 'ac3', 'aac', 'dts', 'track', 'tracks', 'forced', 'sdh', 'hardsub', 'softsub',
+]);
+
 class RemoveDashGluedBibliographicCode extends Rule {
   static override priority = 32;
   override priority = 32;
@@ -927,6 +1006,19 @@ class RemoveDashGluedBibliographicCode extends Rule {
     for (const match of (matches.named('subtitle_language') ?? []) as Match[]) {
       if (!RemoveDashGluedBibliographicCode.isBibliographicOnly(String(match.raw ?? ''))) continue;
       if (input[match.start - 1] === '-') out.push(match);
+    }
+    // A lowercase language NAME glued by a dash to an ordinary following word is a
+    // compound adjective: "chinese-style furniture", "french-born", "english-speaking".
+    // Nothing is matched on the word after the dash, so it is plain text.
+    for (const match of (matches.named('language') ?? []) as Match[]) {
+      const raw = String(match.raw ?? '');
+      if (raw.length < 4 || raw !== raw.toLowerCase() || out.includes(match)) continue;
+      if (input[match.end] !== '-') continue;
+      const word = /^-([a-z]{3,})(?![a-z])/.exec(input.slice(match.end))?.[1];
+      if (!word || LANGUAGE_CONFIRMING_WORDS.has(word)) continue;
+      const claimed = (matches.range(match.end + 1, match.end + 1 + word.length, (m: Match) => !m.private) as Match[]) ?? [];
+      if (claimed.length) continue;
+      out.push(match);
     }
     return out.length ? out : false;
   }

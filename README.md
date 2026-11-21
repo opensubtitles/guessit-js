@@ -240,9 +240,10 @@ and as the npm package [`@opensubtitles/guessit-wasm`](packages/guessit-wasm)
 
 ## Differences from Python guessit
 
-guessit-js is a faithful port (tracking Python 4.5.1), but it is **not
-bug-for-bug identical** — where Python has a genuine parsing bug, guessit-js is
-corrected. Run against a live Python guessit 4.5.1 over all 2490 corpus inputs,
+guessit-js is a faithful port (tracking Python 4.5.4, plus the unreleased
+castellano fix [#1007](https://github.com/guessit-io/guessit/pull/1007)), but it
+is **not bug-for-bug identical** — where Python has a genuine parsing bug,
+guessit-js is corrected. Run against a live Python guessit 4.5.1 over all 2490 corpus inputs,
 **2247 (90.2%) come back identical**; every remaining difference is listed, with a
 verdict, in [`docs/python-parity.md`](docs/python-parity.md). Highlights:
 
@@ -273,6 +274,44 @@ verdict, in [`docs/python-parity.md`](docs/python-parity.md). Highlights:
 - **No Python runtime:** zero runtime dependencies, ESM + CJS + WASM, ~2x faster.
 - **Intentional divergences** (cases where guessit-js is *more* correct than
   Python) are catalogued per-example in [`docs/python-parity.md`](docs/python-parity.md).
+
+### Where guessit-js beats Python on real traffic
+
+Measured on ~26,000 distinct filenames from production traffic (IPTV `.strm`
+playlists, typed search phrases, IMDb-style names, release names), the classes
+below parse correctly in guessit-js and not in Python guessit 4.5.4. Every row is
+a test case in [`test/fixtures/better-than-python.yml`](test/fixtures/better-than-python.yml);
+[`scripts/check-better-than-python.py`](scripts/check-better-than-python.py) re-runs
+them through a real Python guessit and fails when Python has caught up (then the
+case moves to the normal fixtures). Regenerate this table with
+`scripts/check-better-than-python.py --table`.
+
+| Input | guessit-js | Python guessit 4.5.4 |
+|---|---|---|
+| `Some Drama Episode #1.16` | title 'Some Drama', season 1, episode 16 | title "Some Drama", episode [1, 16], no season |
+| `Top Show Episode #24.3` | title 'Top Show', season 24, episode 3 | title "Top Show", episode 24, episode_title "3" (season read as the episode) |
+| `"Quoted Series" Episode #1.2` | title 'Quoted Series', season 1, episode 2 | title '"Quoted Series"', episode 1 (episode number dropped, quotes kept) |
+| `"Os 12 Signos" Episode #1.4` | title 'Os 12 Signos', season 1, episode 4 | title '"Os', episode [12, 1] (number inside the quoted title taken as episode) |
+| `en ★ some show - s04e06 - an episode.strm` | title 'some show', language 'en', season 4, episode 6, episode_title 'an episode' | language eng, but title "★ some show" (the list-marker symbol leaks into the title) |
+| `nl ▎ some movie.strm` | title 'some movie', language 'nl' | language nld, title "▎ some movie" |
+| `Some.Movie.2020.Danish.1080p.WEB.H264-GRP` | title 'Some Movie', year 2020, language 'da' | no language (Danish is not in Python's default allowed_languages) |
+| `Some Movie (2021) Tamil HD DVD Print 700MB.mkv` | title 'Some Movie', year 2021, language 'ta' | no language |
+| `some movie (2016) malayalam hdrip` | title 'some movie', year 2016, language 'ml' | no language |
+| `s01e04 - nf - some show (2025) (us) - s01e04 - the few.strm` | title 'some show', season 1, episode 4, episode_title 'the few', year 2025, country 'US', streaming_service 'Netflix' | title "nf", alternative_title "some show", episode_title "the few" |
+| `s01e04 - nf - other show (sa) - s01e04.strm` | title 'other show', season 1, episode 4, streaming_service 'Netflix' | title "nf", release_group "sa" (a region code), episode_title = the show |
+| `s01e02 - 4k-a+ - third show (2022) (us) - s01e02 - half loop.strm` | title 'third show', episode_title 'half loop', screen_size '2160p', streaming_service 'AppleTV' | title "a" (half of "a+"); "4k" in the provider tag is the resolution |
+| `s01e03 - vp - fourth show - s01e03 - a storm.strm` | title 'fourth show', episode_title 'a storm' | title "vp"; an unknown provider tag is dropped |
+| `ar-kh - مسلسل - s01e12 - مسلسل - s01e12.strm` | title 'مسلسل', language 'ar', season 1, episode 12 | title "ar-kh", no language; v4.10: language ara with country KH (Cambodia) |
+| `ar-bdy - مسلسل آخر - s01e21 - مسلسل آخر - s01e21.strm` | title 'مسلسل آخر', language 'ar', season 1, episode 21 | title "ar-bdy", alternative_title = the show |
+| `some show - s05e01 - some show - s05e01.strm` | title 'some show', season 5, episode 1 | episode_title "some show" (a copy of the title); v4.10: alternative_title "some show" |
+| `some show - s05e01 - some show - s05e01 - the real episode.strm` | title 'some show', episode_title 'the real episode' | episode_title "some show" (the real episode title is lost) |
+| `The.Show.S11E01.NF.WEB.H265-GRP.mkv` | title 'The Show', streaming_service 'Netflix' | no streaming_service, episode_title "NF" |
+| `The.Show.S11E01.German.DL.EAC3.AMZN.WEB.H265-GRP.mkv` | streaming_service 'Amazon Prime' | no streaming_service |
+| `X2.2003.1080p.BluRay.x264-GRP.mkv` | title 'X2', year 2003 | bonus 2, no title |
+| `Some.Show.S02E03.1080p.WEB.AV1-GRP.mkv` | title 'Some Show', video_codec 'AV1', release_group 'GRP' | no video_codec, release_group "AV1-GRP" (Python has no AV1) |
+| `1917.1080p.mkv` | title '1917' | year 1917, no title (a lone number is the film's title) |
+| `how to rob a bank[cam]` | title 'how to rob a bank', source 'Camera' | release_group "cam" |
+
 
 ## Known issues
 
