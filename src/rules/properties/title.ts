@@ -1059,6 +1059,12 @@ class IptvLeadingEpisodeLayout extends Rule {
     const segEnd = showStart + m[3].length;
     for (const x of ((matches as any).range(showEnd, segEnd, (mm: Match) => mm.name === 'release_group') as Match[]) ?? []) {
       if (!toRemove.includes(x)) toRemove.push(x);
+      // "(gb)" / "(uk)" / "(au)": an allowed country, read as one (Python does)
+      const cc = String(x.value ?? '').toLowerCase();
+      const country = ({ gb: 'GB', uk: 'GB', au: 'AU', us: 'US' } as Record<string, string>)[cc];
+      if (country && !((matches as any).named('country') as Match[])?.length) {
+        toAppend.push(new Match(x.start, x.end, { name: 'country', value: country, inputString: input }));
+      }
     }
     for (const x of ((matches as any).named('episode_title') as Match[]) ?? []) if (!toRemove.includes(x)) toRemove.push(x);
     for (const x of ((matches as any).named('title') as Match[]) ?? []) if (!toRemove.includes(x)) toRemove.push(x);

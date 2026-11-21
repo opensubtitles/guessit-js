@@ -54,6 +54,12 @@ class ValidateStreamingService extends Rule {
       // group "CNHD" → bogus Cartoon Network). Long distinctive names glued to a
       // recognised suffix (e.g. "NetflixUHD", "iTunesHD") are left alone.
       const rawLen = (service.raw ?? '').length;
+      // "svt_av1" / "SVT-AV1" is the SVT-AV1 encoder (Scalable Video Technology), not
+      // Sveriges Television.
+      if ((service.raw ?? '').toLowerCase() === 'svt' && /^[-_. ]?av-?1/i.test(inp.slice(service.end))) {
+        toRemove.push(service);
+        continue;
+      }
       if (rawLen <= 3) {
         const charAfter = inp[service.end];
         const charBefore = inp[service.start - 1];

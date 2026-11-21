@@ -115,3 +115,16 @@
 ? Some.Movie.2026.1080p.WEBRip.x264.AAC5.1-[YTS.
 : title: Some Movie
   release_group: YTS
+
+# "svt_av1" is the SVT-AV1 encoder, not Sveriges Television
+? Some Show (1995) - S01E01 - Pilot (1080p WEB-DL x264 8bit AAC 2.0 GRP).svt_av1.mkv
+: title: Some Show
+  -streaming_service: Sveriges Television
+
+# a country in round brackets after the show is the country (Python agrees);
+# only a square-bracket [GB] is the Chinese fansub encoding tag
+? some show (gb) - s01e02.strm
+: title: some show
+  country: GB
+  season: 1
+  episode: 2
