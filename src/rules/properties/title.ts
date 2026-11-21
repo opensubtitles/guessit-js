@@ -1012,6 +1012,48 @@ class TitleWordAtTitlePosition extends Rule {
 const NON_LATIN_SCRIPT_RE = /[\u0370-\u03FF\u0400-\u04FF\u0590-\u05FF\u0600-\u06FF\u0E00-\u0E7F\u3000-\u303F\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uAC00-\uD7AF\uFF00-\uFFEF]/;
 
 /**
+ * A number opening the name is the episode, not part of the title, when
+ *  - it is list numbering: "20. termites plus two", "115. summer cooler", or
+ *  - it repeats an explicit episode found later: "20 winter sonata episode 20 last".
+ * A plain leading number stays in the title ("50 First Dates", "12 Angry Men"),
+ * where Python guessit wrongly drops it.
+ */
+class LeadingNumberIsEpisode extends Rule {
+  static override priority = -100;
+  override priority = -100;
+  override consequence = [RemoveMatch, AppendMatch];
+
+  override when(matches: Matches, _context: Context): any {
+    const input: string = (matches as any).inputString ?? '';
+    for (const title of ((matches as any).named('title') as Match[]) ?? []) {
+      const fp = (matches as any).markers.atMatch(title, (m: Match) => m.name === 'path', 0) as Match | undefined;
+      const fpStart = fp ? fp.start : 0;
+      if (title.start !== fpStart) continue;
+      const raw = input.slice(title.start, title.end);
+      const list = /^(\d{1,3})\.[ ]+(?=\S)/.exec(raw);
+      const plain = /^(\d{1,3})[ ]+(?=\S)/.exec(raw);
+      const m = list ?? plain;
+      if (!m) continue;
+      const n = parseInt(m[1], 10);
+      const episodes = ((matches as any).named('episode', (e: Match) => !e.private) as Match[]) ?? [];
+      // only an episode-WORD number repeats it ("… episode 20"); an SxxExx code does not
+      // ("12.Monkeys.S01E12" is the show 12 Monkeys)
+      const repeats = episodes.some((e) => e.value === n && e.start >= title.end && !e.tags?.includes('SxxExx'));
+      if (!list && !repeats) continue;
+      if (list && episodes.length && !repeats) continue;
+      const rest = cleanup(raw.slice(m[0].length));
+      if (!rest) continue;
+      const toAppend: Match[] = [new Match(title.start + m[0].length, title.end, { name: 'title', value: rest, inputString: input })];
+      if (!episodes.length) {
+        toAppend.push(new Match(title.start, title.start + m[1].length, { name: 'episode', value: n, inputString: input, tags: ['list-number'] }));
+      }
+      return [[title], toAppend];
+    }
+    return false;
+  }
+}
+
+/**
  * IPTV episode layout with the episode code first (≈2 % of real traffic):
  *   "s01e04 - nf - some show (2025) (us) - s01e04 - the episode title.strm"
  *   "s01e02 - 4k-a+ - other show - s01e02.strm"
@@ -1653,7 +1695,7 @@ export function title(config: Record<string, unknown>): Rebulk {
     disabled: (context: Context) => isDisabled(context, 'title'),
   });
 
-  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, WordNumeralPartAtTitlePosition, BonusAtTitlePositionRule, LanguageWordInAnimeTitle, SplitOriginalScriptTitle, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle, BracketedTitleFallback, PreBracketJunkTitle, ParentheticalTitleYieldsToLeadBracket, TrimSeasonWordFromTitle, IptvLeadingEpisodeLayout);
+  rebulk.rules(CountryAtTitlePosition, TitleWordAtTitlePosition, WordNumeralPartAtTitlePosition, BonusAtTitlePositionRule, LanguageWordInAnimeTitle, SplitOriginalScriptTitle, TitleFromPosition, PreferTitleWithYear, ExtendLoneArticleTitle, PropertyAtTitlePositionAsTitle, RemoveNumericAlternativeTitle, RemoveTailAlternativeTitle, RemoveTailTitle, BracketedTitleFallback, PreBracketJunkTitle, ParentheticalTitleYieldsToLeadBracket, TrimSeasonWordFromTitle, IptvLeadingEpisodeLayout, LeadingNumberIsEpisode);
 
   // Expected title functional pattern
   const expectedTitle = buildExpectedFunction('expected_title');

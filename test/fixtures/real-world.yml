@@ -165,3 +165,26 @@
 ? '"1670" Some Episode Name'
 : title: '"1670" Some Episode Name'
   -episode: 1670
+
+# list numbering opening the name is the episode (Python agrees)
+? 20. some short title [
+: title: some short title
+  episode: 20
+  type: episode
+
+# a leading number repeated by a later "episode N" is the episode
+? 20 some drama episode 20 last
+: title: some drama
+  episode: 20
+  episode_title: last
+
+# a plain leading number stays in a film title (Python drops it)
+? 50 First Dates
+: title: 50 First Dates
+  -episode: 50
+
+# …and an SxxExx code does not repeat it (12 Monkeys)
+? 12.Monkeys.S01E12.mkv
+: title: 12 Monkeys
+  season: 1
+  episode: 12
