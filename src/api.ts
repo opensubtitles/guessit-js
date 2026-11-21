@@ -166,6 +166,14 @@ export class GuessItApi {
       });
       result[key] = deduped.length === 1 ? deduped[0] : deduped;
     }
+    // IMDb-style series names arrive wrapped in quotes ('"Fragile" Episode #1.2'). A title that
+    // is exactly one double-quoted run carries the quotes as punctuation, not as part of the
+    // name: '"Fragile"' -> 'Fragile'. Python guessit keeps them. Quotes inside a longer title
+    // ('"Magnum P.I." Day the Past Came Back') are left alone.
+    if (typeof result['title'] === 'string') {
+      const q = /^"([^"]+)"$/.exec(result['title'] as string);
+      if (q && q[1].trim()) result['title'] = q[1].trim();
+    }
     if (mergedOptions['outputInputString'] || mergedOptions['output_input_string']) {
       result['input_string'] = matches.inputString;
     }

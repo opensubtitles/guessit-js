@@ -278,6 +278,8 @@ function normaliseExpected(v: unknown, key?: string): unknown {
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
 const FIXTURE_FILES = [
+  'better-than-python.yml',
+  'real-world.yml',
   'movies.yml',
   'episodes.yml',
   'various.yml',

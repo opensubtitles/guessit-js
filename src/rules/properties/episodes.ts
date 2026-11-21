@@ -579,6 +579,13 @@ export function episodes(config: EpisodesConfig): Rebulk {
     buildOrPattern(episodeWords, 'episodeMarker') + `@?(?<season>\\d{1,2})\\.(?<episode>\\d{2,3})(?!\\d)`,
     { tags: ['SxxExx'], disabled: isSeasonEpisodeDisabled },
   );
+  // IMDb episode notation "Show Episode #1.16" / "\"Show\" Episode #2.3": the "#" makes the
+  // decimal unambiguous (no audio 5.1 / version 2.0 reading), so a single-digit episode counts.
+  // Python guessit reads these as episode [1, 16] or drops the season (real traffic).
+  rebulk.regex(
+    buildOrPattern(episodeWords, 'episodeMarker') + `[\\s._-]*#[\\s._-]*(?<season>\\d{1,3})\\.(?<episode>\\d{1,4})(?![\\d.])`,
+    { tags: ['SxxExx', 'imdb-episode'], disabled: isSeasonEpisodeDisabled },
+  );
   rebulk.regex(
     // The season half may not be the tail of an episode range: "s16e03-04.313"
     // must leave "04" to the SxxExx chain and "313" to the absolute-episode

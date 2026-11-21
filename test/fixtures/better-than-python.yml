@@ -1,0 +1,38 @@
+# Deliberate improvements over Python guessit (reference: guessit 4.5.4).
+#
+# Every case here parses differently in Python guessit, and guessit-js is right.
+# The "# python:" line records what Python 4.5.4 returns. `scripts/check-better-than-python.py`
+# re-runs these names through Python and fails when Python has started to agree
+# (then the case belongs in the normal fixtures instead).
+#
+# Names are synthetic or sanitised versions of real-traffic patterns.
+
+# --- IMDb episode notation "Show Episode #S.E" --------------------------------
+# python: title "Some Drama", episode [1, 16], no season
+? 'Some Drama Episode #1.16'
+: title: Some Drama
+  season: 1
+  episode: 16
+  type: episode
+
+# python: title "Top Show", episode 24, episode_title "3" (season read as the episode)
+? 'Top Show Episode #24.3'
+: title: Top Show
+  season: 24
+  episode: 3
+  type: episode
+  -episode_title: '3'
+
+# python: title '"Quoted Series"', episode 1 (episode number dropped, quotes kept)
+? '"Quoted Series" Episode #1.2'
+: title: Quoted Series
+  season: 1
+  episode: 2
+  type: episode
+
+# python: title '"Os', episode [12, 1] (number inside the quoted title taken as episode)
+? '"Os 12 Signos" Episode #1.4'
+: title: Os 12 Signos
+  season: 1
+  episode: 4
+  type: episode
