@@ -7,7 +7,7 @@
  * identical to calling `guessit` one name at a time, and a name that throws must
  * become an `error` entry instead of taking the batch down with it.
  */
-import { describe, it, expect, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { guessit, guessitMany, GuessItApi } from '../src/index.js';
@@ -80,7 +80,7 @@ async function startServer(): Promise<void> {
     env: { ...process.env, PORT: String(PORT) },
     stdio: 'ignore',
   });
-  for (let attempt = 0; attempt < 100; attempt++) {
+  for (let attempt = 0; attempt < 250; attempt++) {
     try {
       await fetch(`${BASE}?filename=probe.2020.mkv`);
       return;
@@ -101,8 +101,11 @@ const post = (body: unknown) =>
 afterAll(() => { server?.kill(); });
 
 describe('server.ts batch POST', () => {
+  // Boot outside any single test: tsx cold start can exceed the 5s per-test
+  // timeout on a loaded CI runner (notably under coverage instrumentation).
+  beforeAll(startServer, 30_000);
+
   it('parses a batch and returns an entry per name', async () => {
-    await startServer();
     const res = await post({ filenames: NAMES });
     expect(res.status).toBe(200);
     const entries = (await res.json()) as Array<{ input_string: string; result?: Record<string, unknown> }>;

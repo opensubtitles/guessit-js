@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { cpus } from 'os';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 import { guessit } from '../src/index.js';
 
 const execAsync = promisify(exec);

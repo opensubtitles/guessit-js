@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="../../../base.css" />
     <link rel="shortcut icon" type="image/x-icon" href="../../../favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="../../../theme.js"></script>
     <style type='text/css'>
         .coverage-summary .sorter {
             background-image: url(../../../sort-arrow-sprite.png);
@@ -19,34 +20,44 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
+        
+        <label class="theme-select quiet">
+            Theme
+            <select id="themeSelect" autocomplete="off">
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+                <option value="legacy">Legacy</option>
+            </select>
+        </label>
+
         <h1><a href="../../../index.html">All files</a> / <a href="index.html">src/rules/properties</a> website.ts</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">98.11% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>118/118</span>
+                <span class='fraction'>52/53</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">73.52% </span>
+                <span class="strong">66.66% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>25/34</span>
+                <span class='fraction'>30/45</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">90.9% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>7/7</span>
+                <span class='fraction'>10/11</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">98.03% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>118/118</span>
+                <span class='fraction'>50/51</span>
             </div>
         
             
@@ -181,124 +192,124 @@
 <a name='L116'></a><a href='#L116'>116</a>
 <a name='L117'></a><a href='#L117'>117</a>
 <a name='L118'></a><a href='#L118'>118</a>
-<a name='L119'></a><a href='#L119'>119</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">261x</span>
-<span class="cline-any cline-yes">261x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">8054x</span>
-<span class="cline-any cline-yes">8054x</span>
-<span class="cline-any cline-yes">173x</span>
-<span class="cline-any cline-yes">173x</span>
-<span class="cline-any cline-yes">657x</span>
-<span class="cline-any cline-yes">52x</span>
-<span class="cline-any cline-yes">52x</span>
-<span class="cline-any cline-yes">52x</span>
-<span class="cline-any cline-yes">657x</span>
-<span class="cline-any cline-yes">173x</span>
-<span class="cline-any cline-yes">121x</span>
-<span class="cline-any cline-yes">121x</span>
-<span class="cline-any cline-yes">121x</span>
-<span class="cline-any cline-yes">121x</span>
-<span class="cline-any cline-yes">121x</span>
-<span class="cline-any cline-yes">121x</span>
-<span class="cline-any cline-yes">121x</span>
-<span class="cline-any cline-yes">121x</span>
-<span class="cline-any cline-yes">22x</span>
-<span class="cline-any cline-yes">22x</span>
-<span class="cline-any cline-yes">22x</span>
-<span class="cline-any cline-yes">22x</span>
-<span class="cline-any cline-yes">22x</span>
-<span class="cline-any cline-yes">22x</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-yes">22x</span>
-<span class="cline-any cline-yes">121x</span>
-<span class="cline-any cline-yes">173x</span>
-<span class="cline-any cline-yes">8054x</span>
-<span class="cline-any cline-yes">8054x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">8054x</span>
-<span class="cline-any cline-yes">8054x</span>
+<a name='L119'></a><a href='#L119'>119</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">19166x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">220x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9563x</span>
+<span class="cline-any cline-yes">9563x</span>
+<span class="cline-any cline-yes">157x</span>
+<span class="cline-any cline-yes">157x</span>
+<span class="cline-any cline-yes">561x</span>
+<span class="cline-any cline-yes">56x</span>
+<span class="cline-any cline-yes">56x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">157x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">165x</span>
+<span class="cline-any cline-yes">101x</span>
+<span class="cline-any cline-yes">101x</span>
+<span class="cline-any cline-yes">348x</span>
+<span class="cline-any cline-yes">101x</span>
+<span class="cline-any cline-yes">101x</span>
+<span class="cline-any cline-yes">101x</span>
+<span class="cline-any cline-yes">20x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">32x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">20x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9563x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">10x</span>
-<span class="cline-any cline-yes">10x</span>
-<span class="cline-any cline-yes">10x</span>
-<span class="cline-any cline-yes">10x</span>
-<span class="cline-any cline-yes">8054x</span>
-<span class="cline-any cline-yes">8054x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9563x</span>
+<span class="cline-any cline-yes">9563x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">76x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9563x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { Rebulk } from 'rebulk-js';
 import { Rule, RemoveMatch } from 'rebulk-js';
 import type { Match } from 'rebulk-js';
@@ -316,10 +327,10 @@ export function website(config: Record&lt;string, unknown&gt;) {
   rebulk.defaults({ name: 'website' });
 &nbsp;
   const tlds = (config['tlds'] as string[]) || DEFAULT_TLDS;
-  const safeTlds = (config['safe_tlds'<span class="branch-0 cbranch-no" title="branch not covered" >] as string[]) || ['com', 'org', 'net'];</span>
-  const safeSubdomains = (config['safe_subdomains'<span class="branch-0 cbranch-no" title="branch not covered" >] as string[]) || ['www'];</span>
-  const safePrefix = (config['safe_prefixes'<span class="branch-0 cbranch-no" title="branch not covered" >] as string[]) || [];</span>
-  const websitePrefixes = (config['prefixes'<span class="branch-0 cbranch-no" title="branch not covered" >] as string[]) || [];</span>
+  const safeTlds = (config['safe_tlds'] as string[]) || <span class="branch-1 cbranch-no" title="branch not covered" >['com', 'org', 'net'];</span>
+  const safeSubdomains = (config['safe_subdomains'] as string[]) || <span class="branch-1 cbranch-no" title="branch not covered" >['www'];</span>
+  const safePrefix = (config['safe_prefixes'] as string[]) || <span class="branch-1 cbranch-no" title="branch not covered" >[];</span>
+  const websitePrefixes = (config['prefixes'] as string[]) || <span class="branch-1 cbranch-no" title="branch not covered" >[];</span>
 &nbsp;
   rebulk.regex(
     `(?:[^a-z0-9]|^)((?:${buildOrPattern(safeSubdomains)}\\.)+(?:[a-z-0-9-]+\\.)+(?:${buildOrPattern(tlds)}))(?:[^a-z0-9]|$)`,
@@ -353,7 +364,7 @@ export function website(config: Record&lt;string, unknown&gt;) {
     }
 &nbsp;
     validFollowers(match: Match): boolean {
-      return ['season', 'episode', 'year'].includes(match.<span class="branch-0 cbranch-no" title="branch not covered" >name ?? '')</span>;
+      return ['season', 'episode', 'year'].includes(match.name ?? <span class="branch-1 cbranch-no" title="branch not covered" >'')</span>;
     }
 &nbsp;
     override when(matches: any) {
@@ -361,7 +372,7 @@ export function website(config: Record&lt;string, unknown&gt;) {
       for (const websiteMatch of matches.named('website')) {
         let safe = false;
         for (const safeStart of [...this.safeSubdomains, ...this.safePrefix]) {
-          if (String(websiteMatch.<span class="branch-0 cbranch-no" title="branch not covered" >value ?? '')</span>.toLowerCase().startsWith(safeStart)) {
+          if (String(websiteMatch.value ?? <span class="branch-1 cbranch-no" title="branch not covered" >'')</span>.toLowerCase().startsWith(safeStart)) {
             safe = true;
             break;
           }
@@ -369,10 +380,10 @@ export function website(config: Record&lt;string, unknown&gt;) {
         if (!safe) {
           // Work around rebulk-js next() bug: use range() to find followers
           const filepart = matches.markers.atMatch(websiteMatch, (m: Match) =&gt; m.name === 'path', 0);
-          const searchEnd = filepart?.<span class="branch-0 cbranch-no" title="branch not covered" >end ?? (matches.inputString?.length ?? websiteMatch.end + 50);</span>
+          const searchEnd = filepart?.end ?? (<span class="branch-1 cbranch-no" title="branch not covered" >matches.inputString?.length ?? <span class="branch-2 cbranch-no" title="branch not covered" >w</span>ebsiteMatch.end + 50);</span>
           const followers = matches.range(websiteMatch.end, searchEnd,
             (m: Match) =&gt; !m.private &amp;&amp; this.validFollowers(m)) as Match[];
-          const followerArr = Array.isArray(followers) ? <span class="branch-0 cbranch-no" title="branch not covered" >followers : followers ? [followers] : [];</span>
+          const followerArr = Array.isArray(followers) ? followers : <span class="branch-1 cbranch-no" title="branch not covered" >followers ? [followers] : [];</span>
           const suffix = followerArr.length &gt; 0 ? followerArr[0] : undefined;
           if (suffix) {
             const group = matches.markers.atMatch(
@@ -405,11 +416,11 @@ class ValidateWebsitePrefix extends Rule {
       // Work around rebulk-js next() bug: use range() instead
       const websites = matches.range(prefix.end, prefix.end + 100,
         (m: Match) =&gt; !m.private &amp;&amp; m.name === 'website') as Match[];
-      const webArr = Array.isArray(websites) ? <span class="branch-0 cbranch-no" title="branch not covered" >websites : websites ? [websites] : [];</span>
+      const webArr = Array.isArray(websites) ? websites : <span class="branch-1 cbranch-no" title="branch not covered" >websites ? [websites] : [];</span>
       const websiteMatch = webArr.length &gt; 0 ? webArr[0] : undefined;
-      if (
+      <span class="missing-if-branch" title="else path not taken" >E</span>if (
         !websiteMatch ||
-        matches.holes(prefix.end, websiteMatch.start, cleanup, seps, (m: Match) =&gt; m.value)
+        matches.holes(prefix.end, websiteMatch.start, cleanup, <span class="fstat-no" title="function not covered" >seps, (m</span>: Match) =&gt; <span class="cstat-no" title="statement not covered" >m.value)</span>
       ) {
         toRemove.push(prefix);
       }
@@ -423,8 +434,8 @@ class ValidateWebsitePrefix extends Rule {
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
-                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-11-11T05:31:58.896Z
+                <a href="https://vitest.dev/" target="_blank" rel="noopener noreferrer">Vitest</a>
+                at 2026-11-21T00:05:38.433Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

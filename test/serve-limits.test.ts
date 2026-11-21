@@ -7,7 +7,7 @@
  *
  * Requires `npm run build` first (skipped automatically when dist is missing).
  */
-import { describe, it, expect, afterAll } from 'vitest';
+import { describe, it, expect, afterAll, beforeAll } from 'vitest';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -25,7 +25,7 @@ let server: ChildProcess | undefined;
 
 async function startServer(): Promise<void> {
   server = spawn('node', [CLI, '--serve', String(PORT)], { stdio: 'ignore' });
-  for (let attempt = 0; attempt < 50; attempt++) {
+  for (let attempt = 0; attempt < 250; attempt++) {
     try {
       await fetch(`${BASE}?filename=probe.2020.mkv`);
       return;
@@ -39,8 +39,11 @@ async function startServer(): Promise<void> {
 afterAll(() => { server?.kill(); });
 
 describe.skipIf(!hasDist)('serve input limits', () => {
+  // Boot outside any single test so a slow cold start can't eat the 5s
+  // per-test timeout (vitest 5 enforces it).
+  beforeAll(startServer, 30_000);
+
   it('parses a normal filename', async () => {
-    await startServer();
     const res = await fetch(`${BASE}?filename=Movie.2020.1080p.mkv`);
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ title: 'Movie', year: 2020 });

@@ -15,7 +15,7 @@ import { describe, it, expect } from 'vitest';
 import { createRequire } from 'node:module';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 import { guessit as guessitSrc } from '@/index.js';
 
 const root = resolve(__dirname, '..');
@@ -58,5 +58,5 @@ describe.skipIf(!hasDist)('dist parity', () => {
     }
 
     expect(diffs.slice(0, 5).join('\n'), `${diffs.length} src/dist diffs`).toBe('');
-  });
+  }, 180_000); // parses the whole corpus twice (src + dist), synchronously
 });

@@ -1,7 +1,7 @@
 /**
  * Options handling — port of guessit/options.py
  */
-import defaultOptions from './config/options.json' assert { type: 'json' };
+import defaultOptions from './config/options.json' with { type: 'json' };
 
 export interface GuessItOptions {
   type?: 'movie' | 'episode';
