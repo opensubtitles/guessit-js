@@ -278,3 +278,38 @@
 : title: S.W.A.T
   year: 2017
   type: movie
+
+# upstream 4.5.4 (4cb3ffc, #1001) — VOF / VF2 are French language tags
+? Movie.2020.VOF.1080p.WEB.H264-GRP
+: title: Movie
+  year: 2020
+  language: fr
+  release_group: GRP
+  -alternative_title: VOF
+
+? Movie.2020.MULTi.VF2.1080p.WEB.H264-GRP
+: title: Movie
+  year: 2020
+  language: [mul, fr]
+  release_group: GRP
+  -alternative_title: MULTi VF2
+
+? Movie.2020.VF2.1080p.WEB.H264-GRP
+: title: Movie
+  year: 2020
+  language: fr
+  release_group: GRP
+  -alternative_title: VF2
+
+# upstream develop, unreleased (b9bfab4, #1006/#1007) — Castellano is Spanish, not Catalan
+? Movie.2020.Castellano.1080p.WEB.H264-GRP
+: title: Movie
+  year: 2020
+  language: es
+  -language: ca
+
+? Movie.2020.SPANISH.Castellano.1080p.WEB.H264-GRP
+: title: Movie
+  year: 2020
+  language: es
+  -language: ca
