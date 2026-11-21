@@ -272,3 +272,9 @@
   screen_size: 720p
   video_codec: H.264
   -season: 720
+
+# upstream 4.5.3 (9d5a412)
+? S.W.A.T (2017).mkv
+: title: S.W.A.T
+  year: 2017
+  type: movie

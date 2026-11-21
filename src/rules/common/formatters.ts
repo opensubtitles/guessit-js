@@ -39,7 +39,8 @@ function potentialBefore(i: number, inputString: string): boolean {
 function potentialAfter(i: number, inputString: string): boolean {
   return (
     i + 2 >= inputString.length ||
-    (inputString[i + 2] === inputString[i] && !seps.includes(inputString[i + 1]))
+    // upstream 4.5.3 (9d5a412): any separator after the next char, not only the same one
+    (seps.includes(inputString[i + 2]) && !seps.includes(inputString[i + 1]))
   );
 }
 
@@ -79,7 +80,10 @@ export function cleanup(inputString: string): string {
       // it is not the closing dot of an abbreviation ("S.H.I.E.L.D.").
       if (/\d/.test(inputString[pi - 1] ?? '')
           && !strip(inputString.slice(pi + 1), seps)) continue;
-      if (potentialIndices.includes(pi - 2) || potentialIndices.includes(pi + 2)) {
+      // upstream 4.5.3 (9d5a412): the neighbouring separator must be the same character,
+      // so "S.W.A.T " keeps every dot while "a.b c" does not pair the dot with the space.
+      const ch = inputString[pi];
+      if ([pi - 2, pi + 2].some((nb) => potentialIndices.includes(nb) && inputString[nb] === ch)) {
         replaceIndices.push(pi);
       }
     }

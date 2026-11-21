@@ -537,3 +537,16 @@
   season: 1
   episode: 1
   -country: GB
+
+# upstream 4.5.3 (9d5a412) — keep every dot of an abbreviation that starts the title
+? N.C.I.S - S01E01 - Yankee White.mkv
+: title: N.C.I.S
+  season: 1
+  episode: 1
+  episode_title: Yankee White
+
+? J.A.G - 1x01 - A New Life.avi
+: title: J.A.G
+  season: 1
+  episode: 1
+  episode_title: A New Life
