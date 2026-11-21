@@ -151,3 +151,17 @@
   episode: 18
   episode_title: some title
   type: episode
+
+# form-encoded IPTV prefix ("+" for spaces)
+? fr+★+some+series
+: title: some series
+  language: fr
+
+# Japanese corner quotes glued inside a title are quotation marks, not a group
+? 出会い 「星」の名を持つ少年
+: title: 出会い 「星」の名を持つ少年
+
+# a quoted number opening an IMDb-style name is the series, not an episode (Python agrees)
+? '"1670" Some Episode Name'
+: title: '"1670" Some Episode Name'
+  -episode: 1670

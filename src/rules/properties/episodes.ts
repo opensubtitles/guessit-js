@@ -845,6 +845,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
     RemoveInvalidSeasonRule,
     RemoveInvalidEpisodeRule,
     EpisodeEndingTitleBeforeCreditsRule,
+    QuotedNumberIsTitleRule,
   );
 
   return rebulk;
@@ -1810,6 +1811,28 @@ function strip(s: string, chars: string): string {
   while (a < b && chars.includes(s[a])) a++;
   while (b > a && chars.includes(s[b - 1])) b--;
   return s.slice(a, b);
+}
+
+/**
+ * A bare number wrapped in double quotes is a quoted (IMDb-style) series name, not an
+ * episode: '"1670" Rise of the Machines', '"24" Day 6'. Python keeps it in the title.
+ */
+class QuotedNumberIsTitleRule extends Rule {
+  consequence = RemoveMatch;
+  static override priority = 64;
+  override priority = 64;
+
+  when(matches: any, _context: any): any {
+    const input: string = matches.inputString ?? '';
+    const out: any[] = [];
+    for (const ep of matches.named?.('episode', (m: any) => !m.private) || []) {
+      if (!ep.tags?.some((t: string) => t.startsWith('weak'))) continue;
+      if (input[ep.start - 1] !== '"' || input[ep.end] !== '"') continue;
+      if (ep.initiator && ep.initiator !== ep) out.push(ep.initiator, ...(ep.initiator.children || []));
+      else out.push(ep);
+    }
+    return out.length ? out : false;
+  }
 }
 
 /**

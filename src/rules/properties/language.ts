@@ -901,7 +901,7 @@ export function language(config: LanguageConfig, commonWords: Set<string>): Rebu
   // Python guessit 4.5.4 finds the language but leaves "★ Show" as the title. "uk" is
   // left out (IPTV "UK:" means the country), as are words like "csi:" / "law &".
   rebulk.regex(
-    `(?:^|(?<=[\\/]))[ \\t]*(?<code>[a-z]{2})[ \\t]*[★☆▎▌|:][ \\t]+(?=\\S)`,
+    `(?:^|(?<=[\\/]))[ \\t+]*(?<code>[a-z]{2})[ \\t+]*[★☆▎▌|:][ \\t+]+(?=[^\\s+])`,
     {
       name: 'language',
       ignoreCase: true,
@@ -920,7 +920,7 @@ export function language(config: LanguageConfig, commonWords: Set<string>): Rebu
   // "ar-bdy - …", "ar-tr-d - …". The first code is the language; the suffix is a
   // channel-group label (Khaleeji, Bedouin, …), not an ISO country, so no country.
   rebulk.regex(
-    `^[ \\t]*(?<code>[a-z]{2})(?:-[a-z0-9]{1,4}){1,2}[ \\t]+-[ \\t]+(?=\\S)`,
+    `^[ \\t+]*(?<code>[a-z]{2})(?:-[a-z0-9]{1,4}){1,2}[ \\t+]+-[ \\t+]+(?=[^\\s+])`,
     {
       name: 'language',
       ignoreCase: true,
