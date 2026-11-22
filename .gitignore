@@ -34,3 +34,6 @@ coverage/
 
 # real-traffic replay data (private filenames from prod logs) — never commit
 .local-replay/
+
+# Wrangler local dev state (wrangler dev)
+.wrangler/
