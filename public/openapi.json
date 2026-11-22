@@ -3,7 +3,7 @@
   "info": {
     "title": "guessit-js API",
     "description": "Extract metadata from media filenames. A TypeScript port of the Python [guessit](https://github.com/guessit-io/guessit) library.\n\nParses movie and TV episode filenames to extract properties like title, year, season, episode, resolution, codec, language, release group, and 56 metadata fields.\n\n## Quick Start\n\n```bash\ncurl \"https://guessit.opensubtitles.com/api/guessit?filename=Breaking.Bad.S01E02.720p.BluRay.x264-DEMAND.mkv\"\n```\n\n## Features\n- **Runs 2191 of the 2229 cases in Python guessit 4.5.1's own test suite**, and 2247 of 2490 corpus inputs come back identical to it\n- **~2x faster** than Python (~1.7ms vs ~3.5ms per parse, same machine and inputs)\n- **Zero runtime dependencies**\n- **56 detected properties**: title, year, season, episode, resolution, codec, language, and more\n\n## ⚠️ Hosted demo disclaimer\nThe hosted endpoint (guessit.opensubtitles.com) is for **testing and evaluation only — never use it in production**. Free tier, hard daily request cap, no uptime guarantee. For production, self-host (`npx guessit-js --serve`) or call the library in-process.",
-    "version": "5.1.0",
+    "version": "5.2.0",
     "contact": {
       "name": "guessit-js",
       "url": "https://opensubtitles.github.io/guessit-js"
@@ -327,6 +327,45 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/mcp": {
+      "post": {
+        "summary": "Model Context Protocol endpoint for AI agents",
+        "description": "Stateless MCP over Streamable HTTP: POST a JSON-RPC 2.0 message (or batch), get a JSON answer; notifications get 202. Tools: guessit, guessit_batch, guessit_properties. Configure an MCP client with this URL, or run `npx -y guessit-js --mcp` locally (stdio).",
+        "operationId": "mcp",
+        "tags": [
+          "Parsing"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "JSON-RPC 2.0 request, e.g. {\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"guessit\", \"arguments\": {\"filename\": \"The.Matrix.1999.mkv\"}}}"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSON-RPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Notification accepted, no body"
+          },
+          "413": {
+            "description": "Body over 1 MiB"
           }
         }
       }
