@@ -16,7 +16,7 @@ if (typeof globalThis.process === 'undefined') {
 const { guessit, guessitMany, properties, version, OUTPUT_FORMATS } = await import('../dist/guessit-js.js');
 // Agent-facing documents and the MCP protocol core. wrangler bundles .txt as
 // text and .json as data, so the worker serves the same files as the repo.
-const { handleMcpPayload } = await import('../bin/mcp-core.mjs');
+const { handleMcpHttp } = await import('../bin/mcp-core.mjs');
 const { default: LLMS_TXT } = await import('../public/llms.txt');
 const { default: OPENAPI } = await import('../public/openapi.json');
 
@@ -33,7 +33,7 @@ const MAX_BATCH = 100;
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Accept, Mcp-Protocol-Version, Mcp-Session-Id',
+  'Access-Control-Allow-Headers': 'Content-Type, Accept, Mcp-Protocol-Version, Mcp-Method, Mcp-Name, Mcp-Session-Id',
 };
 
 function json(data, status = 200, extra = {}) {
@@ -73,8 +73,10 @@ export default {
       if (request.method !== 'POST') return json({ error: 'Use POST for MCP JSON-RPC messages' }, 405, { Allow: 'POST, OPTIONS' });
       const text = await request.text();
       if (text.length > 1 << 20) return json({ error: 'Request body too large' }, 413);
-      const answer = handleMcpPayload({ guessit, guessitMany, properties, version, maxBatch: MAX_BATCH }, text);
-      return answer ? json(answer) : new Response(null, { status: 202, headers: CORS });
+      const { status, body } = handleMcpHttp(
+        { guessit, guessitMany, properties, version, maxBatch: MAX_BATCH }, text, (name) => request.headers.get(name),
+      );
+      return body ? json(body, status) : new Response(null, { status, headers: CORS });
     }
     if (url.pathname !== '/api/guessit') return json({ error: 'Not found', ...USAGE }, 404);
 

@@ -1,0 +1,38 @@
+{
+  "manifest_version": "0.3",
+  "name": "guessit-js",
+  "display_name": "guessit-js: media filename parser",
+  "version": "0.0.0",
+  "description": "Parse movie and TV filenames: title, year, season, episode, codecs, languages, release group.",
+  "long_description": "Extracts metadata from movie and TV episode filenames and release names: title, year, season, episode, episode title, resolution, video and audio codec, source, streaming service, language, subtitle language, release group, container and more (56 properties). Same JSON as Python guessit, parses many real-world names better. Runs locally, offline, no API key, no data leaves your machine.",
+  "author": {
+    "name": "OpenSubtitles",
+    "url": "https://github.com/opensubtitles"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/opensubtitles/guessit-js.git"
+  },
+  "homepage": "https://opensubtitles.github.io/guessit-js/",
+  "documentation": "https://github.com/opensubtitles/guessit-js#ai-agents-mcp",
+  "support": "https://github.com/opensubtitles/guessit-js/issues",
+  "server": {
+    "type": "node",
+    "entry_point": "bin/cli.mjs",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/bin/cli.mjs", "--mcp"]
+    }
+  },
+  "tools": [
+    { "name": "guessit", "description": "Parse one movie or TV episode filename or release name" },
+    { "name": "guessit_batch", "description": "Parse many filenames in one call" },
+    { "name": "guessit_properties", "description": "List every property guessit can return with its possible values" }
+  ],
+  "keywords": ["guessit", "filename", "parser", "movie", "tv", "subtitles", "media", "release-name"],
+  "license": "LGPL-3.0-only",
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": { "node": ">=18.0.0" }
+  }
+}

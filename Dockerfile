@@ -19,8 +19,11 @@ ENV NODE_ENV=production \
     PORT=3847
 
 COPY --from=build --chown=node:node /app/dist ./dist
-COPY --from=build --chown=node:node /app/bin/cli.mjs ./bin/cli.mjs
+COPY --from=build --chown=node:node /app/bin/cli.mjs /app/bin/mcp.mjs /app/bin/mcp-core.mjs ./bin/
 COPY --from=build --chown=node:node /app/package.json ./package.json
+
+# MCP server on stdio for AI agents:  docker run -i --rm <image> node bin/cli.mjs --mcp
+LABEL io.modelcontextprotocol.server.name="io.github.opensubtitles/guessit-js"
 
 USER node
 

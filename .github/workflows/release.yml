@@ -37,6 +37,9 @@ jobs:
       - name: Built bundle parses like src
         run: npx vitest run test/dist-parity.test.ts
 
+      - name: Build the Claude Desktop extension (MCPB)
+        run: bash scripts/build-mcpb.sh
+
       - name: Build WASM (downloads pinned Javy)
         run: bash wasm/build.sh
 
@@ -61,7 +64,7 @@ jobs:
           gh release create "$GITHUB_REF_NAME" \
             --title "$GITHUB_REF_NAME" \
             --generate-notes \
-            wasm/guessit.wasm wasm/guessit.wasm.gz
+            wasm/guessit.wasm wasm/guessit.wasm.gz mcpb/guessit-js.mcpb
 
   # Separate job so a problem here never blocks the main guessit-js release.
   # One-time setup: @opensubtitles/guessit-wasm must exist on npm (first publish
@@ -105,3 +108,14 @@ jobs:
             exit 0
           fi
           npm publish --provenance --access public
+
+  # The official MCP Registry entry (io.github.opensubtitles/guessit-js). Separate
+  # job, so a registry problem never blocks the npm release.
+  mcp-registry:
+    needs: release
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/mcp-registry.yml
+    with:
+      tag: ${{ github.ref_name }}

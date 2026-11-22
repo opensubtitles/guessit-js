@@ -9,8 +9,11 @@ Example: `The.Matrix.1999.1080p.BluRay.x264-GRP.mkv` → `{"title": "The Matrix"
 - Local (stdio), any MCP client: command `npx -y guessit-js --mcp`
   - Claude Code: `claude mcp add guessit -- npx -y guessit-js --mcp`
   - Claude Desktop / Cursor / VS Code JSON: `{"mcpServers": {"guessit": {"command": "npx", "args": ["-y", "guessit-js", "--mcp"]}}}`
+- Claude Desktop: one-click extension `https://github.com/opensubtitles/guessit-js/releases/latest/download/guessit-js.mcpb`
+- Docker: `docker run -i --rm ghcr.io/opensubtitles/guessit-js node bin/cli.mjs --mcp`
 - Remote (Streamable HTTP, no install, demo tier): `https://guessit.opensubtitles.com/mcp`
-- Tools: `guessit` (one name: `{"filename": "...", "options": {...}}`), `guessit_batch` (`{"filenames": [...]}`), `guessit_properties` (every property and its possible values). All read-only.
+- Tools: `guessit` (one name: `{"filename": "...", "options": {...}}`), `guessit_batch` (`{"filenames": [...]}`), `guessit_properties` (every property and its possible values). All read-only, each with an outputSchema and structuredContent.
+- Protocol: stateless MCP 2026-07-28 (`server/discover`) and the 2025-11-25…2024-11-05 `initialize` handshake. Official MCP Registry name: `io.github.opensubtitles/guessit-js`.
 
 ## Use it from code
 

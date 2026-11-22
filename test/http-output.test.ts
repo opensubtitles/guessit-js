@@ -93,6 +93,25 @@ for (const surface of SURFACES) {
       expect(called.result.structuredContent.language).toBe('French');
       expect((await rpc({ jsonrpc: '2.0', method: 'notifications/initialized' })).status).toBe(202);
       expect((await fetch(`${origin}/mcp`)).status).toBe(405);
+      // 2026-07-28 (stateless): no handshake, mirrored headers, _meta per request.
+      const modern = await fetch(`${origin}/mcp`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json', accept: 'application/json, text/event-stream',
+          'mcp-protocol-version': '2026-07-28', 'mcp-method': 'tools/call', 'mcp-name': 'guessit',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0', id: 3, method: 'tools/call',
+          params: {
+            name: 'guessit', arguments: { filename: 'Amelie.2001.FRENCH.mkv' },
+            _meta: { 'io.modelcontextprotocol/protocolVersion': '2026-07-28', 'io.modelcontextprotocol/clientCapabilities': {} },
+          },
+        }),
+      });
+      expect(modern.status).toBe(200);
+      const m = await modern.json() as any;
+      expect(m.result.resultType).toBe('complete');
+      expect(m.result.structuredContent.title).toBe('Amelie');
       const llms = await fetch(`${origin}/llms.txt`);
       expect(llms.headers.get('content-type')).toContain('text/plain');
       expect(await llms.text()).toMatch(/^# guessit-js/);
