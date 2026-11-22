@@ -14,7 +14,7 @@ const hasDist = existsSync(join(root, 'dist', 'guessit-js.js'));
 // Ports 38471 (serve-limits) and 38472 (batch) belong to other test files, which run in parallel.
 const SURFACES = [
   { name: 'cli --serve', port: 38474, cmd: ['node', join(root, 'bin', 'cli.mjs'), '--serve', '38474'], env: {}, needsDist: true },
-  { name: 'server.ts', port: 38475, cmd: ['npx', 'tsx', join(root, 'server.ts')], env: { PORT: '38475' }, needsDist: false },
+  { name: 'server.ts', port: 38475, cmd: ['node', '--import', 'tsx', join(root, 'server.ts')], env: { PORT: '38475' }, needsDist: false },
 ];
 
 for (const surface of SURFACES) {
@@ -75,6 +75,27 @@ for (const surface of SURFACES) {
       expect(batch.body[0].result.language).toEqual({ alpha3: 'fra' });
       const bad = await post({ filename: 'Amelie.2001.FRENCH.mkv', options: { output: 'x' } });
       expect(bad.status).toBe(400);
+    });
+
+    it.runIf(surface.name === 'server.ts')('serves MCP over HTTP and llms.txt for AI agents', async () => {
+      const origin = `http://127.0.0.1:${surface.port}`;
+      const rpc = async (body: unknown) => fetch(`${origin}/mcp`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', accept: 'application/json, text/event-stream' },
+        body: JSON.stringify(body),
+      });
+      const list = await (await rpc({ jsonrpc: '2.0', id: 1, method: 'tools/list' })).json() as any;
+      expect(list.result.tools.map((t: any) => t.name)).toContain('guessit');
+      const called = await (await rpc({
+        jsonrpc: '2.0', id: 2, method: 'tools/call',
+        params: { name: 'guessit', arguments: { filename: 'Amelie.2001.FRENCH.mkv' } },
+      })).json() as any;
+      expect(called.result.structuredContent.language).toBe('French');
+      expect((await rpc({ jsonrpc: '2.0', method: 'notifications/initialized' })).status).toBe(202);
+      expect((await fetch(`${origin}/mcp`)).status).toBe(405);
+      const llms = await fetch(`${origin}/llms.txt`);
+      expect(llms.headers.get('content-type')).toContain('text/plain');
+      expect(await llms.text()).toMatch(/^# guessit-js/);
     });
   });
 }

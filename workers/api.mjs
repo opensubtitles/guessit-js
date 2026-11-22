@@ -13,7 +13,12 @@
 if (typeof globalThis.process === 'undefined') {
   globalThis.process = { env: {} };
 }
-const { guessit, guessitMany, version, OUTPUT_FORMATS } = await import('../dist/guessit-js.js');
+const { guessit, guessitMany, properties, version, OUTPUT_FORMATS } = await import('../dist/guessit-js.js');
+// Agent-facing documents and the MCP protocol core. wrangler bundles .txt as
+// text and .json as data, so the worker serves the same files as the repo.
+const { handleMcpPayload } = await import('../bin/mcp-core.mjs');
+const { default: LLMS_TXT } = await import('../public/llms.txt');
+const { default: OPENAPI } = await import('../public/openapi.json');
 
 // Parsing cost grows with the square of the number of matches a name yields, so
 // a long synthetic string costs far more than its length suggests: 400
@@ -28,7 +33,7 @@ const MAX_BATCH = 100;
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, Accept, Mcp-Protocol-Version, Mcp-Session-Id',
 };
 
 function json(data, status = 200, extra = {}) {
@@ -46,6 +51,9 @@ const USAGE = {
   output: 'python (default): Python guessit notation, e.g. "language": "French"; codes: guessit-js values, e.g. "language": {"alpha3": "fra"}',
   post: '/api/guessit with {"filename": "..."} or {"filenames": [...], "options": {...}}',
   health: '/api/health',
+  mcp: 'POST /mcp: Model Context Protocol (Streamable HTTP) for AI agents; tools guessit, guessit_batch, guessit_properties',
+  llms: '/llms.txt',
+  openapi: '/openapi.json',
 };
 
 export default {
@@ -55,6 +63,19 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
     if (url.pathname === '/api/health') return json({ status: 'ok', version });
     if (url.pathname === '/' || url.pathname === '') return json({ ...USAGE, version });
+    if (url.pathname === '/llms.txt') {
+      return new Response(LLMS_TXT, { headers: { ...CORS, 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=3600' } });
+    }
+    if (url.pathname === '/openapi.json') return json(OPENAPI, 200, { 'Cache-Control': 'public, max-age=3600' });
+    if (url.pathname === '/mcp') {
+      // Stateless Streamable HTTP: every POST is answered with plain JSON; there
+      // is no server-initiated stream, so GET is not offered.
+      if (request.method !== 'POST') return json({ error: 'Use POST for MCP JSON-RPC messages' }, 405, { Allow: 'POST, OPTIONS' });
+      const text = await request.text();
+      if (text.length > 1 << 20) return json({ error: 'Request body too large' }, 413);
+      const answer = handleMcpPayload({ guessit, guessitMany, properties, version, maxBatch: MAX_BATCH }, text);
+      return answer ? json(answer) : new Response(null, { status: 202, headers: CORS });
+    }
     if (url.pathname !== '/api/guessit') return json({ error: 'Not found', ...USAGE }, 404);
 
     if (request.method === 'GET') {
