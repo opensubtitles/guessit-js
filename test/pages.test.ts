@@ -44,17 +44,16 @@ describe('homepage examples', () => {
 
   // These hold against the checked-in python-compare.json; the Pages deploy
   // regenerates it from PyPI, and the page itself then shows whatever Python says.
+  // Default output is Python's notation, so the raw results must match exactly.
   it.each(groups.same)('same as Python: %s', (name) => {
     expect(diffKeys(guessit(name) as any, pycmp.results[name])).toEqual([]);
   });
 
-  it.each(groups.format)('same answer, different notation: %s', (name) => {
-    const js = guessit(name) as any;
-    expect(diffKeys(js, pycmp.canonical[name])).toEqual([]);
-    expect(diffKeys(js, pycmp.results[name]).length).toBeGreaterThan(0);
+  it.each(groups.same)("output: 'codes' carries the same answer: %s", (name) => {
+    expect(diffKeys(guessit(name, { output: 'codes' }) as any, pycmp.canonical[name])).toEqual([]);
   });
 
   it.each(groups.python_wrong)('Python differs: %s', (name) => {
-    expect(diffKeys(guessit(name) as any, pycmp.canonical[name]).length).toBeGreaterThan(0);
+    expect(diffKeys(guessit(name) as any, pycmp.results[name]).length).toBeGreaterThan(0);
   });
 });

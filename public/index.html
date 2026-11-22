@@ -124,6 +124,8 @@
     }
     #demo-input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--accent-glow); }
     #demo-input::placeholder { color: #3d4258; }
+    .demo-toggle { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 0.8rem; color: var(--text-dim); cursor: pointer; flex-wrap: wrap; }
+    .demo-toggle code { font-family: var(--font-mono); color: var(--text); }
 
     .demo-result { margin-top: 20px; min-height: 60px; }
     .result-grid {
@@ -172,11 +174,9 @@
     .examples-group h3 { font-size: 1rem; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
     .examples-group p { color: var(--text-dim); font-size: 0.85rem; margin: 0 0 10px; }
     .example-btn.pysame { border-left: 3px solid var(--green); }
-    .example-btn.pyformat { border-left: 3px solid var(--orange); }
     .example-btn.pyfail { border-left: 3px solid var(--red); }
     .example-btn.pyfail:hover { border-color: var(--red); border-left-color: var(--red); }
     .pyfail-tag.same { background: rgba(74, 222, 128, 0.12); color: var(--green); }
-    .pyfail-tag.format { background: var(--orange-dim); color: var(--orange); }
     .pyfail-tag {
       display: inline-block; margin-right: 8px; padding: 0 7px;
       background: rgba(248, 113, 113, 0.12); color: var(--red);
@@ -277,7 +277,7 @@
   <h1>guessit<span>-js</span></h1>
   <p class="tagline">Extract metadata from media filenames using smart pattern matching. Zero dependencies. TypeScript port of the Python guessit library.</p>
   <div class="badges">
-    <span class="badge"><span class="dot green"></span>v4.11.0</span>
+    <span class="badge"><span class="dot green"></span>v5.0.0</span>
     <span class="badge"><span class="dot orange"></span>Zero dependencies</span>
     <span class="badge"><span class="dot cyan"></span>TypeScript</span>
   </div>
@@ -292,6 +292,8 @@
       placeholder="The.Dark.Knight.2008.1080p.BluRay.x264-GROUP.mkv"
       autocomplete="off" spellcheck="false"
     >
+    <label class="demo-toggle"><input type="checkbox" id="demo-codes">
+      <code>output: 'codes'</code> &mdash; guessit-js codes (<code>{"alpha3": "por", "country": "BR"}</code>) instead of Python's names (<code>"Portuguese"</code>)</label>
     <div class="demo-result" id="demo-result">
       <div class="demo-empty">Type a filename above or click an example below.</div>
     </div>
@@ -387,6 +389,10 @@ guessit(<span class="code-string">'file.mkv'</span>, { <span class="code-key">ty
 
 <span class="code-comment">// Provide expected titles for better matching</span>
 guessit(<span class="code-string">'file.mkv'</span>, { <span class="code-key">expected_title</span>: [<span class="code-string">'My Show'</span>] });
+
+<span class="code-comment">// Output uses Python guessit's notation: "language": "French", "country": "UNITED STATES"</span>
+<span class="code-comment">// guessit-js codes instead: {"alpha3": "por", "country": "BR"}, "US", Date</span>
+guessit(<span class="code-string">'file.mkv'</span>, { <span class="code-key">output</span>: <span class="code-string">'codes'</span> });
 
 <span class="code-comment">// Restrict languages &amp; countries</span>
 guessit(<span class="code-string">'file.mkv'</span>, { <span class="code-key">allowed_languages</span>: [<span class="code-string">'en'</span>, <span class="code-string">'fr'</span>], <span class="code-key">allowed_countries</span>: [<span class="code-string">'us'</span>, <span class="code-string">'gb'</span>] });</pre>
@@ -553,7 +559,7 @@ Built with Vite. Type-checked with tsc --noEmit.</pre>
 </section>
 
 <footer>
-  <p><a href="https://github.com/opensubtitles/guessit-js" target="_blank" rel="noopener">guessit-js</a> v4.11.0 &mdash; TypeScript port of <a href="https://github.com/guessit-io/guessit" target="_blank" rel="noopener">guessit</a> &mdash; LGPLv3</p>
+  <p><a href="https://github.com/opensubtitles/guessit-js" target="_blank" rel="noopener">guessit-js</a> v5.0.0 &mdash; TypeScript port of <a href="https://github.com/guessit-io/guessit" target="_blank" rel="noopener">guessit</a> &mdash; LGPLv3</p>
 </footer>
 
 <script>var process = { env: {} };</script>
@@ -563,7 +569,7 @@ Built with Vite. Type-checked with tsc --noEmit.</pre>
   // Keep in sync with scripts/showcase-examples.json (test/pages.test.ts checks it).
   var GROUPS = [
     { key: 'same', tag: 'py =', title: 'Same as Python',
-      text: 'Everyday release names: guessit-js and Python guessit return the same answer.',
+      text: 'Everyday release names: guessit-js returns exactly what Python guessit returns, in the same notation ("language": "French", "country": "UNITED STATES").',
       names: [
       "The.Dark.Knight.2008.1080p.BluRay.x264-GROUP.mkv",
       "Game.of.Thrones.S08E06.The.Iron.Throne.1080p.AMZN.WEB-DL.DDP5.1.H.264-GoT.mkv",
@@ -573,10 +579,6 @@ Built with Vite. Type-checked with tsc --noEmit.</pre>
       "Movies/The Matrix (1999)/The.Matrix.1999.REMASTERED.1080p.BluRay.x264-GROUP.mkv",
       "Mob Psycho 100 - 09 [1080p].mkv",
       "[SCY] Attack on Titan Season 3 - 11 (BD 1080p Hi10 FLAC) [5D7A2C4E].mkv",
-    ] },
-    { key: 'format', tag: 'py ≈', title: 'Same answer, different notation',
-      text: 'Both agree on the meaning; guessit-js writes it in a different JSON form: languages as ISO 639-3 codes ({"alpha3": "fra"}) instead of English names, countries as ISO 3166 codes ("US" instead of "UNITED STATES").',
-      names: [
       "Amelie.2001.FRENCH.1080p.BluRay.x264-GRP.mkv",
       "Movie.Name.2019.MULTi.VFF.1080p.BluRay.x265-GRP.mkv",
       "Movie.2020.German.DL.1080p.BluRay.AVC.REMUX-GRP.mkv",
@@ -616,6 +618,8 @@ Built with Vite. Type-checked with tsc --noEmit.</pre>
   ];
 
   var input = document.getElementById('demo-input');
+  var codesToggle = document.getElementById('demo-codes');
+  codesToggle.addEventListener('change', function() { if (lastFilename) fetchResult(lastFilename); });
   var resultDiv = document.getElementById('demo-result');
   var examplesList = document.getElementById('examples-list');
   var propsGrid = document.getElementById('props-grid');
@@ -641,8 +645,8 @@ Built with Vite. Type-checked with tsc --noEmit.</pre>
   });
 
   // Populate examples, one block per group
-  var TAG_CLASS = { same: 'same', format: 'format', fail: '' };
-  var BTN_CLASS = { same: 'pysame', format: 'pyformat', fail: 'pyfail' };
+  var TAG_CLASS = { same: 'same', fail: '' };
+  var BTN_CLASS = { same: 'pysame', fail: 'pyfail' };
   function addExample(grid, ex, group) {
     var btn = document.createElement('button');
     btn.className = 'example-btn ' + BTN_CLASS[group.key];
@@ -735,7 +739,7 @@ Built with Vite. Type-checked with tsc --noEmit.</pre>
     // Use client-side library (works on both GitHub Pages and self-hosted)
     if (window.GuessitJS) {
       try {
-        var data = window.GuessitJS.guessit(filename);
+        var data = window.GuessitJS.guessit(filename, codesToggle.checked ? { output: 'codes' } : undefined);
         lastFilename = filename;
         renderResult(data, start, filename);
       } catch(e) {
@@ -745,7 +749,7 @@ Built with Vite. Type-checked with tsc --noEmit.</pre>
     }
 
     // Fallback: try API (self-hosted server)
-    fetch('/api/guessit?filename=' + encodeURIComponent(filename))
+    fetch('/api/guessit?filename=' + encodeURIComponent(filename) + (codesToggle.checked ? '&output=codes' : ''))
       .then(function(r) { if (!r.ok) throw new Error('API unavailable'); return r.json(); })
       .then(function(data) { renderResult(data, start); })
       .catch(function(err) {
@@ -753,9 +757,10 @@ Built with Vite. Type-checked with tsc --noEmit.</pre>
       });
   }
 
-  // Bring both sides to one notation before comparing: guessit-js languages are
-  // {"alpha3": ...} objects and dates ISO timestamps; python-compare.json carries
-  // Python's values already converted (language -> alpha3, country -> alpha2).
+  // Bring both sides to one notation before comparing. The default output already
+  // is Python's notation; with output: 'codes' languages are {"alpha3": ...}
+  // objects and dates Date objects, so python-compare.json also carries Python's
+  // values converted to codes (language -> alpha3, country -> alpha2).
   // mimetype is skipped: Python reads it from the host OS table.
   function canon(v) {
     if (Array.isArray(v)) return '[' + v.map(canon).join(',') + ']';
@@ -789,12 +794,14 @@ Built with Vite. Type-checked with tsc --noEmit.</pre>
       return;
     }
     var py = PYCMP && filename && PYCMP.results && PYCMP.results[filename];
-    var pyc = py && PYCMP.canonical && PYCMP.canonical[filename] || py;
+    // Compare like with like: Python's own output in the default (Python) notation,
+    // Python's values converted to codes when the codes toggle is on.
+    var pyc = py && codesToggle.checked && PYCMP.canonical && PYCMP.canonical[filename] || py;
     var keysDiffer = py ? diffKeys(data, pyc) : [];
     var html = renderGrid(data, keysDiffer);
     html += '<div class="demo-timing"><span class="dot"></span> ' + Object.keys(data).length + ' properties &middot; ' + elapsed + 'ms (in-browser)</div>';
     if (py) {
-      var notation = diffKeys(data, py).filter(function(k) { return keysDiffer.indexOf(k) < 0; });
+      var notation = pyc === py ? [] : diffKeys(data, py).filter(function(k) { return keysDiffer.indexOf(k) < 0; });
       var verdictStyle = 'text-transform:none; letter-spacing:0; color:var(--';
       var verdict = keysDiffer.length
         ? '<span style="' + verdictStyle + 'red)">&mdash; differs on ' + escapeHtml(keysDiffer.join(', ')) + '</span>'

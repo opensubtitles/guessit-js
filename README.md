@@ -13,6 +13,7 @@ Extract metadata (title, year, season, episode, codec, language, etc.) from medi
 ## Features
 
 - **Runs 2191 of the 2229 cases in Python guessit's own test suite** (upstream 4.5.1, its corpus *and* its per-rule files) — and is **more correct**: fixes for 32 historical upstream bugs, Python's still-open #877, and 114 of the 276 cross-parser cases Python admits failing (see [Differences from Python](#differences-from-python-guessit))
+- **Drop-in output**: results use Python guessit's own notation (`"language": "French"`, `"country": "UNITED STATES"`, `"date": "2024-03-15"`) in the library, CLI, REST API and WASM; guessit-js only *parses* better. Richer codes are opt-in with [`output: 'codes'`](#output-notation)
 - **~2x faster** than Python per parse ([measured](#performance))
 - **56 properties** detected: title, year, season, episode, resolution, codec, language, ids, and more — with a [machine-readable schema](#output-schema)
 - **Batch parsing**: `guessitMany()` in-process, or one POST for up to 100 names
@@ -90,6 +91,34 @@ guessit('X2.2003.720p.DSNP.WEB-DL.DDP5.1.H.264-EVO.mkv');
 //   streaming_service: 'Disney+', source: 'Web', ... }
 ```
 
+### Output notation
+
+Results are a drop-in for Python guessit: the same keys and the same notation
+Python's `guessit --json` prints, so code written against Python guessit keeps
+working. guessit-js parses many names better (see
+[Differences](#differences-from-python-guessit)); it never formats differently
+by default.
+
+| Value | default (`output: 'python'`) | `output: 'codes'` |
+|---|---|---|
+| `language`, `subtitle_language` | `"French"`, `["German", "Multiple languages"]` | `{ alpha3: 'fra' }`, `[{ alpha3: 'deu' }, { alpha3: 'mul' }]` |
+| region / script | dropped, as in Python: `"Portuguese"` | kept: `{ alpha3: 'por', country: 'BR' }` |
+| `country` | `"UNITED STATES"` | `"US"` |
+| `date` | `"2024-03-15"` | `Date` (JSON: `"2024-03-15T00:00:00.000Z"`) |
+
+```typescript
+guessit('Movie.2020.PT-BR.1080p.mkv');
+// { title: 'Movie', year: 2020, language: 'Portuguese', ... }
+guessit('Movie.2020.PT-BR.1080p.mkv', { output: 'codes' });
+// { title: 'Movie', year: 2020, language: { alpha3: 'por', country: 'BR' }, ... }
+```
+
+The same switch exists everywhere: `?output=codes` or `"options": {"output": "codes"}`
+on the REST API, `--output-codes` on the CLI, `{"options": {"output": "codes"}}`
+for WASM. The names are generated from babelfish, the library Python guessit uses
+(`scripts/python-names.py`). `toPythonNotation()`, `pythonLanguageName()` and
+`pythonCountryName()` are exported for converting codes yourself.
+
 ### Batch
 
 `guessitMany()` parses a list in one pass. `guessit()` re-parses the options and
@@ -129,6 +158,7 @@ guessit('file.mkv', { type: 'episode' });
 guessit('my 720p show S01E02', { expected_title: ['my 720p show'] });
 guessit('file.mkv', { allowed_languages: ['en', 'fr'] });
 guessit('file.mkv', { excludes: ['release_group'] });
+guessit('file.mkv', { output: 'codes' });  // guessit-js codes instead of Python names
 ```
 
 ```typescript
@@ -203,6 +233,9 @@ curl -X POST http://localhost:3847/api/guessit \
 ```
 
 CLI parsing flags become server defaults: `guessit-js --serve -t episode -L en`.
+Every surface answers in Python guessit's notation; add `?output=codes` (GET) or
+`"options": {"output": "codes"}` (POST) for guessit-js codes
+([Output notation](#output-notation)). Any other `output` value is a `400`.
 The repo also ships a fuller dev server (`npm start`) with the demo page,
 Swagger UI at `/docs`, and static WASM serving.
 
@@ -227,6 +260,7 @@ For non-JS environments (Rust, Go, C++, edge compute). Uses [Javy](https://githu
 ```bash
 npm run wasm
 echo '{"filename":"Movie.2024.1080p.mkv"}' | wasmtime wasm/guessit.wasm
+echo '{"filename":"Movie.PT-BR.mkv","options":{"output":"codes"}}' | wasmtime wasm/guessit.wasm
 ```
 
 The WASM build is **bit-identical to the JS build** across the entire test corpus
@@ -237,6 +271,13 @@ Prebuilt binaries ship with every [GitHub release](https://github.com/opensubtit
 and as the npm package [`@opensubtitles/guessit-wasm`](packages/guessit-wasm)
 (`guessit.wasm` + a small `node:wasi` helper). Binaries are never committed to git.
 `wasm/build.sh` downloads Javy pinned by version **and** sha256.
+
+### Versioning
+
+One version number for everything built from a release tag: the `guessit-js`
+npm package, `@opensubtitles/guessit-wasm`, the WASM binaries on the GitHub
+release, the Docker image (`ghcr.io/opensubtitles/guessit-js:<version>`) and the
+hosted API (`/api/health` reports it).
 
 ## Differences from Python guessit
 
