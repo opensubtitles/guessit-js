@@ -202,3 +202,50 @@
   season: 1
   episode: 3
   type: episode
+
+# --- Numbered specials "SP01" (upstream #1000, open) --------------------------
+# python: title "SP01", episode 86 (the show's name read as the episode)
+? '[DB]86_-_SP01_(10bit_BD1080p_x265).mkv'
+: title: '86'
+  episode: 1
+  episode_details: Special
+  type: episode
+
+# python: title "Haikyuu", no episode, type movie
+? '[DB]Haikyuu_-_SP01_(10bit_BD1080p_x265).mkv'
+: title: Haikyuu
+  episode: 1
+  episode_details: Special
+  type: episode
+
+# python: episode_title "SP01", no episode
+? '[FFF] Some Anime Show - SP01 [BD][720p-AAC][F2F4B7A3].mkv'
+: title: Some Anime Show
+  episode: 1
+  episode_details: Special
+  type: episode
+
+# --- A bare "Vhs" inside an episode title (upstream #964 / PR #1004, unreleased)
+# python: source [VHS, Web], episode_title cut to "The Family Memories"
+? 'Some.Show.S06E05.The.Family.Memories.Vhs.Mix.Tape.1080p.WEBRip.x264-GRP.mkv'
+: title: Some Show
+  season: 6
+  episode: 5
+  episode_title: The Family Memories Vhs Mix Tape
+  source: Web
+  other: Rip
+
+# --- More French version tags (upstream #1005, open) -------------------------
+# python: alternative_title "VFB" (Belgian French dub), no language
+? 'Movie.2020.VFB.1080p.WEB.H264-GRP'
+: title: Movie
+  year: 2020
+  language: fr
+  -alternative_title: VFB
+
+# python: alternative_title "VOQ" (original Québec version), no language
+? 'Some.Movie.2006.VOQ.1080p.BluRay.x264-GRP.mkv'
+: title: Some Movie
+  year: 2006
+  language: fr
+  -alternative_title: VOQ

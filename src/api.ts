@@ -45,8 +45,25 @@ export class GuessItApi {
   private _config: Record<string, unknown> | null = null;
   private _loadConfigOptions: GuessItOptions | null = null;
   private _advancedConfig: unknown = null;
+  /**
+   * Merged (config + call options) objects per distinct options value, for the
+   * config they were merged from. Merging deep-copies the whole config, which
+   * costs about a third of a parse; callers mostly repeat a handful of option
+   * sets, so each is merged once. Bounded, oldest evicted first. Rules never
+   * write to the merged options (guessitMany already shares one per batch).
+   * Same idea as upstream guessit#1008.
+   */
+  private _mergedCache = new Map<string, Record<string, unknown>>();
+  private _mergedCacheConfig: Record<string, unknown> | null = null;
+  private static readonly MERGED_CACHE_SIZE = 16;
+  private _lastBuilder: unknown = null;
+  private _lastOverrideKey: string | null = null;
 
   reset(): void {
+    this._mergedCache.clear();
+    this._mergedCacheConfig = null;
+    this._lastBuilder = null;
+    this._lastOverrideKey = null;
     this._rebulk = null;
     this._config = null;
     this._loadConfigOptions = null;
@@ -77,9 +94,20 @@ export class GuessItApi {
       config = this._config;
     }
 
+    // Fast path: same config object, same rules builder and the same advancedConfig
+    // override as the previous call means the rule set cannot change. Skipping the
+    // deep merge and the two JSON dumps of advanced_config is most of what a call
+    // with unchanged options used to spend before parsing.
+    const override = parsedOptions['advancedConfig'];
+    const overrideKey = override === undefined ? '' : cacheKey({ o: override });
+    if (!force && this._rebulk && overrideKey !== null && config === this._config &&
+        builder === this._lastBuilder && overrideKey === this._lastOverrideKey) {
+      return config;
+    }
+
     const advancedConfig = mergeOptions(
       (config['advanced_config'] as Record<string, unknown>) ?? {},
-      (parsedOptions['advancedConfig'] as Record<string, unknown>) ?? {},
+      (override as Record<string, unknown>) ?? {},
     );
 
     const shouldBuild = force || !this._rebulk || !this._advancedConfig ||
@@ -91,6 +119,8 @@ export class GuessItApi {
     }
 
     this._config = config;
+    this._lastBuilder = builder;
+    this._lastOverrideKey = overrideKey;
     return config;
   }
 
@@ -130,7 +160,22 @@ export class GuessItApi {
   private _prepare(options?: RawOptions): Record<string, unknown> {
     const parsedOptions = parseOptions(options, true);
     const config = this.configure(parsedOptions, undefined, false, false);
-    return mergeOptions(config, parsedOptions);
+    // A reloaded config (force, or a different config source) invalidates every entry.
+    if (this._mergedCacheConfig !== config) {
+      this._mergedCache.clear();
+      this._mergedCacheConfig = config;
+    }
+    const key = cacheKey(parsedOptions);
+    if (key === null) return mergeOptions(config, parsedOptions);
+    let merged = this._mergedCache.get(key);
+    if (!merged) {
+      merged = mergeOptions(config, parsedOptions);
+      if (this._mergedCache.size >= GuessItApi.MERGED_CACHE_SIZE) {
+        this._mergedCache.delete(this._mergedCache.keys().next().value as string);
+      }
+      this._mergedCache.set(key, merged);
+    }
+    return merged;
   }
 
   private _guess(string: string, mergedOptions: Record<string, unknown>): GuessItResult {
@@ -258,6 +303,31 @@ export class GuessItApi {
     }
     return suggested;
   }
+}
+
+/**
+ * A stable key for an options object, or null when it holds anything JSON cannot
+ * represent faithfully (functions, RegExp, Date, class instances...), which are
+ * then merged per call as before.
+ */
+function cacheKey(options: Record<string, unknown>): string | null {
+  const plain = (v: unknown): boolean => {
+    if (v === null || ['string', 'number', 'boolean'].includes(typeof v)) return true;
+    if (Array.isArray(v)) return v.every(plain);
+    if (typeof v === 'object' && Object.getPrototypeOf(v) === Object.prototype) {
+      return Object.values(v as Record<string, unknown>).every((x) => x === undefined || plain(x));
+    }
+    return false;
+  };
+  if (!plain(options)) return null;
+  const sorted = (v: unknown): unknown => {
+    if (Array.isArray(v)) return v.map(sorted);
+    if (v && typeof v === 'object') {
+      return Object.fromEntries(Object.keys(v).sort().map((k) => [k, sorted((v as Record<string, unknown>)[k])]));
+    }
+    return v;
+  };
+  return JSON.stringify(sorted(options));
 }
 
 /** Default singleton API instance */

@@ -123,7 +123,7 @@ export const GUESSIT_SYNONYMS: Record<string, string[]> = {
   // castellano = Castilian (Spanish from Spain), not Catalan — upstream develop b9bfab4 (#1006)
   'spa': ['esp', 'español', 'espanol', 'castellano', 'espanol castellano', 'español castellano'],
   // VOF (version originale française), VF2 (both French dubs) — upstream 4.5.4 4cb3ffc (#1001)
-  'fra': ['français', 'vf', 'vff', 'vfi', 'vfq', 'vof', 'vf2'],
+  'fra': ['français', 'vf', 'vff', 'vfi', 'vfq', 'vof', 'vf2', 'vfb', 'voq'],
   'swe': ['se'],
   'por_BR': ['po', 'pb', 'pob', 'ptbr', 'br', 'brazilian'],
   'deu_CH': ['swissgerman', 'swiss german'],
