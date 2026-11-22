@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "guessit-js": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "guessit-js", "--mcp"]
+    },
+    "guessit-js-remote": {
+      "type": "streamable-http",
+      "url": "https://guessit.opensubtitles.com/mcp"
+    }
+  }
+}
