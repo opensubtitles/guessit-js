@@ -2,6 +2,11 @@
 
 All notable changes to guessit-js are documented here.
 
+## [5.3.2]
+
+- **MCP Registry entry has an icon:** `server.json` lists the 512×512 PNG at
+  https://opensubtitles.github.io/guessit-js/icon.png. No code change.
+
 ## [5.3.1]
 
 **Agent Plugins manifest and tool titles.** No change to parsing or to the MCP
