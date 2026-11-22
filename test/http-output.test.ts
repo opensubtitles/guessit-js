@@ -11,9 +11,10 @@ import { join, resolve } from 'node:path';
 const root = resolve(__dirname, '..');
 const hasDist = existsSync(join(root, 'dist', 'guessit-js.js'));
 
+// Ports 38471 (serve-limits) and 38472 (batch) belong to other test files, which run in parallel.
 const SURFACES = [
-  { name: 'cli --serve', port: 38472, cmd: ['node', join(root, 'bin', 'cli.mjs'), '--serve', '38472'], env: {}, needsDist: true },
-  { name: 'server.ts', port: 38473, cmd: ['npx', 'tsx', join(root, 'server.ts')], env: { PORT: '38473' }, needsDist: false },
+  { name: 'cli --serve', port: 38474, cmd: ['node', join(root, 'bin', 'cli.mjs'), '--serve', '38474'], env: {}, needsDist: true },
+  { name: 'server.ts', port: 38475, cmd: ['npx', 'tsx', join(root, 'server.ts')], env: { PORT: '38475' }, needsDist: false },
 ];
 
 for (const surface of SURFACES) {
