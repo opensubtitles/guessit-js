@@ -2,6 +2,38 @@
 
 All notable changes to guessit-js are documented here.
 
+## [5.3.0]
+
+**MCP server: latest protocol, one-click installs, official registry.** No
+change to parsing; results are identical to 5.2.0.
+
+- **MCP `2026-07-28`, the stateless revision.** `server/discover`, per-request
+  `_meta` (protocol version and client capabilities), `resultType`, server
+  identity in every result, cacheable `tools/list` (`ttlMs`, `cacheScope`),
+  `UnsupportedProtocolVersion` (`-32022`) with the supported list. Over HTTP the
+  mirrored `MCP-Protocol-Version`, `Mcp-Method` and `Mcp-Name` headers are
+  checked against the body (`400` + `HeaderMismatch` `-32020`), unknown methods
+  answer `404`.
+- **Older clients work unchanged:** the `initialize` handshake now also
+  negotiates `2025-11-25`, and still `2025-06-18`, `2025-03-26` and `2024-11-05`.
+  Legacy results carry no new protocol fields; the additions are the tool
+  `outputSchema` and the server's `description` and `websiteUrl`. Over HTTP an
+  unparseable body or an `MCP-Protocol-Version` header naming a version this
+  server does not speak now answers `400` (was `200` with a JSON-RPC error).
+- **Every tool declares an `outputSchema`** matching its `structuredContent`.
+- **Claude Desktop extension:** `guessit-js.mcpb` is attached to every GitHub
+  release (`scripts/build-mcpb.sh`); open it in Claude Desktop to install.
+- **Docker:** the image carries the MCP server
+  (`docker run -i --rm ghcr.io/opensubtitles/guessit-js node bin/cli.mjs --mcp`)
+  and the `io.modelcontextprotocol.server.name` label.
+- **Official MCP Registry:** the registry name is now
+  `com.opensubtitles/guessit-js` (DNS-verified on opensubtitles.com; it was
+  `io.github.opensubtitles/guessit-js`, never published). `package.json`
+  `mcpName` follows. `.github/workflows/mcp-registry.yml` publishes
+  `server.json` (npm + `.mcpb` + remote) after each release once enabled.
+  Schema `2025-12-11`.
+- README: install buttons for VS Code and Cursor, Claude Desktop, Docker.
+
 ## [5.2.0]
 
 **AI agents can use guessit-js as a tool.** guessit-js is now a

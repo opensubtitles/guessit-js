@@ -3,8 +3,35 @@
 // Cloudflare worker and server.ts (HTTP POST /mcp). No Node-only imports, no
 // dependencies.
 
-const SUPPORTED_PROTOCOLS = ['2025-06-18', '2025-03-26', '2024-11-05'];
+// Dual-era: "modern" revisions (2026-07-28+) are stateless and carry the
+// protocol version in every request's _meta; "legacy" revisions open with an
+// initialize handshake. The server itself keeps no state either way.
+const MODERN_PROTOCOLS = ['2026-07-28'];
+const LEGACY_PROTOCOLS = ['2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05'];
+const SUPPORTED_PROTOCOLS = [...MODERN_PROTOCOLS, ...LEGACY_PROTOCOLS];
 const MAX_FILENAME_LENGTH = 4096;
+
+const META = 'io.modelcontextprotocol/';
+// The tool list only changes with a new release; clients and shared caches may keep it.
+const CACHEABLE = { ttlMs: 3_600_000, cacheScope: 'public' };
+
+const INSTRUCTIONS =
+  'guessit-js extracts metadata (title, year, season, episode, resolution, codecs, '
+  + 'languages, release group, ...) from movie and TV filenames. Use guessit for one '
+  + 'name, guessit_batch for many. Output matches Python guessit; pass '
+  + 'options.output="codes" for ISO language codes with regions.';
+
+const serverInfo = (api) => ({
+  name: 'guessit-js',
+  title: 'guessit-js',
+  version: api.version,
+  description: 'Parse movie and TV filenames: title, year, season, episode, codecs, languages, release group.',
+  websiteUrl: 'https://opensubtitles.github.io/guessit-js/',
+});
+
+// Error codes (2026-07-28 reserves -32020..-32099 for the MCP specification).
+const HEADER_MISMATCH = -32020;
+const UNSUPPORTED_PROTOCOL_VERSION = -32022;
 
 const OPTIONS_SCHEMA = {
   type: 'object',
@@ -35,6 +62,20 @@ const TOOLS = [
       required: ['filename'],
       additionalProperties: false,
     },
+    outputSchema: {
+      type: 'object',
+      description: 'Python guessit JSON: only the properties found; several values become an array. '
+        + 'guessit_properties lists every property. Full schema: '
+        + 'https://github.com/opensubtitles/guessit-js/blob/main/docs/output-schema.json',
+      properties: {
+        type: { type: 'string', enum: ['movie', 'episode'] },
+        title: {},
+        year: {},
+        season: {},
+        episode: {},
+      },
+      additionalProperties: true,
+    },
     annotations: { readOnlyHint: true, openWorldHint: false, idempotentHint: true },
   },
   {
@@ -53,6 +94,25 @@ const TOOLS = [
       required: ['filenames'],
       additionalProperties: false,
     },
+    outputSchema: {
+      type: 'object',
+      properties: {
+        results: {
+          type: 'array',
+          description: 'One entry per input name, in order',
+          items: {
+            type: 'object',
+            properties: {
+              input_string: { type: 'string' },
+              result: { type: 'object', additionalProperties: true },
+              error: { type: 'string' },
+            },
+            required: ['input_string'],
+          },
+        },
+      },
+      required: ['results'],
+    },
     annotations: { readOnlyHint: true, openWorldHint: false, idempotentHint: true },
   },
   {
@@ -62,6 +122,11 @@ const TOOLS = [
       'List every property guessit can return with its possible values (enum values such as '
       + 'source: ["Blu-ray", "Web", ...]; [null] for free-form ones such as title).',
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    outputSchema: {
+      type: 'object',
+      description: 'Property name -> possible values',
+      additionalProperties: { type: 'array' },
+    },
     annotations: { readOnlyHint: true, openWorldHint: false, idempotentHint: true },
   },
 ];
@@ -107,9 +172,25 @@ function validOptions(options) {
  * message is a notification (or anything else that takes no answer).
  * @param {{ guessit: Function, guessitMany: Function, properties: Function, version: string }} api
  */
+/** The protocol version a request's _meta declares (modern revisions), if any. */
+function requestedVersion(msg) {
+  const meta = msg && msg.params && msg.params._meta;
+  return meta && typeof meta === 'object' ? meta[`${META}protocolVersion`] : undefined;
+}
+
+/** Modern requests declare their version per request; server/discover exists only there. */
+export function isModernRequest(msg) {
+  return !!msg && typeof msg === 'object'
+    && (requestedVersion(msg) !== undefined || msg.method === 'server/discover');
+}
+
+/**
+ * Answer one JSON-RPC message. Returns the response object, or null when the
+ * message is a notification (or anything else that takes no answer).
+ * @param {{ guessit: Function, guessitMany: Function, properties: Function, version: string, maxBatch: number }} api
+ */
 export function handleMcpMessage(api, msg) {
-  const reply = (id, result) => ({ jsonrpc: '2.0', id, result });
-  const fail = (id, code, message) => ({ jsonrpc: '2.0', id, error: { code, message } });
+  const fail = (id, code, message, data) => ({ jsonrpc: '2.0', id, error: data === undefined ? { code, message } : { code, message, data } });
 
   function callTool(name, args) {
     args = args ?? {};
@@ -139,31 +220,62 @@ export function handleMcpMessage(api, msg) {
   }
   const { id, method, params } = msg;
   const isNotification = id === undefined || id === null;
+  if (isNotification) return null; // notifications/initialized, cancelled, ... take no answer
+
+  // Modern (stateless) requests: validate the per-request _meta first.
+  const modern = isModernRequest(msg);
+  const requested = requestedVersion(msg);
+  let modernShape = false;
+  if (modern) {
+    if (typeof requested !== 'string') {
+      return fail(id, -32602, `Invalid params: _meta["${META}protocolVersion"] is required`);
+    }
+    if (!SUPPORTED_PROTOCOLS.includes(requested)) {
+      return fail(id, UNSUPPORTED_PROTOCOL_VERSION, 'Unsupported protocol version', { supported: SUPPORTED_PROTOCOLS, requested });
+    }
+    modernShape = MODERN_PROTOCOLS.includes(requested);
+    const caps = params._meta[`${META}clientCapabilities`];
+    if (modernShape && (!caps || typeof caps !== 'object' || Array.isArray(caps))) {
+      return fail(id, -32602, `Invalid params: _meta["${META}clientCapabilities"] is required`);
+    }
+  }
+  // Modern results say they are complete and name the server (there is no handshake).
+  const reply = (result) => ({
+    jsonrpc: '2.0',
+    id,
+    result: modernShape
+      ? { resultType: 'complete', ...result, _meta: { [`${META}serverInfo`]: serverInfo(api) } }
+      : result,
+  });
+
   switch (method) {
+    case 'server/discover':
+      return reply({
+        supportedVersions: SUPPORTED_PROTOCOLS,
+        capabilities: { tools: {} },
+        instructions: INSTRUCTIONS,
+        ...CACHEABLE,
+      });
     case 'initialize': {
-      const requested = params && params.protocolVersion;
-      return reply(id, {
-        protocolVersion: SUPPORTED_PROTOCOLS.includes(requested) ? requested : SUPPORTED_PROTOCOLS[0],
+      // The legacy handshake negotiates a legacy revision only.
+      const asked = params && params.protocolVersion;
+      return reply({
+        protocolVersion: LEGACY_PROTOCOLS.includes(asked) ? asked : LEGACY_PROTOCOLS[0],
         capabilities: { tools: { listChanged: false } },
-        serverInfo: { name: 'guessit-js', title: 'guessit-js', version: api.version },
-        instructions:
-          'guessit-js extracts metadata (title, year, season, episode, resolution, codecs, '
-          + 'languages, release group, ...) from movie and TV filenames. Use guessit for one '
-          + 'name, guessit_batch for many. Output matches Python guessit; pass '
-          + 'options.output="codes" for ISO language codes with regions.',
+        serverInfo: serverInfo(api),
+        instructions: INSTRUCTIONS,
       });
     }
     case 'ping':
-      return isNotification ? null : reply(id, {});
+      return reply({});
     case 'tools/list':
-      return reply(id, { tools: toolsFor(api) });
+      return reply(modernShape ? { tools: toolsFor(api), ...CACHEABLE } : { tools: toolsFor(api) });
     case 'tools/call': {
       const result = callTool(params && params.name, params && params.arguments);
-      return result === null ? fail(id, -32602, `Unknown tool: ${params && params.name}`) : reply(id, result);
+      return result === null ? fail(id, -32602, `Unknown tool: ${params && params.name}`) : reply(result);
     }
     default:
-      // Notifications (notifications/initialized, cancelled, ...) take no answer.
-      return isNotification ? null : fail(id, -32601, `Method not found: ${method}`);
+      return fail(id, -32601, `Method not found: ${method}`);
   }
 }
 
@@ -182,4 +294,78 @@ export function handleMcpPayload(api, text) {
   return handleMcpMessage(api, msg);
 }
 
-export { TOOLS };
+/** Decode an Mcp-Name / Mcp-Param-* header value ("=?base64?...?=" sentinel or plain ASCII). */
+function decodeHeaderValue(v) {
+  const m = /^=\?base64\?([A-Za-z0-9+/=]*)\?=$/.exec(v);
+  if (!m) return v;
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(Uint8Array.from(atob(m[1]), (c) => c.charCodeAt(0)));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Streamable HTTP POST /mcp, shared by server.ts and the Cloudflare worker.
+ * Stateless: every request is answered with plain JSON, notifications with 202.
+ * @param {string} text the request body
+ * @param {(name: string) => string | null | undefined} header case-insensitive header lookup
+ * @returns {{ status: number, body: unknown }} body null means "no body"
+ */
+export function handleMcpHttp(api, text, header) {
+  let msg;
+  try {
+    msg = JSON.parse(text);
+  } catch {
+    return { status: 400, body: { jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error' } } };
+  }
+  const mismatch = (message) => ({
+    status: 400,
+    body: { jsonrpc: '2.0', id: msg && typeof msg === 'object' && 'id' in msg ? msg.id : null, error: { code: HEADER_MISMATCH, message } },
+  });
+
+  // Modern request: the mirrored headers must be present and match the body.
+  if (!Array.isArray(msg) && isModernRequest(msg)) {
+    const version = requestedVersion(msg);
+    const hv = header('mcp-protocol-version');
+    if (!hv) return mismatch('Header mismatch: MCP-Protocol-Version header is required');
+    if (typeof version === 'string' && hv !== version) {
+      return mismatch(`Header mismatch: MCP-Protocol-Version header value '${hv}' does not match body value '${version}'`);
+    }
+    const hm = header('mcp-method');
+    if (!hm) return mismatch('Header mismatch: Mcp-Method header is required');
+    if (hm !== msg.method) return mismatch(`Header mismatch: Mcp-Method header value '${hm}' does not match body value '${msg.method}'`);
+    if (msg.method === 'tools/call') {
+      const raw = header('mcp-name');
+      if (!raw) return mismatch('Header mismatch: Mcp-Name header is required for tools/call');
+      const name = decodeHeaderValue(raw);
+      if (name === null) return mismatch('Header mismatch: Mcp-Name header is not valid Base64 UTF-8');
+      if (name !== (msg.params && msg.params.name)) return mismatch('Header mismatch: Mcp-Name header does not match params.name');
+    }
+    const answer = handleMcpMessage(api, msg);
+    if (!answer) return { status: 202, body: null };
+    if (!answer.error) return { status: 200, body: answer };
+    const { code } = answer.error;
+    return { status: code === -32601 ? 404 : code === -32603 ? 500 : 400, body: answer };
+  }
+
+  // Legacy (initialize handshake) revisions: as before, JSON-RPC errors ride on 200,
+  // except an MCP-Protocol-Version header this server cannot speak.
+  const hv = header('mcp-protocol-version');
+  if (hv && !SUPPORTED_PROTOCOLS.includes(hv)) {
+    return {
+      status: 400,
+      body: {
+        jsonrpc: '2.0',
+        id: msg && typeof msg === 'object' && 'id' in msg ? msg.id : null,
+        error: { code: UNSUPPORTED_PROTOCOL_VERSION, message: 'Unsupported protocol version', data: { supported: SUPPORTED_PROTOCOLS, requested: hv } },
+      },
+    };
+  }
+  const answer = Array.isArray(msg)
+    ? (() => { const out = msg.map((m) => handleMcpMessage(api, m)).filter(Boolean); return out.length ? out : null; })()
+    : handleMcpMessage(api, msg);
+  return answer ? { status: 200, body: answer } : { status: 202, body: null };
+}
+
+export { TOOLS, SUPPORTED_PROTOCOLS, MODERN_PROTOCOLS, LEGACY_PROTOCOLS };

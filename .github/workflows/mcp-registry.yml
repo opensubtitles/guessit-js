@@ -1,0 +1,82 @@
+name: MCP Registry
+
+# Publishes server.json to the official MCP Registry
+# (https://registry.modelcontextprotocol.io) as com.opensubtitles/guessit-js.
+# Authenticates by DNS: the opensubtitles.com apex carries the TXT record
+# "v=MCPv1; k=ed25519; p=<public key>", and the matching Ed25519 private key
+# (hex seed) is the MCP_PRIVATE_KEY repository secret.
+# Runs after each release (called by release.yml, once npm has the version, since
+# the registry checks the npm package's "mcpName"), or by hand for a given tag.
+on:
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to publish, e.g. v5.3.0'
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag }}
+      PUBLISHER_VERSION: v1.8.11
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Stamp the release version (and the Claude Desktop bundle, if attached)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          jq --arg v "$version" '.version = $v | .packages |= map(.version = $v)' server.json > server.stamped.json
+          url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/guessit-js.mcpb"
+          if gh release download "$TAG" --pattern guessit-js.mcpb --dir /tmp/mcpb 2>/dev/null; then
+            sha=$(sha256sum /tmp/mcpb/guessit-js.mcpb | cut -d' ' -f1)
+            jq --arg url "$url" --arg sha "$sha" --arg v "$version" \
+              '.packages += [{registryType: "mcpb", identifier: $url, version: $v, fileSha256: $sha, transport: {type: "stdio"}}]' \
+              server.stamped.json > server.mcpb.json
+          fi
+          cat server.mcpb.json 2>/dev/null || cat server.stamped.json
+
+      - name: Already published?
+        id: exists
+        run: |
+          version="${TAG#v}"
+          if curl -sf "https://registry.modelcontextprotocol.io/v0/servers/com.opensubtitles%2Fguessit-js/versions/${version}" >/dev/null; then
+            echo "::notice::com.opensubtitles/guessit-js ${version} is already in the MCP Registry"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install mcp-publisher (pinned)
+        if: steps.exists.outputs.skip != 'true'
+        run: |
+          curl -sSfL "https://github.com/modelcontextprotocol/registry/releases/download/${PUBLISHER_VERSION}/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+          ./mcp-publisher --help >/dev/null
+
+      - name: Publish
+        if: steps.exists.outputs.skip != 'true'
+        env:
+          MCP_PRIVATE_KEY: ${{ secrets.MCP_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          ./mcp-publisher login dns --domain opensubtitles.com
+          # Prefer the entry listing the .mcpb bundle too; fall back to npm + remote only.
+          if [ -f server.mcpb.json ]; then
+            cp server.mcpb.json server.json
+            if ./mcp-publisher publish; then exit 0; fi
+            echo "::warning::publishing with the .mcpb package failed; retrying with npm + remote only"
+          fi
+          cp server.stamped.json server.json
+          ./mcp-publisher publish

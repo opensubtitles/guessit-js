@@ -1,6 +1,6 @@
 {
   "name": "guessit-js",
-  "version": "5.2.0",
+  "version": "5.3.0",
   "description": "Extract metadata (title, year, season, episode, codec, language, etc.) from media filenames — TypeScript port of Python guessit",
   "keywords": [
     "guessit",
@@ -86,5 +86,5 @@
     "vite-plugin-dts": "^5.1.2",
     "vitest": "^5.1.1"
   },
-  "mcpName": "io.github.opensubtitles/guessit-js"
+  "mcpName": "com.opensubtitles/guessit-js"
 }

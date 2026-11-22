@@ -37,3 +37,4 @@ coverage/
 
 # Wrangler local dev state (wrangler dev)
 .wrangler/
+mcpb/*.mcpb

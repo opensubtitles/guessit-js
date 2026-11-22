@@ -13,7 +13,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { guessit, guessitMany, properties, version, OUTPUT_FORMATS } from './src/index.js';
 // @ts-expect-error plain ES module shared with the CLI and the worker, no type declarations
-import { handleMcpPayload } from './bin/mcp-core.mjs';
+import { handleMcpHttp } from './bin/mcp-core.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env['PORT'] || '3847', 10);
@@ -50,7 +50,7 @@ const MIME_TYPES: Record<string, string> = {
 function setCors(res: http.ServerResponse): void {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Mcp-Protocol-Version, Mcp-Session-Id');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Mcp-Protocol-Version, Mcp-Method, Mcp-Name, Mcp-Session-Id');
 }
 
 function sendJson(res: http.ServerResponse, status: number, data: unknown): void {
@@ -233,9 +233,13 @@ const server = http.createServer(async (req, res) => {
     }
     try {
       const body = await readBody(req);
-      const answer = handleMcpPayload({ guessit, guessitMany, properties, version, maxBatch: MAX_BATCH }, body);
-      if (answer) sendJson(res, 200, answer);
-      else { setCors(res); res.writeHead(202); res.end(); }
+      const header = (name: string) => {
+        const v = req.headers[name];
+        return Array.isArray(v) ? v[0] : v;
+      };
+      const { status, body: answer } = handleMcpHttp({ guessit, guessitMany, properties, version, maxBatch: MAX_BATCH }, body, header);
+      if (answer) sendJson(res, status, answer);
+      else { setCors(res); res.writeHead(status); res.end(); }
     } catch (err) {
       sendJson(res, err instanceof Error && err.message === 'Body too large' ? 413 : 400, { error: String(err) });
     }
