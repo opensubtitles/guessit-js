@@ -59,6 +59,20 @@ jobs:
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # The registry validates the npm version, and a fresh npm publish can take
+      # minutes to become visible. Wait for it instead of failing the release.
+      - name: Wait for the npm version
+        if: steps.exists.outputs.skip != 'true'
+        run: |
+          version="${TAG#v}"
+          for i in $(seq 1 60); do
+            if curl -sf "https://registry.npmjs.org/guessit-js/${version}" >/dev/null; then
+              echo "guessit-js@${version} is on npm"; exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::guessit-js@${version} not visible on npm after 10 minutes"; exit 1
+
       - name: Install mcp-publisher (pinned)
         if: steps.exists.outputs.skip != 'true'
         run: |
