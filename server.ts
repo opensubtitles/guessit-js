@@ -11,7 +11,9 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { guessit, guessitMany, version, OUTPUT_FORMATS } from './src/index.js';
+import { guessit, guessitMany, properties, version, OUTPUT_FORMATS } from './src/index.js';
+// @ts-expect-error plain ES module shared with the CLI and the worker, no type declarations
+import { handleMcpPayload } from './bin/mcp-core.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env['PORT'] || '3847', 10);
@@ -42,12 +44,13 @@ const MIME_TYPES: Record<string, string> = {
   '.ico': 'image/x-icon',
   '.wasm': 'application/wasm',
   '.gz': 'application/gzip',
+  '.txt': 'text/plain; charset=utf-8',
 };
 
 function setCors(res: http.ServerResponse): void {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Mcp-Protocol-Version, Mcp-Session-Id');
 }
 
 function sendJson(res: http.ServerResponse, status: number, data: unknown): void {
@@ -217,6 +220,25 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     sendJson(res, 405, { error: 'Method not allowed' });
+    return;
+  }
+
+  // Model Context Protocol for AI agents (stateless Streamable HTTP: JSON answers, no stream)
+  if (url.pathname === '/mcp') {
+    if (method !== 'POST') {
+      setCors(res);
+      res.writeHead(405, { 'Content-Type': 'application/json', Allow: 'POST, OPTIONS' });
+      res.end(JSON.stringify({ error: 'Use POST for MCP JSON-RPC messages' }));
+      return;
+    }
+    try {
+      const body = await readBody(req);
+      const answer = handleMcpPayload({ guessit, guessitMany, properties, version, maxBatch: MAX_BATCH }, body);
+      if (answer) sendJson(res, 200, answer);
+      else { setCors(res); res.writeHead(202); res.end(); }
+    } catch (err) {
+      sendJson(res, err instanceof Error && err.message === 'Body too large' ? 413 : 400, { error: String(err) });
+    }
     return;
   }
 

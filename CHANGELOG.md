@@ -2,6 +2,38 @@
 
 All notable changes to guessit-js are documented here.
 
+## [5.2.0]
+
+**AI agents can use guessit-js as a tool.** guessit-js is now a
+[Model Context Protocol](https://modelcontextprotocol.io) server, with no new
+dependencies:
+
+- **Local, stdio:** `npx -y guessit-js --mcp` (Claude Code:
+  `claude mcp add guessit -- npx -y guessit-js --mcp`).
+- **Remote, Streamable HTTP:** `https://guessit.opensubtitles.com/mcp`, and
+  `POST /mcp` on a self-hosted `npm start` server. Stateless: every POST is
+  answered with JSON; notifications get `202`.
+- **Tools, all read-only:**
+  - `guessit`: one name plus optional options, the same result as the library;
+  - `guessit_batch`: up to 100 names over HTTP, 1000 on stdio;
+  - `guessit_properties`: every property with its possible values.
+
+  Bad input is a tool error the agent can read, not a protocol failure.
+
+For language models and agent tooling:
+
+- `llms.txt` (on GitHub Pages, the hosted API and `server.ts`): what guessit-js
+  is, the output notation, MCP setup and the REST API, in one page.
+- The hosted API now also serves `/openapi.json`. The OpenAPI spec documents
+  `/mcp`.
+- `server.json` describes the package for the official MCP registry
+  (`io.github.opensubtitles/guessit-js`), and `package.json` carries the matching
+  `mcpName` and MCP keywords.
+
+Also: `test/http-output.test.ts` had taken port 38472 from `test/batch.test.ts`,
+which made both flaky when run in parallel. It has its own ports now and starts
+`server.ts` as a single process, so no server outlives the tests.
+
 ## [5.1.0]
 
 **`guessit()` is about 40% faster per call.** Before parsing anything, every call

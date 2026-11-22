@@ -252,6 +252,7 @@
       nav .links a { font-size: 0.8rem; }
     }
   </style>
+  <link rel="alternate" type="text/plain" href="llms.txt" title="llms.txt: guessit-js for language models">
 </head>
 <body>
 
@@ -277,7 +278,7 @@
   <h1>guessit<span>-js</span></h1>
   <p class="tagline">Extract metadata from media filenames using smart pattern matching. Zero dependencies. TypeScript port of the Python guessit library.</p>
   <div class="badges">
-    <span class="badge"><span class="dot green"></span>v5.1.0</span>
+    <span class="badge"><span class="dot green"></span>v5.2.0</span>
     <span class="badge"><span class="dot orange"></span>Zero dependencies</span>
     <span class="badge"><span class="dot cyan"></span>TypeScript</span>
   </div>
@@ -381,6 +382,20 @@ console.log(result.type);        <span class="code-comment">// "movie"</span></p
 <span class="code-key">const</span> result = guessit(<span class="code-string">'Inception.2010.720p.BRRip.x264.mkv'</span>);
 console.log(result.title);  <span class="code-comment">// "Inception"</span>
 console.log(result.year);   <span class="code-comment">// 2010</span></pre>
+    </div>
+    <div class="install-block">
+      <div class="install-block-header">AI agents (MCP)</div>
+      <pre><span class="code-comment"># Claude Code, local</span>
+claude mcp add guessit -- npx -y guessit-js --mcp
+
+<span class="code-comment"># or remote, nothing to install</span>
+claude mcp add --transport http guessit \
+  https://guessit.opensubtitles.com/mcp
+
+<span class="code-comment"># any MCP client (Claude Desktop, Cursor, VS Code)</span>
+{ <span class="code-string">"command"</span>: <span class="code-string">"npx"</span>, <span class="code-string">"args"</span>: [<span class="code-string">"-y"</span>, <span class="code-string">"guessit-js"</span>, <span class="code-string">"--mcp"</span>] }
+
+<span class="code-comment"># for LLMs: <a href="llms.txt" style="color:inherit">llms.txt</a></span></pre>
     </div>
     <div class="install-block">
       <div class="install-block-header">Options</div>
@@ -559,7 +574,7 @@ Built with Vite. Type-checked with tsc --noEmit.</pre>
 </section>
 
 <footer>
-  <p><a href="https://github.com/opensubtitles/guessit-js" target="_blank" rel="noopener">guessit-js</a> v5.1.0 &mdash; TypeScript port of <a href="https://github.com/guessit-io/guessit" target="_blank" rel="noopener">guessit</a> &mdash; LGPLv3</p>
+  <p><a href="https://github.com/opensubtitles/guessit-js" target="_blank" rel="noopener">guessit-js</a> v5.2.0 &mdash; TypeScript port of <a href="https://github.com/guessit-io/guessit" target="_blank" rel="noopener">guessit</a> &mdash; LGPLv3</p>
 </footer>
 
 <script>var process = { env: {} };</script>

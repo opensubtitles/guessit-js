@@ -14,6 +14,7 @@ Extract metadata (title, year, season, episode, codec, language, etc.) from medi
 
 - **Runs 2191 of the 2229 cases in Python guessit's own test suite** (upstream 4.5.1, its corpus *and* its per-rule files) — and is **more correct**: fixes for 32 historical upstream bugs, Python's still-open #877, and 114 of the 276 cross-parser cases Python admits failing (see [Differences from Python](#differences-from-python-guessit))
 - **Drop-in output**: results use Python guessit's own notation (`"language": "French"`, `"country": "UNITED STATES"`, `"date": "2024-03-15"`) in the library, CLI, REST API and WASM; guessit-js only *parses* better. Richer codes are opt-in with [`output: 'codes'`](#output-notation)
+- **AI-agent ready**: an [MCP server](#ai-agents-mcp) (`npx -y guessit-js --mcp`, or the hosted `https://guessit.opensubtitles.com/mcp`) and an [`llms.txt`](https://opensubtitles.github.io/guessit-js/llms.txt)
 - **~2x faster** than Python per parse ([measured](#performance))
 - **56 properties** detected: title, year, season, episode, resolution, codec, language, ids, and more — with a [machine-readable schema](#output-schema)
 - **Batch parsing**: `guessitMany()` in-process, or one POST for up to 100 names
@@ -252,6 +253,42 @@ Swagger UI at `/docs`, and static WASM serving.
 A name that fails to parse becomes an `error` entry — the request still answers
 `200`. The caps bound the shape of one request, not throughput: for 10k names,
 send 100 requests, or skip HTTP and call `guessitMany()` in-process.
+
+## AI agents (MCP)
+
+guessit-js is a [Model Context Protocol](https://modelcontextprotocol.io) server,
+so AI agents (Claude, Cursor, VS Code Copilot, any MCP client) can call it as a
+tool. Three read-only tools:
+
+| Tool | Input | Output |
+|---|---|---|
+| `guessit` | `{"filename": "...", "options": {...}}` | the result, same JSON as the library |
+| `guessit_batch` | `{"filenames": [...], "options": {...}}` | `{"results": [{input_string, result} \| {input_string, error}]}` |
+| `guessit_properties` | `{}` | every property with its possible values |
+
+**Local (stdio)**, no server to run:
+
+```bash
+claude mcp add guessit -- npx -y guessit-js --mcp      # Claude Code
+```
+
+```json
+{ "mcpServers": { "guessit": { "command": "npx", "args": ["-y", "guessit-js", "--mcp"] } } }
+```
+
+(Claude Desktop `claude_desktop_config.json`, Cursor `.cursor/mcp.json`, VS Code
+`.vscode/mcp.json` with `"servers"` instead of `"mcpServers"`.)
+
+**Remote (Streamable HTTP)**, nothing to install: `https://guessit.opensubtitles.com/mcp`
+(demo tier, same limits as the hosted API), or `POST /mcp` on a self-hosted
+`npm start` server.
+
+```bash
+claude mcp add --transport http guessit https://guessit.opensubtitles.com/mcp
+```
+
+For language models reading about the project: [`llms.txt`](https://opensubtitles.github.io/guessit-js/llms.txt)
+(also at `/llms.txt` on the hosted API) and the [OpenAPI spec](https://opensubtitles.github.io/guessit-js/openapi.json).
 
 ## WASM
 

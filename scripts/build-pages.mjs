@@ -84,6 +84,18 @@ console.log('✓ public/docs/output-schema.json');
   console.log(`✓ public/dist/wasm-test-cases.json (${out.length} cases, expectations from current JS build)`);
 }
 
+// The MCP registry entry (server.json) names the package version twice.
+{
+  const server = JSON.parse(readFileSync(r('server.json'), 'utf8'));
+  const { version: v } = JSON.parse(readFileSync(r('package.json'), 'utf8'));
+  if (server.version !== v || server.packages.some((p) => p.version !== v)) {
+    server.version = v;
+    for (const p of server.packages) p.version = v;
+    writeFileSync(r('server.json'), JSON.stringify(server, null, 2) + '\n');
+    console.log(`✓ server.json stamped ${v}`);
+  }
+}
+
 // Stamp the current package version into the pages so they never go stale.
 // Python guessit references are written without the vX.Y.Z pattern on purpose.
 const { version } = JSON.parse(readFileSync(r('package.json'), 'utf8'));

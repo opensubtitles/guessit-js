@@ -1,0 +1,47 @@
+# guessit-js
+
+> Extract metadata from movie and TV episode filenames and release names: title, year, season, episode, episode title, resolution, video/audio codec, source, streaming service, language, subtitle language, release group, container and more (56 properties). A TypeScript port of Python guessit that returns the same JSON as Python guessit and parses many real-world names better. Zero runtime dependencies. LGPLv3. Available as an npm library, a CLI, a REST API, WASM and an MCP server for AI agents.
+
+Example: `The.Matrix.1999.1080p.BluRay.x264-GRP.mkv` → `{"title": "The Matrix", "year": 1999, "screen_size": "1080p", "source": "Blu-ray", "video_codec": "H.264", "release_group": "GRP", "container": "mkv", "mimetype": "video/x-matroska", "type": "movie"}`
+
+## Use it from an AI agent (MCP)
+
+- Local (stdio), any MCP client: command `npx -y guessit-js --mcp`
+  - Claude Code: `claude mcp add guessit -- npx -y guessit-js --mcp`
+  - Claude Desktop / Cursor / VS Code JSON: `{"mcpServers": {"guessit": {"command": "npx", "args": ["-y", "guessit-js", "--mcp"]}}}`
+- Remote (Streamable HTTP, no install, demo tier): `https://guessit.opensubtitles.com/mcp`
+- Tools: `guessit` (one name: `{"filename": "...", "options": {...}}`), `guessit_batch` (`{"filenames": [...]}`), `guessit_properties` (every property and its possible values). All read-only.
+
+## Use it from code
+
+- Install: `npm install guessit-js`
+- `import { guessit, guessitMany } from 'guessit-js'`
+- `guessit('Show.Name.S01E02.Pilot.720p.WEB-DL.mkv')` → `{title: 'Show Name', season: 1, episode: 2, episode_title: 'Pilot', screen_size: '720p', source: 'Web', type: 'episode', ...}`
+- `guessitMany(names, options)` → `[{input_string, result} | {input_string, error}]`, one per name, in order
+- Options: `type` ("movie" | "episode"), `expected_title`, `allowed_languages`, `allowed_countries`, `name_only`, `excludes`, `includes`, `output`
+- WASM: `npm install @opensubtitles/guessit-wasm`, or `echo '{"filename": "..."}' | wasmtime guessit.wasm`
+
+## Output notation
+
+- Default (`output: "python"`): identical to Python guessit's JSON. `"language": "French"`, `["German", "Multiple languages"]`; `"country": "UNITED STATES"`; `"date": "2024-03-15"`.
+- `output: "codes"`: `"language": {"alpha3": "por", "country": "BR"}` (keeps regions such as pt-BR), `"country": "US"`, ISO date-time.
+- Properties appear only when found. Several values become an array (`"language": ["English", "French"]`).
+- `type` is always present: `movie` or `episode`.
+
+## REST API
+
+- `GET /api/guessit?filename=<name>[&type=movie|episode][&output=python|codes]`
+- `POST /api/guessit` with `{"filename": "..."}` or `{"filenames": [...up to 100], "options": {...}}`
+- `GET /api/health` → `{"status": "ok", "version": "..."}`
+- Hosted demo (testing only, daily cap): `https://guessit.opensubtitles.com`. Self-host: `npx guessit-js --serve` (port 3847).
+- Errors are JSON `{"error": "..."}`: 400 bad input, 413 over a limit (1024 characters per name, 100 names per request).
+
+## Reference
+
+- [README](https://github.com/opensubtitles/guessit-js#readme): full documentation
+- [OpenAPI spec](https://opensubtitles.github.io/guessit-js/openapi.json)
+- [Output JSON Schema](https://github.com/opensubtitles/guessit-js/blob/main/docs/output-schema.json): every property, type and enum
+- [Interactive demo](https://opensubtitles.github.io/guessit-js/)
+- [Differences from Python guessit](https://github.com/opensubtitles/guessit-js#differences-from-python-guessit)
+- [npm: guessit-js](https://www.npmjs.com/package/guessit-js), [npm: @opensubtitles/guessit-wasm](https://www.npmjs.com/package/@opensubtitles/guessit-wasm)
+- [Changelog](https://github.com/opensubtitles/guessit-js/blob/main/CHANGELOG.md)

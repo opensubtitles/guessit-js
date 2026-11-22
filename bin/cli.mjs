@@ -77,6 +77,9 @@ Information:
   --version             Display the guessit-js version banner
 
 Extras (not in the Python CLI):
+  --mcp                 Run as an MCP server on stdio, so AI agents (Claude,
+                        Cursor, VS Code, ...) can call guessit as a tool:
+                        tools guessit, guessit_batch, guessit_properties
   --output-codes        JSON with guessit-js codes instead of Python's names:
                         languages as {"alpha3": ...} (keeps regions such as
                         pt-BR), countries as ISO alpha-2, dates as ISO strings.
@@ -149,6 +152,7 @@ let serve = false;
 let servePort = 3847;
 let benchmark = 0;
 let completionShell = null;
+let mcp = false;
 
 const needsValue = (a, i) => {
   if (i + 1 >= args.length) fail(`option ${a} requires a value`);
@@ -198,6 +202,7 @@ for (let i = 0; i < args.length; i++) {
     case '-p': case '--properties': listProperties = true; break;
     case '-V': case '--values': listValues = true; break;
     case '--output-codes': cliOptions.output = 'codes'; break;
+    case '--mcp': mcp = true; break;
     case '--serve':
       serve = true;
       if (args[i + 1] && /^\d+$/.test(args[i + 1])) { servePort = Number(args[++i]); }
@@ -364,7 +369,7 @@ if (listProperties || listValues) {
 
 // ---- shell completion -------------------------------------------------------
 if (completionShell) {
-  const flags = '-t --type -n --name-only -Y --date-year-first -D --date-day-first -L --allowed-languages -C --allowed-countries -E --episode-prefer-number -T --expected-title -G --expected-group --includes --excludes -f --input-file -v --verbose -P --show-property -a --advanced -s --single-value -j --json --jsonl -y --yaml -i --output-input-string -c --config --no-user-config --no-default-config -p --properties -V --values --version --serve --benchmark --completion -h --help';
+  const flags = '-t --type -n --name-only -Y --date-year-first -D --date-day-first -L --allowed-languages -C --allowed-countries -E --episode-prefer-number -T --expected-title -G --expected-group --includes --excludes -f --input-file -v --verbose -P --show-property -a --advanced -s --single-value -j --json --jsonl -y --yaml -i --output-input-string -c --config --no-user-config --no-default-config -p --properties -V --values --version --serve --mcp --output-codes --benchmark --completion -h --help';
   if (completionShell === 'bash') {
     console.log(`_guessit_js() {
   local cur="\${COMP_WORDS[COMP_CWORD]}"
@@ -384,6 +389,12 @@ _arguments '*: :{ _alternative "flags:flag:(${flags})" "files:filename:_files" }
   process.exit(0);
 }
 
+// ---- MCP server (AI agents) -------------------------------------------------
+if (mcp) {
+  // Runs until stdin closes; nothing else may write to stdout.
+  const { runMcpServer } = await import('./mcp.mjs');
+  runMcpServer({ guessit, guessitMany, properties: apiProperties, version });
+} else
 // ---- REST API server --------------------------------------------------------
 if (serve) {
   const { createServer } = await import('http');
