@@ -95,4 +95,13 @@ jobs:
         run: node -e "import('./index.js').then(async m => { const r = await m.guessit('The.Matrix.1999.1080p.BluRay.x264.mkv'); if (r.title !== 'The Matrix' || r.year !== 1999) { console.error(r); process.exit(1); } console.log(r); })"
 
       - name: Publish to npm (trusted publishing + provenance)
-        run: npm publish --provenance --access public
+        run: |
+          # Idempotent: a version already on npm (published by hand, or by an
+          # earlier attempt of this run) is skipped, not reported as a failure.
+          name=$(node -p "require('./package.json').name")
+          version=$(node -p "require('./package.json').version")
+          if npm view "$name@$version" version >/dev/null 2>&1; then
+            echo "::notice::$name@$version is already on npm, nothing to publish"
+            exit 0
+          fi
+          npm publish --provenance --access public
