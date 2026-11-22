@@ -4090,6 +4090,7 @@ var GuessitJS = (() => {
       RemoveInvalidSeasonRule,
       RemoveInvalidEpisodeRule,
       EpisodeEndingTitleBeforeCreditsRule,
+      SpecialMarkerIsSpecial,
       QuotedNumberIsTitleRule
     );
     return rebulk;
@@ -4823,6 +4824,35 @@ var GuessitJS = (() => {
   __name(_RemoveInvalidEpisodeRule, "RemoveInvalidEpisodeRule");
   _RemoveInvalidEpisodeRule.priority = 64;
   var RemoveInvalidEpisodeRule = _RemoveInvalidEpisodeRule;
+  var _SpecialMarkerIsSpecial = class _SpecialMarkerIsSpecial extends Rule {
+    constructor() {
+      super(...arguments);
+      this.priority = 60;
+      this.consequence = AppendMatch;
+    }
+    when(matches, context) {
+      if (isDisabled(context, "episode_details")) return false;
+      const input = matches.inputString ?? "";
+      const toAppend = [];
+      for (const episode of matches.named?.("episode", (m) => !m.private && m.tags?.includes("special-episode")) || []) {
+        const marker = /SP-?$/i.exec(input.slice(Math.max(0, episode.start - 3), episode.start));
+        if (!marker) continue;
+        const start = episode.start - marker[0].length;
+        const already = matches.range(start, episode.end, (m) => m.name === "episode_details" && m.value === "Special", 0);
+        if (already) continue;
+        toAppend.push(new Match(start, start + 2, {
+          name: "episode_details",
+          value: "Special",
+          tags: ["special-marker"],
+          inputString: input
+        }));
+      }
+      return toAppend.length ? toAppend : false;
+    }
+  };
+  __name(_SpecialMarkerIsSpecial, "SpecialMarkerIsSpecial");
+  _SpecialMarkerIsSpecial.priority = 60;
+  var SpecialMarkerIsSpecial = _SpecialMarkerIsSpecial;
   var _EpisodeEndingTitleBeforeCreditsRule = class _EpisodeEndingTitleBeforeCreditsRule extends Rule {
     constructor() {
       super(...arguments);
@@ -9646,7 +9676,7 @@ var GuessitJS = (() => {
     // castellano = Castilian (Spanish from Spain), not Catalan — upstream develop b9bfab4 (#1006)
     "spa": ["esp", "espa\xF1ol", "espanol", "castellano", "espanol castellano", "espa\xF1ol castellano"],
     // VOF (version originale française), VF2 (both French dubs) — upstream 4.5.4 4cb3ffc (#1001)
-    "fra": ["fran\xE7ais", "vf", "vff", "vfi", "vfq", "vof", "vf2"],
+    "fra": ["fran\xE7ais", "vf", "vff", "vfi", "vfq", "vof", "vf2", "vfb", "voq"],
     "swe": ["se"],
     "por_BR": ["po", "pb", "pob", "ptbr", "br", "brazilian"],
     "deu_CH": ["swissgerman", "swiss german"],
@@ -14233,7 +14263,9 @@ var GuessitJS = (() => {
             "vfi",
             "vfq",
             "vof",
-            "vf2"
+            "vf2",
+            "vfb",
+            "voq"
           ],
           swe: [
             "se"
@@ -16804,8 +16836,24 @@ options=${JSON.stringify(options)}
       this._config = null;
       this._loadConfigOptions = null;
       this._advancedConfig = null;
+      /**
+       * Merged (config + call options) objects per distinct options value, for the
+       * config they were merged from. Merging deep-copies the whole config, which
+       * costs about a third of a parse; callers mostly repeat a handful of option
+       * sets, so each is merged once. Bounded, oldest evicted first. Rules never
+       * write to the merged options (guessitMany already shares one per batch).
+       * Same idea as upstream guessit#1008.
+       */
+      this._mergedCache = /* @__PURE__ */ new Map();
+      this._mergedCacheConfig = null;
+      this._lastBuilder = null;
+      this._lastOverrideKey = null;
     }
     reset() {
+      this._mergedCache.clear();
+      this._mergedCacheConfig = null;
+      this._lastBuilder = null;
+      this._lastOverrideKey = null;
       this._rebulk = null;
       this._config = null;
       this._loadConfigOptions = null;
@@ -16822,9 +16870,14 @@ options=${JSON.stringify(options)}
       } else {
         config = this._config;
       }
+      const override = parsedOptions["advancedConfig"];
+      const overrideKey = override === void 0 ? "" : cacheKey({ o: override });
+      if (!force && this._rebulk && overrideKey !== null && config === this._config && builder === this._lastBuilder && overrideKey === this._lastOverrideKey) {
+        return config;
+      }
       const advancedConfig = mergeOptions(
         config["advanced_config"] ?? {},
-        parsedOptions["advancedConfig"] ?? {}
+        override ?? {}
       );
       const shouldBuild = force || !this._rebulk || !this._advancedConfig || JSON.stringify(this._advancedConfig) !== JSON.stringify(advancedConfig);
       if (shouldBuild) {
@@ -16832,6 +16885,8 @@ options=${JSON.stringify(options)}
         this._rebulk = builder(advancedConfig);
       }
       this._config = config;
+      this._lastBuilder = builder;
+      this._lastOverrideKey = overrideKey;
       return config;
     }
     guessit(string, options) {
@@ -16868,7 +16923,21 @@ options=${JSON.stringify(options)}
     _prepare(options) {
       const parsedOptions = parseOptions(options, true);
       const config = this.configure(parsedOptions, void 0, false, false);
-      return mergeOptions(config, parsedOptions);
+      if (this._mergedCacheConfig !== config) {
+        this._mergedCache.clear();
+        this._mergedCacheConfig = config;
+      }
+      const key = cacheKey(parsedOptions);
+      if (key === null) return mergeOptions(config, parsedOptions);
+      let merged = this._mergedCache.get(key);
+      if (!merged) {
+        merged = mergeOptions(config, parsedOptions);
+        if (this._mergedCache.size >= _GuessItApi.MERGED_CACHE_SIZE) {
+          this._mergedCache.delete(this._mergedCache.keys().next().value);
+        }
+        this._mergedCache.set(key, merged);
+      }
+      return merged;
     }
     _guess(string, mergedOptions) {
       if (!this._rebulk) {
@@ -16960,7 +17029,28 @@ options=${JSON.stringify(options)}
     }
   };
   __name(_GuessItApi, "GuessItApi");
+  _GuessItApi.MERGED_CACHE_SIZE = 16;
   var GuessItApi = _GuessItApi;
+  function cacheKey(options) {
+    const plain = /* @__PURE__ */ __name((v) => {
+      if (v === null || ["string", "number", "boolean"].includes(typeof v)) return true;
+      if (Array.isArray(v)) return v.every(plain);
+      if (typeof v === "object" && Object.getPrototypeOf(v) === Object.prototype) {
+        return Object.values(v).every((x) => x === void 0 || plain(x));
+      }
+      return false;
+    }, "plain");
+    if (!plain(options)) return null;
+    const sorted = /* @__PURE__ */ __name((v) => {
+      if (Array.isArray(v)) return v.map(sorted);
+      if (v && typeof v === "object") {
+        return Object.fromEntries(Object.keys(v).sort().map((k) => [k, sorted(v[k])]));
+      }
+      return v;
+    }, "sorted");
+    return JSON.stringify(sorted(options));
+  }
+  __name(cacheKey, "cacheKey");
   var defaultApi = new GuessItApi();
   function guessit(string, options) {
     return defaultApi.guessit(string, options);

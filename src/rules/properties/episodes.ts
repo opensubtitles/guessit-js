@@ -847,6 +847,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
     RemoveInvalidSeasonRule,
     RemoveInvalidEpisodeRule,
     EpisodeEndingTitleBeforeCreditsRule,
+    SpecialMarkerIsSpecial,
     QuotedNumberIsTitleRule,
   );
 
@@ -1764,6 +1765,39 @@ class RemoveInvalidEpisodeRule extends Rule {
  * the episode slot, so the number has no episode to number. A number behind its own
  * dash ("Show - 12 - NCED") keeps the episode slot.
  */
+/**
+ * "SP01" / "SP-01" is a numbered special: the special-episode pattern reads the number
+ * as the episode, and the SP prefix also marks it episode_details "Special"
+ * (upstream #1000). OVA/EX keep only the episode.
+ */
+class SpecialMarkerIsSpecial extends Rule {
+  static override priority = 60;
+  override priority = 60;
+  override consequence = AppendMatch;
+
+  when(matches: any, context: any): any {
+    if (isDisabled(context, 'episode_details')) return false;
+    const input: string = matches.inputString ?? '';
+    const toAppend: any[] = [];
+    for (const episode of matches.named?.('episode', (m: any) =>
+      !m.private && m.tags?.includes('special-episode')) || []) {
+      const marker = /SP-?$/i.exec(input.slice(Math.max(0, episode.start - 3), episode.start));
+      if (!marker) continue;
+      const start = episode.start - marker[0].length;
+      const already = matches.range(start, episode.end, (m: any) =>
+        m.name === 'episode_details' && m.value === 'Special', 0);
+      if (already) continue;
+      toAppend.push(new Match(start, start + 2, {
+        name: 'episode_details',
+        value: 'Special',
+        tags: ['special-marker'],
+        inputString: input,
+      }));
+    }
+    return toAppend.length ? toAppend : false;
+  }
+}
+
 class EpisodeEndingTitleBeforeCreditsRule extends Rule {
   consequence = RemoveMatch;
   static override priority = 64;
