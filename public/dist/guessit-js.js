@@ -17033,7 +17033,7 @@ function reset() {
 __name(reset, "reset");
 
 // package.json
-var version = "5.0.0";
+var version = "5.1.0";
 
 // src/index.ts
 var version2 = version;

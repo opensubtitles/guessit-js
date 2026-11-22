@@ -2,6 +2,35 @@
 
 All notable changes to guessit-js are documented here.
 
+## [5.1.0]
+
+**`guessit()` is about 40% faster per call.** Before parsing anything, every call
+deep-merged the whole configuration with the call's options, re-merged
+`advanced_config` and compared two JSON dumps of it. The merged options are now
+cached per distinct option set (at most 16, cleared when the configuration
+reloads), and the rule set is not re-checked while the configuration, builder
+and `advancedConfig` override are unchanged. Calling `guessit()` in a loop over
+2,000 real names went from 5.0 to 3.0 ms per name, the same as `guessitMany()`.
+The HTTP servers call `guessit()` once per request, so every request gets the
+gain. Options holding values JSON cannot represent are merged per call as before.
+This is the idea of upstream guessit#1008; the thread-safety half of that issue
+does not apply to JavaScript.
+
+From the upstream issues opened since 4.5.4:
+
+- **#1000:** `Show - SP01` already read episode 1 with the right title (Python
+  4.5.4 reads the show's number as the episode, or leaves `SP01` in the title).
+  The `SP` prefix now also adds `episode_details: "Special"`.
+- **#1005:** `VFB` (Belgian French dub) and `VOQ` (original Québec version) are
+  French instead of leaking into `alternative_title`. The proposed
+  `language_variant` property is not adopted while upstream decides; a new key
+  in the default output would break the Python drop-in promise.
+- **#964 / PR #1004:** a bare `Vhs` inside an episode title is not a source.
+  Already correct here; now pinned by a fixture.
+
+On 25,977 real production names, 4 results change, each a genuine numbered
+special gaining `episode_details: "Special"`. Suite 2717.
+
 ## [5.0.0]
 
 **Output is now a drop-in for Python guessit, everywhere.** guessit-js parses
