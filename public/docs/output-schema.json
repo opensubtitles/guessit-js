@@ -10,7 +10,7 @@
         "object",
         "string"
       ],
-      "description": "A language or country. Rendered as a string code or an object with alpha3/alpha2/name/country.",
+      "description": "A language or country. Default output: the name Python guessit prints (\"French\", \"Multiple languages\", \"UNITED STATES\"). With output: \"codes\": a language object {alpha3, country?, script?} and an ISO 3166 alpha-2 country code.",
       "properties": {
         "name": {
           "type": "string"
@@ -407,7 +407,7 @@
     },
     "date": {
       "type": "string",
-      "format": "date-time"
+      "description": "Default output: \"YYYY-MM-DD\", as Python guessit. With output: \"codes\": a Date, ISO-8601 date-time in JSON."
     },
     "disc": {
       "oneOf": [

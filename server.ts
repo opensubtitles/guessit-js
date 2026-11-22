@@ -11,7 +11,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { guessit, guessitMany, version } from './src/index.js';
+import { guessit, guessitMany, version, OUTPUT_FORMATS } from './src/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env['PORT'] || '3847', 10);
@@ -77,6 +77,18 @@ function readBody(req: http.IncomingMessage): Promise<string> {
   });
 }
 
+/**
+ * `output` selects the value notation: "python" (default, Python guessit's JSON:
+ * "French", "UNITED STATES", "2024-03-15") or "codes" (guessit-js native values).
+ * Returns an error message for anything else.
+ */
+function badOutput(value: unknown): string | null {
+  if (value === undefined || value === null) return null;
+  return (OUTPUT_FORMATS as readonly unknown[]).includes(value)
+    ? null
+    : `Invalid output "${String(value)}": must be "python" or "codes"`;
+}
+
 function handleGuessitGet(url: URL, res: http.ServerResponse): void {
   const filename = url.searchParams.get('filename');
   if (!filename) {
@@ -93,6 +105,13 @@ function handleGuessitGet(url: URL, res: http.ServerResponse): void {
   if (type === 'movie' || type === 'episode') {
     options.type = type;
   }
+  const output = url.searchParams.get('output');
+  const outputError = badOutput(output);
+  if (outputError) {
+    sendJson(res, 400, { error: outputError });
+    return;
+  }
+  if (output) options.output = output;
 
   try {
     const result = guessit(filename, options);
@@ -110,6 +129,12 @@ async function handleGuessitPost(req: http.IncomingMessage, res: http.ServerResp
       parsed = JSON.parse(body);
     } catch {
       sendJson(res, 400, { error: 'Invalid JSON body' });
+      return;
+    }
+
+    const outputError = badOutput(parsed.options?.output);
+    if (outputError) {
+      sendJson(res, 400, { error: outputError });
       return;
     }
 

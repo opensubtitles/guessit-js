@@ -2,6 +2,53 @@
 
 All notable changes to guessit-js are documented here.
 
+## [5.0.0]
+
+**Output is now a drop-in for Python guessit, everywhere.** guessit-js parses
+better than Python guessit; it no longer formats differently. Every surface (the
+npm library, `guessitMany()`, the CLI, `--serve`, `server.ts`, the hosted API and
+WASM) returns the notation Python guessit's JSON output uses:
+
+| Value | 5.0 default (Python) | 4.x / `output: 'codes'` |
+|---|---|---|
+| `language`, `subtitle_language` | `"French"`, `["German", "Multiple languages"]` | `{ alpha3: 'fra' }`, `[{ alpha3: 'deu' }, { alpha3: 'mul' }]` |
+| region | dropped, as Python: `"Portuguese"` | kept: `{ alpha3: 'por', country: 'BR' }` |
+| `country` | `"UNITED STATES"` | `"US"` |
+| `date` | `"2024-03-15"` | `Date` (JSON `"2024-03-15T00:00:00.000Z"`) |
+
+The names come from babelfish, the library Python guessit itself uses
+(`scripts/python-names.py` generates `src/language/python-names.ts`), so they
+match Python exactly, e.g. `ell` is `"Modern Greek (1453-)"`, as in Python.
+
+**Migrating from 4.x:** to keep the 4.x values, ask for codes:
+
+- library: `guessit(name, { output: 'codes' })`, `guessitMany(names, { output: 'codes' })`
+- HTTP: `?output=codes`, or `"options": {"output": "codes"}` in a POST body
+- CLI: `--output-codes`
+- WASM: `{"filename": "...", "options": {"output": "codes"}}`
+
+Any other `output` value throws (library) or answers `400` (HTTP).
+`toPythonNotation()`, `pythonLanguageName()` and `pythonCountryName()` are
+exported for converting codes yourself. Advanced mode (`advanced: true`) still
+returns match objects, as Python does.
+
+Why a major version: the values of `language`, `subtitle_language`, `country`
+and `date` change type for library users. Everything else, and every parsing
+result, is the same as 4.11.0.
+
+Also:
+
+- The CLI's Python names came from hand-kept tables covering 60 languages and
+  37 countries; it now uses the generated tables (61 languages, all 249
+  countries), so e.g. Estonia prints `"ESTONIA"` instead of `"EE"`.
+- The hosted API includes the version in its edge-cache key, so a release
+  never serves answers cached by the previous one.
+- The demo page has an `output: 'codes'` toggle; the "same answer, different
+  notation" example group is gone, because there is no notation difference left.
+- One version number covers every artifact built from a release tag: the npm
+  packages (`guessit-js`, `@opensubtitles/guessit-wasm`), the WASM binaries, the
+  Docker images and the hosted API.
+
 ## [4.11.0]
 
 **Real production filenames now parse better than Python guessit 4.5.4.**

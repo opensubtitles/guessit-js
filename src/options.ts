@@ -19,6 +19,13 @@ export interface GuessItOptions {
   singleValue?: boolean;
   enforceList?: boolean;
   outputInputString?: boolean;
+  /**
+   * Value notation. 'python' (default): Python guessit's JSON notation, language
+   * and country names ("French", "UNITED STATES") and "YYYY-MM-DD" dates.
+   * 'codes': guessit-js native values, `{ alpha3, country? }` language objects,
+   * ISO alpha-2 countries and Date objects.
+   */
+  output?: 'python' | 'codes';
   noUserConfig?: boolean;
   noDefaultConfig?: boolean;
   advancedConfig?: Record<string, unknown>;

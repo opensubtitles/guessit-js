@@ -328,7 +328,8 @@ for (const fixtureFile of FIXTURE_FILES) {
   describe(fixtureFile, () => {
     for (const { input, expected, options, negated } of entries) {
       it((negated ? '-' : '') + input, () => {
-        const result = guessit(input, options);
+        // Fixtures are written in codes notation (Python test YAML uses "fr" / "US" style values).
+        const result = guessit(input, { ...options, output: 'codes' });
 
         if (negated) {
           // Negated test: at least one expected property should be missing or different

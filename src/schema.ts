@@ -2,7 +2,10 @@
 // Regenerate: node --import tsx scripts/gen-schema.mjs
 // Source of truth: test/fixtures/corpus-schema-data.json + python-properties.json.
 
-/** A detected language or country, as guessit renders it. */
+/**
+ * A language as returned with `output: 'codes'`. The default output gives the
+ * name Python guessit prints instead ("French").
+ */
 export interface GuessitLanguage {
   name?: string;
   alpha3?: string;

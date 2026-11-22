@@ -112,7 +112,7 @@
   "The.Office.US.S02E01.The.Dundies.DVDRIP.XviD-TOPAZ.avi",
   {
    "title": "The Office",
-   "country": "US",
+   "country": "UNITED STATES",
    "season": 2,
    "episode": 1,
    "episode_title": "The Dundies",
@@ -170,9 +170,7 @@
   "Movie.FRENCH.DVDRip.XviD.avi",
   {
    "title": "Movie",
-   "language": {
-    "alpha3": "fra"
-   },
+   "language": "French",
    "source": "DVD",
    "other": "Rip",
    "video_codec": "Xvid",
@@ -342,9 +340,7 @@
   {
    "title": "Amelie",
    "year": 2001,
-   "language": {
-    "alpha3": "fra"
-   },
+   "language": "French",
    "screen_size": "1080p",
    "source": "Blu-ray",
    "video_codec": "H.264",
@@ -360,12 +356,8 @@
    "title": "Movie Name",
    "year": 2019,
    "language": [
-    {
-     "alpha3": "mul"
-    },
-    {
-     "alpha3": "fra"
-    }
+    "Multiple languages",
+    "French"
    ],
    "screen_size": "1080p",
    "source": "Blu-ray",
@@ -382,12 +374,8 @@
    "title": "Movie",
    "year": 2020,
    "language": [
-    {
-     "alpha3": "deu"
-    },
-    {
-     "alpha3": "mul"
-    }
+    "German",
+    "Multiple languages"
    ],
    "screen_size": "1080p",
    "source": "Blu-ray",
@@ -409,9 +397,7 @@
    "screen_size": "720p",
    "source": "HDTV",
    "video_codec": "H.264",
-   "subtitle_language": {
-    "alpha3": "eng"
-   },
+   "subtitle_language": "English",
    "container": "mkv",
    "mimetype": "video/x-matroska",
    "type": "episode"
@@ -421,7 +407,7 @@
   "The.Office.US.S02E01.The.Dundies.720p.HDTV.x264-GRP.mkv",
   {
    "title": "The Office",
-   "country": "US",
+   "country": "UNITED STATES",
    "season": 2,
    "episode": 1,
    "episode_title": "The Dundies",
@@ -517,9 +503,7 @@
  [
   "en ★ some show - s04e06 - an episode.strm",
   {
-   "language": {
-    "alpha3": "eng"
-   },
+   "language": "English",
    "title": "some show",
    "season": 4,
    "episode": 6,
@@ -536,7 +520,7 @@
    "streaming_service": "Netflix",
    "title": "some show",
    "year": 2025,
-   "country": "US",
+   "country": "UNITED STATES",
    "episode_title": "the few",
    "container": "strm",
    "type": "episode"
@@ -558,9 +542,7 @@
   {
    "title": "Some Movie",
    "year": 2020,
-   "language": {
-    "alpha3": "dan"
-   },
+   "language": "Danish",
    "screen_size": "1080p",
    "source": "Web",
    "video_codec": "H.264",
@@ -653,9 +635,7 @@
   {
    "title": "Le Fabuleux Destin d Amelie Poulain",
    "year": 2001,
-   "language": {
-    "alpha3": "fra"
-   },
+   "language": "French",
    "screen_size": "1080p",
    "container": "mkv",
    "mimetype": "video/x-matroska",

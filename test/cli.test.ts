@@ -40,6 +40,12 @@ describe.skipIf(!hasDist)('CLI', () => {
     expect(stdout).toContain('{"title": "Movie", "year": 2020');
   });
 
+  it('--output-codes emits guessit-js codes instead of Python names', () => {
+    const { stdout } = run(['-j', '--output-codes', 'Movie.2020.PT-BR.1080p.mkv']);
+    expect(JSON.parse(stdout).language).toEqual({ alpha3: 'por', country: 'BR' });
+    expect(JSON.parse(run(['-j', 'Movie.2020.PT-BR.1080p.mkv']).stdout).language).toBe('Portuguese');
+  });
+
   it('-j uses babelfish language display names', () => {
     const { stdout } = run(['-j', 'B.S01E02 en.mkv']);
     expect(stdout).toContain('"language": "English"');

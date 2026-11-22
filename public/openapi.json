@@ -3,7 +3,7 @@
   "info": {
     "title": "guessit-js API",
     "description": "Extract metadata from media filenames. A TypeScript port of the Python [guessit](https://github.com/guessit-io/guessit) library.\n\nParses movie and TV episode filenames to extract properties like title, year, season, episode, resolution, codec, language, release group, and 56 metadata fields.\n\n## Quick Start\n\n```bash\ncurl \"https://guessit.opensubtitles.com/api/guessit?filename=Breaking.Bad.S01E02.720p.BluRay.x264-DEMAND.mkv\"\n```\n\n## Features\n- **Runs 2191 of the 2229 cases in Python guessit 4.5.1's own test suite**, and 2247 of 2490 corpus inputs come back identical to it\n- **~2x faster** than Python (~1.7ms vs ~3.5ms per parse, same machine and inputs)\n- **Zero runtime dependencies**\n- **56 detected properties**: title, year, season, episode, resolution, codec, language, and more\n\n## ⚠️ Hosted demo disclaimer\nThe hosted endpoint (guessit.opensubtitles.com) is for **testing and evaluation only — never use it in production**. Free tier, hard daily request cap, no uptime guarantee. For production, self-host (`npx guessit-js --serve`) or call the library in-process.",
-    "version": "4.11.0",
+    "version": "5.0.0",
     "contact": {
       "name": "guessit-js",
       "url": "https://opensubtitles.github.io/guessit-js"
@@ -76,6 +76,20 @@
                 "movie",
                 "episode"
               ]
+            }
+          },
+          {
+            "name": "output",
+            "in": "query",
+            "required": false,
+            "description": "Value notation. `python` (default): exactly what Python guessit prints, so Python guessit users can switch without changes: `\"language\": \"French\"`, `\"country\": \"UNITED STATES\"`, `\"date\": \"2024-03-15\"`. `codes`: guessit-js values that keep more detail: `\"language\": {\"alpha3\": \"por\", \"country\": \"BR\"}` (the Python name \"Portuguese\" drops the region), `\"country\": \"US\"`, `\"date\": \"2024-03-15T00:00:00.000Z\"`.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "python",
+                "codes"
+              ],
+              "default": "python"
             }
           }
         ],
@@ -443,6 +457,15 @@
           "episode_prefer_number": {
             "type": "boolean",
             "description": "Prefer episode number detection over other patterns"
+          },
+          "output": {
+            "type": "string",
+            "enum": [
+              "python",
+              "codes"
+            ],
+            "default": "python",
+            "description": "Value notation. `python` (default): exactly what Python guessit prints, so Python guessit users can switch without changes: `\"language\": \"French\"`, `\"country\": \"UNITED STATES\"`, `\"date\": \"2024-03-15\"`. `codes`: guessit-js values that keep more detail: `\"language\": {\"alpha3\": \"por\", \"country\": \"BR\"}` (the Python name \"Portuguese\" drops the region), `\"country\": \"US\"`, `\"date\": \"2024-03-15T00:00:00.000Z\"`."
           }
         }
       },
@@ -494,12 +517,11 @@
           },
           "date": {
             "type": "string",
-            "format": "date",
-            "description": "Release date in ISO 8601 format (YYYY-MM-DD)"
+            "description": "Release date: \"YYYY-MM-DD\" as Python guessit prints it; an ISO 8601 date-time (\"2024-03-15T00:00:00.000Z\") with output=codes"
           },
           "country": {
             "type": "string",
-            "description": "Country code (ISO 3166-1 alpha-2, e.g., \"US\", \"GB\")"
+            "description": "Country: the name Python guessit prints (\"UNITED STATES\"), or the ISO 3166-1 alpha-2 code (\"US\") with output=codes"
           },
           "language": {
             "oneOf": [
@@ -513,7 +535,7 @@
                 }
               }
             ],
-            "description": "Detected language(s) as ISO 639-3 alpha3 codes"
+            "description": "Detected language(s): names as Python guessit prints them (\"French\"), or language objects with output=codes"
           },
           "subtitle_language": {
             "oneOf": [
@@ -527,7 +549,7 @@
                 }
               }
             ],
-            "description": "Subtitle language(s) as ISO 639-3 alpha3 codes"
+            "description": "Subtitle language(s): names as Python guessit prints them (\"English\"), or language objects with output=codes"
           },
           "season": {
             "oneOf": [
@@ -760,16 +782,32 @@
         }
       },
       "Language": {
-        "type": "object",
-        "description": "Language object with ISO 639-3 alpha3 code",
-        "properties": {
-          "alpha3": {
+        "oneOf": [
+          {
             "type": "string",
-            "description": "ISO 639-3 three-letter language code (e.g., \"eng\", \"fra\", \"deu\")"
+            "description": "Default output: the language name Python guessit prints (\"French\", \"Multiple languages\")."
+          },
+          {
+            "type": "object",
+            "description": "With output=codes: ISO 639-3 code, plus region and script when present.",
+            "properties": {
+              "alpha3": {
+                "type": "string",
+                "description": "ISO 639-3 code (\"eng\", \"fra\", \"por\")"
+              },
+              "country": {
+                "type": "string",
+                "description": "ISO 3166-1 alpha-2 region (\"BR\" for pt-BR)"
+              },
+              "script": {
+                "type": "string",
+                "description": "ISO 15924 script (\"Latn\")"
+              }
+            },
+            "required": [
+              "alpha3"
+            ]
           }
-        },
-        "required": [
-          "alpha3"
         ]
       },
       "HealthResponse": {
