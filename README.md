@@ -7,6 +7,7 @@ Extract metadata (title, year, season, episode, codec, language, etc.) from medi
 [![License: LGPL-3.0](https://img.shields.io/badge/License-LGPL--3.0-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
 [![Python corpus](https://img.shields.io/badge/python_corpus-2191%2F2229-brightgreen)](https://github.com/guessit-io/guessit)
 [![Coverage](https://img.shields.io/badge/coverage-97%25-brightgreen)](https://github.com/opensubtitles/guessit-js/actions/workflows/ci.yml)
+[![mcptry](https://mcptry.com/badge/com.opensubtitles/guessit-js)](https://mcptry.com/servers/com.opensubtitles/guessit-js)
 
 **[Live Demo](https://opensubtitles.github.io/guessit-js)** · **[API Docs](https://opensubtitles.github.io/guessit-js/docs)** · **[npm](https://www.npmjs.com/package/guessit-js)**
 
