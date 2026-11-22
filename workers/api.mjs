@@ -13,7 +13,7 @@
 if (typeof globalThis.process === 'undefined') {
   globalThis.process = { env: {} };
 }
-const { guessit, guessitMany, version } = await import('../dist/guessit-js.js');
+const { guessit, guessitMany, version, OUTPUT_FORMATS } = await import('../dist/guessit-js.js');
 
 // Parsing cost grows with the square of the number of matches a name yields, so
 // a long synthetic string costs far more than its length suggests: 400
@@ -42,7 +42,8 @@ const USAGE = {
   service: 'guessit-js API',
   notice: 'DEMO for testing/evaluation only — never use in production. Free tier, daily request cap, no SLA. Self-host: npx guessit-js --serve',
   docs: 'https://opensubtitles.github.io/guessit-js/docs/',
-  get: '/api/guessit?filename=Movie.2020.1080p.mkv&type=movie|episode (type optional)',
+  get: '/api/guessit?filename=Movie.2020.1080p.mkv&type=movie|episode&output=python|codes (type and output optional)',
+  output: 'python (default): Python guessit notation, e.g. "language": "French"; codes: guessit-js values, e.g. "language": {"alpha3": "fra"}',
   post: '/api/guessit with {"filename": "..."} or {"filenames": [...], "options": {...}}',
   health: '/api/health',
 };
@@ -65,12 +66,21 @@ export default {
       const options = {};
       const type = url.searchParams.get('type');
       if (type === 'movie' || type === 'episode') options.type = type;
+      const output = url.searchParams.get('output');
+      if (output !== null && !OUTPUT_FORMATS.includes(output)) {
+        return json({ error: `Invalid output "${output}": must be "python" or "codes"` }, 400);
+      }
+      if (output) options.output = output;
       try {
         // Cloudflare does NOT auto-cache Worker responses — a Cache-Control
         // header alone only instructs browsers. Real edge caching needs the
         // Cache API. Identical input → identical output, so cache hard.
         const cache = caches.default;
-        const cacheKey = new Request(url.toString(), { method: 'GET' });
+        // The version is part of the key, so a release never serves answers cached
+        // by the previous one.
+        const keyUrl = new URL(url.toString());
+        keyUrl.searchParams.set('__v', version);
+        const cacheKey = new Request(keyUrl.toString(), { method: 'GET' });
         const hit = await cache.match(cacheKey);
         if (hit) {
           const res = new Response(hit.body, hit);
@@ -93,6 +103,9 @@ export default {
       try { body = await request.json(); }
       catch { return json({ error: 'Invalid JSON body' }, 400); }
       const options = body && typeof body.options === 'object' && body.options ? body.options : {};
+      if (options.output !== undefined && !OUTPUT_FORMATS.includes(options.output)) {
+        return json({ error: `Invalid output "${options.output}": must be "python" or "codes"` }, 400);
+      }
       try {
         if (Array.isArray(body.filenames)) {
           // One entry per name, each {input_string, result} or {input_string, error},

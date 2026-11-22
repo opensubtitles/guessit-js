@@ -6,7 +6,7 @@
 import { readFileSync, existsSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
-import { guessit, guessitMany, properties as apiProperties, version } from '../dist/guessit-js.js';
+import { guessit, guessitMany, properties as apiProperties, version, pythonLanguageName, pythonCountryName } from '../dist/guessit-js.js';
 
 // Parsing cost grows with the square of the number of matches a name yields, so
 // a long synthetic string costs far more than its length suggests: 400
@@ -23,8 +23,6 @@ const MAX_BATCH = 100;
 // Python's GuessitEncoder emits babelfish `.name` in JSON ("English",
 // "UNITED STATES") while YAML uses str() ("en", "pt-BR", "US"). Mirror both.
 const ALPHA3_TO_2 = {"eng":"en","fra":"fr","deu":"de","spa":"es","ita":"it","por":"pt","rus":"ru","jpn":"ja","zho":"zh","kor":"ko","ara":"ar","hin":"hi","tur":"tr","pol":"pl","nld":"nl","swe":"sv","dan":"da","nor":"no","fin":"fi","hun":"hu","ces":"cs","ron":"ro","ukr":"uk","heb":"he","cat":"ca","vie":"vi","tha":"th","ind":"id","mal":"ml","tel":"te","tam":"ta","bul":"bg","hrv":"hr","srp":"sr","slk":"sk","slv":"sl","ell":"el","lit":"lt","lav":"lv","est":"et","glg":"gl","eus":"eu","ben":"bn","isl":"is","mkd":"mk","bos":"bs","alb":"sq","per":"fa","msa":"ms","mon":"mn","urd":"ur","pan":"pa","guj":"gu","kan":"kn","mar":"mr","asm":"as","mya":"my","khm":"km","lao":"lo"};
-const LANGUAGE_NAMES = {"eng":"English","fra":"French","deu":"German","spa":"Spanish","ita":"Italian","por":"Portuguese","rus":"Russian","jpn":"Japanese","zho":"Chinese","kor":"Korean","ara":"Arabic","hin":"Hindi","tur":"Turkish","pol":"Polish","nld":"Dutch","swe":"Swedish","dan":"Danish","nor":"Norwegian","fin":"Finnish","hun":"Hungarian","ces":"Czech","ron":"Romanian","ukr":"Ukrainian","heb":"Hebrew","cat":"Catalan","vie":"Vietnamese","tha":"Thai","ind":"Indonesian","mal":"Malayalam","tel":"Telugu","tam":"Tamil","bul":"Bulgarian","hrv":"Croatian","srp":"Serbian","slk":"Slovak","slv":"Slovenian","ell":"Greek","lit":"Lithuanian","lav":"Latvian","est":"Estonian","glg":"Galician","eus":"Basque","ben":"Bengali","isl":"Icelandic","mkd":"Macedonian","bos":"Bosnian","alb":"Albanian","per":"Persian","msa":"Malay","mon":"Mongolian","urd":"Urdu","pan":"Punjabi","guj":"Gujarati","kan":"Kannada","mar":"Marathi","asm":"Assamese","mya":"Burmese","khm":"Khmer","lao":"Lao"};
-const COUNTRY_NAMES = {"US":"UNITED STATES","GB":"UNITED KINGDOM","AU":"AUSTRALIA","CA":"CANADA","NZ":"NEW ZEALAND","IE":"IRELAND","FR":"FRANCE","DE":"GERMANY","ES":"SPAIN","IT":"ITALY","BR":"BRAZIL","PT":"PORTUGAL","RU":"RUSSIAN FEDERATION","JP":"JAPAN","CN":"CHINA","TW":"TAIWAN, PROVINCE OF CHINA","HK":"HONG KONG","KR":"KOREA, REPUBLIC OF","IN":"INDIA","MX":"MEXICO","NL":"NETHERLANDS","SE":"SWEDEN","NO":"NORWAY","DK":"DENMARK","FI":"FINLAND","PL":"POLAND","CH":"SWITZERLAND","AT":"AUSTRIA","BE":"BELGIUM","CZ":"CZECHIA","GR":"GREECE","HU":"HUNGARY","RO":"ROMANIA","TR":"TURKEY","UA":"UKRAINE","AR":"ARGENTINA","ZA":"SOUTH AFRICA"};
 
 const HELP = `usage: guessit-js [options] [filename ...]
 
@@ -79,6 +77,10 @@ Information:
   --version             Display the guessit-js version banner
 
 Extras (not in the Python CLI):
+  --output-codes        JSON with guessit-js codes instead of Python's names:
+                        languages as {"alpha3": ...} (keeps regions such as
+                        pt-BR), countries as ISO alpha-2, dates as ISO strings.
+                        --serve: ?output=codes or {"options": {"output": "codes"}}
   --serve [PORT]        Start a REST API server (default port 3847;
                         GET /api/guessit?filename=..., POST {filename|filenames})
   --benchmark [N]       Parse the given filenames N times (default 1000)
@@ -195,6 +197,7 @@ for (let i = 0; i < args.length; i++) {
     case '--no-default-config': cliOptions.no_default_config = true; break;
     case '-p': case '--properties': listProperties = true; break;
     case '-V': case '--values': listValues = true; break;
+    case '--output-codes': cliOptions.output = 'codes'; break;
     case '--serve':
       serve = true;
       if (args[i + 1] && /^\d+$/.test(args[i + 1])) { servePort = Number(args[++i]); }
@@ -234,8 +237,24 @@ if (!noUserConfig) {
 
 // Precedence: user/explicit config < CLI flags.
 const options = { ...configOptions, ...cliOptions };
+// The CLI renders Python's notation itself (JSON names, YAML str() codes), so it
+// always asks the library for codes and converts at display time.
+const requestedOutput = options.output === 'codes' ? 'codes' : 'python';
 for (const key of ['allowed_languages', 'allowed_countries', 'expected_title', 'expected_group', 'includes', 'excludes']) {
   if (configOptions[key] && cliOptions[key]) options[key] = [...configOptions[key], ...cliOptions[key]];
+}
+options.output = 'codes';
+
+// A result in the notation the caller asked for. Codes go out as the library
+// returns them (JSON turns Date into an ISO string); Python notation is rendered
+// here, as Python's own CLI would.
+function render(result, want, mode = 'json') {
+  return want === 'codes' ? JSON.parse(JSON.stringify(result)) : display(result, mode);
+}
+function wantedOutput(value) {
+  if (value === undefined || value === null || value === '' || value === 'python') return 'python';
+  if (value === 'codes') return 'codes';
+  throw new Error(`invalid output "${value}": must be "python" or "codes"`);
 }
 
 if (options.type && options.type !== 'movie' && options.type !== 'episode') {
@@ -254,14 +273,14 @@ function display(v, mode, key) {
         const base = ALPHA3_TO_2[v.alpha3] || v.alpha3;
         return v.country ? `${base}-${v.country}` : base;
       }
-      return LANGUAGE_NAMES[v.alpha3] || v.alpha3;
+      return pythonLanguageName(v.alpha3);
     }
     const out = {};
     for (const [k, val] of Object.entries(v)) out[k] = display(val, mode, k);
     return out;
   }
   if (key === 'country' && typeof v === 'string' && mode !== 'yaml') {
-    return COUNTRY_NAMES[v] || v;
+    return pythonCountryName(v);
   }
   return v;
 }
@@ -402,7 +421,10 @@ if (serve) {
       const opts = { ...baseOptions };
       const type = url.searchParams.get('type');
       if (type === 'movie' || type === 'episode') opts.type = type;
-      try { sendJson(res, 200, display(guessit(filename, opts), 'json')); }
+      let want;
+      try { want = wantedOutput(url.searchParams.get('output') ?? requestedOutput); }
+      catch (e) { sendJson(res, 400, { error: e.message }); return; }
+      try { sendJson(res, 200, render(guessit(filename, opts), want)); }
       catch (e) { sendJson(res, 500, { error: String((e && e.message) || e) }); }
       return;
     }
@@ -413,7 +435,8 @@ if (serve) {
       req.on('end', () => {
         try {
           const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
-          const opts = { ...baseOptions, ...(body.options || {}) };
+          const want = wantedOutput((body.options && body.options.output) ?? requestedOutput);
+          const opts = { ...baseOptions, ...(body.options || {}), output: 'codes' };
           if (Array.isArray(body.filenames)) {
             if (body.filenames.length > MAX_BATCH) {
               sendJson(res, 413, { error: `Max ${MAX_BATCH} filenames per request` });
@@ -429,7 +452,7 @@ if (serve) {
             // guessitMany parses the options once and isolates a name that throws.
             sendJson(res, 200, guessitMany(names, opts).map((entry) => (
               'result' in entry
-                ? { input_string: entry.input_string, result: display(entry.result, 'json') }
+                ? { input_string: entry.input_string, result: render(entry.result, want) }
                 : entry
             )));
           } else if (typeof body.filename === 'string') {
@@ -437,7 +460,7 @@ if (serve) {
               sendJson(res, 413, { error: `filename exceeds ${MAX_FILENAME_LENGTH} characters` });
               return;
             }
-            sendJson(res, 200, display(guessit(body.filename, opts), 'json'));
+            sendJson(res, 200, render(guessit(body.filename, opts), want));
           } else {
             sendJson(res, 400, { error: 'Body must contain "filename" (string) or "filenames" (array)' });
           }
@@ -486,7 +509,7 @@ for (const filename of filenames) {
       result = {};
       for (const [k, v] of Object.entries(raw)) result[k] = simplifyAdvanced(v);
     } else {
-      result = display(raw, output === 'yaml' ? 'yaml' : 'json');
+      result = output === 'yaml' ? display(raw, 'yaml') : render(raw, requestedOutput);
     }
   } catch (e) {
     hadError = true;
