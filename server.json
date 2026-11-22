@@ -1,6 +1,6 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.opensubtitles/guessit-js",
+  "name": "com.opensubtitles/guessit-js",
   "title": "guessit-js",
   "description": "Parse movie and TV filenames: title, year, season, episode, codecs, languages, release group.",
   "repository": {

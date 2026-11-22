@@ -23,7 +23,7 @@ COPY --from=build --chown=node:node /app/bin/cli.mjs /app/bin/mcp.mjs /app/bin/m
 COPY --from=build --chown=node:node /app/package.json ./package.json
 
 # MCP server on stdio for AI agents:  docker run -i --rm <image> node bin/cli.mjs --mcp
-LABEL io.modelcontextprotocol.server.name="io.github.opensubtitles/guessit-js"
+LABEL io.modelcontextprotocol.server.name="com.opensubtitles/guessit-js"
 
 USER node
 

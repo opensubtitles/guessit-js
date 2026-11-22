@@ -13,7 +13,7 @@ Example: `The.Matrix.1999.1080p.BluRay.x264-GRP.mkv` → `{"title": "The Matrix"
 - Docker: `docker run -i --rm ghcr.io/opensubtitles/guessit-js node bin/cli.mjs --mcp`
 - Remote (Streamable HTTP, no install, demo tier): `https://guessit.opensubtitles.com/mcp`
 - Tools: `guessit` (one name: `{"filename": "...", "options": {...}}`), `guessit_batch` (`{"filenames": [...]}`), `guessit_properties` (every property and its possible values). All read-only, each with an outputSchema and structuredContent.
-- Protocol: stateless MCP 2026-07-28 (`server/discover`) and the 2025-11-25…2024-11-05 `initialize` handshake. Official MCP Registry name: `io.github.opensubtitles/guessit-js`.
+- Protocol: stateless MCP 2026-07-28 (`server/discover`) and the 2025-11-25…2024-11-05 `initialize` handshake. Official MCP Registry name: `com.opensubtitles/guessit-js`.
 
 ## Use it from code
 

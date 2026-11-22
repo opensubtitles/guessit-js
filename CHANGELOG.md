@@ -26,9 +26,12 @@ change to parsing; results are identical to 5.2.0.
 - **Docker:** the image carries the MCP server
   (`docker run -i --rm ghcr.io/opensubtitles/guessit-js node bin/cli.mjs --mcp`)
   and the `io.modelcontextprotocol.server.name` label.
-- **Official MCP Registry:** each release publishes `server.json`
-  (`io.github.opensubtitles/guessit-js`, npm + `.mcpb` + remote) through GitHub
-  OIDC, no secret (`.github/workflows/mcp-registry.yml`). Schema `2025-12-11`.
+- **Official MCP Registry:** the registry name is now
+  `com.opensubtitles/guessit-js` (DNS-verified on opensubtitles.com; it was
+  `io.github.opensubtitles/guessit-js`, never published). `package.json`
+  `mcpName` follows. `.github/workflows/mcp-registry.yml` publishes
+  `server.json` (npm + `.mcpb` + remote) after each release once enabled.
+  Schema `2025-12-11`.
 - README: install buttons for VS Code and Cursor, Claude Desktop, Docker.
 
 ## [5.2.0]

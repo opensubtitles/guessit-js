@@ -1,9 +1,10 @@
 name: MCP Registry
 
 # Publishes server.json to the official MCP Registry
-# (https://registry.modelcontextprotocol.io) as io.github.opensubtitles/guessit-js.
-# Authenticates with GitHub Actions OIDC: no secret, the io.github.opensubtitles
-# namespace is granted to workflows of this organization's repositories.
+# (https://registry.modelcontextprotocol.io) as com.opensubtitles/guessit-js.
+# Authenticates by DNS: the opensubtitles.com apex carries the TXT record
+# "v=MCPv1; k=ed25519; p=<public key>", and the matching Ed25519 private key
+# (hex seed) is the MCP_PRIVATE_KEY repository secret.
 # Runs after each release (called by release.yml, once npm has the version, since
 # the registry checks the npm package's "mcpName"), or by hand for a given tag.
 on:
@@ -21,7 +22,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write   # mcp-publisher login github-oidc
 
 jobs:
   publish:
@@ -54,8 +54,8 @@ jobs:
         id: exists
         run: |
           version="${TAG#v}"
-          if curl -sf "https://registry.modelcontextprotocol.io/v0/servers/io.github.opensubtitles%2Fguessit-js/versions/${version}" >/dev/null; then
-            echo "::notice::io.github.opensubtitles/guessit-js ${version} is already in the MCP Registry"
+          if curl -sf "https://registry.modelcontextprotocol.io/v0/servers/com.opensubtitles%2Fguessit-js/versions/${version}" >/dev/null; then
+            echo "::notice::com.opensubtitles/guessit-js ${version} is already in the MCP Registry"
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -67,9 +67,11 @@ jobs:
 
       - name: Publish
         if: steps.exists.outputs.skip != 'true'
+        env:
+          MCP_PRIVATE_KEY: ${{ secrets.MCP_PRIVATE_KEY }}
         run: |
           set -euo pipefail
-          ./mcp-publisher login github-oidc
+          ./mcp-publisher login dns --domain opensubtitles.com
           # Prefer the entry listing the .mcpb bundle too; fall back to npm + remote only.
           if [ -f server.mcpb.json ]; then
             cp server.mcpb.json server.json

@@ -269,7 +269,7 @@ tool. Three read-only tools:
 [![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_guessit-0098FF?logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=guessit&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22guessit-js%22%2C%22--mcp%22%5D%7D)
 [![Install in Cursor](https://img.shields.io/badge/Cursor-Install_guessit-000000?logo=cursor&logoColor=white)](https://cursor.com/en/install-mcp?name=guessit&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsImd1ZXNzaXQtanMiLCItLW1jcCJdfQ==)
 [![Claude Desktop extension](https://img.shields.io/badge/Claude_Desktop-guessit--js.mcpb-D97757?logo=claude&logoColor=white)](https://github.com/opensubtitles/guessit-js/releases/latest/download/guessit-js.mcpb)
-[![MCP Registry](https://img.shields.io/badge/MCP_Registry-io.github.opensubtitles%2Fguessit--js-555)](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.opensubtitles/guessit-js)
+[![MCP Registry](https://img.shields.io/badge/MCP_Registry-com.opensubtitles%2Fguessit--js-555)](https://registry.modelcontextprotocol.io/v0/servers?search=com.opensubtitles/guessit-js)
 
 **Claude Desktop**: download [`guessit-js.mcpb`](https://github.com/opensubtitles/guessit-js/releases/latest/download/guessit-js.mcpb)
 from the latest release and open it (Settings → Extensions). Runs locally, offline.
@@ -301,7 +301,7 @@ Protocol: dual-era. Stateless MCP `2026-07-28` (`server/discover`, per-request
 `_meta`, no handshake) and the `initialize` handshake of `2025-11-25` back to
 `2024-11-05`, on both stdio and HTTP. Every tool has an `outputSchema` and
 returns `structuredContent`. Listed in the [official MCP Registry](https://registry.modelcontextprotocol.io)
-as `io.github.opensubtitles/guessit-js`.
+as `com.opensubtitles/guessit-js`.
 
 For language models reading about the project: [`llms.txt`](https://opensubtitles.github.io/guessit-js/llms.txt)
 (also at `/llms.txt` on the hosted API) and the [OpenAPI spec](https://opensubtitles.github.io/guessit-js/openapi.json).
