@@ -76,7 +76,7 @@ const TOOLS = [
       },
       additionalProperties: true,
     },
-    annotations: { readOnlyHint: true, openWorldHint: false, idempotentHint: true },
+    annotations: { title: 'Parse a media filename', readOnlyHint: true, openWorldHint: false, idempotentHint: true },
   },
   {
     name: 'guessit_batch',
@@ -113,7 +113,7 @@ const TOOLS = [
       },
       required: ['results'],
     },
-    annotations: { readOnlyHint: true, openWorldHint: false, idempotentHint: true },
+    annotations: { title: 'Parse many media filenames', readOnlyHint: true, openWorldHint: false, idempotentHint: true },
   },
   {
     name: 'guessit_properties',
@@ -127,7 +127,7 @@ const TOOLS = [
       description: 'Property name -> possible values',
       additionalProperties: { type: 'array' },
     },
-    annotations: { readOnlyHint: true, openWorldHint: false, idempotentHint: true },
+    annotations: { title: 'List guessit properties', readOnlyHint: true, openWorldHint: false, idempotentHint: true },
   },
 ];
 

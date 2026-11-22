@@ -4,7 +4,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { guessit, guessitMany, properties, version } from '../src/index.js';
 // @ts-expect-error plain ES module without type declarations
@@ -32,6 +32,9 @@ describe('MCP core', () => {
     for (const t of tools) {
       expect(t.inputSchema.type).toBe('object');
       expect(t.annotations.readOnlyHint).toBe(true);
+      expect(t.annotations.idempotentHint).toBe(true);
+      // Directory reviews (Claude) ask for a display title in the annotations too.
+      expect(t.annotations.title).toBe(t.title);
     }
     expect(tools[1].inputSchema.properties.filenames.maxItems).toBe(100);
   });
@@ -233,4 +236,19 @@ describe.skipIf(!hasDist)('guessit-js --mcp (stdio)', () => {
     const msg = JSON.parse(out.trim());
     expect(msg.result.supportedVersions[0]).toBe(MODERN);
   }, 30_000);
+});
+
+describe('Agent Plugins manifest (plugin.json, mcp.json)', () => {
+  const root = resolve(__dirname, '..');
+  const read = (f: string) => JSON.parse(readFileSync(join(root, f), 'utf8'));
+  it('plugin.json and server.json carry the package version', () => {
+    const v = read('package.json').version;
+    expect(read('plugin.json').version).toBe(v);
+    expect(read('server.json').version).toBe(v);
+  });
+  it('mcp.json runs the published package over stdio and names the hosted endpoint', () => {
+    const { mcpServers } = read('mcp.json');
+    expect(mcpServers['guessit-js']).toEqual({ type: 'stdio', command: 'npx', args: ['-y', 'guessit-js', '--mcp'] });
+    expect(mcpServers['guessit-js-remote']).toEqual({ type: 'streamable-http', url: 'https://guessit.opensubtitles.com/mcp' });
+  });
 });

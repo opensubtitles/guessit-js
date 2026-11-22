@@ -8,13 +8,13 @@
     "source": "github"
   },
   "websiteUrl": "https://opensubtitles.github.io/guessit-js/",
-  "version": "5.3.0",
+  "version": "5.3.1",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "guessit-js",
-      "version": "5.3.0",
+      "version": "5.3.1",
       "transport": {
         "type": "stdio"
       },

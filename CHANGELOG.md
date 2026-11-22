@@ -2,6 +2,20 @@
 
 All notable changes to guessit-js are documented here.
 
+## [5.3.1]
+
+**Agent Plugins manifest and tool titles.** No change to parsing or to the MCP
+protocol behaviour.
+
+- **`plugin.json` and `mcp.json`** at the repository root, per the
+  [Agent Plugins 1.0.0](https://agent-plugins.org/specification) layout, so
+  plugin directories (cursor.directory and others) detect the MCP server from
+  the GitHub repository: the local `npx -y guessit-js --mcp` server and the
+  hosted `https://guessit.opensubtitles.com/mcp` endpoint. Neither file ships in
+  the npm package.
+- **Every MCP tool sets `annotations.title`** (same text as its `title`), which
+  directory reviews ask for.
+
 ## [5.3.0]
 
 **MCP server: latest protocol, one-click installs, official registry.** No
