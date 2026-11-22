@@ -5,6 +5,7 @@ import type { Rebulk } from 'rebulk-js';
 import { rebulkBuilder, type AdvancedConfig } from './rules/index.js';
 import { parseOptions, loadConfig, mergeOptions, type GuessItOptions, type RawOptions } from './options.js';
 import { GUESSIT_SCHEMA } from './schema.js';
+import { parseOutputFormat, toPythonNotation } from './output.js';
 export type { GuessItResult, GuessitLanguage, PropertySchema } from './schema.js';
 export { GUESSIT_SCHEMA } from './schema.js';
 import type { GuessItResult } from './schema.js';
@@ -137,6 +138,8 @@ export class GuessItApi {
       throw new Error('Rebulk not initialized');
     }
 
+    // Validate before parsing so a bad value fails the same way for every string.
+    const output = parseOutputFormat(mergedOptions['output']);
     const matches = this._rebulk.matches(string, mergedOptions);
     const matchesDict = matches.toDict(
       !!(mergedOptions['advanced'] as boolean),
@@ -193,6 +196,9 @@ export class GuessItApi {
       result['input_string'] = matches.inputString;
     }
 
+    // Advanced mode returns live Match objects (as Python does); notation applies
+    // to plain results only.
+    if (output === 'python' && !mergedOptions['advanced']) return toPythonNotation(result);
     return result;
   }
 
