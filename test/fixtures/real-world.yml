@@ -363,3 +363,19 @@
 ? Some Kitchen 13.June.2026 1080p H265 Grp0554.mp4
 : title: Some Kitchen
   date: 2026-06-13
+
+# One title per name: a second title hole becomes the alternative or episode title
+? Some Saga (5) Second Part CZ dabing 1080p 2007.mkv
+: title: Some Saga
+  year: 2007
+  type: movie
+
+? "[Grp] Some Heroine Maid desu (Proud)! - S01E04 [1080p].mkv"
+: title: Some Heroine Maid desu
+  season: 1
+  episode: 4
+
+? Some Show (BBC) TV Series S2E4 The Episode.mkv
+: title: Some Show
+  season: 2
+  episode: 4
