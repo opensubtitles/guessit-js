@@ -4,6 +4,33 @@ All notable changes to guessit-js are documented here.
 
 ## [Unreleased]
 
+**The year is no longer copied into a missing season.** Python guessit turns
+`Show E01 [2019]` into season 2019 episode 1 (its `YearSeason` rule). A
+subtitle or metadata search for season 2019 finds nothing, so guessit-js now
+leaves the season empty and keeps the year. To get Python's behaviour back,
+pass `year_season: true` (CLI `--year-season`). On 414,588 real names this
+changes the season of 1,779 and nothing else.
+
+**More real-world names parse right.** Each fix below was measured on 414,588
+real names against Python guessit 4.5.4; every changed result was reviewed.
+
+| Name (synthetic, same shape as the real ones) | Before | Now | Names changed |
+|---|---|---|---|
+| `S02E22 Some Show Words (1984) WEBRip ITA.mkv` | no title, words as episode title | title "Some Show Words" (as Python) | 1,587 |
+| `grp-someshow-0503-720-web.mkv` | episode [503, 720] | S05E03, 720p (as Python) | 1,339 |
+| `Some.Movie.2020.1080.BluRay.mkv`, `show-720-web.mkv` | S10E80, S07E20 | 1080p, 720p | (incl. above) |
+| `Some Movie 2 (2006) (1080p BluRay x265) [Grp].mkv` | episode 2, season 2006 | movie "Some Movie 2" (as Python) | 115 |
+| `Team A at Team B 26.05.2026.mkv`, `WWE.Monday.Night.Raw.2026.06.08…` | title "Team A Dia…", "WWE" | full title | 198 |
+| `Some Saga (5) Second Part 2007.mkv` | a list of two titles | one title, the rest alternative/episode title | 216 |
+| `Some Show Season 2 - 08.mkv`, `Season_2_[08]` | season range 2–8 | S02E08 | 135 |
+| `Some Show 2nd Season - 08 - Title.mkv`, `S3 - 12 END` | no episode | episode 8 / 12 | (incl. above) |
+| `S01E08 Name [Original Name 2021 Uk]`, `S01E01 (Thailand, 2022, drama)` | year dropped | year kept (as Python) | 286 |
+| `2026-06-08 23-23-59.mp4` (screen recorder) | episodes 23…59 | date only | (incl. above) |
+
+The title cut came from a character class built from the separator list without
+escaping `-`, so `=-_` became a range that took in every letter: the date
+silently swallowed the words before it.
+
 **Czech and Slovak dub / subtitle tags.** `dabing` and `dab` (dubbed) now mark
 the audio language and `titulky` and `tit` the subtitle language, the way
 `dub` and `sub` already did: `Some Movie CZ DABING 2025` gives title "Some
