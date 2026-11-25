@@ -401,6 +401,10 @@ class NumericEpisodeTitleToEpisode extends Rule {
       const ets = matches.range(fp.start, fp.end, (m: Match) => m.name === 'episode_title') as Match[] | Match | undefined;
       for (const et of (Array.isArray(ets) ? ets : ets ? [ets] : [])) {
         if (/^\d{1,3}$/.test(String(et.value ?? '').trim())) out.push(et);
+        // "Some Show 2nd Season - 08 SK - Title", "… S3 - 12 END": the number leads the episode
+        // title right after the dash; it is the episode and the words stay the episode title.
+        else if (/^\d{1,3}\s+\S/.test(String(et.raw ?? '')) &&
+          /\s-\s*$/.test((et.inputString ?? '').slice(fp.start, et.start))) out.push(et);
       }
     }
     return out.length ? out : false;
@@ -409,6 +413,24 @@ class NumericEpisodeTitleToEpisode extends Rule {
   override then(matches: Matches, whenResponse: unknown, _context: any): void {
     for (const et of whenResponse as Match[]) {
       matches.remove(et);
+      const raw = String(et.raw ?? '');
+      const lead = /^(\d{1,3})\s+(?=\S)/.exec(raw);
+      if (lead && raw.trim() !== lead[1]) {
+        const input = et.inputString ?? '';
+        matches.append(new Match(et.start, et.start + lead[1].length, { name: 'episode', value: parseInt(lead[1], 10), inputString: input }));
+        let restStart = et.start + lead[0].length;
+        while (restStart < et.end && /[\s._-]/.test(input[restStart])) restStart++;
+        let rest = input.slice(restStart, et.end);
+        // a language code first ("SK - Title"): the code is the language, the words the title
+        const code = /^([A-Za-z]{2,3})\s+-\s+/.exec(rest);
+        if (code && matches.range(restStart, restStart + code[1].length, (m: Match) => m.name === 'language', 0)) {
+          restStart += code[0].length; rest = input.slice(restStart, et.end);
+        }
+        if (/[\p{L}\p{N}]/u.test(rest)) {
+          matches.append(new Match(restStart, et.end, { name: 'episode_title', value: rest.trim(), inputString: input }));
+        }
+        continue;
+      }
       et.name = 'episode';
       et.value = parseInt(String(et.value).trim(), 10);
       matches.append(et);

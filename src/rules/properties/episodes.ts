@@ -850,9 +850,42 @@ export function episodes(config: EpisodesConfig): Rebulk {
     SpecialMarkerIsSpecial,
     QuotedNumberIsTitleRule,
     WeakResolutionBeforeSourceRule,
+    SeasonWordDashEpisodeRule,
   );
 
   return rebulk;
+}
+
+/**
+ * "Some Show Season 2 - 08", "Some_Show_Season_2_[08]": the number after the dash or in the
+ * bracket is the episode (zero-padded or bracketed), not the end of a season range 2-8.
+ * Python guessit has the same range bug; a real pack reads "Season 1-3" or "Seasons 1 - 3".
+ */
+class SeasonWordDashEpisodeRule extends Rule {
+  override when(matches: any, _context: any): any {
+    if (((matches.named('episode', (m: any) => !m.private) as any[]) ?? []).length) return undefined;
+    const seasons = ((matches.named('season', (m: any) => !m.private) as any[]) ?? []).slice()
+      .sort((a: any, b: any) => a.start - b.start || a.end - b.end);
+    if (seasons.length < 2) return undefined;
+    const first = seasons[0];
+    const input: string = first.inputString ?? '';
+    if (!/^\d{1,2}$/.test(input.slice(first.start, first.end))) return undefined;
+    if (!/(?:^|[\s._-])season[\s._]*$/i.test(input.slice(0, first.start))) return undefined;
+    const m = /^(\s+-\s+|[\s._]*\[)(\d{2,3})(?=$|[\s._\]-])/.exec(input.slice(first.end));
+    if (!m) return undefined;
+    const bracket = m[1].includes('[');
+    if (!bracket && !m[2].startsWith('0')) return undefined;
+    const epStart = first.end + m[1].length;
+    const epEnd = epStart + m[2].length;
+    // every other season must come from this same "N - MM" span
+    if (seasons.some((x: any) => x !== first && (x.start < first.start || x.end > epEnd + 1))) return undefined;
+    return { first, rest: seasons.filter((x: any) => x !== first), epStart, epEnd, value: parseInt(m[2], 10), input };
+  }
+
+  override then(matches: any, found: any, _context: any): void {
+    for (const x of found.rest) matches.remove(x);
+    matches.append(new Match(found.epStart, found.epEnd, { name: 'episode', value: found.value, inputString: found.input }));
+  }
 }
 
 /**

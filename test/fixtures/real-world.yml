@@ -379,3 +379,34 @@
 : title: Some Show
   season: 2
   episode: 4
+
+# Season word, then the episode after a dash or in brackets (anime naming)
+? Some_Show_Season_2_[08]_[HEVC].mkv
+: title: Some Show
+  season: 2
+  episode: 8
+
+? Some Show Season 2 - 08.mkv
+: season: 2
+  episode: 8
+
+? Some Show Season 1 - 3.mkv
+: season: [1, 2, 3]
+
+? Some Show 2nd Season - 08 - Some Title.mkv
+: title: Some Show
+  season: 2
+  episode: 8
+  episode_title: Some Title
+
+? "[Grp] Some Show S3 - 12 END (WEB 1920x1080 AVC AAC).mkv"
+: season: 3
+  episode: 12
+
+? "[Grp] Some Show S1 - 12 - The Name [BD][1080p] [D5044E6D].mkv"
+: season: 1
+  episode: 12
+  episode_title: The Name
+
+? "[Grp] Some Show S2 - 00 (1080p) [A1F31848].mkv"
+: episode: "00"
