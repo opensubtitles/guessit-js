@@ -287,3 +287,16 @@
 
 ? Some Show E36 The Adventures of Peter Pan ENG.mkv
 : language: en
+
+# Episode code first: the words after it are the show title (as in Python guessit)
+? S02E22 Some Show Episode Words (1984) WEBRip 1080p HEVC EAC3 ITA ENG SUB ITA ENG - Grp.mkv
+: title: Some Show Episode Words
+  season: 2
+  episode: 22
+  year: 1984
+  -episode_title: Some Show Episode Words
+
+? S07E06 Some Episode - AV1 1080p GRP.mkv
+: title: Some Episode
+  season: 7
+  episode: 6

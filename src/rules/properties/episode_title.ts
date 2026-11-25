@@ -85,7 +85,8 @@ export function episodeTitle(config: Record<string, unknown>) {
     RemoveTailEpisodeTitle,
     FormationRunEpisodeTitle,
     RenameEpisodeTitleWhenMovieType,
-    JoinDashedEpisodeTitleTail
+    JoinDashedEpisodeTitleTail,
+    EpisodeTitleWithoutTitleIsTitle
   );
 
   return rebulk;
@@ -1025,5 +1026,34 @@ class RenameEpisodeTitleWhenMovieType extends Rule {
       match.name = 'alternative_title';
       matches.append(match);
     }
+  }
+}
+
+/**
+ * "S02E22 Show Name Episode Words (1984) WEBRip ITA.mkv": the episode code comes first, so
+ * the words after it were taken as the episode title and the result had no title at all.
+ * Python guessit takes them as the title. When an episode has no title anywhere, the first
+ * episode title becomes the title (a second one, if any, stays the episode title).
+ */
+class EpisodeTitleWithoutTitleIsTitle extends Rule {
+  static override priority = POST_PROCESS;
+  static override dependency = ['JoinDashedEpisodeTitleTail', 'RenameEpisodeTitleWhenMovieType'];
+
+  override when(matches: Matches, _context: any): Match | undefined {
+    if (((matches.named('title', (m: Match) => !m.private) as Match[]) ?? []).length) return undefined;
+    const episodeType = matches.named('type', (m: Match) => m.value === 'episode', 0) as Match | undefined;
+    if (!episodeType) return undefined;
+    // "Site.com_16.01.23.Some.Names": the site name stands in for the show (upstream fixture)
+    if (((matches.named('website') as Match[]) ?? []).length) return undefined;
+    const ets = ((matches.named('episode_title') as Match[]) ?? []).slice().sort((a, b) => a.start - b.start);
+    return ets[0];
+  }
+
+  override then(matches: Matches, whenResponse: unknown, _context: any): void {
+    const et = whenResponse as Match | undefined;
+    if (!et) return;
+    matches.remove(et);
+    et.name = 'title';
+    matches.append(et);
   }
 }
