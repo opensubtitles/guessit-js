@@ -1175,6 +1175,14 @@ class AnimeTrailingEpisodeRule extends Rule {
       // "Mob Psycho 100 - NCED01": the number ends the title, the credits marker holds the
       // episode slot (upstream 4.5.4, 1244783).
       if (endsTitleBeforeCredits(matches, { start: numStart, end: title.end })) continue;
+      // "Some Movie 2 (2006) (1080p BluRay x265) [Grp]": a year right after the number makes
+      // it a sequel, not an episode (Python guessit says movie too).
+      const yearAfter = matches.range(title.end, filepart.end, (y: any) => !y.private && y.name === 'year', 0);
+      // Also "Some Movie 2 - Other Name 2 1983 [720p] [Grp]": the year after a dashed alternative title.
+      const beforeYear = yearAfter ? input.slice(title.end, yearAfter.rawStart ?? yearAfter.start) : '';
+      // And "Some Movie 2 (Original Name 2) (2016)": the original title in brackets, then the year.
+      if (yearAfter && (/^[\s._([-]*$/.test(beforeYear) || /^\s+-\s+[^\[\]()]*[\s(]$/.test(beforeYear) ||
+          /^\s*\([^()]+\)[^\d()\[\]]*\(?$/.test(beforeYear))) continue;
       toRemove.push(title);
       const newTitle = new Match(title.start, title.start + m[1].length, {
         name: 'title', value: cleanup(m[1]), inputString: input,

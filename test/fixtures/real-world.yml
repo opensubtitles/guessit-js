@@ -328,3 +328,21 @@
 ? "[Grp] Some Anime 1080 (BD 1080p 10-bit Opus) [A0C7B9D0].mkv"
 : episode: 1080
   screen_size: 1080p
+
+# A sequel number before the year is part of the title, even with anime-style brackets
+? Some Bear 2 (2006) (1080p BluRay x265 10-bit AAC 5.1) [Grp].mkv
+: title: Some Bear 2
+  year: 2006
+  type: movie
+  -episode: 2
+
+? Some Movie 2 - Other Name 2 1983 [720p.WEB-DL.H265-FT] [Lektor PL] [Grp].mkv
+: title: Some Movie 2
+  alternative_title: Other Name 2
+  year: 1983
+  type: movie
+
+? Some Name 2 (Other Name- Chapter 2) (2017) - [1080p WEB-DL AVC] {SK AAC 2.0}.mkv
+: title: Some Name 2
+  year: 2017
+  type: movie
