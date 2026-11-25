@@ -469,6 +469,15 @@ class LanguageFinder {
     const post = word.inputString[word.end] ?? '';
     if ('[(|'.includes(pre) && pre !== '' && '])|'.includes(post) && post !== '') return true;
     const after = word.inputString.slice(word.end).toLowerCase();
+    // a dub or subtitle word right after the code: "SK dabing", "sk-tit", "SK titulky"
+    if (/^[\s._+-]*(?:dabing|dab|dub|dubbed|tit|titulky)(?![a-z])/.test(after)) return true;
+    // next to a common language code: "CZ SK", "cz,sk", "CZ+SK", "(cz sk en 1080p)".
+    // Only a code written as a tag (all caps or all lower case) counts; a Title Case
+    // word is a word ("En Fin", "Peter Pan ENG").
+    const before = word.inputString.slice(0, word.start).toLowerCase();
+    const tagLike = raw === raw.toUpperCase() || raw === raw.toLowerCase();
+    if (tagLike && (/(?:^|[^a-z])(?:cz|cs|en|eng|pl|hu|de|ger)[\s._,+/-]+$/.test(before) ||
+        /^[\s._,+/-]+(?:cz|cs|en|eng|pl|hu|de|ger)(?![a-z])/.test(after))) return true;
     const ext = /^[.\s_-]*\.?([a-z0-9]{2,4})$/.exec(after)?.[1];
     if (ext && SubtitleExtensionRule.SUBTITLE_EXTENSIONS.has(ext)) return true;
     return key === 'subtitle_language' && raw.length === 2;

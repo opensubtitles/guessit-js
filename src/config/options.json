@@ -920,7 +920,9 @@
         "customsubs",
         "customsub",
         "soft subtitles",
-        "soft subs"
+        "soft subs",
+        "titulky",
+        "tit"
       ],
       "subtitle_prefixes": [
         "st",
@@ -942,7 +944,9 @@
       "language_affixes": [
         "dublado",
         "dubbed",
-        "dub"
+        "dub",
+        "dabing",
+        "dab"
       ],
       "language_prefixes": [
         "true"

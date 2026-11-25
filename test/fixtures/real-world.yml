@@ -240,3 +240,50 @@
 : title: some show
   language: nl
   year: 2024
+
+# Czech / Slovak dub and subtitle words: "dabing", "dab" mark the audio language,
+# "titulky", "tit" the subtitle language; neither stays in the title or group
+? Some Movie CZ DABING 2025.1080p.mkv
+: title: Some Movie
+  language: cs
+  year: 2025
+
+? Some Movie cz tit (2020).mkv
+: title: Some Movie
+  subtitle_language: cs
+
+? Some Movie (2020) CZ titulky.mkv
+: title: Some Movie
+  subtitle_language: cs
+  -release_group: titulky
+
+? Some Show CZ dabing S04E08 Episode Name.mkv
+: title: Some Show
+  language: cs
+  season: 4
+  episode: 8
+
+# Slovak (and other non-default codes) count next to a common code or a dub word
+? Some.Movie.2020.CZ.SK.mkv
+: title: Some Movie
+  language: [cs, sk]
+
+? Some Movie 2020 (cz sk 1080p).mkv
+: title: Some Movie
+  language: [cs, sk]
+  -release_group: sk
+
+? Some Movie 2020 SK dabing.mkv
+: title: Some Movie
+  language: sk
+
+? Some.Show.S01E01.1080p.NF.WEB-DL.HIN-ENG-TAM-TEL.DDP5.1.H.264-GRP.mkv
+: language: [hi, en, ta, te]
+
+# …but a Title Case word is a word, not a code
+? En Fin [HDTV 1080p][Cap.103].mkv
+: title: En Fin
+  -language: en
+
+? Some Show E36 The Adventures of Peter Pan ENG.mkv
+: language: en

@@ -4,6 +4,21 @@ All notable changes to guessit-js are documented here.
 
 ## [Unreleased]
 
+**Czech and Slovak dub / subtitle tags.** `dabing` and `dab` (dubbed) now mark
+the audio language and `titulky` and `tit` the subtitle language, the way
+`dub` and `sub` already did: `Some Movie CZ DABING 2025` gives title "Some
+Movie" and language Czech (was title "Some Movie CZ DABING"), `CZ titulky` gives
+subtitle language Czech (was release group "titulky"). Slovak and the other
+languages Python guessit does not enable by default (Danish, Tamil, Chinese,
+Turkish, …) are also accepted as a two-letter or three-letter code when the
+code is written as a tag (all caps or all lower case) next to a common code or
+a dub word: `CZ.SK`, `(cz sk 1080p)`, `SK dabing`, `HIN-ENG-TAM-TEL`,
+`ITA-DAN-ENG`. Title Case words stay words (`En Fin`, `Peter Pan ENG`).
+
+On 414,588 real names, dub/subtitle words left in the title, episode title,
+alternative title or release group drop from 13,324 to 40; 16,638 results
+change, all reviewed by pattern.
+
 **Leading "N. " numbers: a year now means a movie.** A number opening the name
 with a dot ("20. some title") is read as list numbering, so as the episode.
 That stays, but it no longer fires when the same name part has a year and no
