@@ -1012,7 +1012,8 @@
   video_codec: H.264
 
 ? FlexGet.Series.2013.14.of.21.Title.Here.720p.HDTV.AAC5.1.x264-NOGRP
-: audio_channels: '5.1'
+: options: {year_season: true}
+  audio_channels: '5.1'
   audio_codec: AAC
   episode_count: 21
   episode: 14
@@ -4675,7 +4676,8 @@
   type: episode
 
 ? Eyes.Of.Dawn.1991.E01.480p.MBCVOD.AAC.x264-NOGPR.mp4
-: title: Eyes Of Dawn
+: options: {year_season: true}
+  title: Eyes Of Dawn
   year: 1991
   season: 1991
   episode: 1

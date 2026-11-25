@@ -430,3 +430,20 @@
 ? Some Game Gameplay - Story Part 2 - recorder 2026-06-05 23-09-24-696.mp4
 : date: 2026-06-05
   -episode: 23
+
+# The year is not copied into a missing season (Python guessit does; opt in with year_season)
+? Some.Show.1991.E01.480p.AAC.x264-GRP.mp4
+: title: Some Show
+  year: 1991
+  episode: 1
+  -season: 1991
+
+? Some Show E01 [2019].mkv
+: episode: 1
+  year: 2019
+  -season: 2019
+
+? Some.Show.1991.E01.480p.mp4
+: options: {year_season: true}
+  season: 1991
+  episode: 1

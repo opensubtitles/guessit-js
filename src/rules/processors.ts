@@ -317,13 +317,18 @@ export class SeasonYear extends Rule {
   }
 }
 
-/** If year found, no season found, and episode found, create a season match. */
+/**
+ * If year found, no season found, and episode found, create a season match (Python guessit).
+ * Off by default: "Show E01 [2019]" is episode 1 of a show from 2019, not season 2019, and a
+ * subtitle search for season 2019 finds nothing. The option year_season: true turns it back on.
+ */
 export class YearSeason extends Rule {
   static priority = POST_PROCESS;
   static consequence = AppendMatch;
 
-  when(matches: Matches, _context: Record<string, unknown>): Match[] {
+  when(matches: Matches, context: Record<string, unknown>): Match[] {
     const ret: Match[] = [];
+    if (!context?.['year_season'] && !context?.['yearSeason']) return ret;
     // Only trigger when there are strong (non-weak) episodes. Weak-episode matches
     // (bare 2-digit numbers) often coincide with title numbers like "21" or "12".
     const strongEpisodes = matches.named('episode').filter(
