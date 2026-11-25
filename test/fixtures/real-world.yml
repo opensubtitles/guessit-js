@@ -182,13 +182,23 @@
   -episode: 5
   -season: 1997
 
-? 13 dni, 13 noci - 13 Days, 13 Nights (2025) CZ dab.mkv
-: title: 13 dni, 13 noci
+? 13 days 13 nights - 13 Days 13 Nights (2025).mkv
+: title: 13 days 13 nights
   year: 2025
   type: movie
   -episode: 13
 
 # …while a season keeps the list number as the episode
+? 21 gramů - 21 Grams (2003).mkv
+: title: 21 gramů
+  year: 2003
+
+? 1. The Hobbit - An Unexpected Journey 720p (2012).mkv
+: title: 1 The Hobbit
+  year: 2012
+  type: movie
+  -season: 2012
+
 ? 03. Some Show.S03.2026.WEB-DL 1080p.mkv
 : title: Some Show
   season: 3

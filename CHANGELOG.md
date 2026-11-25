@@ -13,19 +13,21 @@ season, and the caller's `type: movie` is now honoured.
 |---|---|---|
 | `5. element (1997).mkv` | episode 5, title "element", **season 1997** | movie "5 element", 1997 |
 | `1. Shrek (2001).mkv` | episode 1, season 2001 | movie "1 Shrek", 2001 |
-| `13 dní, 13 nocí - 13 Days, 13 Nights (2025).mkv` | episode 13 | movie "13 dní, 13 nocí", 2025 |
+| `13 days 13 nights - 13 Days 13 Nights (2025).mkv` | episode 13, title "days 13 nights" | movie "13 days 13 nights", 2025 |
 | `21 gramů - 21 Grams (2003).mkv` | movie "gramů" | movie "21 gramů" |
+| `1. The Hobbit - An Unexpected Journey 720p (2012).mkv` | episode 1, season 2012 | movie "1 The Hobbit", 2012 |
 | `03. Some Show.S03.2026.WEB-DL.mkv` | S03E03 | S03E03 (unchanged: a season keeps it) |
 | `8. mile.mkv` with `type: movie` | movie, but episode 8, title "mile" | movie "8 mile" |
 
 On 3,811 real names that start with a number, 24 results change, all for the
-better; the year was also being copied into `season` in every one of them.
+better. Where an episode was read, the year was usually copied into `season`
+too.
 
 Known limits:
 
 - **No year, no season** (`8. mile.mkv`, `6. smysl.mkv`) is still episode 8 /
   6. In real traffic such names are mostly series episodes, lectures and music
-  lists (`1. Omámení a zmatení.mkv`); pass `type: movie` (`-t movie`,
+  lists (`1. Some Episode Title.mkv`); pass `type: movie` (`-t movie`,
   `?type=movie`) when you know it is a film. Python guessit reads them as movies.
 - **Collection order stays in the title:** `1. Shrek (2001)` gives "1 Shrek",
   `2. Harry Potter and the Chamber of Secrets (2002)` gives "2 Harry Potter…",
