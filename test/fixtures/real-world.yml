@@ -300,3 +300,31 @@
 : title: Some Episode
   season: 7
   episode: 6
+
+# A bare resolution number right before the source tag is the resolution
+? grp-someshow-0503-720-web.mkv
+: season: 5
+  episode: 3
+  screen_size: 720p
+  source: Web
+
+? grp-someshow-0106-1080-web.mkv
+: season: 1
+  episode: 6
+  screen_size: 1080p
+
+? Some.Movie.2020.1080.BluRay.mkv
+: title: Some Movie
+  year: 2020
+  screen_size: 1080p
+  type: movie
+  -episode: 80
+
+# …but not when the name has its own resolution tag or the number sits before a bracket
+? "[Grp] Some Anime 1080 WEB 1080p.mkv"
+: episode: 1080
+  screen_size: 1080p
+
+? "[Grp] Some Anime 1080 (BD 1080p 10-bit Opus) [A0C7B9D0].mkv"
+: episode: 1080
+  screen_size: 1080p

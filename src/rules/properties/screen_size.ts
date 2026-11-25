@@ -216,6 +216,18 @@ class ResolveScreenSizeConflicts extends Rule {
         hasNeighbor = true;
       }
 
+      // "show-0503-720-web", "Movie.2020.1080.BluRay": a bare resolution number right before
+      // the source tag is the resolution, not season 7 episode 20.
+      // Not when the name spells a resolution elsewhere: "One Piece 1080 WEB 1080p" is episode 1080.
+      if (!hasNeighbor && allScreensizes.length === 1 && /^(?:480|576|720|1080|1440|2160)$/.test(screenSizeMatch.raw ?? '')) {
+        const nextSource = matches.range(screenSizeMatch.end, filepart.end, (m: Match) => m.name === 'source', 0) as Match | undefined;
+        if (nextSource &&
+            /^[\s._-]*$/.test((screenSizeMatch.inputString ?? '').slice(screenSizeMatch.end, (nextSource as any).rawStart ?? nextSource.start))) {
+          toRemove.push(...conflicts);
+          hasNeighbor = true;
+        }
+      }
+
       if (!hasNeighbor) {
         toRemove.push(screenSizeMatch);
       }

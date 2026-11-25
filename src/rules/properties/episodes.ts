@@ -849,9 +849,49 @@ export function episodes(config: EpisodesConfig): Rebulk {
     EpisodeEndingTitleBeforeCreditsRule,
     SpecialMarkerIsSpecial,
     QuotedNumberIsTitleRule,
+    WeakResolutionBeforeSourceRule,
   );
 
   return rebulk;
+}
+
+/**
+ * "grp-show-0503-720-web": the bare number right before the source tag is the resolution,
+ * not a second episode. It becomes the screen size, and a lone 3-4 digit number left over
+ * is read as season and episode ("0503" → S05E03), as Python guessit does.
+ */
+class WeakResolutionBeforeSourceRule extends Rule {
+  override when(matches: any, _context: any): any {
+    const episodes = ((matches.named('episode', (m: any) => !m.private) as any[]) ?? []);
+    if (episodes.length < 2 || ((matches.named('season') as any[]) ?? []).length) return undefined;
+    if (((matches.named('screen_size') as any[]) ?? []).length) return undefined;
+    const res = episodes.find((m: any) => m.tags?.includes('weak-episode') &&
+      /^(?:480|576|720|1080|2160)$/.test(String(m.raw ?? '')));
+    if (!res) return undefined;
+    const input: string = res.inputString ?? '';
+    const source = matches.range(res.end, input.length, (m: any) => m.name === 'source', 0);
+    if (!source || !/^[\s._-]*$/.test(input.slice(res.end, source.rawStart ?? source.start))) return undefined;
+    const rest = episodes.filter((m: any) => m !== res);
+    if (rest.length !== 1 || !rest[0].tags?.includes('weak-episode')) return undefined;
+    return { res, rest: rest[0] };
+  }
+
+  override then(matches: any, found: any, _context: any): void {
+    const { res, rest } = found;
+    const input: string = res.inputString ?? '';
+    matches.remove(res);
+    for (const sep of (matches.named('episodeSeparator') as any[]) ?? []) {
+      if (sep.start >= rest.end && sep.end <= res.start) matches.remove(sep);
+    }
+    matches.append(new Match(res.start, res.end, { name: 'screen_size', value: `${res.raw}p`, inputString: input }));
+    const raw = String(rest.raw ?? '');
+    const v = Number(raw);
+    if (/^\d{3,4}$/.test(raw) && v % 100 > 0 && Math.floor(v / 100) > 0) {
+      matches.remove(rest);
+      matches.append(new Match(rest.start, rest.end - 2, { name: 'season', value: Math.floor(v / 100), inputString: input }));
+      matches.append(new Match(rest.end - 2, rest.end, { name: 'episode', value: v % 100, inputString: input }));
+    }
+  }
 }
 
 /**
