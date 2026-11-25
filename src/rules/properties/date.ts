@@ -5,7 +5,7 @@ import { Rebulk } from 'rebulk-js';
 import { Rule, RemoveMatch } from 'rebulk-js';
 import type { Match, Matches } from 'rebulk-js';
 import type { Context } from 'rebulk-js';
-import { dash, seps } from '../common/index.js';
+import { dash, seps, sepsPattern } from '../common/index.js';
 import { searchDate, validYear, validWeek } from '../common/date.js';
 import { isDisabled } from '../common/pattern.js';
 import { and_, sepsSurround } from '../common/validators.js';
@@ -373,7 +373,7 @@ class AbsorbWeekdayPrefix extends Rule {
 
   constructor(weekdayWords: string[]) {
     super();
-    const sepsClass = '[' + seps.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ']';
+    const sepsClass = '[' + sepsPattern + ']';
     this.weekdayRe = new RegExp(
       '(?:^|' + sepsClass + ')(' + buildOrPattern(weekdayWords.length ? weekdayWords : ['\\bnever\\b']) + ')' + sepsClass + '*$',
       'i',

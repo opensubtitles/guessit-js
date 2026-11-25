@@ -346,3 +346,20 @@
 : title: Some Name 2
   year: 2017
   type: movie
+
+# A date does not swallow the words before it (weekday check treated letters as separators)
+? Team Alpha Diamondbacks at Team Beta Giants 26.05.2026.mkv
+: title: Team Alpha Diamondbacks at Team Beta Giants
+  date: 2026-05-26
+
+? Some.Wrestling.Monday.Night.Show.2026.06.08.1080p.WEB.h264-GRP.mkv
+: title: Some Wrestling Monday Night Show
+  date: 2026-06-08
+
+? F1_MONACO_Qualifying_2026-06-06.mkv
+: title: F1 MONACO Qualifying
+  date: 2026-06-06
+
+? Some Kitchen 13.June.2026 1080p H265 Grp0554.mp4
+: title: Some Kitchen
+  date: 2026-06-13
