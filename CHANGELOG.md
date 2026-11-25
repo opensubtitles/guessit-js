@@ -2,6 +2,42 @@
 
 All notable changes to guessit-js are documented here.
 
+## [Unreleased]
+
+**Leading "N. " numbers: a year now means a movie.** A number opening the name
+with a dot ("20. some title") is read as list numbering, so as the episode.
+That stays, but it no longer fires when the same name part has a year and no
+season, and the caller's `type: movie` is now honoured.
+
+| Name | Before | Now |
+|---|---|---|
+| `5. element (1997).mkv` | episode 5, title "element", **season 1997** | movie "5 element", 1997 |
+| `1. Shrek (2001).mkv` | episode 1, season 2001 | movie "1 Shrek", 2001 |
+| `13 dní, 13 nocí - 13 Days, 13 Nights (2025).mkv` | episode 13 | movie "13 dní, 13 nocí", 2025 |
+| `21 gramů - 21 Grams (2003).mkv` | movie "gramů" | movie "21 gramů" |
+| `03. Some Show.S03.2026.WEB-DL.mkv` | S03E03 | S03E03 (unchanged: a season keeps it) |
+| `8. mile.mkv` with `type: movie` | movie, but episode 8, title "mile" | movie "8 mile" |
+
+On 3,811 real names that start with a number, 24 results change, all for the
+better; the year was also being copied into `season` in every one of them.
+
+Known limits:
+
+- **No year, no season** (`8. mile.mkv`, `6. smysl.mkv`) is still episode 8 /
+  6. In real traffic such names are mostly series episodes, lectures and music
+  lists (`1. Omámení a zmatení.mkv`); pass `type: movie` (`-t movie`,
+  `?type=movie`) when you know it is a film. Python guessit reads them as movies.
+- **Collection order stays in the title:** `1. Shrek (2001)` gives "1 Shrek",
+  `2. Harry Potter and the Chamber of Secrets (2002)` gives "2 Harry Potter…",
+  same as Python. A title search may need the number stripped.
+- **An episode named with a year** but no season and no show folder
+  (`5. Episode Title (2019).mkv`) is now a movie. Zero-padded numbers are not
+  touched by this change; `01. Pilot (2019).mkv` already read as a movie titled
+  "01" before it (and still does).
+- Music and lecture lists with a year (`8. Some Artist live at Some Festival
+  2026.mp4`) become a movie with the number in the title, instead of episode 8,
+  season 2026.
+
 ## [5.3.2]
 
 - **MCP Registry entry has an icon:** `server.json` lists the 512×512 PNG at

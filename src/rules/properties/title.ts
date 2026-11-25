@@ -1064,12 +1064,24 @@ class LeadingNumberIsEpisode extends Rule {
   override priority = -100;
   override consequence = [RemoveMatch, AppendMatch];
 
-  override when(matches: Matches, _context: Context): any {
+  override when(matches: Matches, context: Context): any {
+    // the caller said it is a movie: a leading number is part of the title
+    if ((context as any)?.type === 'movie') return false;
     const input: string = (matches as any).inputString ?? '';
     for (const title of ((matches as any).named('title') as Match[]) ?? []) {
       const fp = (matches as any).markers.atMatch(title, (m: Match) => m.name === 'path', 0) as Match | undefined;
       const fpStart = fp ? fp.start : 0;
       if (title.start !== fpStart) continue;
+      // "5. element (1997)", "1. Shrek (2001)": a year with no season marks a movie
+      // whose number belongs to the title (or a collection order), not an episode.
+      // A season ("01. Show.S03.2026") keeps the number as the episode.
+      const fpEnd = fp ? fp.end : input.length;
+      const inPart = (m: Match) => !m.private && m.start >= fpStart && m.end <= fpEnd;
+      const hasYear = (((matches as any).named('year', inPart) as Match[]) ?? []).length > 0;
+      const hasSeason = (((matches as any).named('season', inPart) as Match[]) ?? []).length > 0;
+      // Zero-padding ("01. Pilot (2019)") is deliberate episode numbering and is kept.
+      const unpadded = /^[1-9]/.test(input.slice(title.start, title.end));
+      if (hasYear && !hasSeason && unpadded) continue;
       const raw = input.slice(title.start, title.end);
       const list = /^(\d{1,3})\.[ ]+(?=\S)/.exec(raw);
       const plain = /^(\d{1,3})[ ]+(?=\S)/.exec(raw);

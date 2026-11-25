@@ -173,6 +173,35 @@
   episode: 20
   episode_title: last
 
+# …but a year with no season marks a movie: the number stays in the title and
+# the year is not copied into a season
+? 5. element (1997).mkv
+: title: 5 element
+  year: 1997
+  type: movie
+  -episode: 5
+  -season: 1997
+
+? 13 dni, 13 noci - 13 Days, 13 Nights (2025) CZ dab.mkv
+: title: 13 dni, 13 noci
+  year: 2025
+  type: movie
+  -episode: 13
+
+# …while a season keeps the list number as the episode
+? 03. Some Show.S03.2026.WEB-DL 1080p.mkv
+: title: Some Show
+  season: 3
+  episode: 3
+  year: 2026
+
+# the caller's type: movie keeps the number in the title
+? 8. mile.mkv
+: options: -t movie
+  title: 8 mile
+  type: movie
+  -episode: 8
+
 # a plain leading number stays in a film title (Python drops it)
 ? 50 First Dates
 : title: 50 First Dates
