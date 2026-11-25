@@ -410,3 +410,23 @@
 
 ? "[Grp] Some Show S2 - 00 (1080p) [A1F31848].mkv"
 : episode: "00"
+
+# A metadata bracket keeps its year next to an SxxExx
+? Some Show S01E08 Episode Name [Original Name 2021 Uk] (cz en 1080p WEBRip).mkv
+: season: 1
+  episode: 8
+  year: 2021
+
+? Some Show S01E01 (Thailand, 2022, drama, BL).mkv
+: season: 1
+  episode: 1
+  year: 2022
+
+# A recorder timestamp after a date is the time, not an episode range
+? 2026-06-08 23-23-59.mp4
+: date: 2026-06-08
+  -episode: 23
+
+? Some Game Gameplay - Story Part 2 - recorder 2026-06-05 23-09-24-696.mp4
+: date: 2026-06-05
+  -episode: 23
