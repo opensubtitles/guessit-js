@@ -523,6 +523,21 @@ class SceneReleaseGroup extends Rule {
             })()) {
           continue;
         }
+        // A hole that runs over a spaced " - NN" episode is not a group as a whole. Behind a
+        // leading [Group] it is title text plus the episode ("[Grp] Show wa Kawaii Mono ga
+        // Osuki. - 07 (1080p)"); otherwise the group ends where the " - NN" starts
+        // ("… (JG666) - 20" → JG666, episode 20).
+        const spacedEp = (matches.range(lastHole.start, lastHole.end, (m: Match) =>
+          (m.name === 'episode' || m.name === 'season') && !m.private) as Match[] ?? [])
+          .map((m: Match) => /\s*-\s*\[?$/.exec(inputStr.slice(lastHole.start, m.start + (/[[(]/.test(inputStr[m.start]) ? 1 : 0))))
+          .find((x): x is RegExpExecArray => !!x && /\s-/.test(x[0]));
+        if (spacedEp) {
+          if (/^[[{]/.test(inputStr.slice(start).trimStart())) continue;
+          const cut = lastHole.start + spacedEp.index;
+          if (!cleanup(inputStr.slice(lastHole.start, cut))) continue;
+          lastHole.end = cut;
+          lastHole.value = cleanup(inputStr.slice(lastHole.start, cut));
+        }
         if (
           previousMatch &&
           this.isPreviousMatch(previousMatch) &&

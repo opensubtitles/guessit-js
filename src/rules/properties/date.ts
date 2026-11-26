@@ -196,6 +196,9 @@ class RemoveDecimalVersionDate extends Rule {
       // underscore stamp ("…Channel.5_2025_07_18…") is a genuine date whose
       // leading digit belongs to the token before it.
       if (!/^\d+(?:\.\d+)+$/.test(input.slice(dateMatch.start, dateMatch.end))) continue;
+      // a full "YYYY.MM.DD" stamp is never the tail of a version run: "Formula1.2026.11.20",
+      // "Formula.1.2026.11.20" (the digit in front belongs to the series name)
+      if (/^(?:19|20)\d{2}\.\d{1,2}\.\d{1,2}$/.test(input.slice(dateMatch.start, dateMatch.end))) continue;
       const prevChar = input[dateMatch.start - 1];
       const prevDigit = input[dateMatch.start - 2];
       if (prevChar === '.' && prevDigit && /\d/.test(prevDigit)) {

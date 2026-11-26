@@ -1155,7 +1155,9 @@ class MotorsportRoundIsEpisode extends Rule {
       } else {
         // "MotoGP 2002 - 09. Sachsenring Race", "MotoGP_2026_08_VC_Madarska_…": the round
         // number written right behind the season year (Python reads it the same way).
-        const yr = /(?:^|[\W_])(?:19|20)\d{2}(\s+-\s+|_)(\d{2})(?=\.\s|_|\s+-\s)/.exec(text);
+        // "F1.2026.21.Las.Vegas.Race": the dotted form, followed by a word.
+        const yr = /(?:^|[\W_])(?:19|20)\d{2}(\s+-\s+|_)(\d{2})(?=\.\s|_|\s+-\s)/.exec(text) ??
+          /(?:^|[\W_])(?:19|20)\d{2}(\.)(\d{2})(?=\.[^\W\d_])/.exec(text);
         if (yr) {
           const start = filepart.start + yr.index + yr[0].length - yr[2].length;
           toAppend.push(new Match(start, start + 2, {

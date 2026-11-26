@@ -1033,10 +1033,11 @@ class RemoveDashGluedBibliographicCode extends Rule {
       out.push(match);
     }
     // A locale is written "pt-BR" / "en-US" / "PT-BR"; Title Case on both halves
-    // ("Kamen Rider My-Th") is a word of the title, not Burmese as spoken in Thailand.
+    // ("Kamen Rider My-Th", "Kamen Rider My-th") is a word of the title, not Burmese as
+    // spoken in Thailand.
     for (const match of (matches.named('language') ?? []) as Match[]) {
       const raw = String(match.raw ?? '');
-      if (!/^[A-Z][a-z]-[A-Z][a-z]$/.test(raw) || out.includes(match)) continue;
+      if (!/^[A-Z][a-z]-[A-Za-z][a-z]$/.test(raw) || out.includes(match)) continue;
       // two release-tag language codes side by side ("Cz-Sk", "En-De") stay languages
       if (raw.toLowerCase().split('-').every((c) => COMMON_PAIR_CODES.has(c))) continue;
       // real locales in Title Case ("DarkMahou.Pt-Br"); and the name's first word, where

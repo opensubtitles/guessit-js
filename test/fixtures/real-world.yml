@@ -629,3 +629,42 @@
 ? '[Grpname] Some Show - S00E01 - Prologue [BSITE.WEB-DL 1080P AVC, AAC][9DC8584F].mkv'
 : release_group: Grpname
   episode_title: Prologue
+
+# a spaced " - NN" episode after an audio word ("Mono") is no scene release group
+? '[Grpname] Some Show wa Kawaii Mono ga Suki. - 07 (1080p).mkv'
+: release_group: Grpname
+  episode: 7
+  type: episode
+
+? '[Grpname] Some Show Mono ga Suki - 07 [1080p CR WEB-DL AVC AAC][MultiSub][0B55F8F4].mkv'
+: release_group: Grpname
+  episode: 7
+
+# "My-th" (lowercase second half) is a title word too, not Burmese
+? '[Grpname] Some Rider My-th 11 and CMs HD720 h264.mkv'
+: title: Some Rider My-th
+  episode: 11
+  release_group: Grpname
+
+# a full YYYY.MM.DD after a digit-ending series name is a date, not a version run
+? Formula1.2026.11.20.Las.Vegas.1.Practice.HDTV.720p.x264-GRP.mkv
+: title: Formula1
+  date: 2026-11-20
+  episode_title: Las Vegas 1 Practice
+
+? Formula.1.2026.11.20.Some.Place.HDTV.720p.x264-GRP.mkv
+: title: Formula 1
+  date: 2026-11-20
+
+# the dotted sports round after the year
+? F1.2026.21.Some.Place.Race.WEB-DL.1080p-GRP.mkv
+: season: 2026
+  episode: 21
+  episode_title: Some Place Race
+
+# without a leading [Group] the scene group ends where a spaced " - NN" starts
+? Some Show (Other Name) 1979 MULTI BluRay (1080p x265 10bit FLAC 2.0) (GRP666) - 20.mkv
+: release_group: GRP666
+
+? Some Film (2026) 1080p CZ,some words - 19.mp4
+: language: Czech

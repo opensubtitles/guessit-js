@@ -4,6 +4,18 @@ All notable changes to guessit-js are documented here.
 
 ## [Unreleased]
 
+**Fixes found by checking fresh tracker release names (osmeta) against Python.**
+Measured on 73,814 current tracker names and the 414,588 real names: 43 and 213
+results change; every tracker-name change now agrees with Python 4.5.4.
+
+| Name (synthetic) | 5.5.0 | Now |
+|---|---|---|
+| `[Grp] Show wa Kawaii Mono ga Suki. - 07 (1080p)` | movie, group "ga Suki. - 07" | episode 7, group "Grp" |
+| `Show (Other) 1979 BluRay (1080p x265) (GRP666) - 20.mkv` | group "(GRP666) - 20" | group "GRP666" |
+| `[Grp] Some Rider My-th 11 …` | title "Some Rider", language Burmese, no episode | title "Some Rider My-th", episode 11 |
+| `Formula1.2026.11.20.Las.Vegas.…` | no date, title "Formula1.2026.11.20 …" | date 2026-11-20, title "Formula1" |
+| `F1.2026.21.Some.Place.Race.…` | movie | season 2026, episode 21 |
+
 ## [5.5.0]
 
 **Cleaner release groups, and more names parse like Python or better.** Measured
