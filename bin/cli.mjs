@@ -434,6 +434,7 @@ if (serve) {
       const opts = { ...baseOptions };
       const type = url.searchParams.get('type');
       if (type === 'movie' || type === 'episode') opts.type = type;
+      if (/^(?:1|true|yes|on)$/i.test(url.searchParams.get('year_season') ?? '')) opts.year_season = true;
       let want;
       try { want = wantedOutput(url.searchParams.get('output') ?? requestedOutput); }
       catch (e) { sendJson(res, 400, { error: e.message }); return; }

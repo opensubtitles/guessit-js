@@ -91,6 +91,21 @@
               ],
               "default": "python"
             }
+          },
+          {
+            "name": "year_season",
+            "in": "query",
+            "required": false,
+            "description": "Copy the year into a missing season, as Python guessit does (`Show E01 [2019]` → `season: 2019`). Off by default: the year is usually the show's release year, so guessit-js leaves `season` unset. An explicit season (`S2019E01`) is always kept. Accepts `1`/`true`.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1",
+                "true",
+                "false"
+              ]
+            }
           }
         ],
         "responses": {
@@ -505,6 +520,11 @@
             ],
             "default": "python",
             "description": "Value notation. `python` (default): exactly what Python guessit prints, so Python guessit users can switch without changes: `\"language\": \"French\"`, `\"country\": \"UNITED STATES\"`, `\"date\": \"2024-03-15\"`. `codes`: guessit-js values that keep more detail: `\"language\": {\"alpha3\": \"por\", \"country\": \"BR\"}` (the Python name \"Portuguese\" drops the region), `\"country\": \"US\"`, `\"date\": \"2024-03-15T00:00:00.000Z\"`."
+          },
+          "year_season": {
+            "type": "boolean",
+            "default": false,
+            "description": "Copy the year into a missing season, as Python guessit does (`Show E01 [2019]` → `season: 2019`). Off by default: the year is usually the show's release year, so guessit-js leaves `season` unset. An explicit season (`S2019E01`) is always kept."
           }
         }
       },

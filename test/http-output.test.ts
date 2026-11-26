@@ -66,6 +66,17 @@ for (const surface of SURFACES) {
       expect(status).toBe(400);
     });
 
+    it('year_season: off by default, on with ?year_season=1 or options.year_season', async () => {
+      const name = encodeURIComponent('Some Show E01 [2019].mkv');
+      const off = await get(`filename=${name}`);
+      expect(off.body.season).toBeUndefined();
+      expect(off.body.year).toBe(2019);
+      expect((await get(`filename=${name}&year_season=1`)).body.season).toBe(2019);
+      expect((await get(`filename=${name}&year_season=0`)).body.season).toBeUndefined();
+      const posted = await post({ filename: 'Some Show E01 [2019].mkv', options: { year_season: true } });
+      expect(posted.body.season).toBe(2019);
+    });
+
     it('POST single and batch honour options.output', async () => {
       const single = await post({ filename: 'Amelie.2001.FRENCH.mkv' });
       expect(single.body.language).toBe('French');

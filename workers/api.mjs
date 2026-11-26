@@ -94,6 +94,8 @@ export default {
         return json({ error: `Invalid output "${output}": must be "python" or "codes"` }, 400);
       }
       if (output) options.output = output;
+      // Off by default; ?year_season=1 copies the year into a missing season, like Python.
+      if (/^(?:1|true|yes|on)$/i.test(url.searchParams.get('year_season') ?? '')) options.year_season = true;
       try {
         // Cloudflare does NOT auto-cache Worker responses — a Cache-Control
         // header alone only instructs browsers. Real edge caching needs the

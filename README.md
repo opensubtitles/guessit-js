@@ -161,7 +161,14 @@ guessit('my 720p show S01E02', { expected_title: ['my 720p show'] });
 guessit('file.mkv', { allowed_languages: ['en', 'fr'] });
 guessit('file.mkv', { excludes: ['release_group'] });
 guessit('file.mkv', { output: 'codes' });  // guessit-js codes instead of Python names
+guessit('Show E01 [2019].mkv', { year_season: true }); // season 2019, like Python guessit
 ```
+
+`year_season` is off by default. Python guessit copies the year into a missing
+season (`Chernobyl E01 [2019]` → season 2019), but the year is usually the show's
+release year, so guessit-js leaves `season` unset. Turn it on to get Python's
+answer: `year_season: true`, `?year_season=1` (GET), `"options": {"year_season": true}`
+(POST, MCP) or `--year-season` (CLI). An explicit season (`S2019E01`) is always kept.
 
 ```typescript
 import { version } from 'guessit-js';  // package version string
@@ -238,6 +245,7 @@ CLI parsing flags become server defaults: `guessit-js --serve -t episode -L en`.
 Every surface answers in Python guessit's notation; add `?output=codes` (GET) or
 `"options": {"output": "codes"}` (POST) for guessit-js codes
 ([Output notation](#output-notation)). Any other `output` value is a `400`.
+`?year_season=1` restores Python's year-as-season ([Options](#options)).
 The repo also ships a fuller dev server (`npm start`) with the demo page,
 Swagger UI at `/docs`, and static WASM serving.
 
