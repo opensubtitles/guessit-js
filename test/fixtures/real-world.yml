@@ -526,3 +526,31 @@
 
 ? Some Movie (2010) - 720p.mkv
 : type: movie
+
+# "S2 - 13v2": the version glued to a dash-read episode number survives
+? '[Grp] Some Show S2 - 13v2 (1080p) [ABCD1234].mkv'
+: season: 2
+  episode: 13
+  version: 2
+
+? Some Show S2 - 13v2.mkv
+: season: 2
+  episode: 13
+  version: 2
+
+# a run of language codes behind a scene tag, then " - Grp": languages + group
+? Some Show S03E04 1080p ITA ENG - Grp.mkv
+: season: 3
+  episode: 4
+  language: [Italian, English]
+  release_group: Grp
+  -episode_title: ITA ENG - Grp
+
+? Movie 2010 1080p ITA ENG - Grp.mkv
+: language: [Italian, English]
+  release_group: Grp
+
+# a bare "Sprint" is a race session, not the S-Print cam source
+? Formula.1.2026.R05.Miami.Sprint.1080p.WEB.h264-GRP.mkv
+: source: Web
+  screen_size: 1080p

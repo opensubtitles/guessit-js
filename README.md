@@ -282,6 +282,9 @@ tool. Three read-only tools:
 [![Claude Desktop extension](https://img.shields.io/badge/Claude_Desktop-guessit--js.mcpb-D97757?logo=claude&logoColor=white)](https://github.com/opensubtitles/guessit-js/releases/latest/download/guessit-js.mcpb)
 [![MCP Registry](https://img.shields.io/badge/MCP_Registry-com.opensubtitles%2Fguessit--js-555)](https://registry.modelcontextprotocol.io/v0/servers?search=com.opensubtitles/guessit-js)
 
+[![opensubtitles/guessit-js MCP server](https://glama.ai/mcp/servers/opensubtitles/guessit-js/badges/score.svg)](https://glama.ai/mcp/servers/opensubtitles/guessit-js)
+[![guessit-js MCP connector](https://glama.ai/mcp/connectors/com.opensubtitles/guessit-js/badges/score.svg)](https://glama.ai/mcp/connectors/com.opensubtitles/guessit-js)
+
 **Claude Desktop**: download [`guessit-js.mcpb`](https://github.com/opensubtitles/guessit-js/releases/latest/download/guessit-js.mcpb)
 from the latest release and open it (Settings → Extensions). Runs locally, offline.
 

@@ -34,6 +34,9 @@ real names against Python guessit 4.5.4; every changed result was reviewed.
 | `Some Anime - 08 CZ - Episode Words.mkv` | release group "Episode Words" | episode title | 771 |
 | `Some Anime 4th Season Part 1 - 09.mkv`, `S2 Part 2 - 13` | episode lost, "09" as a title | part 1, episode 9 (as Python) | 51 |
 | `Some Show (2016) - 07.mkv` | a movie, episode lost | episode 7 (as Python) | 62 |
+| `[Grp] Some Show S2 - 13v2 (1080p).mkv` | version dropped | episode 13, version 2 | 958 |
+| `S03E04 1080p ITA ENG - Grp.mkv` | episode title "ITA ENG - Grp" | languages Italian, English; group "Grp" (as Python) | 100 |
+| `Formula.1.2026.R05.Miami.Sprint.1080p.WEB.mkv` | source Camera (read as "S-Print") | source Web; only `S-Print` with the dash is a cam | 108 |
 
 The title cut came from a character class built from the separator list without
 escaping `-`, so `=-_` became a range that took in every letter: the date

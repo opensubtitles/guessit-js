@@ -375,8 +375,32 @@ class SceneReleaseGroup extends Rule {
       // so these don't prevent release_group detection.
       // Also ignore weak-episode matches so trailing numbers (e.g. "Scarface45")
       // aren't consumed by weak episode patterns.
+      // "S03E04 1080p ITA ENG - Grp": the title rules read the language run as an
+      // episode title and the trailing token as its alternative title. When a scene tag
+      // leads into a run made only of languages, the single token after " - " is the group.
+      const inputAll: string = matches.inputString ?? '';
+      const sepsRe = new RegExp(`[${sepsPattern}]`, 'g');
+      const langRunTitles = new Set<Match>();
+      for (const alt of matches.named('alternative_title',
+        (m: Match) => m.start >= start && m.end <= end) as Match[]) {
+        if (!/^[\p{L}\p{N}]+$/u.test(String(alt.raw ?? ''))) continue;
+        const after = matches.next(alt, (m: Match) => !m.private, 0) as Match | undefined;
+        if (after && after.name !== 'container') continue;
+        const et = matches.previous(alt, (m: Match) => m.name === 'episode_title' && m.start >= start, 0) as Match | undefined;
+        if (!et || !/^\s*-\s*$/.test(inputAll.slice(et.end, alt.start))) continue;
+        const langs = matches.range(et.start, et.end,
+          (m: Match) => m.name === 'language' || m.name === 'subtitle_language') as Match[];
+        if (langs.length < 2 || inputAll.slice(et.start, et.end).replace(sepsRe, '') !==
+          langs.map((l) => inputAll.slice(l.start, l.end)).join('').replace(sepsRe, '')) continue;
+        const tag = matches.previous(langs[0], (m: Match) => !m.private && m.start >= start, 0) as Match | undefined;
+        if (!tag || !this.isPreviousMatch(tag) || ['language', 'subtitle_language'].includes(tag.name ?? '') ||
+          inputAll.slice(tag.end, langs[0].start).replace(sepsRe, '')) continue;
+        langRunTitles.add(et);
+        langRunTitles.add(alt);
+      }
+
       const keepOnlyFirstTitle = (match: Match) =>
-        titles.slice(1).includes(match) || match.name === 'episode_title' ||
+        titles.slice(1).includes(match) || match.name === 'episode_title' || langRunTitles.has(match) ||
         !!(match.tags?.includes('weak-episode') || match.tags?.includes('weak-duplicate'));
 
       // Python: ignore=keepOnlyFirstTitle (treat extra titles as unmatched),
@@ -477,6 +501,10 @@ class SceneReleaseGroup extends Rule {
 
           for (const ignoredMatch of ignoredMatches) {
             matches.remove(ignoredMatch);
+          }
+          // the language run in front of the group is languages, not an episode title
+          for (const m of langRunTitles) {
+            if (m.name === 'episode_title' && previousMatch.end === m.end) matches.remove(m);
           }
 
           ret.push(lastHole);

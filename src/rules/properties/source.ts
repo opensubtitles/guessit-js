@@ -49,11 +49,11 @@ export function source(config: Record<string, unknown>): Rebulk {
   rebulk.regex(...buildSourcePattern(['HD-?CAM', 'CAM-?HD'], '', optional(ripSuffix)),
     { value: { source: 'HD Camera', other: 'Rip' } });
 
-  // HQCAM and S-Print/SPrint (Indian cam-release conventions) are cameras too
-  // (cross-parser corpus).
+  // HQCAM and S-Print (Indian cam-release conventions) are cameras too
+  // (cross-parser corpus). Only the dashed form: a bare "Sprint" is a race session.
   rebulk.regex(...buildSourcePattern(['HQ-?CAM'], '', optional(ripSuffix)),
     { value: { source: 'Camera', other: 'Rip' } });
-  rebulk.regex(...buildSourcePattern(['S-?Print'], '', optional(ripSuffix)),
+  rebulk.regex(...buildSourcePattern(['S-Print'], '', optional(ripSuffix)),
     { value: { source: 'Camera' } });
 
   // Telesync (TS is too common, avoid 'streaming_service.suffix' tag)

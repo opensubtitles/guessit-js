@@ -434,6 +434,12 @@ class NumericEpisodeTitleToEpisode extends Rule {
       et.name = 'episode';
       et.value = parseInt(String(et.value).trim(), 10);
       matches.append(et);
+      // "S2 - 13v2": the version glued to the number went with the weak episode it rode on.
+      const input = et.inputString ?? '';
+      const ver = /^v(\d{1,2})(?=$|[\s._\-\[\]()])/i.exec(input.slice(et.end));
+      if (ver && !matches.named('version', undefined, 0)) {
+        matches.append(new Match(et.end, et.end + ver[0].length, { name: 'version', value: parseInt(ver[1], 10), inputString: input }));
+      }
     }
   }
 }
