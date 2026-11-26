@@ -849,9 +849,118 @@ export function episodes(config: EpisodesConfig): Rebulk {
     EpisodeEndingTitleBeforeCreditsRule,
     SpecialMarkerIsSpecial,
     QuotedNumberIsTitleRule,
+    WeakResolutionBeforeSourceRule,
+    SeasonWordDashEpisodeRule,
+    SeasonPartDashEpisodeRule,
   );
 
   return rebulk;
+}
+
+/**
+ * "Some Show Season 2 - 08", "Some_Show_Season_2_[08]": the number after the dash or in the
+ * bracket is the episode (zero-padded or bracketed), not the end of a season range 2-8.
+ * Python guessit has the same range bug; a real pack reads "Season 1-3" or "Seasons 1 - 3".
+ */
+class SeasonWordDashEpisodeRule extends Rule {
+  override when(matches: any, _context: any): any {
+    if (((matches.named('episode', (m: any) => !m.private) as any[]) ?? []).length) return undefined;
+    const seasons = ((matches.named('season', (m: any) => !m.private) as any[]) ?? []).slice()
+      .sort((a: any, b: any) => a.start - b.start || a.end - b.end);
+    if (seasons.length < 2) return undefined;
+    const first = seasons[0];
+    const input: string = first.inputString ?? '';
+    if (!/^\d{1,2}$/.test(input.slice(first.start, first.end))) return undefined;
+    if (!/(?:^|[\s._-])season[\s._]*$/i.test(input.slice(0, first.start))) return undefined;
+    const m = /^(\s+-\s+|[\s._]*\[)(\d{2,3})(?=$|[\s._\]-])/.exec(input.slice(first.end));
+    if (!m) return undefined;
+    const bracket = m[1].includes('[');
+    if (!bracket && !m[2].startsWith('0')) return undefined;
+    const epStart = first.end + m[1].length;
+    const epEnd = epStart + m[2].length;
+    // every other season must come from this same "N - MM" span
+    if (seasons.some((x: any) => x !== first && (x.start < first.start || x.end > epEnd + 1))) return undefined;
+    return { first, rest: seasons.filter((x: any) => x !== first), epStart, epEnd, value: parseInt(m[2], 10), input };
+  }
+
+  override then(matches: any, found: any, _context: any): void {
+    for (const x of found.rest) matches.remove(x);
+    matches.append(new Match(found.epStart, found.epEnd, { name: 'episode', value: found.value, inputString: found.input }));
+  }
+}
+
+/**
+ * "Show 4th Season Part 1 - 09", "Show S2 Part 2 - 13": the number after the dash is the
+ * episode of that season's part. Without it, the part is dropped as an episode title
+ * conflict and "09" is lost. Runs before RemoveConflictsWithEpisodeTitle (priority 64).
+ */
+class SeasonPartDashEpisodeRule extends Rule {
+  static override priority = 65;
+
+  override when(matches: any, _context: any): any {
+    // a weak episode guess on the number itself is fine; it is replaced below
+    const episodes = ((matches.named('episode', (m: any) => !m.private) as any[]) ?? []);
+    if (episodes.some((e: any) => !e.tags?.includes('weak-episode'))) return undefined;
+    const seasons = ((matches.named('season', (m: any) => !m.private) as any[]) ?? []);
+    if (seasons.length !== 1) return undefined;
+    const season = seasons[0];
+    const input: string = season.inputString ?? '';
+    const part = matches.range(season.end, input.length, (m: any) => m.name === 'part', 0);
+    if (!part || !/^(?:(?:st|nd|rd|th)[\s._-]*season)?[\s._-]*$/i.test(input.slice(season.end, part.parent?.start ?? part.start))) return undefined;
+    const m = /^(\s+-\s+)(\d{1,4})(?=$|v\d|[\s._\[\]()-])/i.exec(input.slice(part.end));
+    if (!m) return undefined;
+    const start = part.end + m[1].length;
+    const end = start + m[2].length;
+    if (episodes.some((e: any) => e.start < start || e.end > end)) return undefined;
+    if (matches.range(start, end, (x: any) => !x.private && !['episode', 'episode_title', 'title'].includes(x.name), 0)) return undefined;
+    return { start, end, value: parseInt(m[2], 10), input, weak: episodes };
+  }
+
+  override then(matches: any, found: any, _context: any): void {
+    for (const x of found.weak) matches.remove(x);
+    for (const x of (matches.range(found.start, found.end,
+      (y: any) => y.name === 'episode_title' || y.name === 'title') as any[]) ?? []) matches.remove(x);
+    matches.append(new Match(found.start, found.end, { name: 'episode', value: found.value, inputString: found.input }));
+  }
+}
+
+/**
+ * "grp-show-0503-720-web": the bare number right before the source tag is the resolution,
+ * not a second episode. It becomes the screen size, and a lone 3-4 digit number left over
+ * is read as season and episode ("0503" → S05E03), as Python guessit does.
+ */
+class WeakResolutionBeforeSourceRule extends Rule {
+  override when(matches: any, _context: any): any {
+    const episodes = ((matches.named('episode', (m: any) => !m.private) as any[]) ?? []);
+    if (episodes.length < 2 || ((matches.named('season') as any[]) ?? []).length) return undefined;
+    if (((matches.named('screen_size') as any[]) ?? []).length) return undefined;
+    const res = episodes.find((m: any) => m.tags?.includes('weak-episode') &&
+      /^(?:480|576|720|1080|2160)$/.test(String(m.raw ?? '')));
+    if (!res) return undefined;
+    const input: string = res.inputString ?? '';
+    const source = matches.range(res.end, input.length, (m: any) => m.name === 'source', 0);
+    if (!source || !/^[\s._-]*$/.test(input.slice(res.end, source.rawStart ?? source.start))) return undefined;
+    const rest = episodes.filter((m: any) => m !== res);
+    if (rest.length !== 1 || !rest[0].tags?.includes('weak-episode')) return undefined;
+    return { res, rest: rest[0] };
+  }
+
+  override then(matches: any, found: any, _context: any): void {
+    const { res, rest } = found;
+    const input: string = res.inputString ?? '';
+    matches.remove(res);
+    for (const sep of (matches.named('episodeSeparator') as any[]) ?? []) {
+      if (sep.start >= rest.end && sep.end <= res.start) matches.remove(sep);
+    }
+    matches.append(new Match(res.start, res.end, { name: 'screen_size', value: `${res.raw}p`, inputString: input }));
+    const raw = String(rest.raw ?? '');
+    const v = Number(raw);
+    if (/^\d{3,4}$/.test(raw) && v % 100 > 0 && Math.floor(v / 100) > 0) {
+      matches.remove(rest);
+      matches.append(new Match(rest.start, rest.end - 2, { name: 'season', value: Math.floor(v / 100), inputString: input }));
+      matches.append(new Match(rest.end - 2, rest.end, { name: 'episode', value: v % 100, inputString: input }));
+    }
+  }
 }
 
 /**
@@ -1135,6 +1244,14 @@ class AnimeTrailingEpisodeRule extends Rule {
       // "Mob Psycho 100 - NCED01": the number ends the title, the credits marker holds the
       // episode slot (upstream 4.5.4, 1244783).
       if (endsTitleBeforeCredits(matches, { start: numStart, end: title.end })) continue;
+      // "Some Movie 2 (2006) (1080p BluRay x265) [Grp]": a year right after the number makes
+      // it a sequel, not an episode (Python guessit says movie too).
+      const yearAfter = matches.range(title.end, filepart.end, (y: any) => !y.private && y.name === 'year', 0);
+      // Also "Some Movie 2 - Other Name 2 1983 [720p] [Grp]": the year after a dashed alternative title.
+      const beforeYear = yearAfter ? input.slice(title.end, yearAfter.rawStart ?? yearAfter.start) : '';
+      // And "Some Movie 2 (Original Name 2) (2016)": the original title in brackets, then the year.
+      if (yearAfter && (/^[\s._([-]*$/.test(beforeYear) || /^\s+-\s+[^\[\]()]*[\s(]$/.test(beforeYear) ||
+          /^\s*\([^()]+\)[^\d()\[\]]*\(?$/.test(beforeYear))) continue;
       toRemove.push(title);
       const newTitle = new Match(title.start, title.start + m[1].length, {
         name: 'title', value: cleanup(m[1]), inputString: input,

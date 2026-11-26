@@ -5,7 +5,7 @@ import { Rebulk } from 'rebulk-js';
 import { Rule, RemoveMatch } from 'rebulk-js';
 import type { Match, Matches } from 'rebulk-js';
 import type { Context } from 'rebulk-js';
-import { dash, seps } from '../common/index.js';
+import { dash, seps, sepsPattern } from '../common/index.js';
 import { searchDate, validYear, validWeek } from '../common/date.js';
 import { isDisabled } from '../common/pattern.js';
 import { and_, sepsSurround } from '../common/validators.js';
@@ -154,6 +154,12 @@ class RemoveGroupedYearWithSxxExx extends Rule {
       const range = year.tags.includes('year-range') ? rootParent(year) : undefined;
       const groupLen = group.end - group.start;
       const yearLen = range ? range.end - range.start : year.end - year.start;
+      // …but a metadata bracket keeps its year: "[Original Name 2021 Uk]" (year, then a country
+      // code) or "(Thailand, 2026, Drama)" (comma-separated facts).
+      const input = year.inputString ?? '';
+      const tail = input.slice(year.end, group.end);
+      const head = input.slice(group.start, year.start);
+      if (/^\s+[A-Za-z]{2}\s*[\])}]$/.test(tail) || (/,\s*$/.test(head) && /^\s*[,)\]}]/.test(tail))) continue;
       if (groupLen - yearLen > 4) {
         // Group has significant content beyond the year - it's episode title content
         ret.push(year);
@@ -231,11 +237,17 @@ class AbsorbBroadcastClockSuffix extends Rule {
       if (!stamp) continue;
 
       const sep = stamp[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const tail = new RegExp(`^((?:${sep}\\d{2}){2,3})(?!\\d)`)
+      let tail = new RegExp(`^((?:${sep}\\d{2}){2,3})(?!\\d)`)
         .exec(input.slice(dateMatch.end));
-      if (!tail) continue;
-
-      const units = tail[1].split(stamp[1]).filter(Boolean).map((u) => parseInt(u, 10));
+      let units: number[] = [];
+      if (tail) {
+        units = tail[1].split(stamp[1]).filter(Boolean).map((u) => parseInt(u, 10));
+      } else {
+        // a screen-recorder or camera stamp: "2026-06-08 23-23-59", "2026-06-10 00-21-20-185"
+        tail = /^([ _T](\d{2})([-.:_])(\d{2})(?:\3(\d{2}))?(?:[-.:_]\d{3})?)(?![\d])/.exec(input.slice(dateMatch.end));
+        if (!tail) continue;
+        units = [tail[2], tail[4], tail[5]].filter((u) => u !== undefined).map((u) => parseInt(u, 10));
+      }
       const limits = [23, 59, 59];
       if (units.some((u, i) => u > limits[i])) continue;
 
@@ -373,7 +385,7 @@ class AbsorbWeekdayPrefix extends Rule {
 
   constructor(weekdayWords: string[]) {
     super();
-    const sepsClass = '[' + seps.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ']';
+    const sepsClass = '[' + sepsPattern + ']';
     this.weekdayRe = new RegExp(
       '(?:^|' + sepsClass + ')(' + buildOrPattern(weekdayWords.length ? weekdayWords : ['\\bnever\\b']) + ')' + sepsClass + '*$',
       'i',

@@ -10,7 +10,7 @@
 //   4. SP=<dir> npx tsx scripts/upstream-corpus-quarantine.mts to park what fails.
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 
 const SP = process.env['SP']!;
 const upDir = join(SP, 'up');

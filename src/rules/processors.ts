@@ -317,20 +317,45 @@ export class SeasonYear extends Rule {
   }
 }
 
-/** If year found, no season found, and episode found, create a season match. */
+/** Sports series whose seasons are numbered by year (TheTVDB, IMDb): "Formula.1.2026.E13". */
+const YEARLY_SEASON_SPORTS = new RegExp(
+  '(?:^|[^a-z0-9])(?:formula[\\s._-]?(?:1|one|2|3|e)|f1|motogp|moto[23]|wsbk|world[\\s._-]?superbike|wrc|' +
+  'indycar|nascar|wec|dtm|btcc|supercars|ufc|wwe|nfl|nba|nhl|mlb|grand[\\s._-]?prix|round[\\s._-]?\\d+|' +
+  'qualifying|practice|sprint|race)(?![a-z])', 'i');
+
+/**
+ * If year found, no season found, and episode found, create a season match.
+ *
+ * Python guessit always does this; guessit-js by default only where the year really numbers
+ * the season: a sports series with the bare year right before the episode
+ * ("Formula.1.2026.E13", "MotoGP 2026 Round14"). Otherwise the year is the show's release year
+ * ("Chernobyl E01 [2019]", "Some Drama 2026 KOREAN E08") and a subtitle search for season 2019
+ * finds nothing. year_season: true always copies the year (Python), false never does.
+ */
 export class YearSeason extends Rule {
   static priority = POST_PROCESS;
   static consequence = AppendMatch;
 
-  when(matches: Matches, _context: Record<string, unknown>): Match[] {
+  when(matches: Matches, context: Record<string, unknown>): Match[] {
     const ret: Match[] = [];
+    const option = context?.['year_season'] ?? context?.['yearSeason'];
+    if (option === false) return ret;
     // Only trigger when there are strong (non-weak) episodes. Weak-episode matches
     // (bare 2-digit numbers) often coincide with title numbers like "21" or "12".
     const strongEpisodes = matches.named('episode').filter(
       (m: Match) => !m.tags.includes('weak-episode') && !m.tags.includes('weak-duplicate'),
     );
     if (matches.named('season').length === 0 && strongEpisodes.length > 0) {
+      const input = matches.inputString ?? '';
       for (const year of matches.named('year')) {
+        if (!option) {
+          // the default: a bare year directly before the episode of a sports series
+          const raw = input.slice(year.start, year.end);
+          const next = strongEpisodes.find((e: Match) => e.start >= year.end);
+          if (!/^\d{4}$/.test(raw) || !next || !YEARLY_SEASON_SPORTS.test(input)) continue;
+          const between = input.slice(year.end, next.start);
+          if (!/^[\s._-]*(?:e|ep|episode|round|r)?[\s._-]*$/i.test(between)) continue;
+        }
         const season = year.clone();
         (season as unknown as { name: string }).name = 'season';
         ret.push(season);

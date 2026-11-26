@@ -143,7 +143,14 @@ class TypeProcessor extends Rule {
       // Case 1: all episodes weak + year + no strong indicators → movie
       // e.g. "12 Angry Men (1957)", "21 (2008)" — the number is part of the movie title.
       // But not if there's an anime-style bracket release group.
-      if (allEpisodesWeakNoRange && noStrongIndicatorsExtended && hasYear && !hasAnimeStyleRG) {
+      // "Show (2016) - 07", "Show (2026) - 07 CZ - Title": a number behind the bracketed
+      // year and a spaced dash is the episode; a film's number sits before its year.
+      const episodeAfterYearDash = yearArr2.some((y) => episodeArr.some((e) =>
+        e.start >= y.end && /^[([]\d{4}[)\]]\s+-\s+$/.test(inputStr2.slice(y.start, e.start)) &&
+        /^\d{2,3}$/.test(String(e.raw ?? '')) &&
+        /^(?:$|[\s.]|v\d)/i.test(inputStr2.slice(e.end, e.end + 2))));
+      if (allEpisodesWeakNoRange && noStrongIndicatorsExtended && hasYear && !hasAnimeStyleRG &&
+          !episodeAfterYearDash) {
         return { type: 'movie', removeWeak: true };
       }
       // Case 2: episodeDetails only (no episode/season/absolute) + year → movie

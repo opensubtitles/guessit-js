@@ -4,6 +4,44 @@ All notable changes to guessit-js are documented here.
 
 ## [Unreleased]
 
+**The year becomes the season only for sports series.** Python guessit turns
+`Show E01 [2019]` into season 2019 episode 1 (its `YearSeason` rule), but the
+year is usually the show's release year, and a subtitle or metadata search for
+season 2019 finds nothing. guessit-js now does it only where the year really
+numbers the season: a sports series with the bare year right before the episode
+(`Formula.1.2026.E13`, `MotoGP 2026 Round14` → season 2026, as TheTVDB lists
+them). `year_season: true` always copies the year, like Python; `false` never
+does (`?year_season=1|0` on GET, `--year-season` / `--no-year-season` on the
+CLI). On 414,588 real names this removes the season from 1,487 (all non-sports) and keeps it on 292 sports
+names (Formula 1, MotoGP, WSBK, WRC, IndyCar …); nothing else changes.
+
+**More real-world names parse right.** Each fix below was measured on 414,588
+real names against Python guessit 4.5.4; every changed result was reviewed.
+
+| Name (synthetic, same shape as the real ones) | Before | Now | Names changed |
+|---|---|---|---|
+| `S02E22 Some Show Words (1984) WEBRip ITA.mkv` | no title, words as episode title | title "Some Show Words" (as Python) | 1,587 |
+| `grp-someshow-0503-720-web.mkv` | episode [503, 720] | S05E03, 720p (as Python) | 1,339 |
+| `Some.Movie.2020.1080.BluRay.mkv`, `show-720-web.mkv` | S10E80, S07E20 | 1080p, 720p | (incl. above) |
+| `Some Movie 2 (2006) (1080p BluRay x265) [Grp].mkv` | episode 2, season 2006 | movie "Some Movie 2" (as Python) | 115 |
+| `Team A at Team B 26.05.2026.mkv`, `WWE.Monday.Night.Raw.2026.06.08…` | title "Team A Dia…", "WWE" | full title | 198 |
+| `Some Saga (5) Second Part 2007.mkv` | a list of two titles | one title, the rest alternative/episode title | 216 |
+| `Some Show Season 2 - 08.mkv`, `Season_2_[08]` | season range 2–8 | S02E08 | 135 |
+| `Some Show 2nd Season - 08 - Title.mkv`, `S3 - 12 END` | no episode | episode 8 / 12 | (incl. above) |
+| `S01E08 Name [Original Name 2021 Uk]`, `S01E01 (Thailand, 2022, drama)` | year dropped | year kept (as Python) | 286 |
+| `2026-06-08 23-23-59.mp4` (screen recorder) | episodes 23…59 | date only | (incl. above) |
+| `grp-someshow-s05e03-720p-web.mkv` | read as a uuid, nothing else | S05E03, 720p (as Python) | 168 |
+| `Some Anime - 08 CZ - Episode Words.mkv` | release group "Episode Words" | episode title | 771 |
+| `Some Anime 4th Season Part 1 - 09.mkv`, `S2 Part 2 - 13` | episode lost, "09" as a title | part 1, episode 9 (as Python) | 51 |
+| `Some Show (2016) - 07.mkv` | a movie, episode lost | episode 7 (as Python) | 62 |
+| `[Grp] Some Show S2 - 13v2 (1080p).mkv` | version dropped | episode 13, version 2 | 958 |
+| `S03E04 1080p ITA ENG - Grp.mkv` | episode title "ITA ENG - Grp" | languages Italian, English; group "Grp" (as Python) | 100 |
+| `Formula.1.2026.R05.Miami.Sprint.1080p.WEB.mkv` | source Camera (read as "S-Print") | source Web; only `S-Print` with the dash is a cam | 108 |
+
+The title cut came from a character class built from the separator list without
+escaping `-`, so `=-_` became a range that took in every letter: the date
+silently swallowed the words before it.
+
 **Czech and Slovak dub / subtitle tags.** `dabing` and `dab` (dubbed) now mark
 the audio language and `titulky` and `tit` the subtitle language, the way
 `dub` and `sub` already did: `Some Movie CZ DABING 2025` gives title "Some

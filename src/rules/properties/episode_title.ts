@@ -85,7 +85,9 @@ export function episodeTitle(config: Record<string, unknown>) {
     RemoveTailEpisodeTitle,
     FormationRunEpisodeTitle,
     RenameEpisodeTitleWhenMovieType,
-    JoinDashedEpisodeTitleTail
+    JoinDashedEpisodeTitleTail,
+    EpisodeTitleWithoutTitleIsTitle,
+    OneTitlePerFilepart
   );
 
   return rebulk;
@@ -399,6 +401,10 @@ class NumericEpisodeTitleToEpisode extends Rule {
       const ets = matches.range(fp.start, fp.end, (m: Match) => m.name === 'episode_title') as Match[] | Match | undefined;
       for (const et of (Array.isArray(ets) ? ets : ets ? [ets] : [])) {
         if (/^\d{1,3}$/.test(String(et.value ?? '').trim())) out.push(et);
+        // "Some Show 2nd Season - 08 SK - Title", "… S3 - 12 END": the number leads the episode
+        // title right after the dash; it is the episode and the words stay the episode title.
+        else if (/^\d{1,3}\s+\S/.test(String(et.raw ?? '')) &&
+          /\s-\s*$/.test((et.inputString ?? '').slice(fp.start, et.start))) out.push(et);
       }
     }
     return out.length ? out : false;
@@ -407,9 +413,33 @@ class NumericEpisodeTitleToEpisode extends Rule {
   override then(matches: Matches, whenResponse: unknown, _context: any): void {
     for (const et of whenResponse as Match[]) {
       matches.remove(et);
+      const raw = String(et.raw ?? '');
+      const lead = /^(\d{1,3})\s+(?=\S)/.exec(raw);
+      if (lead && raw.trim() !== lead[1]) {
+        const input = et.inputString ?? '';
+        matches.append(new Match(et.start, et.start + lead[1].length, { name: 'episode', value: parseInt(lead[1], 10), inputString: input }));
+        let restStart = et.start + lead[0].length;
+        while (restStart < et.end && /[\s._-]/.test(input[restStart])) restStart++;
+        let rest = input.slice(restStart, et.end);
+        // a language code first ("SK - Title"): the code is the language, the words the title
+        const code = /^([A-Za-z]{2,3})\s+-\s+/.exec(rest);
+        if (code && matches.range(restStart, restStart + code[1].length, (m: Match) => m.name === 'language', 0)) {
+          restStart += code[0].length; rest = input.slice(restStart, et.end);
+        }
+        if (/[\p{L}\p{N}]/u.test(rest)) {
+          matches.append(new Match(restStart, et.end, { name: 'episode_title', value: rest.trim(), inputString: input }));
+        }
+        continue;
+      }
       et.name = 'episode';
       et.value = parseInt(String(et.value).trim(), 10);
       matches.append(et);
+      // "S2 - 13v2": the version glued to the number went with the weak episode it rode on.
+      const input = et.inputString ?? '';
+      const ver = /^v(\d{1,2})(?=$|[\s._\-\[\]()])/i.exec(input.slice(et.end));
+      if (ver && !matches.named('version', undefined, 0)) {
+        matches.append(new Match(et.end, et.end + ver[0].length, { name: 'version', value: parseInt(ver[1], 10), inputString: input }));
+      }
     }
   }
 }
@@ -1024,6 +1054,70 @@ class RenameEpisodeTitleWhenMovieType extends Rule {
       matches.remove(match);
       match.name = 'alternative_title';
       matches.append(match);
+    }
+  }
+}
+
+/**
+ * "S02E22 Show Name Episode Words (1984) WEBRip ITA.mkv": the episode code comes first, so
+ * the words after it were taken as the episode title and the result had no title at all.
+ * Python guessit takes them as the title. When an episode has no title anywhere, the first
+ * episode title becomes the title (a second one, if any, stays the episode title).
+ */
+class EpisodeTitleWithoutTitleIsTitle extends Rule {
+  static override priority = POST_PROCESS;
+  static override dependency = ['JoinDashedEpisodeTitleTail', 'RenameEpisodeTitleWhenMovieType'];
+
+  override when(matches: Matches, _context: any): Match | undefined {
+    if (((matches.named('title', (m: Match) => !m.private) as Match[]) ?? []).length) return undefined;
+    const episodeType = matches.named('type', (m: Match) => m.value === 'episode', 0) as Match | undefined;
+    if (!episodeType) return undefined;
+    // "Site.com_16.01.23.Some.Names": the site name stands in for the show (upstream fixture)
+    if (((matches.named('website') as Match[]) ?? []).length) return undefined;
+    const ets = ((matches.named('episode_title') as Match[]) ?? []).slice().sort((a, b) => a.start - b.start);
+    return ets[0];
+  }
+
+  override then(matches: Matches, whenResponse: unknown, _context: any): void {
+    const et = whenResponse as Match | undefined;
+    if (!et) return;
+    matches.remove(et);
+    et.name = 'title';
+    matches.append(et);
+  }
+}
+
+/**
+ * "Some Saga (5) Second Part CZ dabing 2007": two separate holes both became the title, so
+ * the result had a list of titles, which Python guessit never returns. The first one stays
+ * the title; a later one becomes the episode title (an episode without one) or else the
+ * alternative title, and one made only of punctuation ("!") is dropped.
+ */
+class OneTitlePerFilepart extends Rule {
+  static override priority = POST_PROCESS;
+  static override dependency = ['EpisodeTitleWithoutTitleIsTitle'];
+
+  override when(matches: Matches, _context: any): Match[] | undefined {
+    const extra: Match[] = [];
+    for (const filepart of (matches.markers.named('path') as Match[]) ?? []) {
+      const titles = ((matches.range(filepart.start, filepart.end,
+        (m: Match) => m.name === 'title' && !m.private) as Match[]) ?? []).slice().sort((a, b) => a.start - b.start);
+      if (titles.length < 2) continue;
+      const first = String(titles[0].value).toLowerCase();
+      for (const t of titles.slice(1)) if (String(t.value).toLowerCase() !== first) extra.push(t);
+    }
+    return extra.length ? extra : undefined;
+  }
+
+  override then(matches: Matches, whenResponse: unknown, _context: any): void {
+    const isEpisode = !!matches.named('type', (m: Match) => m.value === 'episode', 0);
+    let hasEpisodeTitle = ((matches.named('episode_title') as Match[]) ?? []).length > 0;
+    for (const t of whenResponse as Match[]) {
+      matches.remove(t);
+      if (!/[\p{L}\p{N}]/u.test(String(t.value))) continue;
+      t.name = isEpisode && !hasEpisodeTitle ? 'episode_title' : 'alternative_title';
+      if (t.name === 'episode_title') hasEpisodeTitle = true;
+      matches.append(t);
     }
   }
 }

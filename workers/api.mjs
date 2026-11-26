@@ -94,6 +94,10 @@ export default {
         return json({ error: `Invalid output "${output}": must be "python" or "codes"` }, 400);
       }
       if (output) options.output = output;
+      // year as season: default sports only; ?year_season=1 always (Python), 0 never
+      const ys = url.searchParams.get('year_season') ?? '';
+      if (/^(?:1|true|yes|on)$/i.test(ys)) options.year_season = true;
+      else if (/^(?:0|false|no|off)$/i.test(ys)) options.year_season = false;
       try {
         // Cloudflare does NOT auto-cache Worker responses — a Cache-Control
         // header alone only instructs browsers. Real edge caching needs the

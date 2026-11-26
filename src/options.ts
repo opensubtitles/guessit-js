@@ -26,6 +26,12 @@ export interface GuessItOptions {
    * ISO alpha-2 countries and Date objects.
    */
   output?: 'python' | 'codes';
+  /**
+   * Copy the year into a missing season. true: always, as Python guessit does ("Show 2019
+   * E01" → season 2019). false: never. Default: only for sports series numbered by year
+   * ("Formula.1.2026.E13"); elsewhere the year is the show's release year.
+   */
+  yearSeason?: boolean;
   noUserConfig?: boolean;
   noDefaultConfig?: boolean;
   advancedConfig?: Record<string, unknown>;
