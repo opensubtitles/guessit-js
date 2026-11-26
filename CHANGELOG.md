@@ -4,6 +4,8 @@ All notable changes to guessit-js are documented here.
 
 ## [Unreleased]
 
+## [5.4.0]
+
 **The year becomes the season only for sports series.** Python guessit turns
 `Show E01 [2019]` into season 2019 episode 1 (its `YearSeason` rule), but the
 year is usually the show's release year, and a subtitle or metadata search for
