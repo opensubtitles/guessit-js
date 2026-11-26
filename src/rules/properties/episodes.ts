@@ -1152,6 +1152,16 @@ class MotorsportRoundIsEpisode extends Rule {
           value: parseInt(round[1], 10),
           inputString: input,
         }));
+      } else {
+        // "MotoGP 2002 - 09. Sachsenring Race", "MotoGP_2026_08_VC_Madarska_…": the round
+        // number written right behind the season year (Python reads it the same way).
+        const yr = /(?:^|[\W_])(?:19|20)\d{2}(\s+-\s+|_)(\d{2})(?=\.\s|_|\s+-\s)/.exec(text);
+        if (yr) {
+          const start = filepart.start + yr.index + yr[0].length - yr[2].length;
+          toAppend.push(new Match(start, start + 2, {
+            name: 'episode', value: parseInt(yr[2], 10), inputString: input,
+          }));
+        }
       }
     }
     return (toRemove.length || toAppend.length) ? [toRemove, toAppend] : false;
