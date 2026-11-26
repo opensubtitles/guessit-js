@@ -4,6 +4,8 @@ All notable changes to guessit-js are documented here.
 
 ## [Unreleased]
 
+## [5.5.0]
+
 **Cleaner release groups, and more names parse like Python or better.** Measured
 on the same 414,588 real names as 5.4.0; 55,972 results change and each group
 of changes below was reviewed.
