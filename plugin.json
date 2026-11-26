@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "guessit-js",
-  "version": "5.4.0",
+  "version": "5.5.0",
   "description": "Parse movie and TV filenames: title, year, season, episode, codecs, languages, release group.",
   "author": {
     "name": "OpenSubtitles",
