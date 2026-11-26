@@ -74,14 +74,14 @@
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^22.0.0",
+    "@types/node": "^26.6.6",
     "@vitest/coverage-v8": "^5.1.1",
     "binaryen": "^132.0.0",
     "esbuild": "^0.28.2",
     "js-yaml": "^5.5.0",
     "rebulk-js": "^3.5.0",
     "tsx": "^4.23.15",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "vite": "^8.3.8",
     "vite-plugin-dts": "^5.1.2",
     "vitest": "^5.1.1"
