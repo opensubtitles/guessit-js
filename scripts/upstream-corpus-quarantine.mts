@@ -10,7 +10,7 @@
 // inputs that actually fail are parked.
 import { readFileSync, writeFileSync, unlinkSync, existsSync } from 'fs';
 import { join } from 'path';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 
 const SP = process.env['SP']!;
 const fails: Record<string, string[]> = JSON.parse(readFileSync(join(SP, 'failnames.json'), 'utf8'));

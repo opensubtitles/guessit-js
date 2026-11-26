@@ -39,8 +39,9 @@ const OPTIONS_SCHEMA = {
     'Optional guessit options, as in the library and Python guessit: type ("movie" | "episode"), '
     + 'output ("python" default: language/country as names like "French"; "codes": {"alpha3": "fra"} '
     + 'objects that keep regions such as pt-BR), expected_title, allowed_languages, allowed_countries, '
-    + 'name_only, date_day_first, date_year_first, excludes, includes, year_season (true: copy the year '
-    + 'into a missing season like Python guessit, "Show 2019 E01" → season 2019; off by default).',
+    + 'name_only, date_day_first, date_year_first, excludes, includes, year_season (true: always copy the '
+    + 'year into a missing season like Python guessit, "Show 2019 E01" → season 2019; false: never; '
+    + 'default: only for sports series such as "Formula.1.2026.E13").',
   additionalProperties: true,
 };
 

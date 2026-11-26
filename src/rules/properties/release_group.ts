@@ -425,6 +425,22 @@ class SceneReleaseGroup extends Rule {
         // Fix: use inputString (camelCase)
         const inputStr: string = matches.inputString ?? '';
         const holeValue = String(lastHole.value ?? '');
+        // "Show S03E04 CZ - Episode Name": a spaced " - " behind a language tag that
+        // directly follows the episode leads to the episode title, not a scene group
+        // ("S03E04 CZ-GRP", "S03E04 1080p ITA ENG - Group" keep their group).
+        if (previousMatch &&
+            ['language', 'subtitle_language'].includes(previousMatch.name ?? '') &&
+            /^\s+-\s+\S/.test(inputStr.slice(previousMatch.end, lastHole.end)) &&
+            (() => {
+              // the language tag sits right behind the episode number ("- 08 CZ - …"), not
+              // at the end of a tag run ("… WEBRip ITA ENG - Group")
+              const ep = matches.previous(previousMatch,
+                (m: Match) => !m.private && m.start >= start, 0) as Match | undefined;
+              return !!ep && (ep.name === 'episode' || ep.name === 'season') &&
+                !inputStr.slice(ep.end, previousMatch.start).replace(new RegExp(`[${sepsPattern}]`, 'g'), '');
+            })()) {
+          continue;
+        }
         if (
           previousMatch &&
           this.isPreviousMatch(previousMatch) &&

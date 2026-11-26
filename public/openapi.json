@@ -96,7 +96,7 @@
             "name": "year_season",
             "in": "query",
             "required": false,
-            "description": "Copy the year into a missing season, as Python guessit does (`Show E01 [2019]` → `season: 2019`). Off by default: the year is usually the show's release year, so guessit-js leaves `season` unset. An explicit season (`S2019E01`) is always kept. Accepts `1`/`true`.",
+            "description": "Copy the year into a missing season. `true`/`1`: always, as Python guessit does (`Show E01 [2019]` → `season: 2019`). `false`/`0`: never. Default: only for sports series numbered by year, with the year right before the episode (`Formula.1.2026.E13` → `season: 2026`). An explicit season (`S2019E01`) is always kept.",
             "schema": {
               "type": "string",
               "enum": [
@@ -523,8 +523,7 @@
           },
           "year_season": {
             "type": "boolean",
-            "default": false,
-            "description": "Copy the year into a missing season, as Python guessit does (`Show E01 [2019]` → `season: 2019`). Off by default: the year is usually the show's release year, so guessit-js leaves `season` unset. An explicit season (`S2019E01`) is always kept."
+            "description": "Copy the year into a missing season. `true`/`1`: always, as Python guessit does (`Show E01 [2019]` → `season: 2019`). `false`/`0`: never. Default: only for sports series numbered by year, with the year right before the episode (`Formula.1.2026.E13` → `season: 2026`). An explicit season (`S2019E01`) is always kept."
           }
         }
       },

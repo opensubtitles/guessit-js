@@ -35,7 +35,8 @@ Naming:
   -n, --name-only       Parse files as name only, without extension
   -Y, --date-year-first Take the year first when parsing an ambiguous date
   -D, --date-day-first  Take the day first when parsing an ambiguous date
-  --year-season         Copy the year into an episode's missing season (Python guessit)
+  --year-season         Always copy the year into an episode's missing season (Python guessit)
+  --no-year-season      Never do it (default: only for sports, "Formula.1.2026.E13")
   -L ALLOWED_LANGUAGES, --allowed-languages ALLOWED_LANGUAGES
                         Allowed language (comma-separated, repeatable)
   -C ALLOWED_COUNTRIES, --allowed-countries ALLOWED_COUNTRIES
@@ -182,6 +183,7 @@ for (let i = 0; i < args.length; i++) {
     case '-n': case '--name-only': cliOptions.name_only = true; break;
     case '-Y': case '--date-year-first': cliOptions.date_year_first = true; break;
     case '--year-season': cliOptions.year_season = true; break;
+    case '--no-year-season': cliOptions.year_season = false; break;
     case '-D': case '--date-day-first': cliOptions.date_day_first = true; break;
     case '-L': case '--allowed-languages': pushList('allowed_languages', needsValue(a, i)); i++; break;
     case '-C': case '--allowed-countries': pushList('allowed_countries', needsValue(a, i)); i++; break;
@@ -371,7 +373,7 @@ if (listProperties || listValues) {
 
 // ---- shell completion -------------------------------------------------------
 if (completionShell) {
-  const flags = '-t --type -n --name-only -Y --date-year-first -D --date-day-first --year-season -L --allowed-languages -C --allowed-countries -E --episode-prefer-number -T --expected-title -G --expected-group --includes --excludes -f --input-file -v --verbose -P --show-property -a --advanced -s --single-value -j --json --jsonl -y --yaml -i --output-input-string -c --config --no-user-config --no-default-config -p --properties -V --values --version --serve --mcp --output-codes --benchmark --completion -h --help';
+  const flags = '-t --type -n --name-only -Y --date-year-first -D --date-day-first --year-season --no-year-season -L --allowed-languages -C --allowed-countries -E --episode-prefer-number -T --expected-title -G --expected-group --includes --excludes -f --input-file -v --verbose -P --show-property -a --advanced -s --single-value -j --json --jsonl -y --yaml -i --output-input-string -c --config --no-user-config --no-default-config -p --properties -V --values --version --serve --mcp --output-codes --benchmark --completion -h --help';
   if (completionShell === 'bash') {
     console.log(`_guessit_js() {
   local cur="\${COMP_WORDS[COMP_CWORD]}"
@@ -434,7 +436,10 @@ if (serve) {
       const opts = { ...baseOptions };
       const type = url.searchParams.get('type');
       if (type === 'movie' || type === 'episode') opts.type = type;
-      if (/^(?:1|true|yes|on)$/i.test(url.searchParams.get('year_season') ?? '')) opts.year_season = true;
+      // year as season: default sports only; ?year_season=1 always (Python), 0 never
+      const ys = url.searchParams.get('year_season') ?? '';
+      if (/^(?:1|true|yes|on)$/i.test(ys)) opts.year_season = true;
+      else if (/^(?:0|false|no|off)$/i.test(ys)) opts.year_season = false;
       let want;
       try { want = wantedOutput(url.searchParams.get('output') ?? requestedOutput); }
       catch (e) { sendJson(res, 400, { error: e.message }); return; }

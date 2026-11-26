@@ -851,6 +851,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
     QuotedNumberIsTitleRule,
     WeakResolutionBeforeSourceRule,
     SeasonWordDashEpisodeRule,
+    SeasonPartDashEpisodeRule,
   );
 
   return rebulk;
@@ -885,6 +886,41 @@ class SeasonWordDashEpisodeRule extends Rule {
   override then(matches: any, found: any, _context: any): void {
     for (const x of found.rest) matches.remove(x);
     matches.append(new Match(found.epStart, found.epEnd, { name: 'episode', value: found.value, inputString: found.input }));
+  }
+}
+
+/**
+ * "Show 4th Season Part 1 - 09", "Show S2 Part 2 - 13": the number after the dash is the
+ * episode of that season's part. Without it, the part is dropped as an episode title
+ * conflict and "09" is lost. Runs before RemoveConflictsWithEpisodeTitle (priority 64).
+ */
+class SeasonPartDashEpisodeRule extends Rule {
+  static override priority = 65;
+
+  override when(matches: any, _context: any): any {
+    // a weak episode guess on the number itself is fine; it is replaced below
+    const episodes = ((matches.named('episode', (m: any) => !m.private) as any[]) ?? []);
+    if (episodes.some((e: any) => !e.tags?.includes('weak-episode'))) return undefined;
+    const seasons = ((matches.named('season', (m: any) => !m.private) as any[]) ?? []);
+    if (seasons.length !== 1) return undefined;
+    const season = seasons[0];
+    const input: string = season.inputString ?? '';
+    const part = matches.range(season.end, input.length, (m: any) => m.name === 'part', 0);
+    if (!part || !/^(?:(?:st|nd|rd|th)[\s._-]*season)?[\s._-]*$/i.test(input.slice(season.end, part.parent?.start ?? part.start))) return undefined;
+    const m = /^(\s+-\s+)(\d{1,4})(?=$|v\d|[\s._\[\]()-])/i.exec(input.slice(part.end));
+    if (!m) return undefined;
+    const start = part.end + m[1].length;
+    const end = start + m[2].length;
+    if (episodes.some((e: any) => e.start < start || e.end > end)) return undefined;
+    if (matches.range(start, end, (x: any) => !x.private && !['episode', 'episode_title', 'title'].includes(x.name), 0)) return undefined;
+    return { start, end, value: parseInt(m[2], 10), input, weak: episodes };
+  }
+
+  override then(matches: any, found: any, _context: any): void {
+    for (const x of found.weak) matches.remove(x);
+    for (const x of (matches.range(found.start, found.end,
+      (y: any) => y.name === 'episode_title' || y.name === 'title') as any[]) ?? []) matches.remove(x);
+    matches.append(new Match(found.start, found.end, { name: 'episode', value: found.value, inputString: found.input }));
   }
 }
 

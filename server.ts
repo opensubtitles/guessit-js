@@ -92,8 +92,11 @@ function badOutput(value: unknown): string | null {
     : `Invalid output "${String(value)}": must be "python" or "codes"`;
 }
 
-function isTrue(value: string | null): boolean {
-  return value !== null && /^(?:1|true|yes|on)$/i.test(value);
+function flag(value: string | null): boolean | undefined {
+  if (value === null) return undefined;
+  if (/^(?:1|true|yes|on)$/i.test(value)) return true;
+  if (/^(?:0|false|no|off)$/i.test(value)) return false;
+  return undefined;
 }
 
 function handleGuessitGet(url: URL, res: http.ServerResponse): void {
@@ -119,9 +122,10 @@ function handleGuessitGet(url: URL, res: http.ServerResponse): void {
     return;
   }
   if (output) options.output = output;
-  // Python guessit's habit of copying the year into a missing season ("Show 2019 E01" →
-  // season 2019) is off by default; ?year_season=1 brings it back.
-  if (isTrue(url.searchParams.get('year_season'))) options.year_season = true;
+  // Year as season: by default only for sports series ("Formula.1.2026.E13");
+  // ?year_season=1 always (Python guessit), ?year_season=0 never.
+  const yearSeason = flag(url.searchParams.get('year_season'));
+  if (yearSeason !== undefined) options.year_season = yearSeason;
 
   try {
     const result = guessit(filename, options);

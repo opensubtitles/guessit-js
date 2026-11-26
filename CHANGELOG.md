@@ -4,12 +4,16 @@ All notable changes to guessit-js are documented here.
 
 ## [Unreleased]
 
-**The year is no longer copied into a missing season.** Python guessit turns
-`Show E01 [2019]` into season 2019 episode 1 (its `YearSeason` rule). A
-subtitle or metadata search for season 2019 finds nothing, so guessit-js now
-leaves the season empty and keeps the year. To get Python's behaviour back,
-pass `year_season: true` (CLI `--year-season`). On 414,588 real names this
-changes the season of 1,779 and nothing else.
+**The year becomes the season only for sports series.** Python guessit turns
+`Show E01 [2019]` into season 2019 episode 1 (its `YearSeason` rule), but the
+year is usually the show's release year, and a subtitle or metadata search for
+season 2019 finds nothing. guessit-js now does it only where the year really
+numbers the season: a sports series with the bare year right before the episode
+(`Formula.1.2026.E13`, `MotoGP 2026 Round14` → season 2026, as TheTVDB lists
+them). `year_season: true` always copies the year, like Python; `false` never
+does (`?year_season=1|0` on GET, `--year-season` / `--no-year-season` on the
+CLI). On 414,588 real names this removes the season from 1,487 (all non-sports) and keeps it on 292 sports
+names (Formula 1, MotoGP, WSBK, WRC, IndyCar …); nothing else changes.
 
 **More real-world names parse right.** Each fix below was measured on 414,588
 real names against Python guessit 4.5.4; every changed result was reviewed.
@@ -26,6 +30,10 @@ real names against Python guessit 4.5.4; every changed result was reviewed.
 | `Some Show 2nd Season - 08 - Title.mkv`, `S3 - 12 END` | no episode | episode 8 / 12 | (incl. above) |
 | `S01E08 Name [Original Name 2021 Uk]`, `S01E01 (Thailand, 2022, drama)` | year dropped | year kept (as Python) | 286 |
 | `2026-06-08 23-23-59.mp4` (screen recorder) | episodes 23…59 | date only | (incl. above) |
+| `grp-someshow-s05e03-720p-web.mkv` | read as a uuid, nothing else | S05E03, 720p (as Python) | 168 |
+| `Some Anime - 08 CZ - Episode Words.mkv` | release group "Episode Words" | episode title | 771 |
+| `Some Anime 4th Season Part 1 - 09.mkv`, `S2 Part 2 - 13` | episode lost, "09" as a title | part 1, episode 9 (as Python) | 51 |
+| `Some Show (2016) - 07.mkv` | a movie, episode lost | episode 7 (as Python) | 62 |
 
 The title cut came from a character class built from the separator list without
 escaping `-`, so `=-_` became a range that took in every letter: the date

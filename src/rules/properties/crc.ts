@@ -47,6 +47,14 @@ function guessIdnumber(str: string): Array<[number, number]> {
     if (switchRatio > 0.4 && lettersRatio > 0.4) {
       // Skip matches that look like SxxExx episode patterns (e.g. "S01E01E07-FooBar-Group")
       if (/^[sS]\d+[eE]\d+/i.test(uuid)) continue;
+      // A dash-joined release name is not an id: "grp-show-s05e03-720p-web",
+      // "CZ-ENG-RUS-SK". Ids are random alphanumerics; a token of three or more
+      // letters that are not all hex digits, an episode code or a resolution
+      // marks words. A real uuid inside such a name is still caught by the
+      // hex uuid pattern ("grok-video-147cbe03-9a5c-…").
+      if (uuid.includes('-') && uuid.split('-').some((t) =>
+        /^[a-z]{3,}$/i.test(t) && /[g-z]/i.test(t) ||
+        /^s\d{1,4}(?:e|ep)\d{1,4}$/i.test(t) || /^\d{3,4}[pi]$/i.test(t))) continue;
       ret.push([match.index, match.index + uuid.length]);
     }
   }

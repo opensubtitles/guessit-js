@@ -447,3 +447,82 @@
 : options: {year_season: true}
   season: 1991
   episode: 1
+
+# By default the year is the season only for sports series numbered by year
+? Formula.1.2026.E13.Somewhere.01.Practice.1.1080p.WEBRip.x265-GRP.mkv
+: title: Formula 1
+  year: 2026
+  season: 2026
+  episode: 13
+
+? MotoGP 2026 Round14 Somewhere Race WEB-DL 1080p H264-GRP.mkv
+: season: 2026
+  episode: 14
+
+? Some Drama 2026 KOREAN E08 1080p.mp4
+: title: Some Drama
+  year: 2026
+  episode: 8
+  -season: 2026
+
+? Formula.1.2026.E13.Practice.1080p.mkv
+: options: {year_season: false}
+  episode: 13
+  -season: 2026
+
+# A dash-joined release name is not an id
+? grp-someshow-s05e03-720p-web.mkv
+: title: grp-someshow
+  season: 5
+  episode: 3
+  screen_size: 720p
+  source: Web
+  -uuid: grp-someshow-s05e03-720p-web
+
+? some-video-147cbe03-9a5c-421a-9f39-c316793151ae.mp4
+: uuid: 147cbe03-9a5c-421a-9f39-c316793151ae
+
+# "Show - 08 CZ - Title": the words after the language are the episode title
+? Some Anime - 08 CZ - Some Episode Words.mkv
+: title: Some Anime
+  episode: 8
+  language: Czech
+  episode_title: Some Episode Words
+  -release_group: Some Episode Words
+
+? Some Show S03E04 CZ - Words Here - More Words.mkv
+: season: 3
+  episode: 4
+  episode_title: Words Here - More Words
+
+? S02E05 Some Show Words (1979) WEBRip 1080p x264 EAC3 ITA - Grpname.mkv
+: release_group: Grpname
+
+? Some Show S03E04 CZ-GRP.mkv
+: release_group: GRP
+
+# "Show 4th Season Part 1 - 09": the part's episode
+? '[Grp] Some Anime 4th Season Part 1 - 09 [1080p].mkv'
+: title: Some Anime
+  season: 4
+  part: 1
+  episode: 9
+
+? Some Anime S2 Part 2 - 13 [Grp].mkv
+: season: 2
+  part: 2
+  episode: 13
+
+# "Show (2016) - 07": a number behind the bracketed year is the episode
+? Some Show (2016) - 07.mkv
+: title: Some Show
+  year: 2016
+  episode: 7
+  type: episode
+
+? Some Anime (2026) - 07 CZ - Some Words.mkv
+: episode: 7
+  episode_title: Some Words
+
+? Some Movie (2010) - 720p.mkv
+: type: movie
