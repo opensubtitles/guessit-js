@@ -4,6 +4,25 @@ All notable changes to guessit-js are documented here.
 
 ## [Unreleased]
 
+**Cleaner release groups, and more names parse like Python or better.** Measured
+on the same 414,588 real names as 5.4.0; 55,972 results change and each group
+of changes below was reviewed.
+
+| Name (synthetic, same shape as the real ones) | 5.4.0 | Now | Names changed |
+|---|---|---|---|
+| `some.show.s01e09.1080p.web.h264-grp[EZTVx.to].mkv` | group "grp[EZTVx.to]" | group "grp" (the site stamp is dropped; `lol[ettv]` tracker tags stay) | 42,024 |
+| `[Grp] Show - S01E09 [WEB-DL 1080P AVC, Opus, M-SUB][CRC].mkv`, `… [CHT][SRT]`, `… 143.8561fps` | group "M-SUB", "CHT", "143.8561fps" | group "Grp" (the leading fansub group) | 8,332 |
+| `Show.EP11.1080p.WEB-DL.AAC2.0.H.265.MSubs-Grp.mkv` | group "MSubs-Grp" | group "Grp" | 4,694 |
+| `MotoGP 2002 - 09. Some Race.mkv`, `MotoGP_2026_08_VC_…`, `F2_2026_04_…` | a movie, round lost | season 2026, episode 8 (as Python) | 536 |
+| `Some Show Special S02E01.mkv` | title "Some Show", episode_details Special | title "Some Show Special" (as Python) | 123 |
+| `Greek S04E10 Legacy.mkv` | language Greek, title "Legacy" | title "Greek", episode title "Legacy" (as Python) | 113 |
+| `Kamen Rider My-Th EP06.mkv`, `Yu-Gi-Oh!` | language Burmese, title "Kamen Rider" | title "Kamen Rider My-Th"; `Pt-Br`, `pt-BR` stay locales | 111 |
+
+`F2`/`F3` now count as sports series for the year-as-season default.
+
+**Tooling.** TypeScript 7 for the typecheck; the declaration build keeps the
+TypeScript 6 compiler API through `@typescript/typescript6` (identical `.d.ts`).
+
 ## [5.4.0]
 
 **The year becomes the season only for sports series.** Python guessit turns

@@ -12,6 +12,7 @@ import { markerSorted } from './common/comparators.js';
 import { validYear } from './common/date.js';
 import { iterWords } from './common/words.js';
 import { Language } from '../language/index.js';
+import { YEARLY_SEASON_SPORTS } from './common/sports.js';
 
 const LANG_KEYS = new Set(['language', 'subtitle_language']);
 
@@ -318,10 +319,7 @@ export class SeasonYear extends Rule {
 }
 
 /** Sports series whose seasons are numbered by year (TheTVDB, IMDb): "Formula.1.2026.E13". */
-const YEARLY_SEASON_SPORTS = new RegExp(
-  '(?:^|[^a-z0-9])(?:formula[\\s._-]?(?:1|one|2|3|e)|f1|motogp|moto[23]|wsbk|world[\\s._-]?superbike|wrc|' +
-  'indycar|nascar|wec|dtm|btcc|supercars|ufc|wwe|nfl|nba|nhl|mlb|grand[\\s._-]?prix|round[\\s._-]?\\d+|' +
-  'qualifying|practice|sprint|race)(?![a-z])', 'i');
+
 
 /**
  * If year found, no season found, and episode found, create a season match.

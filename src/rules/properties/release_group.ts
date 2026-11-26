@@ -63,7 +63,16 @@ export function releaseGroup(config: Record<string, unknown>) {
     // The trailing tracker stamp in "PUNCH[TGx]" / "lol[ettv]" stays part of the
     // group name: Python keeps it, and the corpus pins the spelling on a dozen
     // names (`artik[sedg]`, `sadpanda[rarbg]`, `0sec [glodls]`, …).
-    return result.replace(/(.+)\)\s*\[(.+)\]/, '$1 $2').trim();
+    result = result.replace(/(.+)\)\s*\[(.+)\]/, '$1 $2').trim();
+
+    // Step 6: a website stamp glued to the group ("skyanime[EZTVx.to]", "Grp[eztv.re]")
+    // names the site the file came from, not the group; a bare "[TGx]" tracker tag stays.
+    const site = /^(.*?[^\s[])\s*\[[\w-]+(?:\.[\w-]+)*\.[a-z]{2,6}\]$/i.exec(result);
+    if (site) result = site[1];
+    // Step 7: a subtitle marker in front of the group ("MSubs-ToonsHub", "ESub-ToonsHub").
+    const subPrefix = /^(?:E|M|Multi-?)Subs?-(?=\S)/i.exec(result);
+    if (subPrefix) result = result.slice(subPrefix[0].length);
+    return result;
   }
 
   const rebulk = new Rebulk({ disabled: (context) => isDisabled(context, 'release_group') });
@@ -86,8 +95,30 @@ export function releaseGroup(config: Record<string, unknown>) {
     new TrailingTokenAfterEpisodeAsReleaseGroup(cleanGroupname),
     NumericPrefixedGroupRule,
     RemoveSeasonPackReleaseGroup,
-    new ReclaimTrailingSceneGroup(cleanGroupname, (m) => scene.isPreviousMatch(m))
+    new ReclaimTrailingSceneGroup(cleanGroupname, (m) => scene.isPreviousMatch(m)),
+    DropSkippedReleaseTag
   );
+}
+
+/**
+ * The trailing tag SceneReleaseGroup passed over for the leading [Group] ("143.8561fps",
+ * "[AMZN]") is an encoder or source note: it does not become the episode title either.
+ */
+const SKIPPED_RELEASE_TAGS = new WeakMap<object, Array<[number, number, string]>>();
+
+class DropSkippedReleaseTag extends Rule {
+  static override priority = POST_PROCESS;
+  override consequence = RemoveMatch;
+
+  override when(matches: any): Match[] | false {
+    const tags = SKIPPED_RELEASE_TAGS.get(matches);
+    if (!tags?.length) return false;
+    const out = (matches.range(0, (matches.inputString ?? '').length, (m: Match) =>
+      (m.name === 'episode_title' || m.name === 'alternative_title') &&
+      tags.some(([s, e, text]) => s <= m.start && m.end <= e &&
+        cleanup(String(m.value ?? '')).toLowerCase() === text.toLowerCase())) as Match[]) ?? [];
+    return out.length ? out : false;
+  }
 }
 
 /**
@@ -422,7 +453,24 @@ class SceneReleaseGroup extends Rule {
         // AnimeReleaseGroup (#696/#757). Gated on an episode/season match so a movie's
         // trailing (group) (YTS/YIFY) is untouched.
         const holeGroup = matches.markers.atMatch(lastHole, (m: Match) => m.name === 'group', 0);
-        if (holeGroup && String((holeGroup as any).raw ?? '').startsWith('(')) {
+        // Same for a tag block further on ("[… AVC, Opus, M-SUB]", "[CHT]", "[SC_TC]") or a
+        // bare frame rate ("1080p 143.8561fps") behind a leading [Group]: fansub names put the
+        // group first, and the trailing token is a subtitle, language or encoder tag.
+        const holeRaw = String((holeGroup as any)?.raw ?? '');
+        const holeText = String(lastHole.value ?? '').trim();
+        // an episode number in the open name ("Show - 09"), not one inside a tag block
+        const strongEpisode = () => ((matches.range(start, lastHole.start, (m: Match) =>
+          (m.name === 'episode' || m.name === 'season') && !m.private &&
+          (!m.tags?.includes('weak-episode') || /(?:\s-\s*|_|^|[[(])$/.test(inputAll.slice(start, m.start + (/[[(]/.test(inputAll[m.start]) ? 1 : 0)))) &&
+          ((g?: Match) => !g || cleanup(String((g as any).value ?? '')) === String(m.raw ?? ''))(
+            matches.markers.atMatch(m, (g: Match) => g.name === 'group', 0))) as Match[]) ?? []).length > 0;
+        // only a token inside a block of other tags, or a block holding just a Chinese
+        // subtitle code: a whole trailing "[JRR]" block is still the group (upstream corpus)
+        const laterTagBlock = !!holeGroup && /^[[{]/.test(holeRaw) && holeGroup.start !== start &&
+          (cleanup(String((holeGroup as any).value ?? '')) !== cleanup(holeText) ||
+            /^(?:CHT|CHS|GB|BIG5)$/i.test(holeText)) && strongEpisode();
+        const bareFps = !holeGroup && /^\d+(?:\.\d+)?fps$/i.test(holeText) && strongEpisode();
+        if ((holeGroup && holeRaw.startsWith('(')) || laterTagBlock || bareFps) {
           const hasEpisodeish = ((matches.range(start, end,
             (m: Match) => m.name === 'episode' || m.name === 'season') as Match[]) ?? []).length > 0;
           if (hasEpisodeish) {
@@ -434,7 +482,17 @@ class SceneReleaseGroup extends Rule {
               const core = String((firstGroup as any).value ?? '').replace(new RegExp(`[${sepsPattern}]`, 'g'), '');
               const emptyish = inner.length === 0 ||
                 inner.every((mm: Match) => mm.name === 'container' && mm.tags?.includes('subtitle'));
-              if (emptyish && core && !intCoercable(core)) continue;
+              const leadsWithBracket = String((firstGroup as any).raw ?? '').startsWith('[');
+              if (emptyish && core && !intCoercable(core) &&
+                  (holeRaw.startsWith('(') && !laterTagBlock && !bareFps || leadsWithBracket)) {
+                // the skipped tag ("143.8561fps", "R2", "AMZN") is no episode title either
+                if (laterTagBlock || bareFps) {
+                  const spans = SKIPPED_RELEASE_TAGS.get(matches) ?? [] as Array<[number, number, string]>;
+                  spans.push([lastHole.start, lastHole.end, cleanup(holeText)]);
+                  SKIPPED_RELEASE_TAGS.set(matches, spans);
+                }
+                continue;
+              }
             }
           }
         }

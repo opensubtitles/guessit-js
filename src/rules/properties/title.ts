@@ -11,6 +11,7 @@ import { cleanup, reorderTitle, foldDiacritics } from '../common/formatters.js';
 import { markerSorted } from '../common/comparators.js';
 import { buildExpectedFunction } from '../common/expected.js';
 import { formatters, POST_PROCESS } from 'rebulk-js';
+import { PYTHON_LANGUAGE_NAMES } from '../../language/python-names.js';
 import { titleSeps, seps, sepsPattern } from '../common/index.js';
 
 // Function words that a title cannot meaningfully END on. If cropping a trailing
@@ -423,6 +424,15 @@ abstract class TitleBaseRule extends Rule {
                 // "Special" is right before a year — keep it in the title
                 break;
               }
+            }
+            // ... or right before the SxxExx ("Some Show Special S02E01", as Python)
+            const nextEp = matches.range(lastIgnored.end, lastIgnored.end + 12,
+              (m: Match) => (m.name === 'season' || m.name === 'episode') && !m.private &&
+                m.tags?.includes('SxxExx'), 0) as Match | undefined;
+            if (nextEp && /^[\s._-]*[se]?$/i.test(inp.slice(lastIgnored.end, nextEp.start))) {
+              toRemove.push(lastIgnored);
+              ignoredArray.pop();
+              break;
             }
           }
           // If the same language value appears again after this hole, it's part of the title name
@@ -930,11 +940,15 @@ class CountryAtTitlePosition extends Rule {
     const inp = (matches as any).inputString || '';
     const out: Match[] = [];
     const cand = matches.range(0, inp.length,
-      (m: Match) => !m.private && ['country', 'other', 'edition'].includes(m.name ?? '')) as Match[] | Match | undefined;
+      (m: Match) => !m.private && ['country', 'other', 'edition', 'language'].includes(m.name ?? '')) as Match[] | Match | undefined;
     const arr = Array.isArray(cand) ? cand : cand ? [cand] : [];
     for (const c of arr) {
       // Title-Case raw only ("Us"/"Extras", not "US"/"PROPER"/lowercase tags).
       if (!/^[A-Z][a-z]+$/.test(c.raw ?? '')) continue;
+      // A language only when the word is a synonym, not the language's name: the show
+      // "Greek S04E10" (Python has no "Greek" language) — "French S01E02" stays French.
+      if (c.name === 'language' &&
+          (PYTHON_LANGUAGE_NAMES[String(c.value ?? '')] ?? '').toLowerCase() === String(c.raw).toLowerCase()) continue;
       const filepart = matches.markers.atMatch(c, (m: Match) => m.name === 'path', 0) as Match | undefined;
       if (!filepart) continue;
       if (![...inp.slice(filepart.start, c.start)].every((ch: string) => seps.includes(ch))) continue;
@@ -947,6 +961,14 @@ class CountryAtTitlePosition extends Rule {
       const anchor = matches.range(c.end, filepart.end,
         (m: Match) => !m.private && ['year', 'season', 'episode', 'date'].includes(m.name ?? ''), 0) as Match | undefined;
       if (!anchor) continue;
+      if (c.name === 'language') {
+        // the "S"/"E" marker of "S04E10" belongs to the anchor
+        const anchorStart = (anchor as any).initiator?.start ?? anchor.start;
+        if ((anchor.name !== 'season' && anchor.name !== 'episode') ||
+            ![...inp.slice(c.end, anchorStart)].every((ch: string) => seps.includes(ch))) continue;
+        out.push(c);
+        continue;
+      }
       if (![...inp.slice(c.end, anchor.start)].every((ch: string) => seps.includes(ch))) {
         // Plain title text between the word and the anchor means the word opens the title
         // ("Au bout c'est la mer - 8x01"); another property in the gap means a real tag.

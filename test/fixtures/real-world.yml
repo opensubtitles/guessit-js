@@ -554,3 +554,78 @@
 ? Formula.1.2026.R05.Miami.Sprint.1080p.WEB.h264-GRP.mkv
 : source: Web
   screen_size: 1080p
+
+# a website stamp glued to the group is not part of it; a bare tracker tag stays
+? some.show.s01e09.1080p.web.h264-grpname[EZTVx.to].mkv
+: release_group: grpname
+
+? Some.Show.S01E01.720p.HDTV.x264-lol[ettv].mkv
+: release_group: lol[ettv]
+
+# a subtitle marker in front of the group
+? Some.Show.EP11.Title.1080p.BILI.WEB-DL.JPN.AAC2.0.H.265.MSubs-GrpName.mkv
+: release_group: GrpName
+
+# a leading [Group] wins over a subtitle / encoder tag at the end
+? '[Grpname] Some Show - S01E09 [YTB.WEB-DL 1080P AVC, Opus, M-SUB][0011F762].mkv'
+: release_group: Grpname
+  episode: 9
+
+? '[Grp-Raws] Some Show - 09 [ViuTV][WEB-DL][CHT][SRT][1080p][AVC AAC].mkv'
+: release_group: Grp-Raws
+
+? '[Grpname] Some Show - 10 x265 10bit 1080p 143.8561fps.mkv'
+: release_group: Grpname
+  -episode_title: 143.8561fps
+
+? '[Grpname] Some Film M-66 (1987) [DVD R2 Remux] [28913AFF].mkv'
+: type: movie
+
+# a whole trailing [Group] block is still the group (upstream corpus)
+? '[AnimeRG].Show.Name.-.03.[Eng.Dubbed].[720p].[WEB-DL].[JRR]'
+: release_group: JRR
+
+# "Greek" (a synonym, not Python's language name) opening a show is the title
+? Greek S04E10 Legacy 1080p DSNP WEB-DL DD 5 1 H 264-playWEB.mkv
+: title: Greek
+  episode_title: Legacy
+  -language: ell
+
+? French S01E02 Some Title 1080p WEB.mkv
+: language: French
+
+# "Special" right before SxxExx is part of the title (as Python)
+? Some.Show.Special.S01E01.720p.mkv
+: title: Some Show Special
+  -episode_details: Special
+
+# a Title-Case "Xx-Yy" is a word, not a locale; "Pt-Br" stays Portuguese
+? Kamen Rider My-Th EP06 [1080p].mkv
+: title: Kamen Rider My-Th
+  -language: mya
+
+? Some.Movie.2023.1080p.WEB.H265-Grp.Pt-Br.mkv
+: language: Portuguese
+
+# a sports round number behind the season year is the episode (as Python)
+? MotoGP 2002 - 09. Some Race.mkv
+: season: 2002
+  episode: 9
+  episode_title: Some Race
+
+? MotoGP_2026_08_VC_Placename_kvalifikace_CZ_HD_1080.mkv
+: episode: 8
+
+? F2_2026_04_VC_Placename_kvalifikace_CZ_HD_1080.mkv
+: episode: 4
+
+? '[Grpname] Some Show [07][WebRip][HEVC_AAC][CHS_JP&CHT_JP].mkv'
+: release_group: Grpname
+
+? '[Grp-Team][Some Show][2026][15][AVC][4K SDR+][NoLogo].mp4'
+: release_group: Grp-Team
+  episode: 15
+
+? '[Grpname] Some Show - S00E01 - Prologue [BSITE.WEB-DL 1080P AVC, AAC][9DC8584F].mkv'
+: release_group: Grpname
+  episode_title: Prologue

@@ -994,6 +994,9 @@ const LANGUAGE_CONFIRMING_WORDS = new Set([
   'audio', 'version', 'dl', 'ac3', 'aac', 'dts', 'track', 'tracks', 'forced', 'sdh', 'hardsub', 'softsub',
 ]);
 
+const COMMON_LOCALES = new Set(['pt-br', 'pt-pt', 'en-us', 'en-gb', 'en-au', 'es-mx', 'es-es', 'es-la', 'fr-ca', 'fr-fr', 'zh-cn', 'zh-tw', 'zh-hk', 'de-de', 'it-it', 'ja-jp', 'ko-kr', 'nl-be', 'sr-rs']);
+const COMMON_PAIR_CODES = new Set(['cz', 'cs', 'sk', 'en', 'de', 'fr', 'it', 'es', 'pl', 'hu', 'ru', 'pt', 'nl']);
+
 class RemoveDashGluedBibliographicCode extends Rule {
   static override priority = 32;
   override priority = 32;
@@ -1027,6 +1030,20 @@ class RemoveDashGluedBibliographicCode extends Rule {
       if (!word || LANGUAGE_CONFIRMING_WORDS.has(word)) continue;
       const claimed = (matches.range(match.end + 1, match.end + 1 + word.length, (m: Match) => !m.private) as Match[]) ?? [];
       if (claimed.length) continue;
+      out.push(match);
+    }
+    // A locale is written "pt-BR" / "en-US" / "PT-BR"; Title Case on both halves
+    // ("Kamen Rider My-Th") is a word of the title, not Burmese as spoken in Thailand.
+    for (const match of (matches.named('language') ?? []) as Match[]) {
+      const raw = String(match.raw ?? '');
+      if (!/^[A-Z][a-z]-[A-Z][a-z]$/.test(raw) || out.includes(match)) continue;
+      // two release-tag language codes side by side ("Cz-Sk", "En-De") stay languages
+      if (raw.toLowerCase().split('-').every((c) => COMMON_PAIR_CODES.has(c))) continue;
+      // real locales in Title Case ("DarkMahou.Pt-Br"); and the name's first word, where
+      // the title rules already keep it whole ("My-Th.Complementary…")
+      if (COMMON_LOCALES.has(raw.toLowerCase())) continue;
+      const fp = matches.markers.atMatch(match, (m: Match) => m.name === 'path', 0) as Match | undefined;
+      if (fp && !input.slice(fp.start, match.start).replace(/[\s._\-[\]()]/g, '')) continue;
       out.push(match);
     }
     return out.length ? out : false;

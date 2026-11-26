@@ -8,6 +8,7 @@ import { Match } from 'rebulk-js';
 import type { Matches } from 'rebulk-js';
 import type { Context } from 'rebulk-js';
 import { isDisabled } from '../common/pattern.js';
+import { YEARLY_SEASON_SPORTS } from '../common/sports.js';
 
 /**
  * Append a type match to the matches collection.
@@ -149,8 +150,14 @@ class TypeProcessor extends Rule {
         e.start >= y.end && /^[([]\d{4}[)\]]\s+-\s+$/.test(inputStr2.slice(y.start, e.start)) &&
         /^\d{2,3}$/.test(String(e.raw ?? '')) &&
         /^(?:$|[\s.]|v\d)/i.test(inputStr2.slice(e.end, e.end + 2))));
+      // "MotoGP 2002 - 09. Sachsenring Race", "MotoGP_2026_08_VC_…": a sports series'
+      // round number right behind the season year is the episode, as Python reads it.
+      const sportsRoundAfterYear = YEARLY_SEASON_SPORTS.test(inputStr2) && yearArr2.some((y) =>
+        /^\d{4}$/.test(String(y.raw ?? '')) && episodeArr.some((e) =>
+          e.start >= y.end && /^(?:\s+-\s+|_)$/.test(inputStr2.slice(y.end, e.start)) &&
+          /^\d{2}$/.test(String(e.raw ?? '')) && /^(?:\.\s|_|\s+-\s)/.test(inputStr2.slice(e.end, e.end + 3))));
       if (allEpisodesWeakNoRange && noStrongIndicatorsExtended && hasYear && !hasAnimeStyleRG &&
-          !episodeAfterYearDash) {
+          !episodeAfterYearDash && !sportsRoundAfterYear) {
         return { type: 'movie', removeWeak: true };
       }
       // Case 2: episodeDetails only (no episode/season/absolute) + year → movie
