@@ -499,6 +499,32 @@ abstract class TitleBaseRule extends Rule {
             })) {
           splitResult = null;
         }
+        // Tracker naming lists alternative titles with a spaced " / " ("拜托了美妙公主 / Onegai Aipri",
+        // "Black Clover / 黑色五葉草"): under an anime signal split there too (only there, the
+        // segments stay whole), and the title is the first Latin-script one when the first is not.
+        if (/\s\/\s/.test(String(trimmedHole.value ?? '')) && (animeStyle || !splitResult) &&
+            this.alternativePropertyName && !isDisabled(context, this.alternativePropertyName)) {
+          const segs: Match[] = [];
+          const re = /\s+\/\s+/g;
+          let from = trimmedHole.start, m: RegExpExecArray | null;
+          const holeText = inp.slice(trimmedHole.start, trimmedHole.end);
+          const mk = (a: number, b: number) => {
+            const raw = cleanup(inp.slice(a, b));
+            if (raw) segs.push(new Match(a, b, { inputString: inp, formatter: trimmedHole.formatter, value: (trimmedHole.formatter as any) ? (trimmedHole.formatter as any)(inp.slice(a, b)) : raw }));
+          };
+          while ((m = re.exec(holeText))) { mk(from, trimmedHole.start + m.index); from = trimmedHole.start + m.index + m[0].length; }
+          mk(from, trimmedHole.end);
+          if (segs.length > 1) splitResult = { title: segs[0], alternatives: segs.slice(1) };
+        }
+        const latin = (x: Match) => {
+          const v = String(x.value ?? '');
+          return (v.match(/\p{Script=Latin}/gu)?.length ?? 0) * 2 > (v.match(/\p{L}/gu)?.length ?? 0);
+        };
+        if (splitResult && /\s\/\s/.test(inp.slice(trimmedHole.start, trimmedHole.end)) && !latin(splitResult.title)) {
+          const all = [splitResult.title, ...splitResult.alternatives];
+          const i = all.findIndex(latin);
+          if (i > 0) splitResult = { title: all[i], alternatives: all.filter((_, j) => j !== i) };
+        }
         if (splitResult) {
           splitResult.title.name = this.matchName;
           toAppend.push(splitResult.title);

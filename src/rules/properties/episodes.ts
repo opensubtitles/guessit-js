@@ -524,7 +524,7 @@ export function episodes(config: EpisodesConfig): Rebulk {
       validator: { season: seasonWordNotYear, season_count: validateRoman },
       conflictSolver: seasonEpisodeConflictSolver,
     })
-    .regex(seasonWordPattern + `@?(?P<season>${numeralWithWords})`)
+    .regex(seasonWordPattern + `(?::@?|@?)(?P<season>${numeralWithWords})`)
     .regex(ofWordPattern + `@?(?P<season_count>${numeral})`)
     .repeater('?')
     .regex(

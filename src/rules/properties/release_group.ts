@@ -95,6 +95,7 @@ export function releaseGroup(config: Record<string, unknown>) {
     new TrailingTokenAfterEpisodeAsReleaseGroup(cleanGroupname),
     NumericPrefixedGroupRule,
     RemoveSeasonPackReleaseGroup,
+    DropSpacedTrackerTag,
     new ReclaimTrailingSceneGroup(cleanGroupname, (m) => scene.isPreviousMatch(m)),
     DropSkippedReleaseTag
   );
@@ -118,6 +119,34 @@ class DropSkippedReleaseTag extends Rule {
       tags.some(([s, e, text]) => s <= m.start && m.end <= e &&
         cleanup(String(m.value ?? '')).toLowerCase() === text.toLowerCase())) as Match[]) ?? [];
     return out.length ? out : false;
+  }
+}
+
+/**
+ * A tracker / uploader tag set off by a space after a scene "-GROUP" ("x265-MeGusta [eztv]",
+ * "h264-Star [TJET]", "x264-0SEC [GloDLS]") is not part of the group: the group is the word
+ * after the dash. Python keeps the tag. Without the dash the bracket can be the group itself
+ * ("1080p.SK [GreAn]", "Kira [SEV]"), so those stay as they are; so does the glued form
+ * ("lol[ettv]"), as Python spells it.
+ */
+class DropSpacedTrackerTag extends Rule {
+  static override priority = POST_PROCESS;
+  override consequence = [RemoveMatch, AppendMatch];
+
+  override when(matches: any): [Match[], Match[]] | false {
+    const inp: string = matches.inputString ?? '';
+    const rgs = matches.named('release_group') as Match[];
+    const rm: Match[] = [], add: Match[] = [];
+    for (const m of Array.isArray(rgs) ? rgs : rgs ? [rgs] : []) {
+      const t = /^([^\s[\](){}]+)\s+\[[^\s[\](){}]+\]$/.exec(String(m.value ?? ''));
+      if (!t) continue;
+      const at = m.start + inp.slice(m.start, m.end).indexOf(t[1]);
+      if (at < m.start || inp[at - 1] !== '-') continue;
+      const n = new Match(at, at + t[1].length, { name: 'release_group', inputString: inp, value: t[1] } as any);
+      (n as any).tags = m.tags;
+      rm.push(m); add.push(n);
+    }
+    return rm.length ? [rm, add] : false;
   }
 }
 
