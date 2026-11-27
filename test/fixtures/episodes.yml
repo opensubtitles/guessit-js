@@ -3304,7 +3304,7 @@
   screen_size: 720p
   source: HDTV
   video_codec: H.264
-  release_group: 0SEC [GloDLS]
+  release_group: 0SEC  # Python: 0SEC [GloDLS]
   container: mkv
   type: episode
 

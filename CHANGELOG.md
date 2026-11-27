@@ -4,6 +4,37 @@ All notable changes to guessit-js are documented here.
 
 ## [Unreleased]
 
+**Fixes found by checking fresh tracker release names (osmeta) against Python.**
+Measured on 73,814 current tracker names and the 414,588 real names: 43 and 213
+results change; every tracker-name change now agrees with Python 4.5.4.
+
+| Name (synthetic) | 5.5.0 | Now |
+|---|---|---|
+| `[Grp] Show wa Kawaii Mono ga Suki. - 07 (1080p)` | movie, group "ga Suki. - 07" | episode 7, group "Grp" |
+| `Show (Other) 1979 BluRay (1080p x265) (GRP666) - 20.mkv` | group "(GRP666) - 20" | group "GRP666" |
+| `[Grp] Some Rider My-th 11 …` | title "Some Rider", language Burmese, no episode | title "Some Rider My-th", episode 11 |
+| `Formula1.2026.11.20.Las.Vegas.…` | no date, title "Formula1.2026.11.20 …" | date 2026-11-20, title "Formula1" |
+| `F1.2026.21.Some.Place.Race.…` | movie | season 2026, episode 21 |
+
+**Tracker naming: `" / "` titles and spaced tracker tags.** These two deliberately differ
+from Python 4.5.4, which keeps the tag and reads every `/` as a folder.
+
+| Name (synthetic) | 5.5.0 | Now |
+|---|---|---|
+| `Some Show S05E10 1080p x265-GrpName [eztv]` | group "GrpName [eztv]" | group "GrpName" |
+| `Some Show / Season: 2 / Episodes: 1-13 of 13 [2002, USA, …]` | title "Episodes: 1", episode 13 | title "Some Show", season 2, episodes 1–13 |
+| `Der Film / The Film [2022, Germany, drama, BDRemux 1080p]` | title "The Film" | title "Der Film", alternative "The Film" |
+| `[Grp] Some Show /  某个节目 Season 2 - 17 […]` | title "某个节目" | title "Some Show", alternative "某个节目" |
+| `Some Film (2001 ITA/ENG) [1080p x265] [Grp]` | title "Grp" | title "Some Film" |
+
+- A tracker tag set off by a space after a scene `-GROUP` (`[eztv]`, `[TJET]`, `[GloDLS]`)
+  is dropped from the group. Without the dash the bracket can be the group itself
+  (`1080p.SK [Grp]`), so that stays; the glued form (`lol[ettv]`) stays as Python spells it.
+- `" / "` with spaces on both sides, and any `/` inside parentheses, no longer splits the
+  name into folders. Real paths (`/media/Show/Season 2/…`) split as before. For anime names
+  the Latin-script title is preferred; `【Grp】[中文 / Romaji][07]` keeps the romaji title.
+- `Season: 2` (with a colon) is a season.
+
 ## [5.5.0]
 
 **Cleaner release groups, and more names parse like Python or better.** Measured

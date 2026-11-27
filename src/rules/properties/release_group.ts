@@ -95,6 +95,7 @@ export function releaseGroup(config: Record<string, unknown>) {
     new TrailingTokenAfterEpisodeAsReleaseGroup(cleanGroupname),
     NumericPrefixedGroupRule,
     RemoveSeasonPackReleaseGroup,
+    DropSpacedTrackerTag,
     new ReclaimTrailingSceneGroup(cleanGroupname, (m) => scene.isPreviousMatch(m)),
     DropSkippedReleaseTag
   );
@@ -118,6 +119,34 @@ class DropSkippedReleaseTag extends Rule {
       tags.some(([s, e, text]) => s <= m.start && m.end <= e &&
         cleanup(String(m.value ?? '')).toLowerCase() === text.toLowerCase())) as Match[]) ?? [];
     return out.length ? out : false;
+  }
+}
+
+/**
+ * A tracker / uploader tag set off by a space after a scene "-GROUP" ("x265-MeGusta [eztv]",
+ * "h264-Star [TJET]", "x264-0SEC [GloDLS]") is not part of the group: the group is the word
+ * after the dash. Python keeps the tag. Without the dash the bracket can be the group itself
+ * ("1080p.SK [GreAn]", "Kira [SEV]"), so those stay as they are; so does the glued form
+ * ("lol[ettv]"), as Python spells it.
+ */
+class DropSpacedTrackerTag extends Rule {
+  static override priority = POST_PROCESS;
+  override consequence = [RemoveMatch, AppendMatch];
+
+  override when(matches: any): [Match[], Match[]] | false {
+    const inp: string = matches.inputString ?? '';
+    const rgs = matches.named('release_group') as Match[];
+    const rm: Match[] = [], add: Match[] = [];
+    for (const m of Array.isArray(rgs) ? rgs : rgs ? [rgs] : []) {
+      const t = /^([^\s[\](){}]+)\s+\[[^\s[\](){}]+\]$/.exec(String(m.value ?? ''));
+      if (!t) continue;
+      const at = m.start + inp.slice(m.start, m.end).indexOf(t[1]);
+      if (at < m.start || inp[at - 1] !== '-') continue;
+      const n = new Match(at, at + t[1].length, { name: 'release_group', inputString: inp, value: t[1] } as any);
+      (n as any).tags = m.tags;
+      rm.push(m); add.push(n);
+    }
+    return rm.length ? [rm, add] : false;
   }
 }
 
@@ -522,6 +551,21 @@ class SceneReleaseGroup extends Rule {
                 !inputStr.slice(ep.end, previousMatch.start).replace(new RegExp(`[${sepsPattern}]`, 'g'), '');
             })()) {
           continue;
+        }
+        // A hole that runs over a spaced " - NN" episode is not a group as a whole. Behind a
+        // leading [Group] it is title text plus the episode ("[Grp] Show wa Kawaii Mono ga
+        // Osuki. - 07 (1080p)"); otherwise the group ends where the " - NN" starts
+        // ("… (JG666) - 20" → JG666, episode 20).
+        const spacedEp = (matches.range(lastHole.start, lastHole.end, (m: Match) =>
+          (m.name === 'episode' || m.name === 'season') && !m.private) as Match[] ?? [])
+          .map((m: Match) => /\s*-\s*\[?$/.exec(inputStr.slice(lastHole.start, m.start + (/[[(]/.test(inputStr[m.start]) ? 1 : 0))))
+          .find((x): x is RegExpExecArray => !!x && /\s-/.test(x[0]));
+        if (spacedEp) {
+          if (/^[[{]/.test(inputStr.slice(start).trimStart())) continue;
+          const cut = lastHole.start + spacedEp.index;
+          if (!cleanup(inputStr.slice(lastHole.start, cut))) continue;
+          lastHole.end = cut;
+          lastHole.value = cleanup(inputStr.slice(lastHole.start, cut));
         }
         if (
           previousMatch &&
